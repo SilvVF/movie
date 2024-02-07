@@ -13,15 +13,16 @@ import io.silv.core.await
 import io.silv.core_ui.components.Poster
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
-import io.silv.movie.coil.DiskBackedFetcher
 import io.silv.movie.coil.FetcherDiskStore
 import io.silv.movie.coil.FetcherDiskStoreImageFile
+import io.silv.movie.coil.OkHttpFetcherConfig
 import io.silv.movie.coil.addDiskFetcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -53,11 +54,11 @@ class App: Application(), ImageLoaderFactory {
                 addDiskFetcher(
                     diskCache = diskCacheInit,
                     memoryCache = memCacheInit,
-                    fetcher = object: DiskBackedFetcher<Poster> {
+                    fetcher = object: OkHttpFetcherConfig<Poster> {
                         override val keyer: Keyer<Poster> = Keyer { data, options ->  data.url }
                         override val diskStore: FetcherDiskStore<Poster> = FetcherDiskStoreImageFile { data, _ -> null }
                         override val context: Context = this@App
-                        override suspend fun fetch(options: Options, data: Poster): ByteArray {
+                        override suspend fun fetch(options: Options, data: Poster): Response {
                             fun newRequest(): Request {
                                 val request = Request.Builder()
                                     .url(data.url!!)
@@ -78,7 +79,7 @@ class App: Application(), ImageLoaderFactory {
 
                                 return request.build()
                             }
-                            return client.newCall(newRequest()).await().body!!.bytes()
+                            return client.newCall(newRequest()).await()
                         }
                     }
                 )

@@ -7,7 +7,6 @@ import coil.decode.ImageSource
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import coil.request.Options
-import okhttp3.Response
 import okio.Source
 import okio.buffer
 import okio.sink
@@ -17,11 +16,11 @@ internal object CoilDiskUtils {
 
     fun writeToMemCache(
         options: Options,
-        bytes: ByteArray,
+        bytes: ByteArray?,
         memCacheKey: MemoryCache.Key,
         memCache: MemoryCache
     ) = runCatching {
-        if (options.memoryCachePolicy.writeEnabled) {
+        if (options.memoryCachePolicy.writeEnabled && bytes != null) {
             val bmp = with(
                 BitmapFactory.Options().apply { inMutable = true }
             ) {
@@ -81,26 +80,6 @@ internal object CoilDiskUtils {
             diskCache.openSnapshot(diskCacheKey)
         } else {
             null
-        }
-    }
-
-    private fun writeToDiskCache(
-        response: Response,
-        diskCache: DiskCache,
-        diskCacheKey: String
-    ): DiskCache.Snapshot? {
-        val editor = diskCache.openEditor(diskCacheKey) ?: return null
-        try {
-            diskCache.fileSystem.write(editor.data) {
-                response.body!!.source().readAll(this)
-            }
-            return editor.commitAndOpenSnapshot()
-        } catch (e: Exception) {
-            try {
-                editor.abort()
-            } catch (ignored: Exception) {
-            }
-            throw e
         }
     }
 
