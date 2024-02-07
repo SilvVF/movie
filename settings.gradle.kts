@@ -15,4 +15,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "movie"
 include(":app")
-include(":coil-disk-fetcher")
+include(":core-network")
+include(":core")
+include(":core-ui")
+include(":data")

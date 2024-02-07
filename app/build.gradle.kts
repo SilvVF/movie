@@ -57,7 +57,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
     packaging {
         resources {
@@ -69,10 +69,10 @@ android {
 
 dependencies {
 
-    implementation(project(":coil-disk-fetcher"))
-
-    implementation(libs.sandwich)
-
+    implementation(project(":core"))
+    implementation(project(":core-ui"))
+    implementation(project(":data"))
+    implementation(project(":core-network"))
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
@@ -84,7 +84,6 @@ dependencies {
     implementation(libs.androidx.material3.window.size)
     implementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.foundation)
-    implementation(libs.androidx.compose.material3)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
     androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
@@ -93,6 +92,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.material3.android)
 
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
@@ -135,5 +135,24 @@ dependencies {
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
-    implementation(libs.kotlin.serialization)
+    implementation(libs.kotlinx.serialization)
+}
+
+tasks {
+    // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions.freeCompilerArgs += listOf(
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
+            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+            "-opt-in=coil.annotation.ExperimentalCoilApi",
+            "-opt-in=kotlinx.coroutines.FlowPreview",
+        )
+    }
 }
