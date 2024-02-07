@@ -3,6 +3,7 @@ package io.silv.core_network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.silv.core.MB
 import io.silv.core.toBytes
+import io.silv.core_network.ratelimit.rateLimit
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,6 +13,7 @@ import org.koin.dsl.module
 import retrofit2.Retrofit
 import retrofit2.create
 import java.io.File
+import kotlin.time.Duration.Companion.seconds
 
 typealias TMDBClient = OkHttpClient
 
@@ -36,6 +38,10 @@ val networkModule =
                     )
                 )
                 .addInterceptor(TMDBAuthInterceptor())
+                .rateLimit(
+                    permits = 50,
+                    period = 1.seconds
+                )
                 .build()
         }
 

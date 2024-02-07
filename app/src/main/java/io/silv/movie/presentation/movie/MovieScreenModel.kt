@@ -35,11 +35,13 @@ class MovieScreenModel(
             ) {
                 getRemoteMovie.subscribe(listing)
             }.flow.map { pagingData ->
-                pagingData.map { sMovie ->
+                val seenIds = mutableSetOf<Long>()
+                pagingData.map dataMap@{ sMovie ->
                     networkToLocalMovie.await(sMovie.toDomain())
                         .let { localMovie -> getMovie.subscribe(localMovie.id) }
                         .stateIn(ioCoroutineScope)
                 }
+                    .filter { seenIds.add(it.value.id) }
                     .filter { !it.value.favorite }
             }
                 .cachedIn(ioCoroutineScope)
