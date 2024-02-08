@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBarDefaults.containerColor
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBarDefaults
@@ -67,7 +66,7 @@ fun SearchLargeTopBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors2 = TopAppBarDefaults.colors2(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
-    extraContent: @Composable () -> Unit = {}
+    extraContent: @Composable () -> Unit = {},
 ) {
     TwoRowsTopAppBar(
         title = title,
@@ -83,7 +82,7 @@ fun SearchLargeTopBar(
         maxHeight = 256.0.dp,
         pinnedHeight = 64.0.dp,
         scrollBehavior = scrollBehavior,
-        extraContent = extraContent
+        extraContent = extraContent,
     )
 }
 
@@ -180,7 +179,10 @@ private fun TwoRowsTopAppBar(
         Modifier
     }
 
-    Surface(modifier = modifier.then(appBarDragModifier), color = appBarContainerColor) {
+    Surface(
+        modifier = modifier.then(appBarDragModifier),
+        color = appBarContainerColor
+    ) {
         Column {
             TopAppBarLayout(
                 modifier = Modifier
@@ -373,11 +375,11 @@ private fun TopAppBarLayout(
 
 @Stable
 class TopAppBarColors2(
-    private val containerColor: Color,
-    private val scrolledContainerColor: Color,
-    internal val navigationIconContentColor: Color,
-    internal val titleContentColor: Color,
-    internal val actionIconContentColor: Color,
+    val containerColor: Color,
+    val scrolledContainerColor: Color,
+    val navigationIconContentColor: Color,
+    val titleContentColor: Color,
+    val actionIconContentColor: Color,
 ) {
     /**
      * Represents the container color used for the top app bar.
@@ -424,15 +426,21 @@ class TopAppBarColors2(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBarDefaults.colors2() = TopAppBarColors2(
-    containerColor = MaterialTheme.colorScheme.surface,
-    scrolledContainerColor = MaterialTheme.colorScheme.applyTonalElevation(
+fun TopAppBarDefaults.colors2(
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    scrolledContainerColor: Color  = MaterialTheme.colorScheme.applyTonalElevation(
         backgroundColor = containerColor,
         elevation = 3.0.dp
     ),
-    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-    titleContentColor = MaterialTheme.colorScheme.onSurface,
-    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    navigationIconContentColor: Color  = MaterialTheme.colorScheme.onSurface,
+    titleContentColor: Color  = MaterialTheme.colorScheme.onSurface,
+    actionIconContentColor: Color  = MaterialTheme.colorScheme.onSurfaceVariant
+) = TopAppBarColors2(
+    containerColor = containerColor,
+    scrolledContainerColor = scrolledContainerColor,
+    navigationIconContentColor = navigationIconContentColor,
+    titleContentColor = titleContentColor,
+    actionIconContentColor = actionIconContentColor
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

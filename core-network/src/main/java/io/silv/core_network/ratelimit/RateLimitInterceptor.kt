@@ -1,5 +1,6 @@
 package io.silv.core_network.ratelimit
 
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -40,7 +41,8 @@ private class RateLimitInterceptor(
     nanoSeconds: Long,
 ) : Interceptor {
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val scope =
+        CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineName("RateLimitInterceptor"))
 
     private val bucket =
         TokenBuckets.builder()

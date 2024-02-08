@@ -10,7 +10,7 @@ import coil.request.Options
 import coil.request.Parameters
 import coil.util.DebugLogger
 import io.silv.core.await
-import io.silv.core_ui.components.Poster
+import io.silv.core_ui.components.PosterData
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
 import io.silv.movie.coil.FetcherDiskStore
@@ -54,11 +54,11 @@ class App: Application(), ImageLoaderFactory {
                 addDiskFetcher(
                     diskCache = diskCacheInit,
                     memoryCache = memCacheInit,
-                    fetcher = object: OkHttpFetcherConfig<Poster> {
-                        override val keyer: Keyer<Poster> = Keyer { data, options ->  data.url }
-                        override val diskStore: FetcherDiskStore<Poster> = FetcherDiskStoreImageFile { data, _ -> null }
+                    fetcher = object: OkHttpFetcherConfig<PosterData> {
+                        override val keyer: Keyer<PosterData> = Keyer { data, options ->  data.url }
+                        override val diskStore: FetcherDiskStore<PosterData> = FetcherDiskStoreImageFile { data, _ -> null }
                         override val context: Context = this@App
-                        override suspend fun fetch(options: Options, data: Poster): Response {
+                        override suspend fun fetch(options: Options, data: PosterData): Response {
                             fun newRequest(): Request {
                                 val request = Request.Builder()
                                     .url(data.url!!)

@@ -145,6 +145,8 @@ internal class TokenBucketImpl(
      * Refills the bucket with the specified number of tokens.  If the bucket is currently full or near capacity then
      * fewer than `numTokens` may be added.
      *
+     * if this is being called from an internal function that locks the mutex use [withReentrantLock]
+     *
      * @param numTokens The number of tokens to add to the bucket.
      */
     override suspend fun refill(numTokens: Long) {

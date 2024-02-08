@@ -69,6 +69,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil)
 
+    implementation(libs.kotlin.collections.immutable)
+    implementation(libs.androidx.paging.common)
+    implementation(libs.androidx.paging.compose)
+
     implementation(libs.voyager.screenModel)
     implementation(libs.voyager.navigator)
     implementation(libs.voyager.koin)
