@@ -3,10 +3,12 @@ package io.silv.movie.presentation.movie.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -84,111 +86,113 @@ fun MovieTopAppBar(
     val appBarContainerColor by rememberUpdatedState(
         colors.containerColor(scrollBehavior.state.collapsedFraction)
     )
-    SearchLargeTopBar(
-        title = { Text("TMDB") },
-        scrollBehavior = scrollBehavior,
-        colors = colors,
-        modifier = modifier.fillMaxWidth(),
-        actions = {
-            ResourceFilterChips(
-                changeResourceType = { actions.changeResource(it) },
-                selected = resource
-            )
-            var dropDownVisible by remember {
-                mutableStateOf(false)
-            }
-            Box(contentAlignment = Alignment.BottomCenter) {
-                DropdownMenu(
-                    expanded = dropDownVisible,
-                    onDismissRequest = { dropDownVisible = false }
-                ) {
-                    PosterDisplayMode.values.forEach {
-                        DropdownMenuItem(
-                            trailingIcon = {
-                                RadioButton(
-                                    selected = displayMode() == it,
-                                    onClick = { actions.setDisplayMode(it) }
-                                )
-                            },
-                            text = {
-                                Text(
-                                    remember {
-                                        it.toString()
-                                            .split(Regex("(?<=[a-z])(?=[A-Z])"))
-                                            .joinToString(" ")
-                                    }
-                                )
-                            },
-                            onClick = { actions.setDisplayMode(it) }
-                        )
-                    }
-                }
-                TooltipIconButton(
-                    onClick = { dropDownVisible = true },
-                    imageVector = when(displayMode()) {
-                        PosterDisplayMode.List -> Icons.AutoMirrored.Filled.List
-                        else -> Icons.Filled.GridView
-                    },
-                    contentDescription = null,
-                    tooltip = "Display Mode"
-                )
-            }
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(
-                    imageVector = Icons.Filled.FilterList,
-                    contentDescription = null
-                )
-            }
-        },
+    Column(
+        modifier = modifier.fillMaxWidth().wrapContentSize(),
     ) {
-        val focusRequester = remember { FocusRequester() }
-        val keyboardController = LocalSoftwareKeyboardController.current
+        SearchLargeTopBar(
+            title = { Text("TMDB") },
+            scrollBehavior = scrollBehavior,
+            colors = colors,
+            actions = {
+                ResourceFilterChips(
+                    changeResourceType = { actions.changeResource(it) },
+                    selected = resource
+                )
+                var dropDownVisible by remember { mutableStateOf(false) }
 
-        SearchBarInputField(
-            query = query(),
-            placeholder = {
-                Text(remember(resource) { "Search for ${resource}..." })
+                Box(contentAlignment = Alignment.BottomCenter) {
+                    DropdownMenu(
+                        expanded = dropDownVisible,
+                        onDismissRequest = { dropDownVisible = false }
+                    ) {
+                        PosterDisplayMode.values.forEach {
+                            DropdownMenuItem(
+                                trailingIcon = {
+                                    RadioButton(
+                                        selected = displayMode() == it,
+                                        onClick = { actions.setDisplayMode(it) }
+                                    )
+                                },
+                                text = {
+                                    Text(
+                                        remember {
+                                            it.toString()
+                                                .split(Regex("(?<=[a-z])(?=[A-Z])"))
+                                                .joinToString(" ")
+                                        }
+                                    )
+                                },
+                                onClick = { actions.setDisplayMode(it) }
+                            )
+                        }
+                    }
+                    TooltipIconButton(
+                        onClick = { dropDownVisible = true },
+                        imageVector = when(displayMode()) {
+                            PosterDisplayMode.List -> Icons.AutoMirrored.Filled.List
+                            else -> Icons.Filled.GridView
+                        },
+                        contentDescription = null,
+                        tooltip = "Display Mode"
+                    )
+                }
+                IconButton(onClick = { /*TODO*/ }) {
+                    Icon(
+                        imageVector = Icons.Filled.FilterList,
+                        contentDescription = null
+                    )
+                }
             },
-            onQueryChange = { actions.changeQuery(it) },
-            focusRequester = focusRequester,
-            onSearch = {
-                actions.onSearch(it)
-                keyboardController?.hide()
-            },
-            trailingIcon = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    AnimatedVisibility(visible = query().isNotEmpty()) {
-                        IconButton(onClick = { actions.changeQuery("") }) {
+        ) {
+            val focusRequester = remember { FocusRequester() }
+            val keyboardController = LocalSoftwareKeyboardController.current
+
+            SearchBarInputField(
+                query = query(),
+                placeholder = {
+                    Text(remember(resource) { "Search for ${resource}..." })
+                },
+                onQueryChange = { actions.changeQuery(it) },
+                focusRequester = focusRequester,
+                onSearch = {
+                    actions.onSearch(it)
+                    keyboardController?.hide()
+                },
+                trailingIcon = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        AnimatedVisibility(visible = query().isNotEmpty()) {
+                            IconButton(onClick = { actions.changeQuery("") }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                        IconButton(onClick = { actions.onSearch(query()) }) {
                             Icon(
-                                imageVector = Icons.Filled.Clear,
+                                imageVector = Icons.Filled.Search,
                                 contentDescription = null
                             )
                         }
                     }
-                    IconButton(onClick = { actions.onSearch(query()) }) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = null
-                        )
-                    }
+                },
+                modifier = Modifier.padding(horizontal = 12.dp)
+            )
+        }
+        Surface(
+            color = if(barExpandedFully)
+                colors.containerColor
+            else
+                appBarContainerColor
+        ) {
+            MovieFilterChips(
+                selected = listing(),
+                query = query(),
+                changeMovePagesType = {
+                    actions.changeCategory(it)
                 }
-            },
-            modifier = Modifier.padding(horizontal = 12.dp)
-        )
-    }
-    Surface(
-        color = if(barExpandedFully)
-            colors.containerColor
-        else
-            appBarContainerColor
-    ) {
-        MovieFilterChips(
-            selected = listing(),
-            query = query(),
-            changeMovePagesType = {
-                actions.changeCategory(it)
-            }
-        )
+            )
+        }
     }
 }
 

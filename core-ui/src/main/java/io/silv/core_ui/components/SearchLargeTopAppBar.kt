@@ -79,7 +79,7 @@ fun SearchLargeTopBar(
         actions = actions,
         colors = colors,
         windowInsets = windowInsets,
-        maxHeight = 256.0.dp,
+        maxHeight = 216.0.dp,
         pinnedHeight = 64.0.dp,
         scrollBehavior = scrollBehavior,
         extraContent = extraContent,

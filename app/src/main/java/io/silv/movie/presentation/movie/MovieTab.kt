@@ -1,10 +1,13 @@
 package io.silv.movie.presentation.movie
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -98,22 +101,21 @@ private fun MovieStandardScreenSizeContent(
     val snackBarHostState = remember { SnackbarHostState() }
 
     Scaffold(
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.systemBars),
         snackbarHost = {
             SnackbarHost(snackBarHostState)
         },
         topBar = {
-            Column(
-                Modifier.hazeChild(hazeState)
-            ) {
-                MovieTopAppBar(
-                    query =  query,
-                    resource = resource,
-                    listing = listing,
-                    displayMode = displayMode,
-                    scrollBehavior = scrollBehavior,
-                    actions = actions,
-                )
-            }
+            MovieTopAppBar(
+                modifier =   Modifier.hazeChild(hazeState),
+                query =  query,
+                resource = resource,
+                listing = listing,
+                displayMode = displayMode,
+                scrollBehavior = scrollBehavior,
+                actions = actions
+            )
         },
         modifier = Modifier
             .fillMaxSize()
