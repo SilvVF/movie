@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MovieTheme {
-                Navigator(MovieScreen) { navigator ->
+                Navigator(MovieScreen()) { navigator ->
                     FadeTransition(navigator)
                 }
             }

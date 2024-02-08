@@ -33,14 +33,26 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+
 class MovieScreenModel(
     private val getRemoteMovie: GetRemoteMovie,
     private val networkToLocalMovie: NetworkToLocalMovie,
     private val getMovie: GetMovie,
-    private val tmdbPreferences: TMDBPreferences
-): StateScreenModel<MovieState>(MovieState()) {
-
+    tmdbPreferences: TMDBPreferences,
+    query: String
+) : StateScreenModel<MovieState>(
+    MovieState(
+        listing = if (query.isNotBlank()) {
+            MoviePagedType.Search(query)
+        } else {
+            MoviePagedType.Default.Popular
+        }
+    )
+) {
     var displayMode by tmdbPreferences.sourceDisplayMode().asState(screenModelScope)
+        private set
+
+    var gridCells by tmdbPreferences.gridCellsCount().asState(screenModelScope)
         private set
 
     init {
@@ -71,7 +83,7 @@ class MovieScreenModel(
                         .let { localMovie -> getMovie.subscribe(localMovie.id) }
                         .stateIn(ioCoroutineScope)
                 }
-                    .filter { seenIds.add(it.value.id) }
+                    .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
                     .filter { !hideLibraryItems || !it.value.favorite }
             }
                 .cachedIn(ioCoroutineScope)
@@ -83,26 +95,21 @@ class MovieScreenModel(
             if(category is MoviePagedType.Search && category.query.isBlank()) {
                 return@launch
             }
-            mutableState.update { state ->
-                state.copy(listing = category)
-            }
+            mutableState.update { state -> state.copy(listing = category) }
         }
     }
 
     fun changeQuery(query: String) {
         screenModelScope.launch {
-            mutableState.update { state ->
-                state.copy(query = query)
-            }
+            mutableState.update { state -> state.copy(query = query) }
         }
     }
 
     fun changeResource(resource: Resource) {
-        screenModelScope.launch {
-            mutableState.update { state ->
-                state.copy(resource = resource)
-            }
-        }
+       screenModelScope.launch {
+           mutableState.update {state -> state.copy(resource = resource)
+           }
+       }
     }
 
     fun changeDisplayMode(mode: PosterDisplayMode) {
@@ -114,11 +121,13 @@ class MovieScreenModel(
     fun changeDialog(dialog: Dialog?) {
         screenModelScope.launch {
             mutableState.update {state ->
-                state.copy(
-                    dialog = dialog
-                )
+                state.copy(dialog = dialog)
             }
         }
+    }
+
+    fun changeGridCells(count: Int) {
+        screenModelScope.launch { gridCells = count }
     }
 
     fun onSearch(query: String) {
@@ -126,19 +135,21 @@ class MovieScreenModel(
             if (query.isBlank()) {
                 return@launch
             }
-            mutableState.update { state ->
-                state.copy(listing = MoviePagedType.Search(query))
-            }
+            mutableState.update { state -> state.copy(listing = MoviePagedType.Search(query)) }
         }
     }
 
+    @Stable
     sealed interface Dialog {
+
+        @Stable
         data object Filter : Dialog
+
+        @Stable
         data class RemoveMovie(val movie: Movie) : Dialog
     }
 
 }
-
 @Immutable
 @Stable
 data class MovieState(
@@ -151,7 +162,9 @@ data class MovieState(
 @Stable
 @Immutable
 enum class Resource {
+    @Stable
     Movie { override fun toString(): String = "Movies" },
+    @Stable
     TVShow  { override fun toString(): String = "TV Shows" }
 }
 
@@ -164,5 +177,6 @@ data class MovieActions(
     val movieLongClick: (movie: Movie) -> Unit,
     val movieClick: (movie: Movie) -> Unit,
     val onSearch: (String) -> Unit,
-    val setDisplayMode: (PosterDisplayMode) -> Unit
+    val setDisplayMode: (PosterDisplayMode) -> Unit,
+    val changeGridCellCount: (Int) -> Unit
 )

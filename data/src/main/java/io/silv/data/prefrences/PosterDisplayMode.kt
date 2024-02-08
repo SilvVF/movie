@@ -18,10 +18,13 @@ package io.silv.data.prefrences
 
 sealed interface PosterDisplayMode {
 
-    data object CompactGrid : PosterDisplayMode
-    data object ComfortableGrid : PosterDisplayMode
+    sealed interface Grid: PosterDisplayMode {
+        data object CompactGrid : Grid
+        data object ComfortableGrid : Grid
+        data object CoverOnlyGrid : Grid
+    }
+
     data object List : PosterDisplayMode
-    data object CoverOnlyGrid : PosterDisplayMode
 
     object Serializer {
         fun deserialize(serialized: String): PosterDisplayMode {
@@ -34,14 +37,14 @@ sealed interface PosterDisplayMode {
     }
 
     companion object {
-        val values by lazy { setOf(CompactGrid, ComfortableGrid, List, CoverOnlyGrid) }
-        val default = CompactGrid
+        val values by lazy { setOf(Grid.CompactGrid, Grid.ComfortableGrid, List, Grid.CoverOnlyGrid) }
+        val default = Grid.CompactGrid
 
         fun deserialize(serialized: String): PosterDisplayMode {
             return when (serialized) {
-                "COMFORTABLE_GRID" -> ComfortableGrid
-                "COMPACT_GRID" -> CompactGrid
-                "COVER_ONLY_GRID" -> CoverOnlyGrid
+                "COMFORTABLE_GRID" -> Grid.ComfortableGrid
+                "COMPACT_GRID" -> Grid.CompactGrid
+                "COVER_ONLY_GRID" -> Grid.CoverOnlyGrid
                 "LIST" -> List
                 else -> default
             }
@@ -50,9 +53,9 @@ sealed interface PosterDisplayMode {
 
     fun serialize(): String {
         return when (this) {
-            ComfortableGrid -> "COMFORTABLE_GRID"
-            CompactGrid -> "COMPACT_GRID"
-            CoverOnlyGrid -> "COVER_ONLY_GRID"
+            Grid.ComfortableGrid -> "COMFORTABLE_GRID"
+            Grid.CompactGrid -> "COMPACT_GRID"
+            Grid.CoverOnlyGrid -> "COVER_ONLY_GRID"
             List -> "LIST"
         }
     }

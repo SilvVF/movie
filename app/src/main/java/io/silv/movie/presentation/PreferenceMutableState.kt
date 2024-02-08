@@ -17,7 +17,10 @@ class PreferenceMutableState<T>(
 
     private val state = mutableStateOf(
         runBlocking {
-            withTimeoutOrNull(100) { preference.get() } ?: preference.defaultValue()
+            withTimeoutOrNull(500) {
+                preference.get()
+            }
+                ?: preference.defaultValue()
         }
     )
 

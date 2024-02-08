@@ -425,6 +425,7 @@ class TopAppBarColors2(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@Stable
 @Composable
 fun TopAppBarDefaults.colors2(
     containerColor: Color = MaterialTheme.colorScheme.surface,

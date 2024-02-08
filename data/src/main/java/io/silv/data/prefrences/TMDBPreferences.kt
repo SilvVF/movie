@@ -13,6 +13,9 @@ class TMDBPreferences(
         PosterDisplayMode.Serializer::deserialize,
     )
 
+    fun gridCellsCount() = preferenceStore.getInt("pref_grid_cells_count", 2)
+
+
 
     fun hideLibraryItems() = preferenceStore.getBoolean("hide_library_items", false)
 

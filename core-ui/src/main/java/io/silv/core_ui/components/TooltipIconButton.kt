@@ -1,6 +1,5 @@
 package io.silv.core_ui.components
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
@@ -12,6 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +34,6 @@ fun TooltipIconButton(
     tint: Color = LocalContentColor.current,
     enabled: Boolean = true,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
-    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     tooltipAlignment: Alignment = Alignment.BottomCenter
 ) {
     val state =  rememberTooltipState()
@@ -59,7 +59,6 @@ fun TooltipIconButton(
             modifier = modifier,
             enabled = enabled,
             colors = colors,
-            interactionSource = interactionSource
         ) {
             Icon(
                 imageVector = imageVector,
@@ -70,6 +69,8 @@ fun TooltipIconButton(
     }
 }
 
+@Immutable
+@Stable
 private class AlignmentOffsetPositionProvider(
     val alignment: Alignment,
     val offset: IntOffset
