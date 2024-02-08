@@ -1,4 +1,4 @@
-package io.silv.data
+package io.silv.data.movie.model
 
 import androidx.compose.runtime.Stable
 
@@ -7,6 +7,7 @@ data class Movie(
     val id: Long,
     val title: String,
     val posterUrl: String?,
+    val posterLastUpdated: Long,
     val favorite: Boolean
 ) {
 
@@ -15,7 +16,8 @@ data class Movie(
             id = -1L,
             posterUrl = "",
             title = "",
-            favorite = false
+            favorite = false,
+            posterLastUpdated = -1L
        )
     }
 }

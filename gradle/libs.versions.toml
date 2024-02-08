@@ -1,5 +1,6 @@
 [versions]
 activityCompose = "1.8.2"
+sqldelight = "2.0.1"
 androidxComposeBom = "2024.01.00"
 androidxCoreKtx = "1.12.0"
 androidxTestEspressoCore = "3.5.1"
@@ -31,6 +32,7 @@ pagingCommon = "3.2.1"
 pagingCompose = "3.2.1"
 pagingRuntime = "3.2.1"
 roomPaging = "2.6.1"
+statelyConcurrency = "2.0.5"
 testJunit = "1.1.5"
 junit= "4.13.2"
 koinVersion="3.5.3"
@@ -59,6 +61,11 @@ retrofit="2.9.0"
 retrofiteKotlinxSerializtionConverter="1.0.0"
 
 [libraries]
+sqldelight-primitive-adapters = { module = "app.cash.sqldelight:primitive-adapters", version.ref = "sqldelight" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-coroutines = {module = "app.cash.sqldelight:coroutines-extensions", version.ref ="sqldelight" }
+sqldelight-paging = {module = "app.cash.sqldelight:androidx-paging3-extensions", version.ref ="sqldelight" }
+
 androidx-material3-android = { module = "androidx.compose.material3:material3-android", version.ref = "material3Android" }
 compose-stable-marker = { module = "com.github.skydoves:compose-stable-marker", version.ref = "composeStableMarker" }
 desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
@@ -129,6 +136,7 @@ androidx-test-espresso-core= { module="androidx.test.espresso:espresso-core", ve
 androidx-test-junit = {module = "androidx.test.ext:junit", version.ref="testJunit"}
 junit={module = "junit:junit", version.ref ="junit"}
 
+stately-concurrency = { module = "co.touchlab:stately-concurrency", version.ref = "statelyConcurrency" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyager" }
 voyager-screenModel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
 voyager-tabNavigator = { module = "cafe.adriel.voyager:voyager-tab-navigator", version.ref = "voyager" }

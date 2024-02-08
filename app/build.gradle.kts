@@ -125,12 +125,6 @@ dependencies {
     implementation(libs.koin.navigation)
     implementation(libs.koin.workmanager)
 
-    implementation(libs.ktor.core)
-    implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.serialization.json)
-    implementation(libs.ktor.contentnegotiation)
-    implementation(libs.ktor.logging)
-
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)

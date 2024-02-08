@@ -1,4 +1,4 @@
-package io.silv.data
+package io.silv.data.movie.interactor
 
 import android.util.Log
 import androidx.paging.PagingSource
@@ -6,6 +6,7 @@ import androidx.paging.PagingState
 import io.silv.core.SMovie
 import io.silv.core.await
 import io.silv.core_network.TMDBMovieService
+import io.silv.core_network.model.toSMovie
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -2,10 +2,19 @@
 plugins {
     alias(libs.plugins.com.android.library)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    id("app.cash.sqldelight") version "2.0.1"
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("io.silv")
+        }
+    }
 }
 
 android {
-    namespace = "io.silv.data"
+    namespace = "io.silv.core_database"
     compileSdk = 34
 
     defaultConfig {
@@ -34,14 +43,6 @@ android {
 }
 
 dependencies {
-
-    compileOnly(libs.compose.stable.marker)
-    implementation(project(":core"))
-    implementation(project(":core-network"))
-    implementation(project(":core-database"))
-
-    implementation(libs.androidx.datastore.preferences)
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -49,11 +50,12 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
 
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.common)
-
-    implementation(libs.retrofit)
-
     implementation(libs.koin.core)
     implementation(libs.koin.android)
+
+    implementation(libs.stately.concurrency)
+
+    implementation(libs.sqldelight.android.driver)
+    implementation(libs.sqldelight.coroutines)
+    implementation(libs.sqldelight.primitive.adapters)
 }

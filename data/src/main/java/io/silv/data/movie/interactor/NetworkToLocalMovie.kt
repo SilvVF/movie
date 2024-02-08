@@ -1,4 +1,7 @@
-package io.silv.data
+package io.silv.data.movie.interactor
+
+import io.silv.data.movie.model.Movie
+import io.silv.data.movie.repository.MovieRepository
 
 class NetworkToLocalMovie(
     private val movieRepository: MovieRepository,

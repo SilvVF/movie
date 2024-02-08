@@ -1,4 +1,4 @@
-package io.silv.data.prefrences
+package io.silv.data.prefrences.core
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +31,7 @@ interface Preference<T> {
             return key.startsWith(PRIVATE_PREFIX)
         }
         fun privateKey(key: String): String {
-            return "${PRIVATE_PREFIX}$key"
+            return "$PRIVATE_PREFIX$key"
         }
         /**
          * A preference used for internal app state that isn't really a user preference
@@ -41,7 +41,7 @@ interface Preference<T> {
             return key.startsWith(APP_STATE_PREFIX)
         }
         fun appStateKey(key: String): String {
-            return "${APP_STATE_PREFIX}$key"
+            return "$APP_STATE_PREFIX$key"
         }
 
         private const val APP_STATE_PREFIX = "__APP_STATE_"

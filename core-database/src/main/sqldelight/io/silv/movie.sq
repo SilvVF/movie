@@ -1,0 +1,25 @@
+import kotlin.Boolean;
+
+CREATE TABLE movie (
+    id INTEGER PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL DEFAULT "",
+    posterUrl TEXT,
+    posterLastUpdated INTEGER NOT NULL DEFAULT 0,
+    favorite INTEGER AS Boolean NOT NULL DEFAULT 0
+);
+
+
+selectById:
+SELECT * FROM movie WHERE id = :id LIMIT 1;
+
+selectAll:
+SELECT * FROM movie;
+
+insert:
+INSERT OR IGNORE INTO movie(id, title, posterUrl, posterLastUpdated, favorite)
+VALUES (:id, :title, :posterUrl, :posterLastUpdated, :favorite);
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+

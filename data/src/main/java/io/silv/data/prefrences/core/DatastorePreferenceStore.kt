@@ -1,14 +1,14 @@
-package io.silv.data.prefrences
+package io.silv.data.prefrences.core
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import io.silv.data.prefrences.DataStorePreference.BooleanPrimitive
-import io.silv.data.prefrences.DataStorePreference.FloatPrimitive
-import io.silv.data.prefrences.DataStorePreference.IntPrimitive
-import io.silv.data.prefrences.DataStorePreference.LongPrimitive
-import io.silv.data.prefrences.DataStorePreference.ObjectPrimitive
-import io.silv.data.prefrences.DataStorePreference.StringPrimitive
-import io.silv.data.prefrences.DataStorePreference.StringSetPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.BooleanPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.FloatPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.IntPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.LongPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.ObjectPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.StringPrimitive
+import io.silv.data.prefrences.core.DataStorePreference.StringSetPrimitive
 import kotlinx.coroutines.flow.firstOrNull
 
 /**

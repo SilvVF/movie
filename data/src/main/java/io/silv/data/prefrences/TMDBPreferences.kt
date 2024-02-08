@@ -1,5 +1,7 @@
 package io.silv.data.prefrences
 
+import io.silv.data.prefrences.core.PreferenceStore
+
 class TMDBPreferences(
     private val preferenceStore: PreferenceStore,
 ) {

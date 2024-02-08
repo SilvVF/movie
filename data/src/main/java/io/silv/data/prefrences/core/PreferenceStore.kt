@@ -15,7 +15,7 @@ limitations under the License.
  */
 
 
-package io.silv.data.prefrences
+package io.silv.data.prefrences.core
 
 import androidx.datastore.preferences.core.Preferences
 

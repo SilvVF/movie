@@ -1,5 +1,7 @@
 package io.silv.data.prefrences
 
+import io.silv.data.prefrences.core.PreferenceStore
+
 class BasePreferences(
     private val settings: PreferenceStore,
 ) {

@@ -1,4 +1,4 @@
-package io.silv.data
+package io.silv.data.movie.model
 
 import androidx.compose.runtime.Stable
 

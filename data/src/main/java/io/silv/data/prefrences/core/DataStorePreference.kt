@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package io.silv.data.prefrences
+package io.silv.data.prefrences.core
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

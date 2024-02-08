@@ -2,6 +2,7 @@ package io.silv.core_ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -36,19 +37,14 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
 
 
 // Search bar has 16dp padding between icons and start/end, while by default text field has 12dp.
@@ -61,7 +57,6 @@ fun SearchBarInputField(
     onQueryChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onActiveChange: (Boolean) -> Unit = {},
     onSearch: (String) -> Unit = {},
     placeholder: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
@@ -70,8 +65,6 @@ fun SearchBarInputField(
     focusRequester: FocusRequester  = remember { FocusRequester() },
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
 ) {
-    val searchSemantics = "11"
-
     val textColor = LocalTextStyle.current.color.takeOrElse {
         colors.textColor(
             enabled,
@@ -94,9 +87,7 @@ fun SearchBarInputField(
             LocalContentColor.current
         },
         tonalElevation = 6.0.dp,
-        modifier = modifier
-            .zIndex(1f)
-            .widthIn(min = 360.dp)
+        modifier = modifier.widthIn(min = 360.dp)
     ) {
         BasicTextField(
             value = query,
@@ -105,13 +96,8 @@ fun SearchBarInputField(
                 .height(SearchBarDefaults.InputFieldHeight)
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
-                .onFocusChanged { onActiveChange(it.isFocused) }
-                .semantics {
-                    contentDescription = searchSemantics
-                    onClick {
-                        focusRequester.requestFocus()
-                        true
-                    }
+                .clickable {
+                    focusRequester.requestFocus()
                 },
             enabled = enabled,
             singleLine = true,

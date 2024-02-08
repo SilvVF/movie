@@ -2,18 +2,20 @@ package io.silv.movie.presentation.movie.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.NewReleases
@@ -23,7 +25,7 @@ import androidx.compose.material.icons.filled.Whatshot
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -42,16 +44,20 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.SearchLargeTopBar
+import io.silv.core_ui.components.TMDBLogo
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.data.MoviePagedType
+import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.MovieActions
 import io.silv.movie.presentation.movie.Resource
@@ -87,12 +93,30 @@ fun MovieTopAppBar(
         colors.containerColor(scrollBehavior.state.collapsedFraction)
     )
     Column(
-        modifier = modifier.fillMaxWidth().wrapContentSize(),
+        modifier = modifier
+            .fillMaxWidth()
+            .wrapContentSize(),
     ) {
         SearchLargeTopBar(
-            title = { Text("TMDB") },
+            title = {
+                TMDBLogo(
+                    modifier = Modifier
+                        .padding(vertical = 18.dp)
+                        .height(24.dp),
+                    contentScale = ContentScale.Fit
+                )
+            },
             scrollBehavior = scrollBehavior,
             colors = colors,
+            navigationIcon = {
+                val navigator = LocalNavigator.current
+                IconButton(onClick = { navigator?.pop() }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            },
             actions = {
                 ResourceFilterChips(
                     changeResourceType = { actions.changeResource(it) },
@@ -136,27 +160,19 @@ fun MovieTopAppBar(
                         tooltip = "Display Mode"
                     )
                 }
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        imageVector = Icons.Filled.FilterList,
-                        contentDescription = null
-                    )
-                }
             },
         ) {
-            val focusRequester = remember { FocusRequester() }
-            val keyboardController = LocalSoftwareKeyboardController.current
+            val focusManager = LocalFocusManager.current
 
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text(remember(resource) { "Search for ${resource}..." })
+                    Text(remember(resource) { "Search for ${resource()}..." })
                 },
                 onQueryChange = { actions.changeQuery(it) },
-                focusRequester = focusRequester,
                 onSearch = {
                     actions.onSearch(it)
-                    keyboardController?.hide()
+                    focusManager.clearFocus(false)
                 },
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -187,7 +203,6 @@ fun MovieTopAppBar(
         ) {
             MovieFilterChips(
                 selected = listing(),
-                query = query(),
                 changeMovePagesType = {
                     actions.changeCategory(it)
                 }
@@ -235,7 +250,6 @@ fun RowScope.ResourceFilterChips(
 fun MovieFilterChips(
     changeMovePagesType: (MoviePagedType) -> Unit,
     selected: MoviePagedType,
-    query: String,
 ) {
     val filters =
         remember {
@@ -243,32 +257,38 @@ fun MovieFilterChips(
                 Triple("Popular", Icons.Filled.Whatshot, MoviePagedType.Default.Popular),
                 Triple("Top Rated", Icons.Outlined.AutoAwesome, MoviePagedType.Default.TopRated),
                 Triple("Upcoming", Icons.Filled.NewReleases, MoviePagedType.Default.Upcoming),
-                Triple("Filter", Icons.Filled.FilterList, MoviePagedType.Search(query)),
             )
         }
 
-    LazyRow {
+    val layoutDirection = LocalLayoutDirection.current
+
+    val paddingHorizontal = with(LocalDensity.current) {
+        TopAppBarDefaults.windowInsets.getLeft(this, layoutDirection).toDp() to
+                TopAppBarDefaults.windowInsets.getRight(this, layoutDirection).toDp()
+    }
+
+    FlowRow(
+        modifier = Modifier.fillMaxWidth().padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
+        maxItemsInEachRow = 3,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
         filters.fastForEach { (tag, icon, type) ->
-            item(
-                key = tag,
-            ) {
-                FilterChip(
-                    modifier = Modifier.padding(4.dp),
-                    selected = selected::class == type::class,
-                    onClick = {
-                        changeMovePagesType(type)
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = icon.name,
-                        )
-                    },
-                    label = {
-                        Text(text = tag)
-                    },
-                )
-            }
+            ElevatedFilterChip(
+                modifier = Modifier.padding(4.dp),
+                selected = selected == type,
+                onClick = {
+                    changeMovePagesType(type)
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = icon.name,
+                    )
+                },
+                label = {
+                    Text(text = tag)
+                },
+            )
         }
     }
 }

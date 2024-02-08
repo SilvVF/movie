@@ -3,8 +3,11 @@ package io.silv.movie.presentation.movie.components
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -15,10 +18,12 @@ import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
+import io.silv.core_ui.components.isScrollingUp
 import io.silv.core_ui.components.toPoster
 import io.silv.core_ui.util.plus
-import io.silv.data.Movie
+import io.silv.data.movie.model.Movie
 import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.movie.MovieScreen
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -29,8 +34,19 @@ fun BrowseMovieSourceList(
     onMovieClick: (Movie) -> Unit,
     onMovieLongClick: (Movie) -> Unit,
 ) {
+    val listState = rememberLazyListState()
+
+    var isScrolling by MovieScreen.LocalIsScrolling.current
+    val isScrollingUp = listState.isScrollingUp()
+
+    LaunchedEffect(isScrollingUp) {
+        isScrolling = isScrollingUp
+    }
+
+
     LazyColumn(
         modifier = modifier,
+        state = listState,
         contentPadding = contentPadding + PaddingValues(vertical = 8.dp),
     ) {
         items(

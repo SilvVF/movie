@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
@@ -14,7 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -26,9 +34,10 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import io.silv.data.Movie
-import io.silv.data.MoviePagedType
+import io.silv.data.movie.model.Movie
+import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.movie.components.FilterBottomSheet
 import io.silv.movie.presentation.movie.components.MovieSourcePagingContent
 import io.silv.movie.presentation.movie.components.MovieTopAppBar
 import kotlinx.coroutines.flow.Flow
@@ -56,6 +65,7 @@ data class MovieScreen(
             resource = { state.resource },
             query = { state.query },
             listing = { state.listing },
+            changeDialog = screenModel::changeDialog,
             actions = MovieActions(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
@@ -80,10 +90,22 @@ data class MovieScreen(
                     entryToRemove = dialog.movie.title
                 )
             }
+            MovieScreenModel.Dialog.Filter -> {
+                FilterBottomSheet(
+                    onDismissRequest = onDismissRequest,
+                    onApplyFilter = { /*TODO*/ }) {
+
+                }
+            }
             else -> Unit
         }
     }
+
+    companion object {
+        val LocalIsScrolling = compositionLocalOf<MutableState<Boolean>> { error("not provided yet")  }
+    }
 }
+
 
 @Composable
 private fun MovieStandardScreenSizeContent(
@@ -93,6 +115,7 @@ private fun MovieStandardScreenSizeContent(
     pagingFlowFlow: () -> StateFlow<Flow<PagingData<StateFlow<Movie>>>>,
     gridCellsCount: () -> Int,
     resource: () -> Resource,
+    changeDialog: (MovieScreenModel.Dialog?) -> Unit,
     actions: MovieActions
 ) {
 
@@ -100,41 +123,63 @@ private fun MovieStandardScreenSizeContent(
     val hazeState = remember { HazeState() }
     val snackBarHostState = remember { SnackbarHostState() }
 
-    Scaffold(
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .exclude(WindowInsets.systemBars),
-        snackbarHost = {
-            SnackbarHost(snackBarHostState)
-        },
-        topBar = {
-            MovieTopAppBar(
-                modifier =   Modifier.hazeChild(hazeState),
-                query =  query,
-                resource = resource,
-                listing = listing,
-                displayMode = displayMode,
-                scrollBehavior = scrollBehavior,
-                actions = actions
-            )
-        },
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-    ) { paddingValues ->
-        MovieSourcePagingContent(
-            paddingValues = paddingValues,
-            pagingFlowFlow = pagingFlowFlow,
-            snackbarHostState = snackBarHostState,
+    val isScrolling = remember { mutableStateOf(false) }
+
+    CompositionLocalProvider(
+       MovieScreen.LocalIsScrolling provides isScrolling
+    ) {
+        Scaffold(
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+                .exclude(WindowInsets.systemBars),
+            snackbarHost = {
+                SnackbarHost(snackBarHostState)
+            },
+            topBar = {
+                MovieTopAppBar(
+                    modifier = Modifier.hazeChild(hazeState),
+                    query = query,
+                    resource = resource,
+                    listing = listing,
+                    displayMode = displayMode,
+                    scrollBehavior = scrollBehavior,
+                    actions = actions
+                )
+            },
+            floatingActionButton = {
+                val expanded by MovieScreen.LocalIsScrolling.current
+                ExtendedFloatingActionButton(
+                    onClick = { changeDialog(MovieScreenModel.Dialog.Filter) },
+                    text = {
+                        Text(text = "Filter")
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.FilterList,
+                            contentDescription = null
+                        )
+                    },
+                    expanded = expanded,
+                )
+            },
             modifier = Modifier
                 .fillMaxSize()
-                .haze(
-                    state = hazeState,
-                    style = HazeDefaults.style(backgroundColor = MaterialTheme.colorScheme.background),
-                ),
-            actions = actions,
-            displayMode = displayMode,
-            gridCellsCount = gridCellsCount
-        )
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+        ) { paddingValues ->
+            MovieSourcePagingContent(
+                paddingValues = paddingValues,
+                pagingFlowFlow = pagingFlowFlow,
+                snackbarHostState = snackBarHostState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(
+                        state = hazeState,
+                        style = HazeDefaults.style(backgroundColor = MaterialTheme.colorScheme.background),
+                    ),
+                actions = actions,
+                displayMode = displayMode,
+                gridCellsCount = gridCellsCount
+            )
+        }
     }
 }
 

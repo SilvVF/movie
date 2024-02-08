@@ -1,4 +1,8 @@
-package io.silv.data
+package io.silv.data.movie.interactor
+
+import io.silv.data.movie.model.MoviePagedType
+import io.silv.data.movie.repository.SourceMovieRepository
+import io.silv.data.movie.repository.SourcePagingSourceType
 
 class GetRemoteMovie(
     private val sourceMovieRepository: SourceMovieRepository

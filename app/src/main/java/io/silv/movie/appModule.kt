@@ -1,6 +1,5 @@
 package io.silv.movie
 
-import io.silv.core_network.networkModule
 import io.silv.data.dataModule
 import io.silv.movie.presentation.movie.MovieScreenModel
 import kotlinx.serialization.json.Json
@@ -10,10 +9,7 @@ import org.koin.dsl.module
 val appModule =
     module {
 
-        includes(
-            networkModule,
-            dataModule
-        )
+        includes(dataModule)
 
         factoryOf(::MovieScreenModel)
 
