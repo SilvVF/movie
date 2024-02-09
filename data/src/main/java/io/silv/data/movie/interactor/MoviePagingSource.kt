@@ -12,6 +12,25 @@ import kotlinx.coroutines.withContext
 
 data class MoviesPage(val movies: List<SMovie>, val hasNextPage: Boolean)
 
+class DiscoverMoviesPagingSource(
+    private val genres: List<String>,
+    private val movieService: TMDBMovieService
+): SourcePagingSource() {
+    override suspend fun getNextPage(page: Int): MoviesPage {
+        val response = movieService.discover(
+            page = page,
+            genres = TMDBMovieService.genresString(genres, TMDBMovieService.JOIN_MODE_MASK_OR)
+        )
+            .await()
+            .body()!!
+
+        return MoviesPage(
+            movies = response.results.map { it.toSMovie() },
+            hasNextPage = response.page < response.totalPages
+        )
+    }
+}
+
 class SearchMovePagingSource(
     private val query: String,
     private val movieService: TMDBMovieService

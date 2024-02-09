@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.components
+package io.silv.movie.presentation.movie.browse.components
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,7 +23,7 @@ import io.silv.core_ui.components.toPoster
 import io.silv.core_ui.util.plus
 import io.silv.data.movie.model.Movie
 import io.silv.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.movie.MovieScreen
+import io.silv.movie.presentation.movie.browse.MovieScreen
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable

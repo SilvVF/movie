@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie
+package io.silv.movie.presentation.movie.browse
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -37,9 +37,9 @@ import dev.chrisbanes.haze.hazeChild
 import io.silv.data.movie.model.Movie
 import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.movie.components.FilterBottomSheet
-import io.silv.movie.presentation.movie.components.MovieSourcePagingContent
-import io.silv.movie.presentation.movie.components.MovieTopAppBar
+import io.silv.movie.presentation.movie.browse.components.FilterBottomSheet
+import io.silv.movie.presentation.movie.browse.components.MovieSourcePagingContent
+import io.silv.movie.presentation.movie.browse.components.MovieTopAppBar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.parameter.parametersOf

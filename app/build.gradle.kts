@@ -97,7 +97,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
 
-    implementation("dev.chrisbanes.haze:haze:0.5.0")
+    implementation(libs.haze)
 
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
@@ -132,6 +132,7 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
+    implementation(libs.kotlin.collections.immutable)
 }
 
 tasks {

@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie
+package io.silv.movie.presentation.movie.browse
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable

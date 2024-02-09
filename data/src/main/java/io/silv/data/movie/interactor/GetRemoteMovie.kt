@@ -18,6 +18,7 @@ class GetRemoteMovie(
                     MoviePagedType.Default.Upcoming -> sourceMovieRepository.getUpcomingMovies()
                 }
             }
+            is MoviePagedType.Discover -> sourceMovieRepository.discoverMovies(type.genres)
         }
     }
 }

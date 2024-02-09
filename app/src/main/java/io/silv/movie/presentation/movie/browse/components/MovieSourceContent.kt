@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.components
+package io.silv.movie.presentation.movie.browse.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,8 +30,8 @@ import io.silv.core_ui.components.isScrollingUp
 import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.data.movie.model.Movie
 import io.silv.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.movie.MovieActions
-import io.silv.movie.presentation.movie.MovieScreen
+import io.silv.movie.presentation.movie.browse.MovieActions
+import io.silv.movie.presentation.movie.browse.MovieScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest

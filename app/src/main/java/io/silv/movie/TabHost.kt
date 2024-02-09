@@ -27,16 +27,23 @@ import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import io.silv.movie.presentation.movie.MovieScreen
+import io.silv.movie.presentation.movie.browse.MovieScreen
+import io.silv.movie.presentation.movie.discover.MovieDiscoverTab
+import kotlinx.collections.immutable.persistentListOf
 
 object TabHost: Screen {
+
+    private val tabs = persistentListOf(
+        HomeTab,
+        MovieDiscoverTab
+    )
 
     @Composable
     override fun Content() {
 
         val navigator = LocalNavigator.current
 
-        TabNavigator(HomeTab) {
+        TabNavigator(MovieDiscoverTab) {
             CompositionLocalProvider(LocalNavigator provides navigator) {
                 Scaffold(
                     contentWindowInsets = WindowInsets(0),

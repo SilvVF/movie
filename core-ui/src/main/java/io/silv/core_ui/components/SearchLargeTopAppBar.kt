@@ -95,7 +95,7 @@ fun SearchLargeTopBar(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TwoRowsTopAppBar(
+internal fun TwoRowsTopAppBar(
     modifier: Modifier = Modifier,
     title: @Composable () -> Unit,
     extraContent: @Composable () -> Unit,
@@ -235,7 +235,7 @@ private fun TwoRowsTopAppBar(
 }
 
 @Composable
-private fun TopAppBarLayout(
+internal fun TopAppBarLayout(
     modifier: Modifier,
     heightPx: Float,
     navigationIconContentColor: Color,
@@ -280,6 +280,7 @@ private fun TopAppBarLayout(
             }
             Box(
                 Modifier.layoutId("extraContent")
+                    .graphicsLayer(alpha = titleAlpha)
             ) {
                 extraContent()
             }
@@ -445,7 +446,7 @@ fun TopAppBarDefaults.colors2(
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
-private suspend fun settleAppBar(
+internal suspend fun settleAppBar(
     state: TopAppBarState,
     velocity: Float,
     flingAnimationSpec: DecayAnimationSpec<Float>?,
@@ -501,9 +502,9 @@ private suspend fun settleAppBar(
 /*@VisibleForTesting*/
 internal val TopTitleAlphaEasing = CubicBezierEasing(.8f, 0f, .8f, .15f)
 
-private val MediumTitleBottomPadding = 24.dp
-private val LargeTitleBottomPadding = 28.dp
-private val TopAppBarHorizontalPadding = 4.dp
+internal val MediumTitleBottomPadding = 24.dp
+internal val LargeTitleBottomPadding = 28.dp
+internal val TopAppBarHorizontalPadding = 4.dp
 
 // A title inset when the App-Bar is a Medium or Large one. Also used to size a spacer when the
 // navigation icon is missing.

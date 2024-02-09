@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.components
+package io.silv.movie.presentation.movie.browse.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

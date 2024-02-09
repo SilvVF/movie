@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.components
+package io.silv.movie.presentation.movie.browse.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -59,8 +59,8 @@ import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
 import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.movie.MovieActions
-import io.silv.movie.presentation.movie.Resource
+import io.silv.movie.presentation.movie.browse.MovieActions
+import io.silv.movie.presentation.movie.browse.Resource
 
 @Composable
 fun MovieTopAppBar(

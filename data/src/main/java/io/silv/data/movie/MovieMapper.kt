@@ -1,6 +1,8 @@
 package io.silv.data.movie
 
+import io.silv.core.SGenre
 import io.silv.core.SMovie
+import io.silv.data.movie.model.Genre
 import io.silv.data.movie.model.Movie
 
 object MovieMapper {
@@ -23,4 +25,8 @@ fun SMovie.toDomain(): Movie {
         title = title,
         posterUrl = posterPath,
     )
+}
+
+fun SGenre.toDomain(): Genre {
+    return Genre(name, id)
 }
