@@ -56,6 +56,10 @@ val networkModule =
         }
 
         single {
+            get<Retrofit>().create<TMDBTVShowService>()
+        }
+
+        single {
             get<Retrofit>().create<TMDBMovieService>()
         }
     }

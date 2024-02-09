@@ -15,9 +15,10 @@ class NetworkToLocalMovie(
                 movie.copy(id = id!!)
             }
             !localMovie.favorite ->
-                // if the manga isn't a favorite, set its display title from source
-                // if it later becomes a favorite, updated title will go to db
-                localMovie.copy(title = movie.title)
+                localMovie.copy(
+                    title = movie.title,
+                    posterUrl = movie.posterUrl ?: localMovie.posterUrl
+                )
             else -> localMovie
         }
     }

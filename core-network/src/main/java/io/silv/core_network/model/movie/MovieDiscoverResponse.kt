@@ -20,7 +20,7 @@ data class MovieDiscoverResponse(
         @SerialName("adult")
         val adult: Boolean = false,
         @SerialName("backdrop_path")
-        val backdropPath: String = "",
+        val backdropPath: String? = "",
         @SerialName("genre_ids")
         val genreIds: List<Int> = listOf(),
         @SerialName("id")

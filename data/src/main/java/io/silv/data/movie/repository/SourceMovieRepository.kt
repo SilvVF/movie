@@ -5,13 +5,20 @@ import io.silv.core.SGenre
 import io.silv.core.SMovie
 import io.silv.core_network.TMDBConstants
 import io.silv.core_network.TMDBMovieService
+import io.silv.core_network.TMDBTVShowService
 import io.silv.data.movie.interactor.DiscoverMoviesPagingSource
-import io.silv.data.movie.interactor.NowPlayingMovePagingSource
-import io.silv.data.movie.interactor.PopularMovePagingSource
-import io.silv.data.movie.interactor.SearchMovePagingSource
+import io.silv.data.movie.interactor.DiscoverTVPagingSource
+import io.silv.data.movie.interactor.NowPlayingMoviePagingSource
+import io.silv.data.movie.interactor.NowPlayingTVPagingSource
+import io.silv.data.movie.interactor.PopularMoviePagingSource
+import io.silv.data.movie.interactor.PopularTVPagingSource
+import io.silv.data.movie.interactor.SearchMoviePagingSource
+import io.silv.data.movie.interactor.SearchTVPagingSource
 import io.silv.data.movie.interactor.SourcePagingSource
-import io.silv.data.movie.interactor.TopRatedMovePagingSource
-import io.silv.data.movie.interactor.UpcomingMovePagingSource
+import io.silv.data.movie.interactor.TopRatedMoviePagingSource
+import io.silv.data.movie.interactor.TopRatedTVPagingSource
+import io.silv.data.movie.interactor.UpcomingMoviePagingSource
+import io.silv.data.movie.interactor.UpcomingTVPagingSource
 
 typealias SourcePagingSourceType = PagingSource<Long, SMovie>
 
@@ -32,6 +39,54 @@ interface SourceMovieRepository {
     fun getTopRatedMovies(): SourcePagingSourceType
 }
 
+interface SourceTVRepository {
+
+    suspend fun getSourceGenres(): List<SGenre>
+
+    fun discoverMovies(genres: List<String>): SourcePagingSource
+
+    fun searchMovies(query: String): SourcePagingSourceType
+
+    fun getNowPlayingMovies(): SourcePagingSourceType
+
+    fun getPopularMovies(): SourcePagingSourceType
+
+    fun getUpcomingMovies(): SourcePagingSourceType
+
+    fun getTopRatedMovies(): SourcePagingSourceType
+}
+
+class SourceTVRepositoryImpl(
+    private val tvService: TMDBTVShowService
+): SourceTVRepository {
+
+    override suspend fun getSourceGenres(): List<SGenre> {
+        return TMDBConstants.genres
+    }
+
+    override fun discoverMovies(genres: List<String>): SourcePagingSource {
+        return DiscoverTVPagingSource(genres, tvService)
+    }
+
+    override fun searchMovies(query: String): SourcePagingSourceType {
+        return SearchTVPagingSource(query, tvService)
+    }
+
+    override fun getNowPlayingMovies(): SourcePagingSourceType {
+        return NowPlayingTVPagingSource(tvService)
+    }
+    override fun getPopularMovies(): SourcePagingSourceType {
+        return PopularTVPagingSource(tvService)
+    }
+    override fun getUpcomingMovies(): SourcePagingSourceType {
+        return UpcomingTVPagingSource(tvService)
+    }
+
+    override fun getTopRatedMovies(): SourcePagingSourceType {
+        return TopRatedTVPagingSource(tvService)
+    }
+}
+
 class SourceMovieRepositoryImpl(
     private val movieService: TMDBMovieService
 ): SourceMovieRepository {
@@ -45,20 +100,20 @@ class SourceMovieRepositoryImpl(
     }
 
     override fun searchMovies(query: String): SourcePagingSourceType {
-        return SearchMovePagingSource(query, movieService)
+        return SearchMoviePagingSource(query, movieService)
     }
 
     override fun getNowPlayingMovies(): SourcePagingSourceType {
-        return NowPlayingMovePagingSource(movieService)
+        return NowPlayingMoviePagingSource(movieService)
     }
     override fun getPopularMovies(): SourcePagingSourceType {
-        return PopularMovePagingSource(movieService)
+        return PopularMoviePagingSource(movieService)
     }
     override fun getUpcomingMovies(): SourcePagingSourceType {
-        return UpcomingMovePagingSource(movieService)
+        return UpcomingMoviePagingSource(movieService)
     }
 
     override fun getTopRatedMovies(): SourcePagingSourceType {
-        return TopRatedMovePagingSource(movieService)
+        return TopRatedMoviePagingSource(movieService)
     }
 }

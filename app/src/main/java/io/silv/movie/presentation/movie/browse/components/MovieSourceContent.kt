@@ -20,9 +20,9 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
@@ -32,7 +32,6 @@ import io.silv.data.movie.model.Movie
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.MovieActions
 import io.silv.movie.presentation.movie.browse.MovieScreen
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -43,12 +42,11 @@ fun MovieSourcePagingContent(
     snackbarHostState: SnackbarHostState,
     actions: MovieActions,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<Flow<PagingData<StateFlow<Movie>>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<Movie>>>,
     gridCellsCount: () -> Int,
     modifier: Modifier = Modifier,
 ) {
-    val pagingFlow by pagingFlowFlow().collectAsStateWithLifecycle()
-    val pagingItems = pagingFlow.collectAsLazyPagingItems()
+    val pagingItems = pagingFlowFlow().collectAsLazyPagingItems()
 
     LaunchedEffect(pagingItems) {
         snapshotFlow { pagingItems.loadState.append }.collectLatest { loadState ->
@@ -84,57 +82,15 @@ fun MovieSourcePagingContent(
 
     when (val mode = displayMode()) {
         is PosterDisplayMode.Grid -> {
-            val gridState = rememberLazyGridState()
-
-            var isScrolling by MovieScreen.LocalIsScrolling.current
-            val isScrollingUp = gridState.isScrollingUp()
-
-            LaunchedEffect(isScrollingUp) {
-                isScrolling = isScrollingUp
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(gridCellsCount()),
-                contentPadding = paddingValues,
-                state = gridState,
-                modifier = modifier.padding(top = 12.dp)
-            ) {
-                items(
-                    key = pagingItems.itemKey { it.value.id },
-                    count = pagingItems.itemCount,
-                    contentType = pagingItems.itemContentType { mode.hashCode() }
-                ) {
-
-                    val movie = pagingItems[it]
-
-                    movie?.let {
-                        when(mode) {
-                            PosterDisplayMode.Grid.ComfortableGrid -> {
-                                BrowseMovieSourceComfortableGridItem(
-                                    movieFlow = movie,
-                                    onClick = actions.movieClick,
-                                    onLongClick = actions.movieLongClick
-                                )
-                            }
-                            PosterDisplayMode.Grid.CompactGrid -> {
-                                BrowseMovieSourceCompactGridItem(
-                                    movieFlow = movie,
-                                    onClick = actions.movieClick,
-                                    onLongClick = actions.movieLongClick
-                                )
-                            }
-                            PosterDisplayMode.Grid.CoverOnlyGrid -> {
-                                BrowseMovieSourceCoverOnlyGridItem(
-                                    movieFlow = movie,
-                                    onClick = actions.movieClick,
-                                    onLongClick = actions.movieLongClick
-                                )
-                            }
-                        }
-                    }
-                }
-                loadingIndicatorItem(pagingItems)
-            }
+           MovieSourcePosterGrid(
+               mode = mode,
+               modifier = modifier,
+               gridCellsCount = gridCellsCount,
+               paddingValues = paddingValues,
+               pagingItems = pagingItems,
+               onMovieClick =  actions.movieClick,
+               onMovieLongClick = actions.movieLongClick
+           )
         }
         PosterDisplayMode.List -> {
             BrowseMovieSourceList(
@@ -145,5 +101,68 @@ fun MovieSourcePagingContent(
                 onMovieLongClick = actions.movieLongClick
             )
         }
+    }
+}
+
+@Composable
+fun MovieSourcePosterGrid(
+    mode: PosterDisplayMode.Grid,
+    modifier: Modifier,
+    gridCellsCount:() -> Int,
+    paddingValues: PaddingValues,
+    pagingItems: LazyPagingItems<StateFlow<Movie>>,
+    onMovieClick: (Movie) -> Unit,
+    onMovieLongClick: (Movie) -> Unit,
+) {
+    val gridState = rememberLazyGridState()
+
+    var isScrolling by MovieScreen.LocalIsScrolling.current
+    val isScrollingUp = gridState.isScrollingUp()
+
+    LaunchedEffect(isScrollingUp) {
+        isScrolling = isScrollingUp
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(gridCellsCount()),
+        contentPadding = paddingValues,
+        state = gridState,
+        modifier = modifier.padding(top = 12.dp)
+    ) {
+        items(
+            key = pagingItems.itemKey { it.value.id },
+            count = pagingItems.itemCount,
+            contentType = pagingItems.itemContentType { mode.hashCode() }
+        ) {
+
+            val movie = pagingItems[it]
+
+            movie?.let {
+                when(mode) {
+                    PosterDisplayMode.Grid.ComfortableGrid -> {
+                        BrowseMovieSourceComfortableGridItem(
+                            movieFlow = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
+                    PosterDisplayMode.Grid.CompactGrid -> {
+                        BrowseMovieSourceCompactGridItem(
+                            movieFlow = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
+                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                        BrowseMovieSourceCoverOnlyGridItem(
+                            movieFlow = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
+                }
+            }
+        }
+        loadingIndicatorItem(pagingItems)
     }
 }

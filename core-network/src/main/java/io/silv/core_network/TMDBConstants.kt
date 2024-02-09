@@ -111,6 +111,26 @@ object TMDBConstants {
         Json.decodeFromString<TmdbGenres>(json).genres
     }
 
+    private fun genresStringFromIds(genreIds: List<Long>, joinMode: Int): String {
+        return when {
+            joinMode and JOIN_MODE_MASK_OR == JOIN_MODE_MASK_OR -> {
+                genreIds.joinToString(separator = "|")
+            }
+            joinMode and JOIN_MODE_MASK_AND == JOIN_MODE_MASK_AND -> {
+                genreIds.joinToString(",")
+            }
+            else -> ""
+        }
+    }
+
+    fun genresString(genres: List<String>, joinMode: Int): String {
+        val genreIds = genres.mapNotNull { TMDBConstants.genreNameToId[it] }
+        return genresStringFromIds(genreIds, joinMode)
+    }
+
+    const val JOIN_MODE_MASK_OR = 0x1
+    const val JOIN_MODE_MASK_AND = 0x10
+
     @Serializable
     data class TmdbGenres(
         @SerialName("genres")

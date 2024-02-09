@@ -8,11 +8,14 @@ import io.silv.core_database.databaseModule
 import io.silv.core_network.networkModule
 import io.silv.data.movie.interactor.GetMovie
 import io.silv.data.movie.interactor.GetRemoteMovie
+import io.silv.data.movie.interactor.GetRemoteTVShows
 import io.silv.data.movie.interactor.NetworkToLocalMovie
 import io.silv.data.movie.repository.MovieRepository
 import io.silv.data.movie.repository.MovieRepositoryImpl
 import io.silv.data.movie.repository.SourceMovieRepository
 import io.silv.data.movie.repository.SourceMovieRepositoryImpl
+import io.silv.data.movie.repository.SourceTVRepository
+import io.silv.data.movie.repository.SourceTVRepositoryImpl
 import io.silv.data.prefrences.TMDBPreferences
 import io.silv.data.prefrences.core.DatastorePreferenceStore
 import io.silv.data.prefrences.core.PreferenceStore
@@ -32,9 +35,13 @@ val dataModule =
 
         factoryOf(::GetRemoteMovie)
 
+        factoryOf(::GetRemoteTVShows)
+
         factoryOf(::NetworkToLocalMovie)
 
         singleOf(::SourceMovieRepositoryImpl) { bind<SourceMovieRepository>() }
+
+        singleOf(::SourceTVRepositoryImpl) { bind<SourceTVRepository>() }
 
         singleOf(::MovieRepositoryImpl) { bind<MovieRepository>() }
 

@@ -1,8 +1,16 @@
 package io.silv.movie.presentation.movie.discover
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterNone
 import androidx.compose.material3.MaterialTheme
@@ -10,13 +18,18 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
@@ -24,11 +37,25 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.CommonEntryItemDefaults
+import io.silv.core_ui.components.EntryCompactGridItem
+import io.silv.core_ui.components.toPoster
+import io.silv.data.movie.model.Genre
+import io.silv.data.movie.model.Movie
+import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.movie.browse.Resource
+import io.silv.movie.presentation.movie.browse.components.InLibraryBadge
 import io.silv.movie.presentation.movie.discover.components.CategorySelectDialog
 import io.silv.movie.presentation.movie.discover.components.MovieDiscoverTopBar
+import io.silv.movie.presentation.movie.discover.components.SelectedPagingItemsGrid
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import org.koin.core.parameter.parametersOf
 
 object MovieDiscoverTab: Tab {
+
     override val options: TabOptions
         @Composable get() = TabOptions(
             index = 1u,
@@ -36,14 +63,30 @@ object MovieDiscoverTab: Tab {
             icon = rememberVectorPainter(image = Icons.Filled.FilterNone)
         )
 
+    private var genreSavedState: Genre? = null
+    private var resourceSavedState: Resource? = null
+
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<MovieDiscoverScreenModel>()
+
+        val screenModel = getScreenModel<MovieDiscoverScreenModel>() { parametersOf(genreSavedState, resourceSavedState) }
         val state by screenModel.state.collectAsStateWithLifecycle()
+        val selectedPagingData by screenModel.pagingFlow.collectAsStateWithLifecycle()
+
+        val pagingItems = selectedPagingData?.collectAsLazyPagingItems()
+
+        LaunchedEffect(screenModel) {
+            snapshotFlow { state }.collectLatest {
+                genreSavedState = it.selectedGenre
+                resourceSavedState = it.selectedResource
+            }
+        }
 
         MovieDiscoverTabContent(
-            setCurrentDialog = screenModel::changeDialog
+            setCurrentDialog = screenModel::changeDialog,
+            moviesByGenre = state.genreWithMovie,
+            selectedPagingItems = pagingItems
         )
 
         val onDismissRequest = { screenModel.changeDialog(null) }
@@ -53,7 +96,7 @@ object MovieDiscoverTab: Tab {
                     onDismissRequest = onDismissRequest,
                     selectedGenres = persistentListOf(),
                     genres = state.genres,
-                    onGenreSelected = {},
+                    onGenreSelected = screenModel::onGenreSelected,
                     clearAllSelected = {}
                 )
             }
@@ -65,7 +108,11 @@ object MovieDiscoverTab: Tab {
 
 @Composable
 fun MovieDiscoverTabContent(
+    selectedGenre: () -> Genre?,
+    selectedResource: () -> Resource?,
+    selectedPagingItems: LazyPagingItems<StateFlow<Movie>>?,
     setCurrentDialog: (MovieDiscoverScreenModel.Dialog?) -> Unit,
+    moviesByGenre: ImmutableList<Pair<Genre, ImmutableList<StateFlow<Movie>>>>,
 ) {
     val hazeState = remember { HazeState() }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -73,29 +120,97 @@ fun MovieDiscoverTabContent(
     Scaffold(
         topBar = {
            MovieDiscoverTopBar(
-               modifier = Modifier.fillMaxWidth()
+               modifier = Modifier
+                   .fillMaxWidth()
                    .hazeChild(
                        state = hazeState,
                        style = HazeDefaults.style(
                            backgroundColor = MaterialTheme.colorScheme.background
                        )
-               ),
+                   ),
                setCurrentDialog = setCurrentDialog,
                scrollBehavior = scrollBehavior,
-               selectedGenre = { null },
-               selectedResource = { null }
+               selectedGenre = selectedGenre,
+               selectedResource = selectedResource
            )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
-        LazyColumn(
-            contentPadding = paddingValues,
-            modifier = Modifier.haze(state = hazeState)
-        ) {
-            items(100) {
-                Text(text = "Item Move title and poster go here $it", modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 120.dp))
+        if (selectedPagingItems != null) {
+            SelectedPagingItemsGrid(
+                mode = PosterDisplayMode.Grid.CoverOnlyGrid,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(hazeState),
+                gridCellsCount = { 2 },
+                paddingValues = paddingValues,
+                pagingItems = selectedPagingItems,
+                onMovieClick = {},
+                onMovieLongClick = {}
+            )
+        } else {
+            GenreItemsLists(
+                paddingValues = paddingValues,
+                hazeState = hazeState,
+                moviesByGenre = moviesByGenre,
+                onMovieLongClick = {},
+                onMovieClick = {}
+            )
+        }
+    }
+}
+
+@Composable
+fun GenreItemsLists(
+    paddingValues: PaddingValues,
+    hazeState: HazeState,
+    moviesByGenre: ImmutableList<Pair<Genre, ImmutableList<StateFlow<Movie>>>>,
+    onMovieLongClick: (Movie) -> Unit,
+    onMovieClick: (Movie) -> Unit,
+) {
+    LazyColumn(
+        contentPadding = paddingValues,
+        modifier = Modifier
+            .fillMaxSize()
+            .haze(hazeState)
+    ) {
+        items(
+            items = moviesByGenre,
+            key = { it.first.name + it.first.name }
+        ) { (genre, items) ->
+
+            Column(Modifier.padding(vertical = 8.dp)) {
+                Text(
+                    text = genre.name,
+                    style = MaterialTheme.typography.titleLarge
+                )
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    items(
+                        items = items,
+                        key = { it.value.id },
+                    ) { movieStateFlow ->
+
+                        val movie by movieStateFlow.collectAsStateWithLifecycle()
+
+                        Box(
+                            Modifier
+                                .width(100.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        ) {
+                            EntryCompactGridItem(
+                                coverData = movie.toPoster(),
+                                coverAlpha = if (movie.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+                                coverBadgeStart = { InLibraryBadge(enabled = movie.favorite) },
+                                onLongClick = { onMovieLongClick(movie) },
+                                onClick = { onMovieClick(movie) },
+                            )
+                        }
+                    }
+                }
             }
         }
     }

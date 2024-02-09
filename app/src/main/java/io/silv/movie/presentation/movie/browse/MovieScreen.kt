@@ -40,7 +40,6 @@ import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.components.FilterBottomSheet
 import io.silv.movie.presentation.movie.browse.components.MovieSourcePagingContent
 import io.silv.movie.presentation.movie.browse.components.MovieTopAppBar
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.parameter.parametersOf
 
@@ -56,7 +55,7 @@ data class MovieScreen(
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         // needed for movie action to be stable
-        val stableChangeDialogRefrence = screenModel::changeDialog
+        val stableChangeDialogRefrence = { dialog: MovieScreenModel.Dialog.RemoveMovie ->  screenModel.changeDialog(dialog) }
 
         MovieStandardScreenSizeContent(
             pagingFlowFlow = { screenModel.moviePagerFlowFlow },
@@ -72,7 +71,7 @@ data class MovieScreen(
                 changeResource = screenModel::changeResource,
                 movieLongClick = {
                     if(it.favorite) {
-                        stableChangeDialogRefrence.invoke(MovieScreenModel.Dialog.RemoveMovie(it))
+                        stableChangeDialogRefrence(MovieScreenModel.Dialog.RemoveMovie(it))
                     }
                 },
                 movieClick = {},
@@ -112,7 +111,7 @@ private fun MovieStandardScreenSizeContent(
     listing: () -> MoviePagedType,
     query: () -> String,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<Flow<PagingData<StateFlow<Movie>>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<Movie>>>,
     gridCellsCount: () -> Int,
     resource: () -> Resource,
     changeDialog: (MovieScreenModel.Dialog?) -> Unit,

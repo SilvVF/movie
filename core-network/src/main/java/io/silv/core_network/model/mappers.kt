@@ -5,6 +5,28 @@ import io.silv.core_network.TMDBConstants
 import io.silv.core_network.model.movie.MovieDiscoverResponse
 import io.silv.core_network.model.movie.MovieListResponse
 import io.silv.core_network.model.movie.MovieSearchResponse
+import io.silv.core_network.model.tv.TVResult
+
+fun TVResult.toSMovie(): SMovie {
+    val m = this
+    return SMovie.create().apply {
+        url = ""
+        posterPath = "https://image.tmdb.org/t/p/original/${m.posterPath}".takeIf { m.posterPath != null }
+        title = m.name
+        genreIds = m.genreIds
+        adult = m.adult
+        releaseDate = m.firstAirDate
+        overview = m.overview
+        id = m.id.toLong()
+        genres = m.genreIds.mapNotNull { id -> TMDBConstants.genreIdToName[id.toLong()]?.let { Pair(id, it) }  }
+        originalTitle = m.originalName
+        originalLanguage = m.originalLanguage
+        backdropPath = m.backdropPath
+        popularity = m.popularity
+        voteCount = m.voteCount
+        voteAverage = m.voteAverage
+    }
+}
 
 fun MovieSearchResponse.Result.toSMovie(): SMovie {
     val m  = this
@@ -20,7 +42,6 @@ fun MovieSearchResponse.Result.toSMovie(): SMovie {
         genres = m.genreIds.mapNotNull { id -> TMDBConstants.genreIdToName[id.toLong()]?.let { Pair(id, it) }  }
         originalTitle = m.originalTitle
         originalLanguage = m.originalLanguage
-        title = m.title
         backdropPath = m.backdropPath
         popularity = m.popularity
         voteCount = m.voteCount
@@ -43,8 +64,7 @@ fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
         id = m.id.toLong()
         originalTitle = m.originalTitle
         originalLanguage = m.originalLanguage
-        title = m.title
-        backdropPath = m.backdropPath
+        backdropPath = m.backdropPath.orEmpty()
         popularity = m.popularity
         voteCount = m.voteCount
         video = m.video

@@ -1,11 +1,13 @@
 package io.silv.movie.presentation.movie.browse
 
+import android.os.Parcelable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
@@ -25,14 +27,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
+import kotlinx.parcelize.Parcelize
 
 class MovieScreenModel(
     private val getRemoteMovie: GetRemoteMovie,
@@ -71,7 +73,7 @@ class MovieScreenModel(
     val moviePagerFlowFlow = state.map { it.listing }
         .combine(tmdbPreferences.hideLibraryItems().changes()) { a, b -> a to b}
         .distinctUntilChanged()
-        .map { (listing, hideLibraryItems) ->
+        .flatMapLatest { (listing, hideLibraryItems) ->
             Pager(
                 PagingConfig(pageSize = 25)
             ) {
@@ -88,7 +90,7 @@ class MovieScreenModel(
             }
                 .cachedIn(ioCoroutineScope)
         }
-        .stateIn(ioCoroutineScope, SharingStarted.Lazily, emptyFlow())
+        .stateIn(ioCoroutineScope, SharingStarted.Lazily, PagingData.empty())
 
     fun changeCategory(category: MoviePagedType) {
         screenModelScope.launch {
@@ -107,8 +109,7 @@ class MovieScreenModel(
 
     fun changeResource(resource: Resource) {
        screenModelScope.launch {
-           mutableState.update {state -> state.copy(resource = resource)
-           }
+           mutableState.update { state -> state.copy(resource = resource) }
        }
     }
 
@@ -150,6 +151,7 @@ class MovieScreenModel(
     }
 
 }
+
 @Immutable
 @Stable
 data class MovieState(
@@ -161,7 +163,8 @@ data class MovieState(
 
 @Stable
 @Immutable
-enum class Resource {
+@Parcelize
+enum class Resource : Parcelable {
     @Stable
     Movie { override fun toString(): String = "Movies" },
     @Stable

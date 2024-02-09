@@ -5,6 +5,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    id("kotlin-parcelize")
 }
 
 android {
@@ -150,6 +151,7 @@ tasks {
             "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
             "-opt-in=coil.annotation.ExperimentalCoilApi",
             "-opt-in=kotlinx.coroutines.FlowPreview",
+            "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
         )
     }
 }

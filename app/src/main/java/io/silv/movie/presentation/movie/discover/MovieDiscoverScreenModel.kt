@@ -4,15 +4,18 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
-import androidx.paging.PagingData
+import androidx.paging.PagingSource
+import androidx.paging.PagingSource.LoadParams.Refresh
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.data.movie.interactor.CombinedPagingSource
 import io.silv.data.movie.interactor.GetMovie
 import io.silv.data.movie.interactor.GetRemoteMovie
+import io.silv.data.movie.interactor.GetRemoteTVShows
 import io.silv.data.movie.interactor.NetworkToLocalMovie
 import io.silv.data.movie.model.Genre
 import io.silv.data.movie.model.Movie
@@ -20,22 +23,22 @@ import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.movie.repository.SourceMovieRepository
 import io.silv.data.movie.toDomain
 import io.silv.data.prefrences.TMDBPreferences
+import io.silv.movie.presentation.movie.browse.Resource
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 
 class MovieDiscoverScreenModel(
@@ -43,55 +46,136 @@ class MovieDiscoverScreenModel(
     private val networkToLocalMovie: NetworkToLocalMovie,
     private val tmdbPreferences: TMDBPreferences,
     private val getMovie: GetMovie,
-    private val getRemoteMovie: GetRemoteMovie
-): StateScreenModel<MovieDiscoverState>(MovieDiscoverState()) {
+    private val getRemoteMovie: GetRemoteMovie,
+    private val getRemoteTVShows: GetRemoteTVShows,
+    genre: Genre?,
+    resource: Resource?,
+): StateScreenModel<MovieDiscoverState>(
+    MovieDiscoverState(selectedGenre = genre, selectedResource = resource)
+) {
 
     init {
         ioCoroutineScope.launch {
             val genres = sourceMovieRepository.getSourceGenres()
 
-            withContext(Dispatchers.Main)  {
+            withContext(Dispatchers.Main) {
                 mutableState.update { state ->
                     state.copy(genres = genres.map { it.toDomain() }.toImmutableList())
                 }
             }
         }
+
+        state.map { it.genres }
+            .distinctUntilChanged()
+            .map { genres ->
+                supervisorScope {
+                    genres.associateWith { genre ->
+                        supervisorScope {
+
+                            val movieSource = getRemoteMovie.subscribe(MoviePagedType.Discover(listOf(genre.name)))
+                            val tvSource = getRemoteTVShows.subscribe(MoviePagedType.Discover(listOf(genre.name)))
+
+                            async {
+                                val (movie, tv) = listOf(
+                                    async { movieSource.load(Refresh(key = null, loadSize = 30, false)) },
+                                    async { tvSource.load(Refresh(key = null, loadSize = 30, false)) }
+                                )
+                                    .awaitAll()
+
+                                listOfNotNull(movie as? PagingSource.LoadResult.Page, tv as? PagingSource.LoadResult.Page)
+                                    .flatMap { it.data }
+                                    .shuffled()
+                            }
+                        }
+                    }.map { (genre, moviesDeffered) ->
+
+                        val seenIds = mutableSetOf<Long>()
+
+                        launch {
+                            val movies = moviesDeffered.await().map { sMovie ->
+                                networkToLocalMovie.await(sMovie.toDomain())
+                                    .let { localMovie -> getMovie.subscribe(localMovie.id) }
+                                    .stateIn(ioCoroutineScope)
+                            }
+                                .filter { movie -> seenIds.add(movie.value.id) }
+                                .filter { movie -> movie.value.posterUrl.isNullOrBlank().not() }
+                                .filter { !hideLibraryItems.value || !it.value.favorite }
+
+                            withContext(Dispatchers.Main) {
+                                mutableState.update { state ->
+                                    state.copy(
+                                        genreWithMovie = (state.genreWithMovie + (genre to movies.toImmutableList()))
+                                            .toImmutableList()
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .launchIn(ioCoroutineScope)
     }
 
     private val hideLibraryItems = tmdbPreferences.hideLibraryItems().stateIn(screenModelScope)
 
-    val pagingSources=  state.map { it.genres }
+    val pagingFlow = state.map { it.selectedGenre to it.selectedResource }
         .distinctUntilChanged()
-        .map { genres ->
-            genres.map {
-                Pager(
-                    config = PagingConfig(30) ,
-                ) {
-                    getRemoteMovie.subscribe(MoviePagedType.Discover(listOf(it.name)))
-                }
-            }
-        }
-        .map { pagers ->
-            pagers.map { pager ->
-                pager.flow.map { pagingData ->
-                    val seenIds = mutableSetOf<Long>()
-                    pagingData.map dataMap@{ sMovie ->
-                        networkToLocalMovie.await(sMovie.toDomain())
-                            .let { localMovie -> getMovie.subscribe(localMovie.id) }
-                            .stateIn(ioCoroutineScope)
+        .map { (genre, resource) ->
+            if (genre == null && resource == null) { return@map null }
+            Pager(
+                config = PagingConfig(pageSize = 50)
+            ) {
+                val genres = genre?.name?.let { listOf(it) } ?: state.value.genres.map { it.name }
+                when {
+                    resource != null -> {
+                        when (resource) {
+                            Resource.Movie -> getRemoteMovie.subscribe(MoviePagedType.Discover(genres))
+                            Resource.TVShow -> getRemoteTVShows.subscribe(MoviePagedType.Discover(genres))
+                        }
                     }
-                        .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
-                        .filter { !hideLibraryItems.value || !it.value.favorite }
+                    else -> {
+                        CombinedPagingSource(
+                            listOf(
+                                getRemoteMovie.subscribe(MoviePagedType.Discover(genres)),
+                                getRemoteTVShows.subscribe(MoviePagedType.Discover(genres))
+                            )
+                        )
+                    }
                 }
-                    .cachedIn(ioCoroutineScope)
+            }.flow.map { pagingData ->
+                val seenIds = mutableSetOf<Long>()
+                pagingData.map dataMap@{ sMovie ->
+                    networkToLocalMovie.await(sMovie.toDomain())
+                        .let { localMovie -> getMovie.subscribe(localMovie.id) }
+                        .stateIn(ioCoroutineScope)
+                }
+                    .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
+                    .filter { !hideLibraryItems.value || !it.value.favorite }
             }
+                .cachedIn(ioCoroutineScope)
         }
-        .stateIn(ioCoroutineScope, SharingStarted.Lazily, emptyFlow<List<Flow<PagingData<StateFlow<Movie>>>>>())
+        .stateIn(ioCoroutineScope, SharingStarted.Lazily, null)
 
     fun changeDialog(dialog: Dialog?) {
         screenModelScope.launch {
             mutableState.update { state ->
                 state.copy(dialog = dialog)
+            }
+        }
+    }
+
+    fun onGenreSelected(genre: Genre?) {
+        screenModelScope.launch {
+            mutableState.update { state ->
+                state.copy(selectedGenre = genre)
+            }
+        }
+    }
+
+    fun onResourceSelected(resource: Resource?) {
+        screenModelScope.launch {
+            mutableState.update { state ->
+                state.copy(selectedResource = resource)
             }
         }
     }
@@ -106,40 +190,8 @@ class MovieDiscoverScreenModel(
 @Immutable
 data class MovieDiscoverState(
     val genres: ImmutableList<Genre> = persistentListOf(),
-    val movieData: ImmutableMap<Genre, List<Movie>> = persistentMapOf(),
-    val tvData: ImmutableMap<Genre, List<String>> = persistentMapOf(),
-    val dialog: MovieDiscoverScreenModel.Dialog? = null
-) {
-
-    val combinedData: ImmutableMap<Genre, List<ResourceType>>
-        get() {
-            val data = mutableMapOf<Genre, MutableList<ResourceType>>()
-            // initialize an empty mutable list for each genre
-            for (genre in genres) {
-                data[genre] = mutableListOf()
-            }
-            for ((genre, movies) in movieData) {
-                val list = data[genre] ?: continue
-                for (movie in movies) {
-                    list.add(RMovie(movie))
-                }
-            }
-            for ((genre, shows) in tvData) {
-                val list = data[genre] ?: continue
-                for (show in shows) {
-                    list.add(RTVShow(show))
-                }
-            }
-            // shuffle values so tv shows are mixed together and dont appear back to back
-            data.values.forEach { list ->  list.shuffle() }
-
-            return data.toImmutableMap()
-        }
-}
-
-@Stable
-sealed interface ResourceType
-@Stable
-data class RMovie(val movie: Movie): ResourceType
-@Stable
-data class RTVShow(val show: String): ResourceType
+    val dialog: MovieDiscoverScreenModel.Dialog? = null,
+    val genreWithMovie: ImmutableList<Pair<Genre, ImmutableList<StateFlow<Movie>>>> = persistentListOf(),
+    val selectedGenre: Genre? = null,
+    val selectedResource: Resource? = null
+)
