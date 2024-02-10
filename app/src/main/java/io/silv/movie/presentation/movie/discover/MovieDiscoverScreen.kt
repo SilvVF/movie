@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.movie.discover
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,7 +50,6 @@ import io.silv.movie.presentation.movie.discover.components.CategorySelectDialog
 import io.silv.movie.presentation.movie.discover.components.MovieDiscoverTopBar
 import io.silv.movie.presentation.movie.discover.components.SelectedPagingItemsGrid
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.core.parameter.parametersOf
@@ -86,7 +86,11 @@ object MovieDiscoverTab: Tab {
         MovieDiscoverTabContent(
             setCurrentDialog = screenModel::changeDialog,
             moviesByGenre = state.genreWithMovie,
-            selectedPagingItems = pagingItems
+            selectedPagingItems = pagingItems,
+            selectedGenre = { state.selectedGenre },
+            selectedResource = { state.selectedResource },
+            onResourceSelected = screenModel::onResourceSelected,
+            clearFilters = screenModel::clearAllSelection
         )
 
         val onDismissRequest = { screenModel.changeDialog(null) }
@@ -94,10 +98,10 @@ object MovieDiscoverTab: Tab {
             MovieDiscoverScreenModel.Dialog.CategorySelect -> {
                 CategorySelectDialog(
                     onDismissRequest = onDismissRequest,
-                    selectedGenres = persistentListOf(),
+                    selectedGenre = state.selectedGenre,
                     genres = state.genres,
                     onGenreSelected = screenModel::onGenreSelected,
-                    clearAllSelected = {}
+                    clearAllSelected = {},
                 )
             }
             null -> Unit
@@ -113,6 +117,8 @@ fun MovieDiscoverTabContent(
     selectedPagingItems: LazyPagingItems<StateFlow<Movie>>?,
     setCurrentDialog: (MovieDiscoverScreenModel.Dialog?) -> Unit,
     moviesByGenre: ImmutableList<Pair<Genre, ImmutableList<StateFlow<Movie>>>>,
+    onResourceSelected: (Resource?) -> Unit,
+    clearFilters: () -> Unit,
 ) {
     val hazeState = remember { HazeState() }
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
@@ -131,31 +137,38 @@ fun MovieDiscoverTabContent(
                setCurrentDialog = setCurrentDialog,
                scrollBehavior = scrollBehavior,
                selectedGenre = selectedGenre,
-               selectedResource = selectedResource
+               selectedResource = selectedResource,
+               onResourceSelected = onResourceSelected,
+               clearFilters = clearFilters
            )
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
-        if (selectedPagingItems != null) {
-            SelectedPagingItemsGrid(
-                mode = PosterDisplayMode.Grid.CoverOnlyGrid,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .haze(hazeState),
-                gridCellsCount = { 2 },
-                paddingValues = paddingValues,
-                pagingItems = selectedPagingItems,
-                onMovieClick = {},
-                onMovieLongClick = {}
-            )
-        } else {
-            GenreItemsLists(
-                paddingValues = paddingValues,
-                hazeState = hazeState,
-                moviesByGenre = moviesByGenre,
-                onMovieLongClick = {},
-                onMovieClick = {}
-            )
+        AnimatedContent(
+            selectedPagingItems,
+            label =""
+        ) { items ->
+            if (items != null) {
+                SelectedPagingItemsGrid(
+                    mode = PosterDisplayMode.Grid.CoverOnlyGrid,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .haze(hazeState),
+                    gridCellsCount = { 2 },
+                    paddingValues = paddingValues,
+                    pagingItems = items,
+                    onMovieClick = {},
+                    onMovieLongClick = {}
+                )
+            } else {
+                GenreItemsLists(
+                    paddingValues = paddingValues,
+                    hazeState = hazeState,
+                    moviesByGenre = moviesByGenre,
+                    onMovieLongClick = {},
+                    onMovieClick = {}
+                )
+            }
         }
     }
 }

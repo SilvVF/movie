@@ -6,6 +6,7 @@ import androidx.compose.runtime.Stable
 data class Movie(
     val id: Long,
     val title: String,
+    val externalUrl: String,
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean
@@ -17,7 +18,8 @@ data class Movie(
             posterUrl = "",
             title = "",
             favorite = false,
-            posterLastUpdated = -1L
+            posterLastUpdated = -1L,
+            externalUrl = ""
        )
     }
 }

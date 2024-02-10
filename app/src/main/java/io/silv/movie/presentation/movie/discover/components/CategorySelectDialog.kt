@@ -23,7 +23,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,7 +44,7 @@ private val CloseDialogButtonPadding = 12.dp
 fun CategorySelectDialog(
     onDismissRequest: () -> Unit,
     genres: ImmutableList<Genre>,
-    selectedGenres: ImmutableList<Genre>,
+    selectedGenre: Genre?,
     clearAllSelected: () -> Unit,
     onGenreSelected: (Genre) -> Unit,
 ) {
@@ -65,8 +64,8 @@ fun CategorySelectDialog(
                     item {
                         GenreListingItem(
                             onClick = clearAllSelected,
-                            genre = Genre("Home", id = null),
-                            selected = selectedGenres.isEmpty()
+                            genre = Genre("All", id = null),
+                            selected = selectedGenre == null
                         )
                     }
                     items(
@@ -74,11 +73,10 @@ fun CategorySelectDialog(
                         key = { it.name + it.id },
                         contentType = { Genre::class.hashCode() }
                     ) { genre ->
-                        val selected = remember(genre, selectedGenres) { genre in selectedGenres }
                         GenreListingItem(
                             onClick = { onGenreSelected(genre) },
                             genre = genre,
-                            selected = selected
+                            selected = genre == selectedGenre
                         )
                     }
                     item {

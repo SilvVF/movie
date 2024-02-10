@@ -1,5 +1,6 @@
 package io.silv.core_network
 
+import io.silv.core_network.model.tv.TVDetailsResponse
 import io.silv.core_network.model.tv.TVDiscoverResponse
 import io.silv.core_network.model.tv.TVListResponse
 import io.silv.core_network.model.tv.TVSearchResponse
@@ -10,6 +11,11 @@ import retrofit2.http.Query
 
 
 interface TMDBTVShowService {
+
+    @GET("https://api.themoviedb.org/3/tv/{id}")
+    fun details(
+        @Path("id") id: Long,
+    ): Call<TVDetailsResponse>
 
     @GET("tv/{type}")
     fun tvList(

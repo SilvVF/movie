@@ -1,16 +1,17 @@
 package io.silv.movie.presentation.movie.discover.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tv
-import androidx.compose.material3.ElevatedAssistChip
 import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +37,8 @@ fun MovieDiscoverTopBar(
     selectedGenre: () -> Genre?,
     selectedResource: () -> Resource?,
     setCurrentDialog: (MovieDiscoverScreenModel.Dialog?) -> Unit,
+    onResourceSelected: (Resource?) -> Unit,
+    clearFilters: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior
 ) {
     val navigator = LocalNavigator.current
@@ -56,15 +59,22 @@ fun MovieDiscoverTopBar(
                 modifier = Modifier.fillMaxWidth(),
                 selectedGenre = selectedGenre,
                 selectedResource = selectedResource,
-                onClearClick = { /*TODO*/ },
-                onResourceSelected = {},
+                onClearClick = clearFilters,
+                onResourceSelected = onResourceSelected,
                 onCategoryClick = {
                     setCurrentDialog(MovieDiscoverScreenModel.Dialog.CategorySelect)
                 }
             )
         },
         navigationIcon = {
-
+            AnimatedVisibility(visible = selectedGenre() != null || selectedResource() != null) {
+                IconButton(onClick = clearFilters) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            }
         },
         colors = TopAppBarDefaults.colors2(Color.Transparent, scrolledContainerColor = Color.Transparent),
         modifier = modifier,
@@ -83,22 +93,21 @@ fun DiscoverMovieFilters(
 ) {
     val category = selectedGenre()
     val resource = selectedResource()
+
     LazyRow(
         modifier = modifier
     ) {
-        if (category != null && resource != null) {
+        if (category != null || resource != null) {
             item(key = "clear-button") {
-                ElevatedAssistChip(
+                IconButton(
                     onClick =  onClearClick,
-                    label = { Text("Clear") },
                     modifier = Modifier.padding(2.dp),
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Filled.Clear,
-                            contentDescription = "clear"
-                        )
-                    }
-                )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = "clear"
+                    )
+                }
             }
         }
         if (resource == Resource.TVShow || resource == null) {

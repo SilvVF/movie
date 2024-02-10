@@ -8,13 +8,14 @@ import io.silv.data.movie.model.Movie
 object MovieMapper {
 
     val mapMovie =
-        { id: Long, title: String, posterUrl: String?, posterLastUpdated: Long, favorite: Boolean ->
+        { id: Long, title: String, posterUrl: String?, posterLastUpdated: Long, favorite: Boolean, externalUrl: String ->
             Movie(
                 id = id,
                 title = title,
                 posterUrl  = posterUrl,
                 favorite = favorite,
-                posterLastUpdated = posterLastUpdated
+                posterLastUpdated = posterLastUpdated,
+                externalUrl = externalUrl
             )
         }
 }
