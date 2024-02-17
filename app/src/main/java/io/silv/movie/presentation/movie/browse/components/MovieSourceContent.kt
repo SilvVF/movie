@@ -20,6 +20,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
@@ -135,31 +136,30 @@ fun MovieSourcePosterGrid(
             contentType = pagingItems.itemContentType { mode.hashCode() }
         ) {
 
-            val movie = pagingItems[it]
+            val movie by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
 
-            movie?.let {
-                when(mode) {
-                    PosterDisplayMode.Grid.ComfortableGrid -> {
-                        BrowseMovieSourceComfortableGridItem(
-                            movieFlow = movie,
-                            onClick = onMovieClick,
-                            onLongClick = onMovieLongClick
-                        )
-                    }
-                    PosterDisplayMode.Grid.CompactGrid -> {
-                        BrowseMovieSourceCompactGridItem(
-                            movieFlow = movie,
-                            onClick = onMovieClick,
-                            onLongClick = onMovieLongClick
-                        )
-                    }
-                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
-                        BrowseMovieSourceCoverOnlyGridItem(
-                            movieFlow = movie,
-                            onClick = onMovieClick,
-                            onLongClick = onMovieLongClick
-                        )
-                    }
+
+            when(mode) {
+                PosterDisplayMode.Grid.ComfortableGrid -> {
+                    BrowseMovieSourceComfortableGridItem(
+                        movie = movie,
+                        onClick = onMovieClick,
+                        onLongClick = onMovieLongClick
+                    )
+                }
+                PosterDisplayMode.Grid.CompactGrid -> {
+                    BrowseMovieSourceCompactGridItem(
+                        movie = movie,
+                        onClick = onMovieClick,
+                        onLongClick = onMovieLongClick
+                    )
+                }
+                PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                    BrowseMovieSourceCoverOnlyGridItem(
+                        movie = movie,
+                        onClick = onMovieClick,
+                        onLongClick = onMovieLongClick
+                    )
                 }
             }
         }

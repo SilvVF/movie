@@ -4,6 +4,7 @@ import io.silv.core_network.model.movie.MovieDetailsResponse
 import io.silv.core_network.model.movie.MovieDiscoverResponse
 import io.silv.core_network.model.movie.MovieListResponse
 import io.silv.core_network.model.movie.MovieSearchResponse
+import io.silv.core_network.model.movie.MovieVideoResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -24,6 +25,12 @@ interface TMDBMovieService {
         @Query("page") page: Int = 1,
         @Query("region") region: String? = null
     ): Call<MovieListResponse>
+
+    @GET("movie/{movie_id}/videos")
+    fun videos(
+        @Path("movie_id") id: Long,
+        @Query("language") language: String = "en-US"
+    ): Call<MovieVideoResponse>
 
     @GET("search/movie")
     fun search(

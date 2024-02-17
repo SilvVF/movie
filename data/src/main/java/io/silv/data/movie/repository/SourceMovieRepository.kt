@@ -3,6 +3,7 @@ package io.silv.data.movie.repository
 import androidx.paging.PagingSource
 import io.silv.core.SGenre
 import io.silv.core.SMovie
+import io.silv.core.STVShow
 import io.silv.core_network.TMDBConstants
 import io.silv.core_network.TMDBMovieService
 import io.silv.core_network.TMDBTVShowService
@@ -20,7 +21,8 @@ import io.silv.data.movie.interactor.TopRatedTVPagingSource
 import io.silv.data.movie.interactor.UpcomingMoviePagingSource
 import io.silv.data.movie.interactor.UpcomingTVPagingSource
 
-typealias SourcePagingSourceType = PagingSource<Long, SMovie>
+typealias MoviePagingSourceType = PagingSource<Long, SMovie>
+typealias TVPagingSourceType = PagingSource<Long, STVShow>
 
 interface SourceMovieRepository {
 
@@ -28,32 +30,32 @@ interface SourceMovieRepository {
 
     fun discoverMovies(genres: List<String>): SourcePagingSource
 
-    fun searchMovies(query: String): SourcePagingSourceType
+    fun searchMovies(query: String): MoviePagingSourceType
 
-    fun getNowPlayingMovies(): SourcePagingSourceType
+    fun getNowPlayingMovies(): MoviePagingSourceType
 
-    fun getPopularMovies(): SourcePagingSourceType
+    fun getPopularMovies(): MoviePagingSourceType
 
-    fun getUpcomingMovies(): SourcePagingSourceType
+    fun getUpcomingMovies(): MoviePagingSourceType
 
-    fun getTopRatedMovies(): SourcePagingSourceType
+    fun getTopRatedMovies(): MoviePagingSourceType
 }
 
 interface SourceTVRepository {
 
     suspend fun getSourceGenres(): List<SGenre>
 
-    fun discoverMovies(genres: List<String>): SourcePagingSource
+    fun discover(genres: List<String>): TVPagingSourceType
 
-    fun searchMovies(query: String): SourcePagingSourceType
+    fun search(query: String): TVPagingSourceType
 
-    fun getNowPlayingMovies(): SourcePagingSourceType
+    fun nowPlaying(): TVPagingSourceType
 
-    fun getPopularMovies(): SourcePagingSourceType
+    fun popular(): TVPagingSourceType
 
-    fun getUpcomingMovies(): SourcePagingSourceType
+    fun upcoming(): TVPagingSourceType
 
-    fun getTopRatedMovies(): SourcePagingSourceType
+    fun topRated(): TVPagingSourceType
 }
 
 class SourceTVRepositoryImpl(
@@ -64,25 +66,25 @@ class SourceTVRepositoryImpl(
         return TMDBConstants.genres
     }
 
-    override fun discoverMovies(genres: List<String>): SourcePagingSource {
+    override fun discover(genres: List<String>): TVPagingSourceType {
         return DiscoverTVPagingSource(genres, tvService)
     }
 
-    override fun searchMovies(query: String): SourcePagingSourceType {
+    override fun search(query: String): TVPagingSourceType {
         return SearchTVPagingSource(query, tvService)
     }
 
-    override fun getNowPlayingMovies(): SourcePagingSourceType {
+    override fun nowPlaying(): TVPagingSourceType {
         return NowPlayingTVPagingSource(tvService)
     }
-    override fun getPopularMovies(): SourcePagingSourceType {
+    override fun popular(): TVPagingSourceType {
         return PopularTVPagingSource(tvService)
     }
-    override fun getUpcomingMovies(): SourcePagingSourceType {
+    override fun upcoming(): TVPagingSourceType {
         return UpcomingTVPagingSource(tvService)
     }
 
-    override fun getTopRatedMovies(): SourcePagingSourceType {
+    override fun topRated(): TVPagingSourceType {
         return TopRatedTVPagingSource(tvService)
     }
 }
@@ -99,21 +101,21 @@ class SourceMovieRepositoryImpl(
         return DiscoverMoviesPagingSource(genres, movieService)
     }
 
-    override fun searchMovies(query: String): SourcePagingSourceType {
+    override fun searchMovies(query: String): MoviePagingSourceType {
         return SearchMoviePagingSource(query, movieService)
     }
 
-    override fun getNowPlayingMovies(): SourcePagingSourceType {
+    override fun getNowPlayingMovies(): MoviePagingSourceType {
         return NowPlayingMoviePagingSource(movieService)
     }
-    override fun getPopularMovies(): SourcePagingSourceType {
+    override fun getPopularMovies(): MoviePagingSourceType {
         return PopularMoviePagingSource(movieService)
     }
-    override fun getUpcomingMovies(): SourcePagingSourceType {
+    override fun getUpcomingMovies(): MoviePagingSourceType {
         return UpcomingMoviePagingSource(movieService)
     }
 
-    override fun getTopRatedMovies(): SourcePagingSourceType {
+    override fun getTopRatedMovies(): MoviePagingSourceType {
         return TopRatedMoviePagingSource(movieService)
     }
 }

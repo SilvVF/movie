@@ -1,17 +1,18 @@
 package io.silv.core_network.model
 
 import io.silv.core.SMovie
+import io.silv.core.STVShow
 import io.silv.core_network.TMDBConstants
 import io.silv.core_network.model.movie.MovieDiscoverResponse
 import io.silv.core_network.model.movie.MovieListResponse
 import io.silv.core_network.model.movie.MovieSearchResponse
 import io.silv.core_network.model.tv.TVResult
 
-fun TVResult.toSMovie(): SMovie {
+fun TVResult.toSTVShow(): STVShow {
     val m = this
-    return SMovie.create().apply {
-        url = "https://api.themoviedb.org/3/tv/$id"
-        posterPath = "https://image.tmdb.org/t/p/original/${m.posterPath}".takeIf { m.posterPath != null }
+    return STVShow.create().apply {
+        url = "https://api.themoviedb.org/3/tv/${m.id}"
+        posterPath = "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.name
         genreIds = m.genreIds
         adult = m.adult
@@ -31,8 +32,8 @@ fun TVResult.toSMovie(): SMovie {
 fun MovieSearchResponse.Result.toSMovie(): SMovie {
     val m  = this
     return SMovie.create().apply {
-        url = "https://api.themoviedb.org/3/movie/$id"
-        posterPath = "https://image.tmdb.org/t/p/original/${m.posterPath}".takeIf { m.posterPath != null }
+        url = "https://api.themoviedb.org/3/movie/${m.id}"
+        posterPath = "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.title
         genreIds = m.genreIds
         adult = m.adult
@@ -53,8 +54,8 @@ fun MovieSearchResponse.Result.toSMovie(): SMovie {
 fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
     val m  = this
     return SMovie.create().apply {
-        url = "https://api.themoviedb.org/3/movie/$id"
-        posterPath =  "https://image.tmdb.org/t/p/original/${m.posterPath}".takeIf { m.posterPath.isNotBlank() }
+        url = "https://api.themoviedb.org/3/movie/${m.id}"
+        posterPath =  "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath.isNotBlank() }
         title = m.title
         genreIds = m.genreIds
         adult = m.adult
@@ -75,8 +76,8 @@ fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
 fun MovieListResponse.Result.toSMovie(): SMovie {
     val m  = this
     return SMovie.create().apply {
-        url = "https://api.themoviedb.org/3/movie/$id"
-        posterPath =  "https://image.tmdb.org/t/p/original/${m.posterPath}".takeIf { m.posterPath != null }
+        url = "https://api.themoviedb.org/3/movie/${m.id}"
+        posterPath =  "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.title
         genreIds = m.genres.map { it.id }
         adult = m.adult

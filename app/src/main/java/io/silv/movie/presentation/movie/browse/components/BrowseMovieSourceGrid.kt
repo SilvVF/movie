@@ -3,15 +3,13 @@ package io.silv.movie.presentation.movie.browse.components
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.silv.core_ui.components.Badge
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.core_ui.components.toPoster
 import io.silv.data.movie.model.Movie
-import kotlinx.coroutines.flow.StateFlow
+import io.silv.data.movie.model.TVShow
 
 @Composable
 fun InLibraryBadge(enabled: Boolean) {
@@ -20,14 +18,60 @@ fun InLibraryBadge(enabled: Boolean) {
     }
 }
 
+@Composable
+fun BrowseShowSourceCoverOnlyGridItem(
+    show: TVShow,
+    onClick: (TVShow) -> Unit = {},
+    onLongClick: (TVShow) -> Unit = {},
+) {
+    EntryCompactGridItem(
+        title = null,
+        coverData = show.toPoster(),
+        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
+        onLongClick = { onLongClick(show) },
+        onClick = { onClick(show) },
+    )
+}
+
+@Composable
+fun BrowsShowSourceCompactGridItem(
+    show: TVShow,
+    onClick: (TVShow) -> Unit = {},
+    onLongClick: (TVShow) -> Unit = {},
+) {
+    EntryCompactGridItem(
+        title = show.title,
+        coverData = show.toPoster(),
+        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
+        onLongClick = { onLongClick(show) },
+        onClick = { onClick(show) },
+    )
+}
+
+@Composable
+fun BrowseShowSourceComfortableGridItem(
+    show: TVShow,
+    onClick: (TVShow) -> Unit = {},
+    onLongClick: (TVShow) -> Unit = {},
+) {
+    EntryComfortableGridItem(
+        title = show.title,
+        coverData = show.toPoster(),
+        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
+        onLongClick = { onLongClick(show) },
+        onClick = { onClick(show) },
+    )
+}
 
 @Composable
 fun BrowseMovieSourceCoverOnlyGridItem(
-    movieFlow: StateFlow<Movie>,
+    movie: Movie,
     onClick: (Movie) -> Unit = {},
     onLongClick: (Movie) -> Unit = {},
 ) {
-    val movie by movieFlow.collectAsStateWithLifecycle()
     EntryCompactGridItem(
         title = null,
         coverData = movie.toPoster(),
@@ -40,11 +84,10 @@ fun BrowseMovieSourceCoverOnlyGridItem(
 
 @Composable
 fun BrowseMovieSourceCompactGridItem(
-    movieFlow: StateFlow<Movie>,
+    movie: Movie,
     onClick: (Movie) -> Unit = {},
     onLongClick: (Movie) -> Unit = {},
 ) {
-    val movie by movieFlow.collectAsStateWithLifecycle()
     EntryCompactGridItem(
         title = movie.title,
         coverData = movie.toPoster(),
@@ -57,12 +100,10 @@ fun BrowseMovieSourceCompactGridItem(
 
 @Composable
 fun BrowseMovieSourceComfortableGridItem(
-    movieFlow: StateFlow<Movie>,
+    movie: Movie,
     onClick: (Movie) -> Unit = {},
     onLongClick: (Movie) -> Unit = {},
 ) {
-    val movie by movieFlow.collectAsStateWithLifecycle()
-
     EntryComfortableGridItem(
         title = movie.title,
         coverData = movie.toPoster(),

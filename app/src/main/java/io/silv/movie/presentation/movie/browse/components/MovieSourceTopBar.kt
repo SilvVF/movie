@@ -57,7 +57,7 @@ import io.silv.core_ui.components.SearchLargeTopBar
 import io.silv.core_ui.components.TMDBLogo
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.data.movie.model.MoviePagedType
+import io.silv.data.movie.model.ContentPagedType
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.MovieActions
 import io.silv.movie.presentation.movie.browse.Resource
@@ -68,7 +68,7 @@ fun MovieTopAppBar(
     modifier: Modifier = Modifier,
     resource: () -> Resource,
     query: () -> String,
-    listing: () -> MoviePagedType,
+    listing: () -> ContentPagedType,
     actions: MovieActions,
     displayMode: () -> PosterDisplayMode
 ) {
@@ -248,15 +248,15 @@ fun RowScope.ResourceFilterChips(
 
 @Composable
 fun MovieFilterChips(
-    changeMovePagesType: (MoviePagedType) -> Unit,
-    selected: MoviePagedType,
+    changeMovePagesType: (ContentPagedType) -> Unit,
+    selected: ContentPagedType,
 ) {
     val filters =
         remember {
             listOf(
-                Triple("Popular", Icons.Filled.Whatshot, MoviePagedType.Default.Popular),
-                Triple("Top Rated", Icons.Outlined.AutoAwesome, MoviePagedType.Default.TopRated),
-                Triple("Upcoming", Icons.Filled.NewReleases, MoviePagedType.Default.Upcoming),
+                Triple("Popular", Icons.Filled.Whatshot, ContentPagedType.Default.Popular),
+                Triple("Top Rated", Icons.Outlined.AutoAwesome, ContentPagedType.Default.TopRated),
+                Triple("Upcoming", Icons.Filled.NewReleases, ContentPagedType.Default.Upcoming),
             )
         }
 

@@ -1,0 +1,36 @@
+import kotlin.Boolean;
+
+CREATE TABLE show (
+    id INTEGER PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL DEFAULT "",
+    posterUrl TEXT,
+    posterLastUpdated INTEGER NOT NULL DEFAULT 0,
+    favorite INTEGER AS Boolean NOT NULL DEFAULT 0,
+    externalUrl TEXT NOT NULL DEFAULT ""
+);
+
+
+selectById:
+SELECT * FROM show WHERE id = :id LIMIT 1;
+
+selectAll:
+SELECT * FROM show;
+
+insert:
+INSERT OR IGNORE INTO show(id, title, posterUrl, posterLastUpdated, favorite, externalUrl)
+VALUES (:id, :title, :posterUrl, :posterLastUpdated, :favorite, :externalUrl);
+
+lastInsertRowId:
+SELECT last_insert_rowid();
+
+update:
+UPDATE show SET
+   title = COALESCE(:title, title),
+   posterUrl = COALESCE(:posterUrl, posterUrl),
+   posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
+   favorite = COALESCE(:favorite, favorite),
+   externalUrl = COALESCE(:externalUrl, externalUrl)
+WHERE id = :showId;
+
+
+

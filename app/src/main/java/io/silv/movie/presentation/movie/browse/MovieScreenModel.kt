@@ -18,7 +18,7 @@ import io.silv.data.movie.interactor.GetMovie
 import io.silv.data.movie.interactor.GetRemoteMovie
 import io.silv.data.movie.interactor.NetworkToLocalMovie
 import io.silv.data.movie.model.Movie
-import io.silv.data.movie.model.MoviePagedType
+import io.silv.data.movie.model.ContentPagedType
 import io.silv.data.movie.toDomain
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.data.prefrences.TMDBPreferences
@@ -45,9 +45,9 @@ class MovieScreenModel(
 ) : StateScreenModel<MovieState>(
     MovieState(
         listing = if (query.isNotBlank()) {
-            MoviePagedType.Search(query)
+            ContentPagedType.Search(query)
         } else {
-            MoviePagedType.Default.Popular
+            ContentPagedType.Default.Popular
         }
     )
 ) {
@@ -63,7 +63,7 @@ class MovieScreenModel(
             .onEach {
                 if (it.isNotBlank()) {
                     mutableState.update {state ->
-                        state.copy(listing = MoviePagedType.Search(it))
+                        state.copy(listing = ContentPagedType.Search(it))
                     }
                 }
             }
@@ -92,9 +92,9 @@ class MovieScreenModel(
         }
         .stateIn(ioCoroutineScope, SharingStarted.Lazily, PagingData.empty())
 
-    fun changeCategory(category: MoviePagedType) {
+    fun changeCategory(category: ContentPagedType) {
         screenModelScope.launch {
-            if(category is MoviePagedType.Search && category.query.isBlank()) {
+            if(category is ContentPagedType.Search && category.query.isBlank()) {
                 return@launch
             }
             mutableState.update { state -> state.copy(listing = category) }
@@ -136,7 +136,7 @@ class MovieScreenModel(
             if (query.isBlank()) {
                 return@launch
             }
-            mutableState.update { state -> state.copy(listing = MoviePagedType.Search(query)) }
+            mutableState.update { state -> state.copy(listing = ContentPagedType.Search(query)) }
         }
     }
 
@@ -155,7 +155,7 @@ class MovieScreenModel(
 @Immutable
 @Stable
 data class MovieState(
-    val listing: MoviePagedType = MoviePagedType.Default.Popular,
+    val listing: ContentPagedType = ContentPagedType.Default.Popular,
     val query: String = "",
     val resource: Resource = Resource.Movie,
     val dialog: MovieScreenModel.Dialog? = null,
@@ -174,7 +174,7 @@ enum class Resource : Parcelable {
 @Immutable
 @Stable
 data class MovieActions(
-    val changeCategory: (MoviePagedType) -> Unit,
+    val changeCategory: (ContentPagedType) -> Unit,
     val changeResource: (Resource) -> Unit,
     val changeQuery: (String) -> Unit,
     val movieLongClick: (movie: Movie) -> Unit,

@@ -30,16 +30,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.data.movie.model.ContentPagedType
 import io.silv.data.movie.model.Movie
-import io.silv.data.movie.model.MoviePagedType
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.components.FilterBottomSheet
 import io.silv.movie.presentation.movie.browse.components.MovieSourcePagingContent
 import io.silv.movie.presentation.movie.browse.components.MovieTopAppBar
+import io.silv.movie.presentation.movie.view.MovieViewScreen
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.parameter.parametersOf
 
@@ -56,6 +59,7 @@ data class MovieScreen(
 
         // needed for movie action to be stable
         val stableChangeDialogRefrence = { dialog: MovieScreenModel.Dialog.RemoveMovie ->  screenModel.changeDialog(dialog) }
+        val navigator = LocalNavigator.currentOrThrow
 
         MovieStandardScreenSizeContent(
             pagingFlowFlow = { screenModel.moviePagerFlowFlow },
@@ -74,7 +78,7 @@ data class MovieScreen(
                         stableChangeDialogRefrence(MovieScreenModel.Dialog.RemoveMovie(it))
                     }
                 },
-                movieClick = {},
+                movieClick = { navigator.push(MovieViewScreen(it.id)) },
                 onSearch = screenModel::onSearch,
                 setDisplayMode = screenModel::changeDisplayMode,
                 changeGridCellCount = screenModel::changeGridCells
@@ -108,7 +112,7 @@ data class MovieScreen(
 
 @Composable
 private fun MovieStandardScreenSizeContent(
-    listing: () -> MoviePagedType,
+    listing: () -> ContentPagedType,
     query: () -> String,
     displayMode: () -> PosterDisplayMode,
     pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<Movie>>>,

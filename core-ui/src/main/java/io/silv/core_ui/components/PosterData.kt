@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import io.silv.data.movie.model.Movie
+import io.silv.data.movie.model.TVShow
 
 fun Movie.toPoster(): PosterData {
     return PosterData(
@@ -54,9 +55,19 @@ fun Movie.toPoster(): PosterData {
     )
 }
 
+fun TVShow.toPoster(): PosterData {
+    return PosterData(
+        id = id,
+        url = posterUrl,
+        title = title,
+        favorite = favorite
+    )
+}
+
 enum class ItemCover(val ratio: Float) {
     Square(1f / 1f),
-    Book(2f / 3f),;
+    Book(2f / 3f),
+    Rect(16f / 9f);
 
     @Composable
     operator fun invoke(

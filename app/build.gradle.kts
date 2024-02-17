@@ -75,6 +75,10 @@ dependencies {
     implementation(project(":data"))
     implementation(project(":core-network"))
 
+    implementation(libs.androidx.constraintlayout)
+    // To use constraintlayout in compose
+    implementation(libs.androidx.constraintlayout.compose)
+
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
@@ -134,6 +138,14 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
+
+    implementation(libs.font.awesome)
+
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.ui)
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
+    implementation("com.github.skydoves:orbital:0.3.4")
 }
 
 tasks {

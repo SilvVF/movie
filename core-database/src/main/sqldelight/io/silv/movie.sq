@@ -1,12 +1,22 @@
 import kotlin.Boolean;
+import kotlin.Int;
+import kotlin.String;
+import kotlin.collections.List;
 
 CREATE TABLE movie (
     id INTEGER PRIMARY KEY NOT NULL,
-    title TEXT NOT NULL DEFAULT "",
+    title TEXT NOT NULL,
+    overview TEXT NOT NULL ,
+    genres TEXT AS List<String>,
+    genreIds TEXT AS List<Int>,
+    originalLanguage TEXT NOT NULL,
+    voteCount INTEGER NOT NULL,
+    releaseDate TEXT NOT NULL,
     posterUrl TEXT,
-    posterLastUpdated INTEGER NOT NULL DEFAULT 0,
-    favorite INTEGER AS Boolean NOT NULL DEFAULT 0,
-    externalUrl TEXT NOT NULL DEFAULT ""
+    posterLastUpdated INTEGER NOT NULL,
+    favorite INTEGER AS Boolean NOT NULL,
+    externalUrl TEXT NOT NULL,
+    popularity REAL NOT NULL
 );
 
 
@@ -17,10 +27,25 @@ selectAll:
 SELECT * FROM movie;
 
 insert:
-INSERT OR IGNORE INTO movie(id, title, posterUrl, posterLastUpdated, favorite, externalUrl)
-VALUES (:id, :title, :posterUrl, :posterLastUpdated, :favorite, :externalUrl);
+INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity)
+VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity);
 
 lastInsertRowId:
 SELECT last_insert_rowid();
 
+update:
+UPDATE movie SET
+    title = COALESCE(:title, title),
+    overview = COALESCE(:overview, overview),
+    genres = COALESCE(:genres, genres),
+    genreIds = COALESCE(:genreIds, genreIds),
+    originalLanguage = COALESCE(:originalLanguage, originalLanguage),
+    voteCount = COALESCE(:voteCount, voteCount),
+    releaseDate = COALESCE(:releaseDate, releaseDate),
+    posterUrl = COALESCE(:posterUrl, posterUrl),
+    posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
+    favorite = COALESCE(:favorite, favorite),
+    externalUrl = COALESCE(:externalUrl, externalUrl),
+    popularity = COALESCE(:popularity, popularity)
+WHERE id = :movieId;
 

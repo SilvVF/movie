@@ -18,14 +18,11 @@ val appModule =
         factoryOf(::MovieScreenModel)
 
         factory { (genre: Genre?, resource: Resource?) ->
-            MovieDiscoverScreenModel(get(), get(), get(), get(), get(), get(), genre, resource)
+            MovieDiscoverScreenModel(get(), get(), get(), get(), get(), get(), get(),get(), get(), get(), get(), genre, resource)
         }
 
-        factory {(movieId: Long) ->
-            MovieViewScreenModel(
-                get(), get(), movieId
-            )
-        }
+        factoryOf(::MovieViewScreenModel)
+
 
         single {
             Json {
