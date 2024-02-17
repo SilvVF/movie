@@ -2,12 +2,11 @@ package io.silv.movie
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.anchoredDraggable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,8 +17,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -39,16 +40,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.CurveFit
 import androidx.constraintlayout.compose.Dimension
@@ -79,7 +78,7 @@ enum class DragAnchors {
     End,
 }
 
-private val NavBarHeight = 80.dp
+private val NavBarHeight = 72.dp
 
 
 
@@ -98,7 +97,30 @@ object TabHost: Screen {
     override fun Content() {
 
         val navigator = LocalNavigator.current
+        val density = LocalDensity.current
         val configuration = LocalConfiguration.current
+
+        val state = remember {
+            AnchoredDraggableState(
+                initialValue = DragAnchors.Start,
+                positionalThreshold = { distance: Float -> distance * 0.5f },
+                velocityThreshold = { with(density) { 100.dp.toPx() } },
+                animationSpec = tween(),
+            ).apply {
+                updateAnchors(
+                    DraggableAnchors {
+                        DragAnchors.Start at 0f
+                        DragAnchors.End at with(density) { configuration.screenHeightDp.dp.toPx() }
+                    }
+                )
+            }
+        }
+
+
+        val progress by animateFloatAsState(
+            targetValue = (1 - (state.requireOffset() / state.anchors.maxAnchor())).coerceIn(0f..1f),
+            label = ""
+        )
 
         TabNavigator(HomeTab) {
 
@@ -108,7 +130,7 @@ object TabHost: Screen {
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         NavigationBar(
-                            modifier = Modifier.height(NavBarHeight)
+                            modifier = Modifier.height(NavBarHeight * (1f - progress))
                         ) {
                             IconButton(onClick = { /*TODO*/ }) {
                                 Icon(
@@ -130,7 +152,9 @@ object TabHost: Screen {
                         playerQueue?.let { videos ->
                             MediaMotionLayout(
                                 videos,
-                                paddingValues
+                                paddingValues,
+                                progress,
+                                state
                             )
                         }
                     }
@@ -141,58 +165,13 @@ object TabHost: Screen {
 }
 
 
-fun AnchoredDraggableState<DragAnchors>.createNestedScrollConnection(
-    scrollState: ScrollableState
-) = object: NestedScrollConnection {
-    override fun onPreScroll(
-        available: Offset,
-        source: NestedScrollSource
-    ): Offset {
-        val delta = available.y
-        return if (delta < 0) {
-            Offset(
-                x = available.x,
-                y = dispatchRawDelta(delta)
-            )
-        } else {
-            Offset.Zero
-        }
-    }
-
-    override fun onPostScroll(
-        consumed: Offset,
-        available: Offset,
-        source: NestedScrollSource
-    ): Offset {
-        val delta = available.y
-        return Offset(
-            x = available.x,
-            y = dispatchRawDelta(delta)
-        )
-    }
-    override suspend fun onPreFling(available: Velocity): Velocity {
-        return if (available.y < 0 && !scrollState.canScrollBackward) {
-            settle(available.y)
-            available
-        } else {
-            Velocity.Zero
-        }
-    }
-
-    override suspend fun onPostFling(
-        consumed: Velocity,
-        available: Velocity
-    ): Velocity {
-        settle(available.y)
-        return super.onPostFling(consumed, available)
-    }
-}
-
 
 @Composable
 fun BoxScope.MediaMotionLayout(
     videos: ImmutableList<MovieVideo>,
     paddingValues: PaddingValues,
+    progress: Float,
+    state: AnchoredDraggableState<DragAnchors>
 ) {
     val motionScene = remember {
         MotionScene {
@@ -209,7 +188,7 @@ fun BoxScope.MediaMotionLayout(
                         width = Dimension.fillToConstraints
                         height = Dimension.fillToConstraints
                         bottom.linkTo(thumbnail.bottom)
-                        start.linkTo(thumbnail.end)
+                        start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         top.linkTo(thumbnail.top)
                     }
@@ -228,18 +207,20 @@ fun BoxScope.MediaMotionLayout(
                         top.linkTo(thumbnail.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
                     }
                     constrain(thumbnail) {
-                        width = Dimension.percent(0.4f)
-                        height = Dimension.value(90.dp)
+                        width = Dimension.percent(0.25f)
+                        height = Dimension.percent(0.08f)
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
                     }
                     constrain(title) {
                         width = Dimension.fillToConstraints
                         height = Dimension.wrapContent
+                        start.linkTo(thumbnail.end, margin = 4.dp)
                         bottom.linkTo(thumbnail.bottom)
-                        end.linkTo(parent.end, margin = 12.dp)
+                        end.linkTo(parent.end,margin = 4.dp)
                         top.linkTo(thumbnail.top)
                     }
                 },
@@ -248,13 +229,13 @@ fun BoxScope.MediaMotionLayout(
                         width = Dimension.fillToConstraints
                         height = Dimension.fillToConstraints
                         bottom.linkTo(thumbnail.bottom)
-                        start.linkTo(thumbnail.end)
+                        start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         top.linkTo(thumbnail.top)
                     }
                     constrain(thumbnail) {
                         width = Dimension.matchParent
-                        height = Dimension.preferredWrapContent
+                        height = Dimension.ratio("16:9")
                         start.linkTo(parent.start)
                         top.linkTo(parent.top)
                         end.linkTo(parent.end)
@@ -263,9 +244,10 @@ fun BoxScope.MediaMotionLayout(
                         width = Dimension.fillToConstraints
                         height = Dimension.wrapContent
                         alpha = 0f
-                        start.linkTo(parent.end)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
+                        start.linkTo(thumbnail.end, margin = 4.dp)
+                        bottom.linkTo(thumbnail.bottom)
+                        end.linkTo(parent.end, margin = 4.dp)
+                        top.linkTo(thumbnail.top)
                     }
                     constrain(items) {
                         width = Dimension.matchParent
@@ -273,6 +255,7 @@ fun BoxScope.MediaMotionLayout(
                         top.linkTo(thumbnail.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
                     }
                     constrain(itemsBg) {
                         width = Dimension.fillToConstraints
@@ -288,81 +271,52 @@ fun BoxScope.MediaMotionLayout(
                     frame(50) {
                         percentWidth = 1f
                         percentX = 0.5f
-                        percentHeight = 0f
-                        curveFit = CurveFit.Spline
-                    }
-                }
-                keyPositions(container) {
-                    frame(50) {
-                        percentHeight = 0f
-                        curveFit = CurveFit.Spline
+                        curveFit = CurveFit.Linear
                     }
                 }
                 keyPositions(title) {
-                    frame(50) {
+                    frame(30) {
                         percentWidth = 1f
                         percentX = 1f
                     }
                 }
                 keyAttributes(title) {
-                    frame(50) {
+                    frame(30) {
                         alpha = 0f
                     }
                 }
             }
         }
     }
-
-    val density = LocalDensity.current
-
-    val state = remember {
-        AnchoredDraggableState(
-            initialValue = DragAnchors.Start,
-            positionalThreshold = { distance: Float -> distance * 0.5f },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = tween(),
-        ).apply {
-            updateAnchors(
-                DraggableAnchors {
-                    DragAnchors.Start at 0f
-                    DragAnchors.End at 1200f
-                }
-            )
-        }
-    }
-
-    val progress by animateFloatAsState(
-        targetValue = (1 - (state.requireOffset() / state.anchors.maxAnchor())).coerceIn(0f..1f),
-        label = ""
-    )
-
     val surfaceColor =  MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
-    val scrollState = rememberLazyListState()
-
-    val nestedScroll = remember {
-        state.createNestedScrollConnection(scrollState)
-    }
 
     MotionLayout(
         motionScene = motionScene,
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .align(Alignment.BottomCenter),
+            .drawWithContent {
+                drawContent()
+                drawLine(
+                    color = Color.Gray,
+                    strokeWidth = 2f,
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height)
+                )
+            }
+            .align(Alignment.BottomCenter)
+            .windowInsetsPadding(WindowInsets.statusBars),
         progress = progress
     ) {
         Box(
             modifier = Modifier
-                .drawBehind { drawRect(Color.Black) }
+                .drawBehind { drawRect(surfaceColor) }
                 .layoutId("items_solid_background"),
         )
         FastScrollLazyColumn(
-            Modifier
-                .background(surfaceColor)
-                .nestedScroll(nestedScroll)
+            modifier = Modifier
+                .fillMaxSize()
                 .layoutId("items"),
-            state = scrollState,
-            contentPadding = paddingValues
         ) {
             items(videos) {
                 VideoMediaItem(
@@ -380,39 +334,48 @@ fun BoxScope.MediaMotionLayout(
         }
         Box(
             modifier = Modifier
+                .clipToBounds()
                 .drawBehind { drawRect(surfaceColor) }
                 .anchoredDraggable(
                     state,
                     Orientation.Vertical
                 )
-                .clipToBounds()
                 .layoutId("video_overlay_touchable_area"),
         )
-        Box(
-            Modifier
-                .layoutId("video_overlay_thumbnail")
-                .clipToBounds()
-                .drawBehind { drawRect(Color.Black) }
-                .anchoredDraggable(
-                    state,
-                    Orientation.Vertical
-                )
-        ) {
-            YoutubeVideoPlayer(
-                modifier = Modifier.fillMaxWidth(),
-                videoId = "nuTU5XcZTLA"
-            )
-        }
         Row(
             Modifier
-                .layoutId("video_overlay_title")
+                .layoutId("video_overlay_title"),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
         ) {
+            Text(
+                text = videos.first().name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
             IconButton(onClick = { /*TODO*/ }) {
                 Icon(imageVector = Icons.Filled.PlayArrow, contentDescription = null)
             }
             IconButton(onClick = { /*TODO*/ }) {
                 Icon(imageVector = Icons.Filled.Close, contentDescription = null)
             }
+        }
+        Box(
+            Modifier
+                .layoutId("video_overlay_thumbnail")
+                .fillMaxWidth()
+                .clipToBounds()
+                .anchoredDraggable(
+                    state,
+                    Orientation.Vertical
+                )
+        ) {
+            YoutubeVideoPlayer(
+                modifier = Modifier.matchParentSize(),
+                videoId = "nuTU5XcZTLA"
+            )
         }
     }
 }
