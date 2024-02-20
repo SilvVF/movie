@@ -65,6 +65,7 @@ kotlinCollectionsImmutable = "0.3.7"
 sandwich = "2.0.4"
 retrofit="2.9.0"
 retrofiteKotlinxSerializtionConverter="1.0.0"
+swiperefreshlayout = "1.1.0"
 
 [libraries]
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
@@ -165,6 +166,7 @@ ktor-logging={module="io.ktor:ktor-client-logging", version.ref="ktor"}
 ktor-contentnegotiation={module="io.ktor:ktor-client-content-negotiation", version.ref="ktor"}
 uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
 benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark-macro-junit4" }
+androidx-swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefreshlayout", version.ref = "swiperefreshlayout" }
 
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }

@@ -40,7 +40,7 @@ import com.skydoves.orbital.Orbital
 import com.skydoves.orbital.animateTransformation
 import com.skydoves.orbital.rememberContentWithOrbitalScope
 import io.silv.data.movie.interactor.MovieVideo
-import io.silv.movie.DragAnchors
+import io.silv.movie.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.YoutubeVideoPlayer
 import io.silv.movie.presentation.movie.view.components.VideoMediaItem
 import kotlinx.collections.immutable.ImmutableList
@@ -59,15 +59,15 @@ fun rememberAnchoredDragState(
 
     val state = remember(dragAnchorEnd) {
         AnchoredDraggableState(
-            initialValue = DragAnchors.Start,
+            initialValue = CollapsableVideoAnchors.Start,
             positionalThreshold = { distance: Float -> distance * 0.2f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
             animationSpec = tween(),
         ).apply {
             updateAnchors(
                 DraggableAnchors {
-                    DragAnchors.Start at 0f
-                    DragAnchors.End at dragAnchorEnd
+                    CollapsableVideoAnchors.Start at 0f
+                    CollapsableVideoAnchors.End at dragAnchorEnd
                 }
             )
         }
@@ -79,7 +79,7 @@ fun rememberAnchoredDragState(
 }
 
 class MediaQueueDragState(
-    val draggableState: AnchoredDraggableState<DragAnchors>,
+    val draggableState: AnchoredDraggableState<CollapsableVideoAnchors>,
     maxHeight: Dp,
     dragAnchorEnd: Float,
     offset: (progress: Float) -> Dp,

@@ -1,9 +1,12 @@
 package io.silv.movie
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
+import android.util.Log
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,134 +14,196 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Stable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.Tab
-import cafe.adriel.voyager.navigator.tab.TabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.core_network.model.movie.MovieVideoResponse
 import io.silv.data.movie.interactor.MovieVideo
 import io.silv.data.movie.interactor.toDomain
+import io.silv.movie.presentation.media.YoutubeVideoPlayer
 import io.silv.movie.presentation.movie.browse.MovieScreen
+import io.silv.movie.presentation.movie.view.components.VideoMediaItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 
-enum class DragAnchors {
-    Start,
-    End,
-}
-
 private val NavBarHeight = 72.dp
 
+class MainScreenModel: ScreenModel {
 
+    var videos by mutableStateOf<ImmutableList<MovieVideo>?>(null)
+        private set
+
+    var collapsableVideoState: CollapsableVideoState? = null
+
+    val list = Json.decodeFromString<MovieVideoResponse>(jsonVideos).results
+        .map { it.toDomain() }
+        .toImmutableList()
+
+    fun requestMediaQueue() {
+        videos = list
+    }
+
+    fun clearMediaQueue() {
+        Log.d("Clear", "Clearing")
+        videos = null
+        screenModelScope.launch {
+            collapsableVideoState?.state?.snapTo(CollapsableVideoAnchors.Start)
+        }
+    }
+}
 
 object TabHost: Screen {
 
-    private val tabs = persistentListOf(
-        HomeTab
-    )
+    private val tabs = persistentListOf(HomeTab)
 
-
-    private val playerQueue by mutableStateOf<ImmutableList<MovieVideo>?>(
-        Json.decodeFromString<MovieVideoResponse>(jsonVideos).results.map { it.toDomain() }.toImmutableList()
-    )
 
     @Composable
     override fun Content() {
 
         val navigator = LocalNavigator.current
-        val density = LocalDensity.current
-        val configuration = LocalConfiguration.current
 
-        val state = remember {
-            AnchoredDraggableState(
-                initialValue = DragAnchors.Start,
-                positionalThreshold = { distance: Float -> distance * 0.5f },
-                velocityThreshold = { with(density) { 100.dp.toPx() } },
-                animationSpec = tween(),
-            ).apply {
-                updateAnchors(
-                    DraggableAnchors {
-                        DragAnchors.Start at 0f
-                        DragAnchors.End at with(density) { configuration.screenHeightDp.dp.toPx() }
-                    }
-                )
+        val mainScreenModel = getScreenModel<MainScreenModel>()
+        val collapsableVideoState = rememberCollapsableVideoState()
+
+        DisposableEffect(collapsableVideoState) {
+            mainScreenModel.collapsableVideoState = collapsableVideoState
+            onDispose {
+                mainScreenModel.collapsableVideoState = null
             }
         }
 
+        BackHandler(
+            enabled = mainScreenModel.videos.isNullOrEmpty().not()
+        ) {
+            mainScreenModel.clearMediaQueue()
+        }
 
-        val progress by animateFloatAsState(
-            targetValue = (1 - (state.requireOffset() / state.anchors.maxAnchor())).coerceIn(0f..1f),
-            label = ""
-        )
-
-        TabNavigator(HomeTab) {
-
-            CompositionLocalProvider(LocalNavigator provides navigator) {
-                Scaffold(
-                    contentWindowInsets = WindowInsets(0),
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        NavigationBar(
-                            modifier = Modifier.height(NavBarHeight * (1f - progress))
-                        ) {
-                            IconButton(onClick = { /*TODO*/ }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Home,
-                                    contentDescription = null
-                                )
-                            }
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            contentWindowInsets = WindowInsets(top = 0.dp, bottom = 0.dp, left = 0.dp, right = 0.dp),
+            bottomBar = {
+                NavigationBar(
+                    Modifier.height(
+                        if (mainScreenModel.videos.isNullOrEmpty()) {
+                            NavBarHeight
+                        } else {
+                            NavBarHeight * (1f - collapsableVideoState.progress)
                         }
-                    }
-                ) { paddingValues ->
-                    Box(Modifier.fillMaxSize()) {
-                        Box(
-                            Modifier
-                                .padding(paddingValues)
-                                .consumeWindowInsets(paddingValues)
-                        ) {
-                            CurrentTab()
-                        }
-                    }
+                    )
+                ) {}
+            }
+        ) { paddingValues ->
+            Box(
+                Modifier
+                    .padding(paddingValues)
+                    .consumeWindowInsets(paddingValues)
+            ) {
+                Navigator(MovieScreen()) {
+                    FadeTransition(it)
+                }
+
+                AnimatedVisibility(
+                    visible = mainScreenModel.videos.isNullOrEmpty().not(),
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .align(Alignment.BottomCenter),
+                    enter = slideInVertically { it } + fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    CollapsableVideo(
+                        state = collapsableVideoState,
+                        videos = mainScreenModel.videos ?: return@AnimatedVisibility,
+                        onDismissRequested = mainScreenModel::clearMediaQueue
+                    )
                 }
             }
         }
     }
 }
 
-@Stable
-private data class ScrollHolder(
-    var idx: Int,
-    var offset: Int
-)
-
 @Composable
-fun BoxScope.MediaMotionLayout() {
+fun BoxScope.CollapsableVideo(
+    state: CollapsableVideoState,
+    videos: ImmutableList<MovieVideo>,
+    onDismissRequested: () -> Unit
+) {
+    CollapsableVideoLayout(
+        actions = {
+            Text(
+                text = "Title text",
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = { /*TODO*/ }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.PlayArrow,
+                    contentDescription = null
+                )
+            }
 
-
+            IconButton(
+                onClick = { /*TODO*/ }
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = null
+                )
+            }
+        },
+        collapsableVideoState = state,
+        modifier = Modifier,
+        player = {
+            YoutubeVideoPlayer(
+                Modifier,
+                videoId = "HUkDW37WaI0"
+            )
+        },
+        onDismissRequested = onDismissRequested
+    ) {
+        items(videos) {
+            VideoMediaItem(onThumbnailClick = { /*TODO*/ }, item = it) {
+                if (it.site == "YouTube") {
+                    "https://img.youtube.com/vi/${it.key}/0.jpg"
+                } else {
+                    ""
+                }
+            }
+        }
+    }
 }
+
 
 object HomeTab: Tab {
     override val options: TabOptions

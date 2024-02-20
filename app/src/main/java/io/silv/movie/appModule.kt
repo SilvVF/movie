@@ -8,6 +8,7 @@ import io.silv.movie.presentation.movie.discover.MovieDiscoverScreenModel
 import io.silv.movie.presentation.movie.view.MovieViewScreenModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val appModule =
@@ -20,6 +21,8 @@ val appModule =
         factory { (genre: Genre?, resource: Resource?) ->
             MovieDiscoverScreenModel(get(), get(), get(), get(), get(), get(), get(),get(), get(), get(), get(), genre, resource)
         }
+
+        singleOf(::MainScreenModel)
 
         factoryOf(::MovieViewScreenModel)
 

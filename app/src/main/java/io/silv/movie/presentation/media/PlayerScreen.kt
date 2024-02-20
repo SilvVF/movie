@@ -16,15 +16,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.Abs
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
 
-data class PlayerScreen(
-    val videoId: String
-): Screen {
-
-    @Composable
-    override fun Content() {
-
-    }
-}
 
 @Composable
 fun YoutubeVideoPlayer(
