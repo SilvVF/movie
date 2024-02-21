@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
@@ -38,8 +37,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +57,10 @@ import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import io.silv.core_ui.components.ScrollbarLazyColumn
+import io.silv.core_ui.components.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -104,6 +108,7 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
                 DraggableAnchors {
                     VideoDragAnchors.Normal at 0f
                     VideoDragAnchors.FullScreen at 1200f
+                    VideoDragAnchors.Dismiss at 1200f
                 }
             )
         }
@@ -135,10 +140,10 @@ class CollapsableVideoState(
         offset.coerceAtLeast(0f).roundToInt()
     }
 
-    val dragEnabled by derivedStateOf {
-        fullscreenState.currentValue == VideoDragAnchors.Normal
+    val dismissFullscreenOffsetPx  by derivedStateOf {
+        val offset = fullscreenState.requireOffset() - fullscreenState.anchors.positionOf(VideoDragAnchors.FullScreen)
+        offset.coerceAtLeast(0f).roundToInt()
     }
-
 
     fun expand() {
         scope.launch {
@@ -149,15 +154,35 @@ class CollapsableVideoState(
 
 private class CollapsableVideoLayoutScrollConnection(
     private val lazyListState: LazyListState,
-    private val state: AnchoredDraggableState<CollapsableVideoAnchors>,
-    private val enabled: Boolean,
+    private val state: AnchoredDraggableState<VideoDragAnchors>,
+    private val scope: CoroutineScope,
 ): NestedScrollConnection {
+
+    var allowedToScroll by mutableStateOf(true)
+
+    init {
+        // block nested scrolling when the user scrolls the list up
+        // this prevents flinging to the start animating the player to take the screen
+        scope.launch {
+            snapshotFlow { lazyListState.isScrollInProgress }.collectLatest { scrolling ->
+                allowedToScroll = lazyListState.firstVisibleItemIndex == 0
+                while (true) {
+                    if (lazyListState.firstVisibleItemIndex != 0) {
+                        allowedToScroll = false
+                        break
+                    }
+                    delay(10)
+                }
+            }
+        }
+    }
+
     override fun onPreScroll(
         available: Offset,
         source: NestedScrollSource
     ): Offset {
         val delta = available.y
-        return if (delta < 0 && enabled) {
+        return if (delta < 0 && allowedToScroll) {
             Offset(
                 x = available.x,
                 y = state.dispatchRawDelta(delta)
@@ -175,13 +200,13 @@ private class CollapsableVideoLayoutScrollConnection(
         val delta = available.y
         return Offset(
             x = available.x,
-            y = if (enabled) state.dispatchRawDelta(delta) else available.y
+            y = if (allowedToScroll) state.dispatchRawDelta(delta) else available.y
         )
     }
 
     override suspend fun onPreFling(available: Velocity): Velocity {
-        return if (available.y < 0 && !lazyListState.canScrollBackward && enabled) {
-            state.animateTo(state.targetValue.takeIf { it != CollapsableVideoAnchors.Dismiss } ?: CollapsableVideoAnchors.End, available.y)
+        return if (available.y < 0 && !lazyListState.canScrollBackward && allowedToScroll) {
+            state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
             available
         } else {
             Velocity.Zero
@@ -192,13 +217,13 @@ private class CollapsableVideoLayoutScrollConnection(
         consumed: Velocity,
         available: Velocity
     ): Velocity {
-        state.animateTo(state.targetValue.takeIf { it != CollapsableVideoAnchors.Dismiss } ?: CollapsableVideoAnchors.End, available.y)
+        state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
         return super.onPostFling(consumed, available)
     }
 }
 
 enum class VideoDragAnchors {
-    Normal, FullScreen
+    Normal, FullScreen, Dismiss
 }
 
 @Composable
@@ -225,8 +250,27 @@ fun BoxScope.CollapsableVideoLayout(
         }
     }
 
-    val nestedScrollConnection = remember(lazyListState, state, collapsableVideoState.dragEnabled) {
-        CollapsableVideoLayoutScrollConnection(lazyListState, state, collapsableVideoState.dragEnabled)
+
+    LaunchedEffect(collapsableVideoState.fullscreenState) {
+        snapshotFlow { collapsableVideoState.fullscreenState.currentValue }.collect {
+            if (collapsableVideoState.fullscreenState.currentValue == VideoDragAnchors.Dismiss) {
+                collapsableVideoState.fullscreenState.animateTo(VideoDragAnchors.Normal)
+            }
+        }
+    }
+
+    val nestedScrollConnection = remember(lazyListState, collapsableVideoState.fullscreenState) {
+        CollapsableVideoLayoutScrollConnection(
+            lazyListState,
+            collapsableVideoState.fullscreenState,
+            scope
+        )
+    }
+
+    val fullscreenDraggableEnabled by remember {
+        derivedStateOf {
+            collapsableVideoState.fullscreenState.currentValue == VideoDragAnchors.FullScreen
+        }
     }
 
     val topPadding = WindowInsets.systemBars.getTop(density)
@@ -252,21 +296,37 @@ fun BoxScope.CollapsableVideoLayout(
                 .aspectRatio(16f / 9f)
                 .anchoredDraggable(
                     collapsableVideoState.fullscreenState,
-                    Orientation.Vertical
+                    Orientation.Vertical,
+                    fullscreenDraggableEnabled,
+
+                    )
+                .anchoredDraggable(
+                    state,
+                    Orientation.Vertical,
+                    !fullscreenDraggableEnabled
                 )
                 .layoutId("player")
             ) {
                 player()
             }
-            Box(modifier = Modifier.layoutId("content")) {
+            Box(modifier = Modifier
+                .layoutId("content")
+                .anchoredDraggable(
+                    collapsableVideoState.fullscreenState,
+                    Orientation.Vertical,
+                    fullscreenDraggableEnabled
+                )
+            ) {
                 ScrollbarLazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            alpha = minOf(1f - collapsableVideoState.fullScreenProgress, contentAlpha)
+                            alpha =
+                                minOf(1f - collapsableVideoState.fullScreenProgress, contentAlpha)
                         }
                         .nestedScroll(nestedScrollConnection),
-                    state = lazyListState
+                    state = lazyListState,
+                    userScrollEnabled = !fullscreenDraggableEnabled
                 ) {
                     content()
                     item {
@@ -306,11 +366,16 @@ fun BoxScope.CollapsableVideoLayout(
             .wrapContentSize()
             .background(MaterialTheme.colorScheme.surfaceColorAtElevation(BottomSheetDefaults.Elevation))
             .anchoredDraggable(
+                collapsableVideoState.fullscreenState,
+                Orientation.Vertical,
+                fullscreenDraggableEnabled
+            )
+            .anchoredDraggable(
                 state,
                 Orientation.Vertical,
-                enabled = collapsableVideoState.dragEnabled
+                enabled = collapsableVideoState.fullscreenState.currentValue == VideoDragAnchors.Normal
             )
-            .clickable {
+            .clickableNoIndication {
                 if (progress < 0.1f) {
                     collapsableVideoState.expand()
                 }
@@ -337,6 +402,14 @@ fun BoxScope.CollapsableVideoLayout(
             .first { it.layoutId == "actions" }
             .measure(constraints.copy(maxWidth = constraints.maxWidth - playerPlaceable.width))
 
+        collapsableVideoState.fullscreenState.updateAnchors(
+            DraggableAnchors {
+                VideoDragAnchors.Normal at 0f
+                VideoDragAnchors.FullScreen at 1200f
+                VideoDragAnchors.Dismiss at 1200f + playerPlaceable.height
+            }
+        )
+
         layout(constraints.maxWidth, (height - collapsableVideoState.dismissOffsetPx).coerceAtLeast(0)) {
 
             val playerCenteredY = (constraints.maxHeight / 2f - playerPlaceable.height + paddingTop)
@@ -358,7 +431,7 @@ fun BoxScope.CollapsableVideoLayout(
 
             playerPlaceable.placeRelative(
                 0,
-                paddingTop + playerY.coerceAtLeast(0)
+                paddingTop + playerY.coerceAtLeast(0) + collapsableVideoState.dismissFullscreenOffsetPx
             )
 
             if (progress == 1f) {
