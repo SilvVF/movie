@@ -22,13 +22,12 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.VerticalFastScroller
 import io.silv.core_ui.components.copyToClipboard
 import io.silv.core_ui.components.toPoster
-import io.silv.movie.MainScreenModel
+import io.silv.movie.MainViewModel
+import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.movie.view.components.ExpandableMovieDescription
 import io.silv.movie.presentation.movie.view.components.MovieInfoBox
 import io.silv.movie.presentation.movie.view.components.VideoMediaItem
@@ -41,8 +40,7 @@ data class MovieViewScreen(
     @Composable
     override fun Content() {
         val screenModel = getScreenModel<MovieViewScreenModel> { parametersOf(id) }
-        val navigator = LocalNavigator.currentOrThrow
-        val mainScreenModel = getScreenModel<MainScreenModel>()
+        val mainScreenModel = getActivityViewModel<MainViewModel>()
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
             MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {

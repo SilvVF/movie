@@ -33,11 +33,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.screenModelScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -59,10 +59,11 @@ import kotlinx.serialization.json.Json
 
 private val NavBarHeight = 72.dp
 
-class MainScreenModel: ScreenModel {
+class MainViewModel: ViewModel() {
 
     var videos by mutableStateOf<ImmutableList<MovieVideo>?>(null)
         private set
+
 
     var collapsableVideoState: CollapsableVideoState? = null
 
@@ -77,7 +78,7 @@ class MainScreenModel: ScreenModel {
     fun clearMediaQueue() {
         Log.d("Clear", "Clearing")
         videos = null
-        screenModelScope.launch {
+        viewModelScope.launch {
             collapsableVideoState?.state?.snapTo(CollapsableVideoAnchors.Start)
         }
     }
@@ -91,9 +92,10 @@ object TabHost: Screen {
     @Composable
     override fun Content() {
 
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.currentOrThrow
+        val context = LocalContext.current
 
-        val mainScreenModel = getScreenModel<MainScreenModel>()
+        val mainScreenModel = getActivityViewModel<MainViewModel>()
         val collapsableVideoState = rememberCollapsableVideoState()
 
         DisposableEffect(collapsableVideoState) {
@@ -190,18 +192,19 @@ fun BoxScope.CollapsableVideo(
                 videoId = "HUkDW37WaI0"
             )
         },
-        onDismissRequested = onDismissRequested
-    ) {
-        items(videos) {
-            VideoMediaItem(onThumbnailClick = { /*TODO*/ }, item = it) {
-                if (it.site == "YouTube") {
-                    "https://img.youtube.com/vi/${it.key}/0.jpg"
-                } else {
-                    ""
+        content = {
+            items(videos) {
+                VideoMediaItem(onThumbnailClick = { /*TODO*/ }, item = it) {
+                    if (it.site == "YouTube") {
+                        "https://img.youtube.com/vi/${it.key}/0.jpg"
+                    } else {
+                        ""
+                    }
                 }
             }
-        }
-    }
+        },
+        onDismissRequested = onDismissRequested
+    )
 }
 
 
