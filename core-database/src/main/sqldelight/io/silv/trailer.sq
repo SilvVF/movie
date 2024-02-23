@@ -1,0 +1,45 @@
+import kotlin.Boolean;
+
+CREATE TABLE trailer (
+    _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    trailer_id TEXT NOT NULL,
+    move_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    video_key TEXT NOT NULL,
+    site TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    official INTEGER AS Boolean NOT NULL,
+    type TEXT NOT NULL,
+    published_at TEXT NOT NULL,
+    FOREIGN KEY(move_id) REFERENCES movie(id) ON DELETE CASCADE
+);
+
+CREATE INDEX movie_id_trailer_index ON trailer(move_id);
+CREATE INDEX trailer_id_trailer_index ON trailer(trailer_id);
+
+selectById:
+SELECT * FROM trailer WHERE :id = _id LIMIT 1;
+
+selectByMovieId:
+SELECT * FROM trailer WHERE move_id = :movieId;
+
+insert:
+INSERT INTO trailer(_id, trailer_id, move_id, name, video_key, site, size, official, type, published_at)
+VALUES (NULL, :trailerId, :movieId,:name, :videoKey, :site, :size, :official, :type, :publishedAt);
+
+update:
+UPDATE trailer
+SET
+   trailer_id = COALESCE(:trailerId, trailer_id),
+   move_id = COALESCE(:moveId, move_id),
+   name = COALESCE(:name, name),
+   video_key = COALESCE(:videoKey, video_key),
+   site = COALESCE(:site, site),
+   size = COALESCE(:size, size),
+   official = COALESCE(:official, official),
+   type = COALESCE(:type, type),
+   published_at = COALESCE(:publishedAt, published_at)
+WHERE _id = :id;
+
+lastInsertRowId:
+SELECT last_insert_rowid();

@@ -9,7 +9,7 @@ import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.core_ui.components.toPoster
 import io.silv.data.movie.model.Movie
-import io.silv.data.movie.model.TVShow
+import io.silv.data.tv.TVShow
 
 @Composable
 fun InLibraryBadge(enabled: Boolean) {

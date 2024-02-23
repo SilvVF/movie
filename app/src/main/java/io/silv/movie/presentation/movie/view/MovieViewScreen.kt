@@ -56,9 +56,10 @@ data class MovieViewScreen(
                 }
             }
             is MovieDetailsState.Success -> {
-                MovieDetailsContent(state) {
-                    mainScreenModel.requestMediaQueue()
-                }
+                MovieDetailsContent(
+                    state,
+                    onVideoThumbnailClick = mainScreenModel::requestMediaQueue
+                )
             }
         }
     }
@@ -67,7 +68,7 @@ data class MovieViewScreen(
 @Composable
 fun MovieDetailsContent(
     state: MovieDetailsState.Success,
-    onVideoThumbnailClick: (uri: String) -> Unit
+    onVideoThumbnailClick: (movieId: Long, trailerId: Long) -> Unit
 ) {
     Scaffold { paddingValues ->
         val topPadding = paddingValues.calculateTopPadding()
@@ -101,12 +102,12 @@ fun MovieDetailsContent(
                             isTabletUi = false,
                             appBarPadding = topPadding,
                             title = state.movie.title,
-                            author = state.details?.productionCompanies?.joinToString(", "),
+                            author = "",
                             artist = "",
                             sourceName = "TMDB",
                             isStubSource = false,
                             coverDataProvider = { state.movie.toPoster() },
-                            status = state.details?.status ?: "",
+                            status = "",
                             onCoverClick = {  },
                             doSearch = { _, _ -> },
                         )
@@ -124,12 +125,12 @@ fun MovieDetailsContent(
                         )
                     }
                     items(
-                        items = state.videos,
-                        key = { it.key + it.id }
+                        items = state.trailers,
+                        key = { it.id }
                     ) {
                         VideoMediaItem(
                             onThumbnailClick = {
-                                onVideoThumbnailClick(it.key)
+                                onVideoThumbnailClick(it.movieId, it.id)
                             },
                             item = it,
                             thumbnailProvider = {

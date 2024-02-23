@@ -17,9 +17,9 @@ import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.data.movie.interactor.GetMovie
 import io.silv.data.movie.interactor.GetRemoteMovie
 import io.silv.data.movie.interactor.NetworkToLocalMovie
-import io.silv.data.movie.model.Movie
 import io.silv.data.movie.model.ContentPagedType
-import io.silv.data.movie.toDomain
+import io.silv.data.movie.model.Movie
+import io.silv.data.movie.model.toDomain
 import io.silv.data.prefrences.PosterDisplayMode
 import io.silv.data.prefrences.TMDBPreferences
 import io.silv.movie.presentation.asState

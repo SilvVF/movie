@@ -31,7 +31,7 @@ import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.playOnYoutube
-import io.silv.data.movie.interactor.MovieVideo
+import io.silv.data.trailers.Trailer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -39,7 +39,7 @@ import java.util.Locale
 @Composable
 fun VideoMediaItem(
     onThumbnailClick: () -> Unit,
-    item: MovieVideo,
+    item: Trailer,
     thumbnailProvider: () -> String,
 ) {
     ElevatedCard(
@@ -98,7 +98,7 @@ fun VideoMediaItem(
 
 @Composable
 fun MediaItemInfo(
-    item: MovieVideo,
+    item: Trailer,
     modifier: Modifier,
 ) {
     Column(modifier) {

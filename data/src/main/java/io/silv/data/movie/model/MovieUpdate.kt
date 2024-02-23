@@ -33,23 +33,3 @@ fun Movie.toMovieUpdate(): MovieUpdate {
         releaseDate = releaseDate
     )
 }
-
-data class ShowUpdate(
-    val showId: Long,
-    val title: String? = null,
-    val externalUrl: String? = null,
-    val posterUrl: String? = null,
-    val posterLastUpdated: Long? = null,
-    val favorite: Boolean? = null
-)
-
-fun TVShow.toShowUpdate(): ShowUpdate {
-    return ShowUpdate(
-        showId = id,
-        favorite = favorite,
-        title = title,
-        externalUrl = externalUrl,
-        posterUrl = posterUrl,
-        posterLastUpdated = posterLastUpdated
-    )
-}

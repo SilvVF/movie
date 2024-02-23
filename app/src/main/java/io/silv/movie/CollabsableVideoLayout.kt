@@ -37,10 +37,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +58,7 @@ import io.silv.core_ui.components.ScrollbarLazyColumn
 import io.silv.core_ui.components.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -155,24 +154,33 @@ class CollapsableVideoState(
 private class CollapsableVideoLayoutScrollConnection(
     private val lazyListState: LazyListState,
     private val state: AnchoredDraggableState<VideoDragAnchors>,
-    private val scope: CoroutineScope,
+    scope: CoroutineScope,
 ): NestedScrollConnection {
 
-    var allowedToScroll by mutableStateOf(true)
+    var allowedToScroll = true
+    var preFlingIdx = 0
 
     init {
         // block nested scrolling when the user scrolls the list up
         // this prevents flinging to the start animating the player to take the screen
         scope.launch {
             snapshotFlow { lazyListState.isScrollInProgress }.collectLatest { scrolling ->
-                allowedToScroll = lazyListState.firstVisibleItemIndex == 0
-                while (true) {
-                    if (lazyListState.firstVisibleItemIndex != 0) {
-                        allowedToScroll = false
-                        break
-                    }
-                    delay(10)
+
+                allowedToScroll = lazyListState.firstVisibleItemIndex <= 0
+
+                if (!scrolling) {
+                    return@collectLatest
                 }
+
+
+                while (lazyListState.firstVisibleItemIndex <= 0) {
+                    ensureActive()
+                    delay(3)
+                }
+
+                ensureActive()
+
+                allowedToScroll = lazyListState.firstVisibleItemIndex <= 0
             }
         }
     }
@@ -182,7 +190,7 @@ private class CollapsableVideoLayoutScrollConnection(
         source: NestedScrollSource
     ): Offset {
         val delta = available.y
-        return if (delta < 0 && allowedToScroll) {
+        return if (delta < 0 && allowedToScroll && lazyListState.firstVisibleItemIndex == 0) {
             Offset(
                 x = available.x,
                 y = state.dispatchRawDelta(delta)
@@ -200,12 +208,18 @@ private class CollapsableVideoLayoutScrollConnection(
         val delta = available.y
         return Offset(
             x = available.x,
-            y = if (allowedToScroll) state.dispatchRawDelta(delta) else available.y
+            y = if (allowedToScroll && lazyListState.firstVisibleItemIndex == 0 && preFlingIdx == 0)
+                state.dispatchRawDelta(delta)
+            else
+                available.y
         )
     }
 
     override suspend fun onPreFling(available: Velocity): Velocity {
-        return if (available.y < 0 && !lazyListState.canScrollBackward && allowedToScroll) {
+
+        preFlingIdx = lazyListState.firstVisibleItemIndex
+
+        return if (available.y < 0 && !lazyListState.canScrollBackward && allowedToScroll && lazyListState.firstVisibleItemIndex == 0) {
             state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
             available
         } else {

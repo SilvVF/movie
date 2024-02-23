@@ -2,10 +2,12 @@ package io.silv.core_network.model
 
 import io.silv.core.SMovie
 import io.silv.core.STVShow
+import io.silv.core.STrailer
 import io.silv.core_network.TMDBConstants
 import io.silv.core_network.model.movie.MovieDiscoverResponse
 import io.silv.core_network.model.movie.MovieListResponse
 import io.silv.core_network.model.movie.MovieSearchResponse
+import io.silv.core_network.model.movie.MovieVideoResponse
 import io.silv.core_network.model.tv.TVResult
 
 fun TVResult.toSTVShow(): STVShow {
@@ -26,6 +28,20 @@ fun TVResult.toSTVShow(): STVShow {
         popularity = m.popularity
         voteCount = m.voteCount
         voteAverage = m.voteAverage
+    }
+}
+
+fun MovieVideoResponse.Result.toSTrailer(): STrailer {
+    val r = this
+    return STrailer.create().apply {
+        key = r.key
+        trailerId = r.id
+        name = r.name
+        site = r.site
+        size = r.size
+        official = r.official
+        publishedAt = r.publishedAt
+        type = r.type
     }
 }
 

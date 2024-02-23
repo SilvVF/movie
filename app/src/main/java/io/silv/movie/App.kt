@@ -27,11 +27,17 @@ import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
+import timber.log.Timber
+
 
 class App: Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
+
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
 
         startKoin {
             androidLogger()
@@ -96,7 +102,9 @@ class App: Application(), ImageLoaderFactory {
             .fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
             .decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
             .transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
-            .logger(DebugLogger())
+            .apply {
+                if (BuildConfig.DEBUG) { logger(DebugLogger()) }
+            }
             .build()
     }
 }

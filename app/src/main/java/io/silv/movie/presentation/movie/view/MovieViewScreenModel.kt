@@ -4,11 +4,15 @@ import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.data.movie.interactor.GetMovie
-import io.silv.data.movie.interactor.GetMovieDetails
-import io.silv.data.movie.interactor.MovieDetails
-import io.silv.data.movie.interactor.MovieVideo
 import io.silv.data.movie.model.Movie
-import kotlinx.coroutines.async
+import io.silv.data.trailers.GetMovieTrailers
+import io.silv.data.trailers.GetRemoteTrailers
+import io.silv.data.trailers.NetworkToLocalTrailer
+import io.silv.data.trailers.Trailer
+import io.silv.data.trailers.toDomain
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -20,7 +24,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MovieViewScreenModel(
-    private val getMovieDetails: GetMovieDetails,
+    private val getMovieTrailers: GetMovieTrailers,
+    private val getRemoteTrailers: GetRemoteTrailers,
+    private val networkToLocalTrailer: NetworkToLocalTrailer,
     private val getMovie: GetMovie,
     private val movieId: Long
 ): StateScreenModel<MovieDetailsState>(MovieDetailsState.Loading) {
@@ -60,16 +66,16 @@ class MovieViewScreenModel(
                 .distinctUntilChanged()
                 .collectLatest { movieId ->
 
-                    val detailsAsync = async { getMovieDetails.await(movieId) }
-                    val videosAsync = async { getMovieDetails.awaitVideos(movieId) }
+                    val trailers = getMovieTrailers.await(movieId)
+                        .ifEmpty {
+                            getRemoteTrailers.await(movieId).map {
+                                networkToLocalTrailer.await(it.toDomain().copy(movieId = movieId))
+                            }
+                        }
 
-                    val details = detailsAsync.await().getOrNull()
-                    val videos = videosAsync.await().getOrDefault(emptyList())
-
-                    mutableState.updateSuccess {
-                        it.copy(
-                            details = details,
-                            videos = videos
+                    mutableState.updateSuccess {state ->
+                        state.copy(
+                            trailers = trailers.toImmutableList()
                         )
                     }
                 }
@@ -95,8 +101,7 @@ sealed class MovieDetailsState {
     @Stable
     data class Success(
         val movie: Movie,
-        val details: MovieDetails? = null,
-        val videos: List<MovieVideo> = emptyList()
+        val trailers: ImmutableList<Trailer> = persistentListOf()
     ): MovieDetailsState()
 
     val success

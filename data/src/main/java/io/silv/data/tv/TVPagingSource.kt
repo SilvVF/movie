@@ -1,4 +1,4 @@
-package io.silv.data.movie.interactor
+package io.silv.data.tv
 
 import io.silv.core.STVShow
 import io.silv.core.await

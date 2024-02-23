@@ -1,8 +1,12 @@
 package io.silv.data.movie.model
 
+import android.os.Parcelable
 import androidx.compose.runtime.Stable
+import io.silv.core.SMovie
+import kotlinx.parcelize.Parcelize
 
 @Stable
+@Parcelize
 data class Movie(
     val id: Long,
     val title: String,
@@ -17,7 +21,7 @@ data class Movie(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean
-) {
+): Parcelable {
 
     companion object {
         fun create() = Movie(
@@ -38,26 +42,20 @@ data class Movie(
     }
 }
 
-
-@Stable
-data class TVShow(
-    val id: Long,
-    val title: String,
-    val externalUrl: String,
-    val posterUrl: String?,
-    val posterLastUpdated: Long,
-    val favorite: Boolean
-) {
-
-    companion object {
-        fun create() = TVShow(
-            id = -1L,
-            posterUrl = "",
-            title = "",
-            favorite = false,
-            posterLastUpdated = -1L,
-            externalUrl = ""
-        )
-    }
+fun SMovie.toDomain(): Movie {
+    return Movie.create().copy(
+        id = id,
+        title = title,
+        posterUrl = posterPath,
+        overview = overview,
+        genres =  genres?.map { it.second } ?: emptyList(),
+        genreIds = genreIds ?: genres?.map { it.first } ?: emptyList(),
+        originalLanguage = originalLanguage,
+        popularity = popularity,
+        voteCount = voteCount,
+        releaseDate = releaseDate,
+        externalUrl = url,
+    )
 }
+
 

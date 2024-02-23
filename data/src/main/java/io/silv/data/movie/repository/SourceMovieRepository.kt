@@ -8,18 +8,18 @@ import io.silv.core_network.TMDBConstants
 import io.silv.core_network.TMDBMovieService
 import io.silv.core_network.TMDBTVShowService
 import io.silv.data.movie.interactor.DiscoverMoviesPagingSource
-import io.silv.data.movie.interactor.DiscoverTVPagingSource
 import io.silv.data.movie.interactor.NowPlayingMoviePagingSource
-import io.silv.data.movie.interactor.NowPlayingTVPagingSource
 import io.silv.data.movie.interactor.PopularMoviePagingSource
-import io.silv.data.movie.interactor.PopularTVPagingSource
 import io.silv.data.movie.interactor.SearchMoviePagingSource
-import io.silv.data.movie.interactor.SearchTVPagingSource
-import io.silv.data.movie.interactor.SourcePagingSource
+import io.silv.data.movie.interactor.SourceMoviePagingSource
 import io.silv.data.movie.interactor.TopRatedMoviePagingSource
-import io.silv.data.movie.interactor.TopRatedTVPagingSource
 import io.silv.data.movie.interactor.UpcomingMoviePagingSource
-import io.silv.data.movie.interactor.UpcomingTVPagingSource
+import io.silv.data.tv.DiscoverTVPagingSource
+import io.silv.data.tv.NowPlayingTVPagingSource
+import io.silv.data.tv.PopularTVPagingSource
+import io.silv.data.tv.SearchTVPagingSource
+import io.silv.data.tv.TopRatedTVPagingSource
+import io.silv.data.tv.UpcomingTVPagingSource
 
 typealias MoviePagingSourceType = PagingSource<Long, SMovie>
 typealias TVPagingSourceType = PagingSource<Long, STVShow>
@@ -28,7 +28,7 @@ interface SourceMovieRepository {
 
     suspend fun getSourceGenres(): List<SGenre>
 
-    fun discoverMovies(genres: List<String>): SourcePagingSource
+    fun discoverMovies(genres: List<String>): SourceMoviePagingSource
 
     fun searchMovies(query: String): MoviePagingSourceType
 
@@ -97,7 +97,7 @@ class SourceMovieRepositoryImpl(
         return TMDBConstants.genres
     }
 
-    override fun discoverMovies(genres: List<String>): SourcePagingSource {
+    override fun discoverMovies(genres: List<String>): SourceMoviePagingSource {
         return DiscoverMoviesPagingSource(genres, movieService)
     }
 
