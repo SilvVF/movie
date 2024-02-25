@@ -79,6 +79,7 @@ dependencies {
     // To use constraintlayout in compose
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.androidx.animation.graphics.android)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
@@ -103,6 +104,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
 
+    implementation(libs.reorderable)
     implementation(libs.haze)
 
     implementation(libs.androidx.paging.compose)
@@ -134,6 +136,7 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
+    implementation(libs.coil.svg)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)

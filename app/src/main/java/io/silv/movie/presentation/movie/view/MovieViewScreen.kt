@@ -15,6 +15,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +25,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.VerticalFastScroller
-import io.silv.core_ui.components.copyToClipboard
+import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.components.toPoster
 import io.silv.movie.MainViewModel
 import io.silv.movie.getActivityViewModel
@@ -32,6 +33,7 @@ import io.silv.movie.presentation.movie.view.components.ExpandableMovieDescripti
 import io.silv.movie.presentation.movie.view.components.MovieInfoBox
 import io.silv.movie.presentation.movie.view.components.VideoMediaItem
 import org.koin.core.parameter.parametersOf
+import timber.log.Timber
 
 data class MovieViewScreen(
     val id: Long,
@@ -56,8 +58,14 @@ data class MovieViewScreen(
                 }
             }
             is MovieDetailsState.Success -> {
+
+                LaunchedEffect(state) {
+                    Timber.d(state.toString())
+                }
+
                 MovieDetailsContent(
-                    state,
+                    state = state,
+                    refresh = screenModel::refresh,
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue
                 )
             }
@@ -68,14 +76,17 @@ data class MovieViewScreen(
 @Composable
 fun MovieDetailsContent(
     state: MovieDetailsState.Success,
+    refresh: () -> Unit,
     onVideoThumbnailClick: (movieId: Long, trailerId: Long) -> Unit
 ) {
     Scaffold { paddingValues ->
+
         val topPadding = paddingValues.calculateTopPadding()
         val listState = rememberLazyListState()
+
         PullRefresh(
-            refreshing = false,
-            onRefresh = {},
+            refreshing = state.refreshing,
+            onRefresh = refresh,
             enabled = { true },
             indicatorPadding = PaddingValues(top = topPadding),
         ) {
@@ -107,7 +118,7 @@ fun MovieDetailsContent(
                             sourceName = "TMDB",
                             isStubSource = false,
                             coverDataProvider = { state.movie.toPoster() },
-                            status = "",
+                            status = state.movie.status,
                             onCoverClick = {  },
                             doSearch = { _, _ -> },
                         )
@@ -124,6 +135,7 @@ fun MovieDetailsContent(
                             }
                         )
                     }
+
                     items(
                         items = state.trailers,
                         key = { it.id }

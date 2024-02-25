@@ -1,5 +1,6 @@
 package io.silv.core_network.model
 
+import android.util.Log
 import io.silv.core.SMovie
 import io.silv.core.STVShow
 import io.silv.core.STrailer
@@ -56,7 +57,7 @@ fun MovieSearchResponse.Result.toSMovie(): SMovie {
         releaseDate = m.releaseDate
         overview = m.overview
         id = m.id.toLong()
-        genres = m.genreIds.mapNotNull { id -> TMDBConstants.genreIdToName[id.toLong()]?.let { Pair(id, it) }  }
+        genres = m.genreIds.mapNotNull { it to (TMDBConstants.genreIdToName[it.toLong()] ?: return@mapNotNull null) }
         originalTitle = m.originalTitle
         originalLanguage = m.originalLanguage
         backdropPath = m.backdropPath
@@ -77,7 +78,7 @@ fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
         adult = m.adult
         releaseDate = m.releaseDate
         overview = m.overview
-        genres = m.genreIds.mapNotNull { id -> TMDBConstants.genreIdToName[id.toLong()]?.let { Pair(id, it) }  }
+        genres = m.genreIds.mapNotNull { it to (TMDBConstants.genreIdToName[it.toLong()] ?: return@mapNotNull null) }
         id = m.id.toLong()
         originalTitle = m.originalTitle
         originalLanguage = m.originalLanguage
@@ -91,15 +92,16 @@ fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
 
 fun MovieListResponse.Result.toSMovie(): SMovie {
     val m  = this
+    Log.d("movie", m.toString())
     return SMovie.create().apply {
         url = "https://api.themoviedb.org/3/movie/${m.id}"
         posterPath =  "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.title
-        genreIds = m.genres.map { it.id }
+        genreIds = m.genreIds
         adult = m.adult
         releaseDate = m.releaseDate
         overview = m.overview
-        genres = m.genres.map { Pair(it.id, it.name) }
+        genres = genreIds?.mapNotNull { it to (TMDBConstants.genreIdToName[it.toLong()] ?: return@mapNotNull null) }
         id = m.id.toLong()
         originalTitle = m.originalTitle
         originalLanguage = m.originalLanguage

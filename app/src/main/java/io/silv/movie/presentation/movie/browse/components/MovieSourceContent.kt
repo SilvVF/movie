@@ -27,7 +27,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import io.silv.core_ui.components.isScrollingUp
+import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.data.movie.model.Movie
 import io.silv.data.prefrences.PosterDisplayMode

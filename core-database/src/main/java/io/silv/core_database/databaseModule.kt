@@ -28,24 +28,24 @@ val databaseModule = module {
         Database(
             driver = get(),
             movieAdapter = Movie.Adapter(
-                genreIdsAdapter = object: ColumnAdapter<List<Int>, String> {
-                    override fun decode(databaseValue: String): List<Int> {
-                        return databaseValue.split(",").map { it.toInt() }
-                    }
-
-                    override fun encode(value: List<Int>): String {
-                        return value.joinToString(",")
-                    }
+                genreIdsAdapter = object : ColumnAdapter<List<Int>, String> {
+                    override fun decode(databaseValue: String) =
+                        if (databaseValue.isEmpty()) {
+                            listOf()
+                        } else {
+                            databaseValue.split(",").mapNotNull { it.toIntOrNull() }
+                        }
+                    override fun encode(value: List<Int>) = value.joinToString(separator = ",")
                 },
-                genresAdapter = object: ColumnAdapter<List<String>, String> {
-                    override fun decode(databaseValue: String): List<String> {
-                        return databaseValue.split("<|>")
-                    }
-
-                    override fun encode(value: List<String>): String {
-                        return value.joinToString("<|>")
-                    }
-                },
+                genresAdapter = object : ColumnAdapter<List<String>, String> {
+                    override fun decode(databaseValue: String) =
+                        if (databaseValue.isEmpty()) {
+                            listOf()
+                        } else {
+                            databaseValue.split(",")
+                        }
+                    override fun encode(value: List<String>) = value.joinToString(separator = ",")
+                }
             )
         )
     }

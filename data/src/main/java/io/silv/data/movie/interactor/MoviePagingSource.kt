@@ -1,6 +1,5 @@
 package io.silv.data.movie.interactor
 
-import android.util.Log
 import io.silv.core.SMovie
 import io.silv.core.await
 import io.silv.core_network.TMDBConstants
@@ -118,9 +117,6 @@ class PopularMoviePagingSource(
             page = page
         )
             .await()
-            .also {
-                Log.d("RESPONSE", it.errorBody()?.string() ?: "")
-            }
             .body()!!
 
         return MoviesPage(

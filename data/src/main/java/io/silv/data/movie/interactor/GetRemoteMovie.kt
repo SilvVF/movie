@@ -1,5 +1,6 @@
 package io.silv.data.movie.interactor
 
+import io.silv.core.SMovie
 import io.silv.data.movie.model.ContentPagedType
 import io.silv.data.movie.repository.MoviePagingSourceType
 import io.silv.data.movie.repository.SourceMovieRepository
@@ -9,6 +10,9 @@ import io.silv.data.movie.repository.TVPagingSourceType
 class GetRemoteMovie(
     private val sourceMovieRepository: SourceMovieRepository
 ) {
+    suspend fun awaitOne(id: Long): SMovie? {
+        return sourceMovieRepository.getMovie(id)
+    }
 
     fun subscribe(type: ContentPagedType): MoviePagingSourceType {
         return when (type) {

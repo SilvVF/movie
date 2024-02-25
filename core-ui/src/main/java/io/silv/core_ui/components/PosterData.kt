@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import io.silv.core_ui.util.selectedBackground
 import io.silv.data.movie.model.Movie
 import io.silv.data.tv.TVShow
 

@@ -110,11 +110,13 @@ fun MovieTopAppBar(
             colors = colors,
             navigationIcon = {
                 val navigator = LocalNavigator.current
-                IconButton(onClick = { navigator?.pop() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = null
-                    )
+                if (navigator?.canPop == true) {
+                    IconButton(onClick = { navigator.pop() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = null
+                        )
+                    }
                 }
             },
             actions = {

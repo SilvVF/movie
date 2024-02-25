@@ -1,4 +1,4 @@
-package io.silv.movie
+package io.silv.movie.presentation.media
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -54,13 +53,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import io.silv.core_ui.components.ScrollbarLazyColumn
-import io.silv.core_ui.components.clickableNoIndication
+import io.silv.core_ui.components.FastScrollLazyColumn
+import io.silv.core_ui.util.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.burnoutcrew.reorderable.ReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import kotlin.math.roundToInt
 
 enum class CollapsableVideoAnchors {
@@ -140,7 +141,9 @@ class CollapsableVideoState(
     }
 
     val dismissFullscreenOffsetPx  by derivedStateOf {
-        val offset = fullscreenState.requireOffset() - fullscreenState.anchors.positionOf(VideoDragAnchors.FullScreen)
+        val offset = fullscreenState.requireOffset() - fullscreenState.anchors.positionOf(
+            VideoDragAnchors.FullScreen
+        )
         offset.coerceAtLeast(0f).roundToInt()
     }
 
@@ -243,12 +246,12 @@ enum class VideoDragAnchors {
 @Composable
 fun BoxScope.CollapsableVideoLayout(
     onDismissRequested: () -> Unit,
+    reorderState: ReorderableLazyListState,
     player: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
     content: LazyListScope.() -> Unit,
     modifier: Modifier = Modifier,
     collapsableVideoState: CollapsableVideoState = rememberCollapsableVideoState(),
-    lazyListState: LazyListState = rememberLazyListState(),
 ) {
 
     val progress = collapsableVideoState.progress
@@ -271,14 +274,6 @@ fun BoxScope.CollapsableVideoLayout(
                 collapsableVideoState.fullscreenState.animateTo(VideoDragAnchors.Normal)
             }
         }
-    }
-
-    val nestedScrollConnection = remember(lazyListState, collapsableVideoState.fullscreenState) {
-        CollapsableVideoLayoutScrollConnection(
-            lazyListState,
-            collapsableVideoState.fullscreenState,
-            scope
-        )
     }
 
     val fullscreenDraggableEnabled by remember {
@@ -331,15 +326,26 @@ fun BoxScope.CollapsableVideoLayout(
                     fullscreenDraggableEnabled
                 )
             ) {
-                ScrollbarLazyColumn(
+
+                val nestedScrollConnection =
+                    remember(reorderState.listState, collapsableVideoState.fullscreenState) {
+                    CollapsableVideoLayoutScrollConnection(
+                        reorderState.listState,
+                        collapsableVideoState.fullscreenState,
+                        scope
+                    )
+                }
+
+                FastScrollLazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .graphicsLayer {
                             alpha =
                                 minOf(1f - collapsableVideoState.fullScreenProgress, contentAlpha)
                         }
+                        .reorderable(reorderState)
                         .nestedScroll(nestedScrollConnection),
-                    state = lazyListState,
+                    state = reorderState.listState,
                     userScrollEnabled = !fullscreenDraggableEnabled
                 ) {
                     content()
@@ -360,15 +366,15 @@ fun BoxScope.CollapsableVideoLayout(
                 }
                 .layoutId("scrollToTop")
             ) {
-                val visible by remember{
-                    derivedStateOf { lazyListState.firstVisibleItemIndex > 0 }
+                val visible by remember {
+                    derivedStateOf { reorderState.listState.firstVisibleItemIndex > 0 }
                 }
                 AnimatedVisibility(visible = visible, enter = fadeIn(),exit = fadeOut()) {
                     Button(
                         shape = RoundedCornerShape(12),
                         modifier = Modifier.height(42.dp),
                         onClick = {
-                            scope.launch { lazyListState.animateScrollToItem(0) }
+                            scope.launch { reorderState.listState.animateScrollToItem(0) }
                         }
                     ) {
                         Text("Scroll to top")

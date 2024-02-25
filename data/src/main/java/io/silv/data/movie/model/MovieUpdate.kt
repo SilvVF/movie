@@ -1,5 +1,7 @@
 package io.silv.data.movie.model
 
+import io.silv.core.Status
+
 data class MovieUpdate(
     val movieId: Long,
     val title: String?,
@@ -13,7 +15,8 @@ data class MovieUpdate(
     val externalUrl: String?,
     val posterUrl: String?,
     val posterLastUpdated: Long?,
-    val favorite: Boolean?
+    val favorite: Boolean?,
+    val status: Status?
 )
 
 fun Movie.toMovieUpdate(): MovieUpdate {
@@ -30,6 +33,7 @@ fun Movie.toMovieUpdate(): MovieUpdate {
         originalLanguage = originalLanguage,
         popularity = popularity,
         voteCount = voteCount,
-        releaseDate = releaseDate
+        releaseDate = releaseDate,
+        status = status
     )
 }

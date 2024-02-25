@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,7 +32,7 @@ import compose.icons.fontawesomeicons.brands.Youtube
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.TooltipIconButton
-import io.silv.core_ui.components.playOnYoutube
+import io.silv.core_ui.util.playOnYoutube
 import io.silv.data.trailers.Trailer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -38,15 +40,18 @@ import java.util.Locale
 
 @Composable
 fun VideoMediaItem(
+    modifier: Modifier = Modifier,
     onThumbnailClick: () -> Unit,
     item: Trailer,
     thumbnailProvider: () -> String,
+    colors: CardColors = CardDefaults.elevatedCardColors(),
 ) {
     ElevatedCard(
-        modifier = Modifier
+        modifier = modifier
             .padding(4.dp)
             .height(120.dp)
-            .fillMaxWidth()
+            .fillMaxWidth(),
+        colors = colors
     ) {
         Box(Modifier.fillMaxSize()) {
             Row(

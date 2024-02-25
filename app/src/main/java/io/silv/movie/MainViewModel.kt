@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.silv.data.trailers.Trailer
 import io.silv.data.trailers.TrailerRepository
+import io.silv.movie.presentation.media.CollapsableVideoAnchors
+import io.silv.movie.presentation.media.CollapsableVideoState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.launch

@@ -1,11 +1,25 @@
 package io.silv.data.movie
 
+import io.silv.core.Status
 import io.silv.data.movie.model.Movie
 
 object MovieMapper {
 
     val mapMovie =
-        { id: Long, title: String, overview: String,genres: List<String>?, genreIds: List<Int>?,originalLanguage: String,voteCount: Long,releaseDate: String,posterUrl: String?, posterLastUpdated: Long,favorite: Boolean, externalUrl: String, popularity: Double ->
+        { id: Long,
+          title: String,
+          overview: String,
+          genres: List<String>?,
+          genreIds: List<Int>?,
+          originalLanguage: String,
+          voteCount: Long,
+          releaseDate: String,
+          posterUrl: String?,
+          posterLastUpdated: Long,
+          favorite: Boolean,
+          externalUrl: String,
+          popularity: Double,
+          status: Long?  ->
             Movie(
                 id = id,
                 title = title,
@@ -19,7 +33,8 @@ object MovieMapper {
                 originalLanguage = originalLanguage,
                 popularity = popularity,
                 voteCount = voteCount.toInt(),
-                releaseDate = releaseDate
+                releaseDate = releaseDate,
+                status = status?.let { Status.entries[status.toInt()] }
             )
         }
 }

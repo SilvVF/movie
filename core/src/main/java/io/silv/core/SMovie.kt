@@ -38,6 +38,16 @@ interface SMovie : Serializable {
 
     var voteAverage: Double
 
+    var productionCompanies: List<String>?
+
+    var status: Status?
+
+    var revenue: Int?
+
+    var imdbId: String?
+
+    var collectionId: Int?
+
     fun copy() = create().also {
         it.url = url
         it.posterPath = posterPath
@@ -57,6 +67,11 @@ interface SMovie : Serializable {
         it.voteCount = voteCount
         it.video = video
         it.voteAverage = voteAverage
+        it.productionCompanies = productionCompanies
+        it.status = status
+        it.revenue = revenue
+        it.imdbId = imdbId
+        it.collectionId = collectionId
     }
 
     companion object {
@@ -83,4 +98,9 @@ class SMovieImpl : SMovie {
     override var voteCount: Int = 0
     override var video: Boolean = false
     override var voteAverage: Double = 0.0
+    override var productionCompanies: List<String>? = null
+    override var status: Status? = null
+    override var revenue: Int? = null
+    override var imdbId: String? = null
+    override var collectionId: Int? = null
 }

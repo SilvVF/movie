@@ -19,7 +19,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.utils.loadOrCueVideo
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -96,7 +95,7 @@ class PlayerState(
 
     fun init(p: YouTubePlayer) {
         player = p
-        queueVideo(
+        loadVideo(
             initialVideoId ?: return,
             initialSecond ?: return
         )
@@ -107,8 +106,8 @@ class PlayerState(
         player?.pause()
     }
 
-    fun queueVideo(videoId: String, second: Float = 0f){
-        player?.loadOrCueVideo(lifecycle, videoId, second)
+    fun loadVideo(videoId: String, second: Float = 0f){
+        player?.loadVideo(videoId, second)
     }
 
     fun play() {

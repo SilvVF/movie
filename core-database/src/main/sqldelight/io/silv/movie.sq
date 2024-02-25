@@ -16,7 +16,8 @@ CREATE TABLE movie (
     posterLastUpdated INTEGER NOT NULL,
     favorite INTEGER AS Boolean NOT NULL,
     externalUrl TEXT NOT NULL,
-    popularity REAL NOT NULL
+    popularity REAL NOT NULL,
+    status INTEGER
 );
 
 
@@ -27,8 +28,8 @@ selectAll:
 SELECT * FROM movie;
 
 insert:
-INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity)
-VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity);
+INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
+VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status);
 
 lastInsertRowId:
 SELECT last_insert_rowid();
@@ -46,6 +47,7 @@ UPDATE movie SET
     posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
     favorite = COALESCE(:favorite, favorite),
     externalUrl = COALESCE(:externalUrl, externalUrl),
-    popularity = COALESCE(:popularity, popularity)
+    popularity = COALESCE(:popularity, popularity),
+    status = COALESCE(:status, status)
 WHERE id = :movieId;
 

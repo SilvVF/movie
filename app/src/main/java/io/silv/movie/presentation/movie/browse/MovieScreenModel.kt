@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
+import timber.log.Timber
 
 class MovieScreenModel(
     private val getRemoteMovie: GetRemoteMovie,
@@ -81,7 +82,7 @@ class MovieScreenModel(
             }.flow.map { pagingData ->
                 val seenIds = mutableSetOf<Long>()
                 pagingData.map dataMap@{ sMovie ->
-                    networkToLocalMovie.await(sMovie.toDomain())
+                    networkToLocalMovie.await(sMovie.toDomain().also { Timber.d(it.toString()) })
                         .let { localMovie -> getMovie.subscribe(localMovie.id) }
                         .stateIn(ioCoroutineScope)
                 }

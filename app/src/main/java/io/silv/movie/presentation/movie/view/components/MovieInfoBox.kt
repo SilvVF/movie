@@ -44,11 +44,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import io.silv.core.Status
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.PosterData
-import io.silv.core_ui.components.clickableNoIndication
-import io.silv.core_ui.components.copyToClipboard
+import io.silv.core_ui.util.clickableNoIndication
+import io.silv.core_ui.util.copyToClipboard
 
 @Composable
 fun MovieInfoBox(
@@ -60,7 +61,7 @@ fun MovieInfoBox(
     sourceName: String,
     isStubSource: Boolean,
     coverDataProvider: () -> PosterData,
-    status: String,
+    status: Status?,
     onCoverClick: () -> Unit,
     doSearch: (query: String, global: Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -130,7 +131,7 @@ private fun MovieAndSourceTitlesLarge(
     doSearch: (query: String, global: Boolean) -> Unit,
     author: String?,
     artist: String?,
-    status: String,
+    status: Status?,
     sourceName: String,
     isStubSource: Boolean,
 ) {
@@ -169,7 +170,7 @@ private fun MovieAndSourceTitlesSmall(
     doSearch: (query: String, global: Boolean) -> Unit,
     author: String?,
     artist: String?,
-    status: String,
+    status: Status?,
     sourceName: String,
     isStubSource: Boolean,
 ) {
@@ -209,7 +210,7 @@ private fun ColumnScope.MovieContentInfo(
     doSearch: (query: String, global: Boolean) -> Unit,
     author: String?,
     artist: String?,
-    status: String,
+    status: Status?,
     sourceName: String,
     isStubSource: Boolean,
     textAlign: TextAlign? = LocalTextStyle.current.textAlign,
@@ -296,12 +297,12 @@ private fun ColumnScope.MovieContentInfo(
     ) {
         Icon(
             imageVector = when (status) {
-                "In Production" -> Icons.Outlined.Schedule
-                "Post Production" -> Icons.Outlined.DoneAll
-                "Rumored" -> Icons.Outlined.AttachMoney
-                "Released" -> Icons.Outlined.Done
-                "Canceled" -> Icons.Outlined.Close
-                "Planned" -> Icons.Outlined.Pause
+                Status.InProduction -> Icons.Outlined.Schedule
+                Status.PostProduction -> Icons.Outlined.DoneAll
+                Status.Rumored -> Icons.Outlined.AttachMoney
+                Status.Released -> Icons.Outlined.Done
+                Status.Canceled -> Icons.Outlined.Close
+                Status.Planned -> Icons.Outlined.Pause
                 else -> Icons.Outlined.Block
             },
             contentDescription = null,
@@ -311,7 +312,7 @@ private fun ColumnScope.MovieContentInfo(
         )
         ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
             Text(
-                text = status,
+                text = status?.toString() ?: "",
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )

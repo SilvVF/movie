@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.util
 
 import android.content.ClipData
 import android.content.ClipboardManager

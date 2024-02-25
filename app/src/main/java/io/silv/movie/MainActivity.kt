@@ -37,7 +37,8 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
 import io.silv.data.trailers.Trailer
 import io.silv.movie.presentation.home.HomeTab
-import io.silv.movie.presentation.player.CollapsablePlayerScreen
+import io.silv.movie.presentation.media.CollapsablePlayerScreen
+import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import org.koin.androidx.compose.defaultExtras
@@ -111,7 +112,7 @@ class MainActivity : ComponentActivity() {
                                         progress = { collapsableVideoState.progress },
                                         tabNavigator = tabNavigator
                                     )
-                                }
+                                },
                             ) { paddingValues ->
                                 Box(
                                     Modifier
@@ -128,9 +129,9 @@ class MainActivity : ComponentActivity() {
                                         exit = fadeOut()
                                     ) {
                                         CollapsablePlayerScreen(
-                                            state = collapsableVideoState,
+                                            collapsableVideoState = collapsableVideoState,
                                             videos = mainScreenModel.videos ?: return@AnimatedVisibility,
-                                            playing = mainScreenModel.videos?.firstOrNull() ?: return@AnimatedVisibility,
+                                            initial = mainScreenModel.videos?.firstOrNull()?.id ?: return@AnimatedVisibility,
                                             onDismissRequested = mainScreenModel::clearMediaQueue
                                         )
                                     }

@@ -4,6 +4,8 @@ import androidx.paging.PagingSource
 import io.silv.core.SGenre
 import io.silv.core.SMovie
 import io.silv.core.STVShow
+import io.silv.core.Status
+import io.silv.core.await
 import io.silv.core_network.TMDBConstants
 import io.silv.core_network.TMDBMovieService
 import io.silv.core_network.TMDBTVShowService
@@ -25,6 +27,8 @@ typealias MoviePagingSourceType = PagingSource<Long, SMovie>
 typealias TVPagingSourceType = PagingSource<Long, STVShow>
 
 interface SourceMovieRepository {
+
+    suspend fun getMovie(id: Long): SMovie?
 
     suspend fun getSourceGenres(): List<SGenre>
 
@@ -92,6 +96,28 @@ class SourceTVRepositoryImpl(
 class SourceMovieRepositoryImpl(
     private val movieService: TMDBMovieService
 ): SourceMovieRepository {
+
+    override suspend fun getMovie(id: Long): SMovie? {
+        val details = movieService.details(id).await().body() ?: return null
+        return SMovie.create().apply {
+            this.id = id
+            title = details.title
+            overview = details.overview
+            genres = details.genres.map { Pair(it.id, it.name) }
+            genreIds = details.genres.map { it.id }
+            originalLanguage = details.originalLanguage
+            popularity = details.popularity
+            voteCount = details.voteCount
+            releaseDate = details.releaseDate
+            url = "https://api.themoviedb.org/3/movie/$id"
+            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.isNotBlank() }
+            adult = details.adult
+            originalTitle = details.originalTitle
+            voteAverage = details.voteAverage
+            productionCompanies = details.productionCompanies.map { it.name }
+            status = Status.fromString(details.status)
+        }
+    }
 
     override suspend fun getSourceGenres(): List<SGenre> {
         return TMDBConstants.genres

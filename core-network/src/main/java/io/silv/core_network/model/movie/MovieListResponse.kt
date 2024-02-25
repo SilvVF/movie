@@ -38,8 +38,8 @@ data class MovieListResponse(
         val releaseDate: String = "",
         @SerialName("overview")
         val overview: String = "",
-        @SerialName("genres")
-        val genres: List<Genres> = emptyList(),
+        @SerialName("genre_ids")
+        val genreIds: List<Int> = emptyList(),
         @SerialName("id")
         val id: Int = 0,
         @SerialName("original_language")
@@ -58,14 +58,5 @@ data class MovieListResponse(
         val video: Boolean = false,
         @SerialName("vote_average")
         val voteAverage: Double = 0.0,
-    )
-
-    @Serializable
-    data class Genres(
-        @SerialName("id")
-        val id: Int,
-
-        @SerialName("name")
-        val name: String
     )
 }

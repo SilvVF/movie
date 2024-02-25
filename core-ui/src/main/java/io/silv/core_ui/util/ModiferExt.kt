@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.util
 
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,7 +21,13 @@ fun Modifier.selectedBackground(isSelected: Boolean): Modifier = if (isSelected)
     this
 }
 
-
+fun Modifier.conditional(condition : Boolean, modifier : Modifier.() -> Modifier) : Modifier {
+    return if (condition) {
+        then(modifier(Modifier))
+    } else {
+        this
+    }
+}
 
 fun Modifier.clickableNoIndication(
     onLongClick: (() -> Unit)? = null,

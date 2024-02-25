@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.util
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.lazy.LazyListState

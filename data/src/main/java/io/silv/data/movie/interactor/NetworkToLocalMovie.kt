@@ -19,9 +19,12 @@ class NetworkToLocalMovie(
             !localMovie.favorite ->
                 localMovie.copy(
                     title = movie.title,
-                    posterUrl = movie.posterUrl ?: localMovie.posterUrl
+                    posterUrl = movie.posterUrl ?: localMovie.posterUrl,
+                    status = movie.status ?: localMovie.status,
+                    popularity = movie.popularity,
+                    voteCount = movie.voteCount
                 )
-            else -> localMovie
+            else -> localMovie // TODO(update movie if favorite)
         }
     }
 

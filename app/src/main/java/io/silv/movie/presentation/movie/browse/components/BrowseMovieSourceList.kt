@@ -18,7 +18,7 @@ import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
-import io.silv.core_ui.components.isScrollingUp
+import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.components.toPoster
 import io.silv.core_ui.util.plus
 import io.silv.data.movie.model.Movie

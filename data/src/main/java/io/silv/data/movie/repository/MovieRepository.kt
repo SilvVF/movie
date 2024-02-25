@@ -1,5 +1,6 @@
 package io.silv.data.movie.repository
 
+import io.silv.core.Status
 import io.silv.core_database.DatabaseHandler
 import io.silv.data.movie.MovieMapper
 import io.silv.data.movie.model.Movie
@@ -45,7 +46,8 @@ class MovieRepositoryImpl(
                 movie.posterLastUpdated,
                 movie.favorite,
                 movie.externalUrl,
-                movie.popularity
+                movie.popularity,
+                movie.status?.let { Status.entries.indexOf(it).toLong() }
             )
             movieQueries.lastInsertRowId()
         }
@@ -75,7 +77,8 @@ class MovieRepositoryImpl(
                     originalLanguage = update.originalLanguage,
                     voteCount = update.voteCount?.toLong(),
                     releaseDate = update.releaseDate,
-                    popularity = update.popularity
+                    popularity = update.popularity,
+                    status = update.status?.let { Status.entries.indexOf(it).toLong() }
                 )
             }
         }
