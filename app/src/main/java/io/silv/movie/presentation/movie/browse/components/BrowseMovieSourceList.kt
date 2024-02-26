@@ -19,11 +19,11 @@ import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
-import io.silv.core_ui.components.toPoster
 import io.silv.core_ui.util.plus
-import io.silv.data.movie.model.Movie
-import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.MovieScreen
+import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable

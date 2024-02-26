@@ -40,8 +40,6 @@ android {
 }
 
 dependencies {
-    implementation(project(":data"))
-
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
     implementation(libs.voyager.screenModel)

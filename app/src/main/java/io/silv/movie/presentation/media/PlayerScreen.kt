@@ -20,6 +20,7 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.Abs
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.YouTubePlayerCallback
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
+import io.silv.movie.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -124,16 +125,18 @@ class PlayerState(
 fun YoutubeVideoPlayer(
     modifier: Modifier,
     playerState: PlayerState,
+    expanded: Boolean,
 ) {
     val lifecycle = LocalLifecycleOwner.current
 
-    val playerOptions = remember {
+    val playerOptions = remember(expanded) {
         IFramePlayerOptions.Builder()
             .modestBranding(1)
             .autoplay(1)
             .rel(0)
             .ivLoadPolicy(3)
-            .ccLoadPolicy(1)
+            .ccLoadPolicy(0)
+            .controls(if (expanded) 1 else 0)
             .build()
     }
 
@@ -141,6 +144,7 @@ fun YoutubeVideoPlayer(
         modifier = modifier,
         factory = {
             YouTubePlayerView(it).apply {
+                inflateCustomPlayerUi(R.layout.custom_player_ui)
                 enableAutomaticInitialization = false
                 lifecycle.lifecycle.addObserver(this)
                 initialize(
@@ -156,9 +160,6 @@ fun YoutubeVideoPlayer(
                     }
                 )
             }
-        },
-        update = { player ->
-
         }
     )
 }

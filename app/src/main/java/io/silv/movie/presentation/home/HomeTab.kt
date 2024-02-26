@@ -1,7 +1,7 @@
 package io.silv.movie.presentation.home
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.rounded.Home
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.navigator.Navigator
@@ -15,7 +15,7 @@ object HomeTab: Tab {
         @Composable get() = TabOptions(
             index = 0u,
             title = "Home",
-            icon = rememberVectorPainter(image = Icons.Filled.Home)
+            icon = rememberVectorPainter(image = Icons.Rounded.Home)
         )
 
     @Composable

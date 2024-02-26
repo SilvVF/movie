@@ -26,12 +26,12 @@ import cafe.adriel.voyager.koin.getScreenModel
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
-import io.silv.core_ui.components.toPoster
 import io.silv.movie.MainViewModel
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.movie.view.components.ExpandableMovieDescription
 import io.silv.movie.presentation.movie.view.components.MovieInfoBox
 import io.silv.movie.presentation.movie.view.components.VideoMediaItem
+import io.silv.movie.presentation.toPoster
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 

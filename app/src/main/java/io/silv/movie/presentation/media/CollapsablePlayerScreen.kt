@@ -35,7 +35,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.AnimatedEqualizer
 import io.silv.core_ui.util.conditional
-import io.silv.data.trailers.Trailer
+import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.presentation.movie.view.components.VideoMediaItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
@@ -107,7 +107,7 @@ fun BoxScope.CollapsablePlayerScreen(
         collapsableVideoState = collapsableVideoState,
         modifier = Modifier,
         player = {
-            YoutubeVideoPlayer(Modifier, playerState)
+            YoutubeVideoPlayer(Modifier, playerState, collapsableVideoState.state.currentValue == CollapsableVideoAnchors.Start)
         },
         content = {
             itemsIndexed(data, { _, it -> it.id }) {idx, trailer ->

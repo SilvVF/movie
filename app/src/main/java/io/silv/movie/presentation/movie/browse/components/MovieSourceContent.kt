@@ -27,10 +27,10 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
-import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.components.loadingIndicatorItem
-import io.silv.data.movie.model.Movie
-import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.core_ui.util.isScrollingUp
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.MovieActions
 import io.silv.movie.presentation.movie.browse.MovieScreen
 import kotlinx.coroutines.flow.StateFlow

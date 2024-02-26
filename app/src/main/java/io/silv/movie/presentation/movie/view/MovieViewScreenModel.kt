@@ -3,16 +3,18 @@ package io.silv.movie.presentation.movie.view
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.data.movie.interactor.GetMovie
-import io.silv.data.movie.interactor.GetRemoteMovie
-import io.silv.data.movie.interactor.NetworkToLocalMovie
-import io.silv.data.movie.model.Movie
-import io.silv.data.movie.model.toDomain
-import io.silv.data.trailers.GetMovieTrailers
-import io.silv.data.trailers.GetRemoteTrailers
-import io.silv.data.trailers.NetworkToLocalTrailer
-import io.silv.data.trailers.Trailer
-import io.silv.data.trailers.toDomain
+import io.silv.movie.data.movie.interactor.GetMovie
+import io.silv.movie.data.movie.interactor.GetRemoteMovie
+import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
+import io.silv.movie.data.movie.interactor.UpdateMovie
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.movie.model.toDomain
+import io.silv.movie.data.movie.model.toMovieUpdate
+import io.silv.movie.data.trailers.GetMovieTrailers
+import io.silv.movie.data.trailers.GetRemoteTrailers
+import io.silv.movie.data.trailers.NetworkToLocalTrailer
+import io.silv.movie.data.trailers.Trailer
+import io.silv.movie.data.trailers.toDomain
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -35,6 +37,7 @@ class MovieViewScreenModel(
     private val networkToLocalTrailer: NetworkToLocalTrailer,
     private val getRemoteMovie: GetRemoteMovie,
     private val getMovie: GetMovie,
+    private val updateMovie: UpdateMovie,
     private val movieId: Long
 ): StateScreenModel<MovieDetailsState>(MovieDetailsState.Loading) {
 
@@ -130,6 +133,14 @@ class MovieViewScreenModel(
         }
     }
 
+    fun toggleMovieFavorite(movie: Movie) {
+        screenModelScope.launch {
+            val update = movie.copy(favorite = !movie.favorite).toMovieUpdate()
+
+            updateMovie.await(update)
+        }
+    }
+
     fun refresh() {
         screenModelScope.launch {
 
@@ -145,6 +156,7 @@ class MovieViewScreenModel(
         }
     }
 }
+
 
 sealed class MovieDetailsState {
 

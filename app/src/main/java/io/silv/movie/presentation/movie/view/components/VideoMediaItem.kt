@@ -33,7 +33,7 @@ import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.playOnYoutube
-import io.silv.data.trailers.Trailer
+import io.silv.movie.data.trailers.Trailer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Icon
@@ -20,7 +21,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -29,13 +29,14 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
-import io.silv.data.trailers.Trailer
+import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.presentation.home.HomeTab
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
@@ -160,6 +161,7 @@ fun AppBottomBar(
 
     NavigationBar(
         Modifier
+            .heightIn(min = 0.dp, max = 72.dp)
             .layout {measurable, constraints ->
                 val placeable = measurable.measure(constraints)
 
@@ -185,7 +187,6 @@ fun AppBottomBar(
                         contentDescription =  tab.options.title
                     )
                 },
-                label = { Text(tab.options.title) },
             )
         }
     }

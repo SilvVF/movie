@@ -6,6 +6,15 @@ plugins {
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp") version "1.9.22-1.0.17"
     id("kotlin-parcelize")
+    id("app.cash.sqldelight") version "2.0.1"
+}
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("io.silv")
+        }
+    }
 }
 
 android {
@@ -70,21 +79,16 @@ android {
 
 dependencies {
 
-    implementation(project(":core"))
     implementation(project(":core-ui"))
-    implementation(project(":data"))
-    implementation(project(":core-network"))
+    implementation(libs.cronet.api)
+    implementation(libs.cronet.okhttp)
 
-    implementation(libs.androidx.constraintlayout)
-    // To use constraintlayout in compose
-    implementation(libs.androidx.constraintlayout.compose)
-    implementation(libs.androidx.swiperefreshlayout)
-    implementation(libs.androidx.animation.graphics.android)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
+    implementation(libs.androidx.animation.graphics.android)
     implementation(libs.voyager.screenModel)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.util)
@@ -100,25 +104,42 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.material3.android)
-
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
+    implementation(libs.androidx.compose.ui.util)
 
-    implementation(libs.reorderable)
-    implementation(libs.haze)
-
+    // Paging3
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.common)
 
-    implementation(libs.androidx.compose.ui.util)
+    // Compose
+    implementation(libs.reorderable)
+    implementation(libs.haze)
+    implementation(libs.font.awesome)
+
+    // COIL
+    implementation(libs.coil.compose)
+    implementation(libs.coil)
+    implementation(libs.coil.svg)
+
+    // Media
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.exoplayer.dash)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.youtubeplayer.core)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    implementation(libs.androidx.navigation.compose)
-
+    // Square
+    implementation(libs.timber)
     implementation(libs.okio)
+    implementation(libs.retrofit.kotlinx.serializtion.converter)
+    implementation(libs.retrofit)
+    implementation(libs.okhttp.dnsoverhttps)
+    implementation(libs.okhttp)
 
     // VOYAGER
     implementation(libs.voyager.koin)
@@ -133,24 +154,17 @@ dependencies {
     implementation(libs.koin.navigation)
     implementation(libs.koin.workmanager)
 
-    // COIL
-    implementation(libs.coil.compose)
-    implementation(libs.coil)
-    implementation(libs.coil.svg)
-
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
 
-    implementation(libs.font.awesome)
 
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.exoplayer.dash)
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.youtubeplayer.core)
-
-    implementation(libs.timber)
+    // Database
+    implementation(libs.stately.concurrency)
+    implementation(libs.sqldelight.android.driver)
+    implementation(libs.sqldelight.coroutines)
+    implementation(libs.sqldelight.primitive.adapters)
 }
 
 tasks {

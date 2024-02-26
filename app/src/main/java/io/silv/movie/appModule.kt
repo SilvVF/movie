@@ -1,6 +1,6 @@
 package io.silv.movie
 
-import io.silv.data.dataModule
+import io.silv.movie.data.dataModule
 import io.silv.movie.presentation.movie.browse.MovieScreenModel
 import io.silv.movie.presentation.movie.view.MovieViewScreenModel
 import kotlinx.serialization.json.Json

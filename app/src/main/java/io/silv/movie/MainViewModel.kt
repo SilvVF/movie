@@ -7,8 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.silv.data.trailers.Trailer
-import io.silv.data.trailers.TrailerRepository
+import io.silv.movie.data.trailers.Trailer
+import io.silv.movie.data.trailers.TrailerRepository
 import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.CollapsableVideoState
 import kotlinx.collections.immutable.ImmutableList

@@ -36,9 +36,9 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import io.silv.data.movie.model.ContentPagedType
-import io.silv.data.movie.model.Movie
-import io.silv.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.movie.model.ContentPagedType
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.movie.browse.components.FilterBottomSheet
 import io.silv.movie.presentation.movie.browse.components.MovieSourcePagingContent
 import io.silv.movie.presentation.movie.browse.components.MovieTopAppBar
@@ -58,7 +58,10 @@ data class MovieScreen(
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         // needed for movie action to be stable
-        val stableChangeDialogRefrence = { dialog: MovieScreenModel.Dialog.RemoveMovie ->  screenModel.changeDialog(dialog) }
+        val stableChangeDialogRefrence = { dialog: MovieScreenModel.Dialog.RemoveMovie ->
+            screenModel.changeDialog(dialog)
+        }
+        val toggleMovieFavorite = { movie: Movie -> screenModel.toggleMovieFavorite(movie) }
         val navigator = LocalNavigator.currentOrThrow
 
         MovieStandardScreenSizeContent(
@@ -76,6 +79,8 @@ data class MovieScreen(
                 movieLongClick = {
                     if(it.favorite) {
                         stableChangeDialogRefrence(MovieScreenModel.Dialog.RemoveMovie(it))
+                    } else {
+                        toggleMovieFavorite(it)
                     }
                 },
                 movieClick = { navigator.push(MovieViewScreen(it.id)) },
@@ -89,7 +94,7 @@ data class MovieScreen(
             is MovieScreenModel.Dialog.RemoveMovie -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { },
+                    onConfirm = { screenModel.toggleMovieFavorite(dialog.movie) },
                     entryToRemove = dialog.movie.title
                 )
             }

@@ -9,7 +9,6 @@ import coil.key.Keyer
 import coil.request.Options
 import coil.request.Parameters
 import coil.util.DebugLogger
-import io.silv.core.await
 import io.silv.core_ui.components.PosterData
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
@@ -17,6 +16,7 @@ import io.silv.movie.coil.FetcherDiskStore
 import io.silv.movie.coil.FetcherDiskStoreImageFile
 import io.silv.movie.coil.OkHttpFetcherConfig
 import io.silv.movie.coil.addDiskFetcher
+import io.silv.movie.core.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.CacheControl

@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import io.silv.core.Status
+import io.silv.movie.core.Status
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.PosterData

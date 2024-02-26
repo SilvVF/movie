@@ -2,7 +2,7 @@ package io.silv.movie.presentation
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import io.silv.data.prefrences.core.Preference
+import io.silv.movie.data.prefrences.core.Preference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

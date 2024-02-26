@@ -7,9 +7,9 @@ import io.silv.core_ui.components.Badge
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
-import io.silv.core_ui.components.toPoster
-import io.silv.data.movie.model.Movie
-import io.silv.data.tv.TVShow
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.tv.TVShow
+import io.silv.movie.presentation.toPoster
 
 @Composable
 fun InLibraryBadge(enabled: Boolean) {
