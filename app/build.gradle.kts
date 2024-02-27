@@ -82,6 +82,8 @@ dependencies {
     implementation(project(":core-ui"))
     implementation(libs.cronet.api)
     implementation(libs.cronet.okhttp)
+    implementation(libs.androidx.media3.datasource.cronet)
+    implementation(libs.androidx.media3.exoplayer.hls)
 
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
@@ -171,6 +173,7 @@ tasks {
     // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.freeCompilerArgs += listOf(
+            "-Xcontext-receivers",
             "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
             "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",

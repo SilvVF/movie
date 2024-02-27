@@ -1,6 +1,7 @@
 package io.silv.movie.network.model
 
 import android.graphics.drawable.Drawable
+import io.silv.movie.core.StreamItem
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -142,7 +143,7 @@ data class Streams(
     val dislikes: Long = 0,
     val audioStreams: List<PipedStream> = emptyList(),
     val videoStreams: List<PipedStream> = emptyList(),
-    var relatedStreams: List<io.silv.movie.core.StreamItem> = emptyList(),
+    var relatedStreams: List<StreamItem> = emptyList(),
     val subtitles: List<Subtitle> = emptyList(),
     val livestream: Boolean = false,
     val proxyUrl: String? = null,
@@ -151,25 +152,25 @@ data class Streams(
     val previewFrames: List<PreviewFrames> = emptyList()
 ) {
 
-    fun toStreamItem(videoId: String): io.silv.movie.core.StreamItem {
-        return io.silv.movie.core.StreamItem(
-            url = videoId,
-            title = title,
-            thumbnail = thumbnailUrl,
-            uploaderName = uploader,
-            uploaderUrl = uploaderUrl,
-            uploaderAvatar = uploaderAvatar,
-            uploadedDate = uploadTimestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date
-                .toString(),
-            uploaded = uploadTimestamp.toEpochMilliseconds(),
-            duration = duration,
-            views = views,
-            uploaderVerified = uploaderVerified,
-            shortDescription = description
-        )
-    }
-
     companion object {
         const val categoryMusic = "Music"
     }
+}
+
+fun Streams.toStreamItem(videoId: String): StreamItem {
+    return StreamItem(
+        url = videoId,
+        title = title,
+        thumbnail = thumbnailUrl,
+        uploaderName = uploader,
+        uploaderUrl = uploaderUrl,
+        uploaderAvatar = uploaderAvatar,
+        uploadedDate = uploadTimestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date
+            .toString(),
+        uploaded = uploadTimestamp.toEpochMilliseconds(),
+        duration = duration,
+        views = views,
+        uploaderVerified = uploaderVerified,
+        shortDescription = description
+    )
 }

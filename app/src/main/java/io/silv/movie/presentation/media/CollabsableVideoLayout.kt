@@ -12,7 +12,6 @@ import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -152,6 +151,12 @@ class CollapsableVideoState(
             state.animateTo(CollapsableVideoAnchors.Start)
         }
     }
+
+    fun dismiss() {
+        scope.launch {
+            state.animateTo(CollapsableVideoAnchors.Dismiss)
+        }
+    }
 }
 
 private class CollapsableVideoLayoutScrollConnection(
@@ -244,14 +249,14 @@ enum class VideoDragAnchors {
 }
 
 @Composable
-fun BoxScope.CollapsableVideoLayout(
+fun CollapsableVideoLayout(
     onDismissRequested: () -> Unit,
+    modifier: Modifier = Modifier,
     reorderState: ReorderableLazyListState,
     player: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
-    content: LazyListScope.() -> Unit,
-    modifier: Modifier = Modifier,
     collapsableVideoState: CollapsableVideoState = rememberCollapsableVideoState(),
+    content: LazyListScope.() -> Unit,
 ) {
 
     val progress = collapsableVideoState.progress
@@ -400,7 +405,6 @@ fun BoxScope.CollapsableVideoLayout(
                     collapsableVideoState.expand()
                 }
             }
-            .align(Alignment.BottomCenter)
     ) { measurables, constraints ->
 
         val height = lerp(LayoutMinHeight.roundToPx(), constraints.maxHeight, progress)

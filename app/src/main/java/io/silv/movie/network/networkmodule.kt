@@ -52,17 +52,20 @@ val networkModule =
         }
 
         single {
-            val engine = CronetEngine.Builder(androidContext())
+           CronetEngine.Builder(androidContext())
                 .enableHttp2(true)
                 .enableQuic(true)
                 .enableBrotli(true)
                 .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 1024L * 1024L) // 1MiB
                 .build()
-            val callFactory = CronetCallFactory.newBuilder(engine).build()
+        }
 
+        single {
             Retrofit.Builder()
-                .baseUrl("https://pipedapi.kavin.rocks")
-                .callFactory(callFactory)
+                .baseUrl("https://pipedapi.adminforge.de/")
+                .callFactory(
+                    CronetCallFactory.newBuilder(get()).build()
+                )
                 .addConverterFactory(
                     get<Json>().asConverterFactory("application/json".toMediaType())
                 )
