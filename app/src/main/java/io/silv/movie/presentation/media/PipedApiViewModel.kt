@@ -31,20 +31,30 @@ class PipedApiViewModel(
 ): ViewModel() {
 
     var player: ExoPlayer? = null
-    var streams by mutableStateOf<Streams?>(null)
+
+    var lastTrailer: Trailer? = null
+    private var trailerToStreams by mutableStateOf<Pair<Trailer,Streams>?>(null)
+
 
     val trailerQueue = mutableStateListOf<Trailer>()
 
+    val streams by derivedStateOf { trailerToStreams?.second }
     val currentTrailer by  derivedStateOf { trailerQueue.firstOrNull() }
 
     init {
         viewModelScope.launch {
             snapshotFlow { currentTrailer }
-                .debounce(3.seconds)
                 .filterNotNull()
                 .distinctUntilChanged()
+                .debounce {
+                    if (streams == null) 0.seconds else 3.seconds
+                }
                 .collectLatest { trailer ->
-                   streams = pipedApi.getStreams(trailer.key)
+                    if (trailer == trailerToStreams?.first)
+                        return@collectLatest
+
+                    trailerToStreams = null
+                    trailerToStreams = trailer to pipedApi.getStreams(trailer.key)
                 }
         }
     }

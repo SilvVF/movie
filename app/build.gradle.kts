@@ -80,11 +80,6 @@ android {
 dependencies {
 
     implementation(project(":core-ui"))
-    implementation(libs.cronet.api)
-    implementation(libs.cronet.okhttp)
-    implementation(libs.androidx.media3.datasource.cronet)
-    implementation(libs.androidx.media3.exoplayer.hls)
-
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
@@ -106,7 +101,6 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.material3.android)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
     implementation(libs.androidx.compose.ui.util)
@@ -124,24 +118,27 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
-    implementation(libs.coil.svg)
 
-    // Media
+    // Media3
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
-    implementation(libs.youtubeplayer.core)
+    implementation(libs.androidx.media3.datasource.cronet)
+    implementation(libs.androidx.media3.exoplayer.hls)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
 
-    // Square
+    // Logging
     implementation(libs.timber)
+
+    // Network
     implementation(libs.okio)
     implementation(libs.retrofit.kotlinx.serializtion.converter)
     implementation(libs.retrofit)
-    implementation(libs.okhttp.dnsoverhttps)
     implementation(libs.okhttp)
+    implementation(libs.cronet.api)
+    implementation(libs.cronet.okhttp)
 
     // VOYAGER
     implementation(libs.voyager.koin)
@@ -160,7 +157,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
-
 
     // Database
     implementation(libs.stately.concurrency)

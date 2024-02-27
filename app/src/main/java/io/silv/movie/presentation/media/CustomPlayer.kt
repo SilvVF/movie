@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
@@ -49,7 +50,8 @@ private fun createExoPlayer(
 
 @Composable
 fun PipedApiPlayer(
-    playerViewModel: PipedApiViewModel
+    playerViewModel: PipedApiViewModel,
+    modifier: Modifier,
 ) {
 
     val context = LocalContext.current
@@ -112,6 +114,7 @@ fun PipedApiPlayer(
     }
 
     AndroidView(
+        modifier = modifier,
         factory = { ctx ->
             PlayerView(ctx).apply {
                 player = exoPlayer

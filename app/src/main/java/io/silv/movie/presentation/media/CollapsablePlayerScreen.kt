@@ -1,8 +1,13 @@
 package io.silv.movie.presentation.media
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.silv.movie.data.trailers.Trailer
 import kotlinx.collections.immutable.ImmutableList
@@ -45,7 +50,18 @@ fun CollapsablePlayerScreen(
         collapsableVideoState = collapsableVideoState,
         player = {
             playerViewModel.streams?.let {
-                PipedApiPlayer(playerViewModel)
+                PipedApiPlayer(
+                    playerViewModel,
+                    modifier = Modifier
+                        .aspectRatio(16f / 9f)
+                        .fillMaxWidth()
+                )
+            } ?: Box(
+                modifier = Modifier
+                .aspectRatio(16f / 9f)
+                .fillMaxWidth()
+            ) {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         },
     ) {
