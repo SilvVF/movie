@@ -7,6 +7,7 @@ import io.silv.movie.network.model.movie.MovieListResponse
 import io.silv.movie.network.model.movie.MovieSearchResponse
 import io.silv.movie.network.model.movie.MovieVideoResponse
 import io.silv.movie.network.model.tv.TVResult
+import io.silv.movie.network.model.tv.TVVideoResponse
 import io.silv.movie.network.service.tmdb.TMDBConstants
 
 fun TVResult.toSTVShow(): STVShow {
@@ -31,6 +32,20 @@ fun TVResult.toSTVShow(): STVShow {
 }
 
 fun MovieVideoResponse.Result.toSTrailer(): io.silv.movie.core.STrailer {
+    val r = this
+    return io.silv.movie.core.STrailer.create().apply {
+        key = r.key
+        trailerId = r.id
+        name = r.name
+        site = r.site
+        size = r.size
+        official = r.official
+        publishedAt = r.publishedAt
+        type = r.type
+    }
+}
+
+fun TVVideoResponse.Result.toSTrailer(): io.silv.movie.core.STrailer {
     val r = this
     return io.silv.movie.core.STrailer.create().apply {
         key = r.key

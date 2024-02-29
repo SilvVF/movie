@@ -1,10 +1,9 @@
 package io.silv.movie.data.trailers
 
-import io.silv.movie.core.STrailer
-
 data class Trailer(
     val id: Long,
-    val movieId: Long,
+    val isMovie: Boolean,
+    val contentId: Long,
     val trailerId: String,
     val key: String,
     val name: String,
@@ -18,7 +17,8 @@ data class Trailer(
 fun io.silv.movie.core.STrailer.toDomain(): Trailer {
     return Trailer(
         id = -1L,
-        movieId = -1L,
+        isMovie = true,
+        contentId = -1L,
         trailerId = trailerId,
         key = key,
         name = name,
@@ -32,6 +32,7 @@ fun io.silv.movie.core.STrailer.toDomain(): Trailer {
 
 data class TrailerUpdate(
     val id: Long,
+    val showId: Long?,
     val movieId: Long?,
     val trailerId: String?,
     val key: String?,
@@ -46,7 +47,8 @@ data class TrailerUpdate(
 fun Trailer.toTrailerUpdate(): TrailerUpdate {
     return TrailerUpdate(
         id = id,
-        movieId = movieId,
+        showId = contentId.takeIf { !isMovie },
+        movieId =  contentId.takeIf { isMovie },
         trailerId = trailerId,
         key = key,
         name = name,
@@ -54,7 +56,7 @@ fun Trailer.toTrailerUpdate(): TrailerUpdate {
         publishedAt = publishedAt,
         site = site,
         size = size,
-        type = type
+        type = type,
     )
 }
 

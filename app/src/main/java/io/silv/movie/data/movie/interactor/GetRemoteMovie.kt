@@ -1,5 +1,6 @@
 package io.silv.movie.data.movie.interactor
 
+import io.silv.movie.core.STVShow
 import io.silv.movie.data.movie.model.ContentPagedType
 import io.silv.movie.data.movie.repository.MoviePagingSourceType
 import io.silv.movie.data.movie.repository.SourceMovieRepository
@@ -31,6 +32,10 @@ class GetRemoteMovie(
 class GetRemoteTVShows(
     private val tvRepository: SourceTVRepository
 ) {
+
+    suspend fun awaitOne(showId: Long): STVShow? {
+        return tvRepository.getShow(showId)
+    }
 
     fun subscribe(type: ContentPagedType): TVPagingSourceType {
         return when (type) {

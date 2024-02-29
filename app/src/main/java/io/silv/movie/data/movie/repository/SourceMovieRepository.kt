@@ -46,6 +46,8 @@ interface SourceMovieRepository {
 
 interface SourceTVRepository {
 
+    suspend fun getShow(id: Long): STVShow?
+
     suspend fun getSourceGenres(): List<SGenre>
 
     fun discover(genres: List<String>): TVPagingSourceType
@@ -64,6 +66,28 @@ interface SourceTVRepository {
 class SourceTVRepositoryImpl(
     private val tvService: TMDBTVShowService
 ): SourceTVRepository {
+    override suspend fun getShow(id: Long): STVShow? {
+        val details = tvService.details(id).await().body() ?: return null
+        return STVShow.create().apply {
+            this.id = id
+            url = "https://api.themoviedb.org/3/tv/$id"
+            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.isNotBlank() }
+            adult = details.adult
+            releaseDate = details.firstAirDate
+            overview = details.overview
+            genres = details.genres.map { Pair(it.id, it.name) }
+            genreIds = details.genres.map { it.id }
+            originalLanguage = details.originalLanguage
+            originalTitle = details.originalName
+            title = details.name
+            backdropPath = details.backdropPath
+            popularity = details.popularity
+            voteCount = details.voteCount
+            voteAverage = details.voteAverage
+            productionCompanies = details.productionCompanies.map { it.name }
+            status = io.silv.movie.core.Status.fromString(details.status)
+        }
+    }
 
     override suspend fun getSourceGenres(): List<SGenre> {
         return TMDBConstants.genres

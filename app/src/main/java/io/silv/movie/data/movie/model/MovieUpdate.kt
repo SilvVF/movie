@@ -16,7 +16,7 @@ data class MovieUpdate(
     val posterUrl: String?,
     val posterLastUpdated: Long?,
     val favorite: Boolean?,
-    val status: io.silv.movie.core.Status?
+    val status: Status?
 )
 
 fun Movie.toMovieUpdate(): MovieUpdate {

@@ -28,11 +28,17 @@ class MainViewModel(
 
     var collapsableVideoState: CollapsableVideoState? = null
 
-    private var movieId: Long? = savedStateHandle["movie"]
+    private var contentId: Long? = savedStateHandle["content"]
         set(value) {
-            savedStateHandle["movie"] = value
+            savedStateHandle["content"] = value
             field = value
         }
+    private var isMovie: Boolean? = savedStateHandle["content"]
+        set(value) {
+            savedStateHandle["content"] = value
+            field = value
+        }
+
     private var trailerId: Long?  = savedStateHandle["trailer"]
         set(value) {
             savedStateHandle["trailer"] = value
@@ -42,20 +48,35 @@ class MainViewModel(
     init {
         run {
             requestMediaQueue(
-                movieId ?: return@run,
-                trailerId ?: return@run,
+                contentId ?: return@run,
+                isMovie ?: return@run,
+                trailerId ?: return@run
             )
         }
     }
 
-    fun requestMediaQueue(mid: Long, tid: Long) {
+    fun requestMediaQueue(contentId: Long, isMovie: Boolean, tid: Long) {
 
-        movieId = mid
+        this.contentId = contentId
+        this.isMovie = isMovie
         trailerId = tid
 
         viewModelScope.launch {
-            val trailers = trailerRepository.getTrailersByMovieId(mid)
-            videos = trailers.toImmutableList()
+
+            val trailers = if (isMovie) {
+                trailerRepository.getTrailersByMovieId(contentId)
+            } else {
+                trailerRepository.getTrailersByShowId(contentId)
+            }
+
+            val mutableTrailers =  trailers.toMutableList()
+
+            val trailerIdx = trailers.indexOfFirst { it.id == tid }
+
+            if (trailerIdx != -1) {
+                mutableTrailers.add(0, mutableTrailers.removeAt(trailerIdx))
+            }
+            videos = mutableTrailers.toImmutableList()
         }
     }
 

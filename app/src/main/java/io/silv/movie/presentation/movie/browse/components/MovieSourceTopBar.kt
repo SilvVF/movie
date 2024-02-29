@@ -59,18 +59,20 @@ import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
 import io.silv.movie.data.movie.model.ContentPagedType
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.movie.browse.MovieActions
-import io.silv.movie.presentation.movie.browse.Resource
 
 @Composable
-fun MovieTopAppBar(
+fun ContentBrowseTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
     modifier: Modifier = Modifier,
-    resource: () -> Resource,
     query: () -> String,
     listing: () -> ContentPagedType,
-    actions: MovieActions,
-    displayMode: () -> PosterDisplayMode
+    displayMode: () -> PosterDisplayMode,
+    changePagedType: (ContentPagedType) -> Unit,
+    changeResourceType: () -> Unit,
+    setDisplayMode: (PosterDisplayMode) -> Unit,
+    changeQuery: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    isMovie: Boolean,
 ) {
     val barExpandedFully by remember {
         derivedStateOf { scrollBehavior.state.collapsedFraction == 0.0f }
@@ -121,8 +123,8 @@ fun MovieTopAppBar(
             },
             actions = {
                 ResourceFilterChips(
-                    changeResourceType = { actions.changeResource(it) },
-                    selected = resource
+                    changeResourceType = changeResourceType,
+                    isMovie = isMovie
                 )
                 var dropDownVisible by remember { mutableStateOf(false) }
 
@@ -136,7 +138,7 @@ fun MovieTopAppBar(
                                 trailingIcon = {
                                     RadioButton(
                                         selected = displayMode() == it,
-                                        onClick = { actions.setDisplayMode(it) }
+                                        onClick = { setDisplayMode(it) }
                                     )
                                 },
                                 text = {
@@ -148,7 +150,7 @@ fun MovieTopAppBar(
                                         }
                                     )
                                 },
-                                onClick = { actions.setDisplayMode(it) }
+                                onClick = { setDisplayMode(it) }
                             )
                         }
                     }
@@ -169,24 +171,24 @@ fun MovieTopAppBar(
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text(remember(resource) { "Search for ${resource()}..." })
+                    Text(remember(isMovie) { "Search for ${if (isMovie) "Movies" else "TV-Shows"}..." })
                 },
-                onQueryChange = { actions.changeQuery(it) },
+                onQueryChange = { changeQuery(it) },
                 onSearch = {
-                    actions.onSearch(it)
+                    onSearch(it)
                     focusManager.clearFocus(false)
                 },
                 trailingIcon = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         AnimatedVisibility(visible = query().isNotEmpty()) {
-                            IconButton(onClick = { actions.changeQuery("") }) {
+                            IconButton(onClick = { changeQuery("") }) {
                                 Icon(
                                     imageVector = Icons.Filled.Clear,
                                     contentDescription = null
                                 )
                             }
                         }
-                        IconButton(onClick = { actions.onSearch(query()) }) {
+                        IconButton(onClick = { onSearch(query()) }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
                                 contentDescription = null
@@ -206,7 +208,7 @@ fun MovieTopAppBar(
             MovieFilterChips(
                 selected = listing(),
                 changeMovePagesType = {
-                    actions.changeCategory(it)
+                    changePagedType(it)
                 }
             )
         }
@@ -215,16 +217,20 @@ fun MovieTopAppBar(
 
 @Composable
 fun RowScope.ResourceFilterChips(
-    changeResourceType: (Resource) -> Unit,
-    selected:() -> Resource,
+    changeResourceType: () -> Unit,
+    isMovie: Boolean,
 ) {
     val contentColor = LocalContentColor.current
     TooltipIconButton(
-        onClick = { changeResourceType(Resource.Movie) },
+        onClick = {
+            if (!isMovie) {
+                changeResourceType()
+            }
+        },
         imageVector = Icons.Filled.Movie,
         tooltip = "Movies",
         tint = animateColorAsState(
-            targetValue = if (selected() == Resource.Movie) {
+            targetValue = if (isMovie) {
                 MaterialTheme.colorScheme.primary
             } else {
                 contentColor
@@ -233,12 +239,16 @@ fun RowScope.ResourceFilterChips(
         ).value
     )
     TooltipIconButton(
-        onClick = { changeResourceType(Resource.TVShow) },
+        onClick = {
+            if (isMovie) {
+                changeResourceType()
+            }
+        },
         imageVector = Icons.Filled.Tv,
         tooltip = "TV Shows",
         contentDescription = null,
         tint = animateColorAsState(
-            targetValue = if (selected() == Resource.TVShow) {
+            targetValue = if (!isMovie) {
                 MaterialTheme.colorScheme.primary
             } else {
                 contentColor

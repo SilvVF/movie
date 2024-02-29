@@ -34,8 +34,6 @@ data class TVDetailsResponse(
     val name: String = "",
     @SerialName("networks")
     val networks: List<Network> = emptyList(),
-    @SerialName("next_episode_to_air")
-    val nextEpisodeToAir: String? = null,
     @SerialName("number_of_episodes")
     val numberOfEpisodes: Int = 0,
     @SerialName("number_of_seasons")
@@ -84,7 +82,7 @@ data class TVDetailsResponse(
         @SerialName("id")
         val id: Int = 0,
         @SerialName("logo_path")
-        val logoPath: String = "",
+        val logoPath: String? = null,
         @SerialName("name")
         val name: String= "",
         @SerialName("origin_country")
@@ -102,7 +100,7 @@ data class TVDetailsResponse(
         @SerialName("name")
         val name: String = "",
         @SerialName("profile_path")
-        val profilePath: String = ""
+        val profilePath: String? = null
     )
 
     @Serializable
@@ -138,7 +136,7 @@ data class TVDetailsResponse(
         @SerialName("still_path")
         val stillPath: String? = null,
         @SerialName("vote_average")
-        val voteAverage: Int = 0,
+        val voteAverage: Double = 0.0,
         @SerialName("vote_count")
         val voteCount: Int = 0
     )
@@ -172,7 +170,7 @@ data class TVDetailsResponse(
         @SerialName("season_number")
         val seasonNumber: Int = 0,
         @SerialName("vote_average")
-        val voteAverage: Int = 0
+        val voteAverage: Double = 0.0
     )
 
     @Serializable

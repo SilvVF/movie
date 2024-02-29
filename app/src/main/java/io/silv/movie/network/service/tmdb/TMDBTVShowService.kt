@@ -4,6 +4,7 @@ import io.silv.movie.network.model.tv.TVDetailsResponse
 import io.silv.movie.network.model.tv.TVDiscoverResponse
 import io.silv.movie.network.model.tv.TVListResponse
 import io.silv.movie.network.model.tv.TVSearchResponse
+import io.silv.movie.network.model.tv.TVVideoResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -12,7 +13,13 @@ import retrofit2.http.Query
 
 interface TMDBTVShowService {
 
-    @GET("https://api.themoviedb.org/3/tv/{id}")
+    @GET("tv/{series_id}/videos")
+    fun videos(
+        @Path("series_id") id: Long,
+        @Query("language") language: String = "en-US"
+    ): Call<TVVideoResponse>
+
+    @GET("tv/{id}")
     fun details(
         @Path("id") id: Long,
     ): Call<TVDetailsResponse>

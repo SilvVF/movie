@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.browse.components
+package io.silv.movie.presentation.tv.components
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,19 +20,20 @@ import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.plus
-import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.tv.TVShow
 import io.silv.movie.presentation.LocalIsScrolling
+import io.silv.movie.presentation.movie.browse.components.InLibraryBadge
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun BrowseMovieSourceList(
+fun BrowseTVSourceList(
     modifier: Modifier,
-    pagingItems: LazyPagingItems<StateFlow<Movie>>,
+    pagingItems: LazyPagingItems<StateFlow<TVShow>>,
     contentPadding: PaddingValues,
-    onMovieClick: (Movie) -> Unit,
-    onMovieLongClick: (Movie) -> Unit,
+    onShowClick: (TVShow) -> Unit,
+    onShowLongClick: (TVShow) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -54,12 +55,12 @@ fun BrowseMovieSourceList(
             contentType = pagingItems.itemContentType { PosterDisplayMode.List.hashCode() },
             key = pagingItems.itemKey { it.value.id }
         ) { index ->
-            val movie by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
+            val tvShow by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
 
-            BrowseMovieSourceListItem(
-                movie = movie,
-                onClick = { onMovieClick(movie) },
-                onLongClick = { onMovieLongClick(movie) },
+            BrowseTVSourceListItem(
+                show = tvShow,
+                onClick = { onShowClick(tvShow) },
+                onLongClick = { onShowLongClick(tvShow) },
             )
         }
 
@@ -74,17 +75,17 @@ fun BrowseMovieSourceList(
 }
 
 @Composable
-private fun BrowseMovieSourceListItem(
-    movie: Movie,
+private fun BrowseTVSourceListItem(
+    show: TVShow,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
     EntryListItem(
-        title = movie.title,
-        coverData = movie.toPoster(),
-        coverAlpha = if (movie.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
+        title = show.title,
+        coverData = show.toPoster(),
+        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         badge = {
-            InLibraryBadge(enabled = movie.favorite)
+            InLibraryBadge(enabled = show.favorite)
         },
         onLongClick = onLongClick,
         onClick = onClick,

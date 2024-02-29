@@ -20,6 +20,7 @@ import io.silv.movie.data.prefrences.core.DatastorePreferenceStore
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.data.trailers.GetMovieTrailers
 import io.silv.movie.data.trailers.GetRemoteTrailers
+import io.silv.movie.data.trailers.GetTVShowTrailers
 import io.silv.movie.data.trailers.NetworkToLocalTrailer
 import io.silv.movie.data.trailers.TrailerRepository
 import io.silv.movie.data.trailers.TrailerRepositoryImpl
@@ -54,6 +55,8 @@ val dataModule =
         factoryOf(::GetRemoteMovie)
 
         factoryOf(::GetRemoteTVShows)
+
+        factoryOf(::GetTVShowTrailers)
 
         factoryOf(::GetMovieTrailers)
 

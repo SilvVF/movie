@@ -132,7 +132,6 @@ class MainActivity : ComponentActivity() {
                                         CollapsablePlayerScreen(
                                             collapsableVideoState = collapsableVideoState,
                                             videos = mainScreenModel.videos ?: return@AnimatedVisibility,
-                                            initial = mainScreenModel.videos?.firstOrNull()?.id ?: return@AnimatedVisibility,
                                             onDismissRequested = mainScreenModel::clearMediaQueue
                                         )
                                     }

@@ -36,6 +36,13 @@ interface STVShow : Serializable {
 
     var voteAverage: Double
 
+    var productionCompanies: List<String>?
+
+    var status: Status?
+
+    // TODO(add seasons)
+    //var seasons: List
+
     fun copy() = create().also {
         it.url = url
         it.posterPath = posterPath
@@ -55,6 +62,8 @@ interface STVShow : Serializable {
         it.voteCount = voteCount
         it.video = video
         it.voteAverage = voteAverage
+        it.productionCompanies = productionCompanies
+        it.status = status
     }
 
     companion object {
@@ -81,4 +90,6 @@ class STVShowImpl : STVShow {
     override var voteCount: Int = 0
     override var video: Boolean = false
     override var voteAverage: Double = 0.0
+    override var productionCompanies: List<String>? = null
+    override var status: Status? = null
 }

@@ -5,7 +5,8 @@ object TrailersMapper {
     val mapTrailer = {
             _id: Long,
             trailer_id: String,
-            movie_id : Long,
+            movie_id : Long?,
+            show_id: Long?,
             name: String,
             video_key: String,
             site: String,
@@ -15,7 +16,8 @@ object TrailersMapper {
             published_at: String ->
         Trailer(
             id = _id,
-            movieId = movie_id,
+            isMovie = movie_id != null,
+            contentId = movie_id ?: show_id!!,
             trailerId = trailer_id,
             key = video_key,
             name = name,

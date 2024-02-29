@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.view
+package io.silv.movie.presentation.tv.view
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,30 +33,30 @@ import io.silv.movie.presentation.movie.view.components.VideoMediaItem
 import io.silv.movie.presentation.toPoster
 import org.koin.core.parameter.parametersOf
 
-data class MovieViewScreen(
+data class TVViewScreen(
     val id: Long,
 ): Screen {
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<MovieViewScreenModel> { parametersOf(id) }
+        val screenModel = getScreenModel<TVViewScreenModel> { parametersOf(id) }
         val mainScreenModel = getActivityViewModel<MainViewModel>()
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
-            MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
+            ShowDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
                 Icon(
                     imageVector = Icons.Default.Error,
                     contentDescription = null,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            MovieDetailsState.Loading -> {
+            ShowDetailsState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
             }
-            is MovieDetailsState.Success -> {
-                MovieDetailsContent(
+            is ShowDetailsState.Success -> {
+                TVDetailsContent(
                     state = state,
                     refresh = screenModel::refresh,
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue
@@ -67,10 +67,10 @@ data class MovieViewScreen(
 }
 
 @Composable
-fun MovieDetailsContent(
-    state: MovieDetailsState.Success,
+fun TVDetailsContent(
+    state: ShowDetailsState.Success,
     refresh: () -> Unit,
-    onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: Long) -> Unit
+    onVideoThumbnailClick: (showId: Long, isMovie: Boolean, trailerId: Long) -> Unit
 ) {
     Scaffold { paddingValues ->
 
@@ -105,13 +105,13 @@ fun MovieDetailsContent(
                         MovieInfoBox(
                             isTabletUi = false,
                             appBarPadding = topPadding,
-                            title = state.movie.title,
+                            title = state.show.title,
                             author = "",
                             artist = "",
                             sourceName = "TMDB",
                             isStubSource = false,
-                            coverDataProvider = { state.movie.toPoster() },
-                            status = state.movie.status,
+                            coverDataProvider = { state.show.toPoster() },
+                            status = state.show.status,
                             onCoverClick = {  },
                             doSearch = { _, _ -> },
                         )
@@ -120,8 +120,8 @@ fun MovieDetailsContent(
                         val context = LocalContext.current
                         ExpandableMovieDescription(
                             defaultExpandState = false,
-                            description = state.movie.overview,
-                            tagsProvider = { state.movie.genres },
+                            description = state.show.overview,
+                            tagsProvider = { state.show.genres },
                             onTagSearch = {},
                             onCopyTagToClipboard = {
                                 context.copyToClipboard("tag", it)
@@ -135,7 +135,7 @@ fun MovieDetailsContent(
                     ) {
                         VideoMediaItem(
                             onThumbnailClick = {
-                                onVideoThumbnailClick(it.contentId, true, it.id)
+                                onVideoThumbnailClick(it.contentId, false, it.id)
                             },
                             item = it,
                             thumbnailProvider = {
@@ -152,4 +152,3 @@ fun MovieDetailsContent(
         }
     }
 }
-

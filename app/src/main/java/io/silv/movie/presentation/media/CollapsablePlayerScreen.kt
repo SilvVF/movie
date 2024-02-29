@@ -18,12 +18,11 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun CollapsablePlayerScreen(
     collapsableVideoState: CollapsableVideoState,
-    initial: Long,
     videos: ImmutableList<Trailer>,
     onDismissRequested: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val playerViewModel = koinViewModel<PipedApiViewModel>()
+    val playerViewModel = koinViewModel<PlayerViewModel>()
 
     LaunchedEffect(videos) {
         playerViewModel.initialize(videos)
@@ -41,10 +40,14 @@ fun CollapsablePlayerScreen(
         actions = {
             CollapsablePlayerDefaults.Actions(
                 currentTrailer = playerViewModel.currentTrailer,
-                playing = true,
-                onPlayClick = {},
+                playing = playerViewModel.playing,
+                onPlayClick = {
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Play)
+                },
                 onCloseClick = { collapsableVideoState.dismiss() },
-                onPauseClick = {}
+                onPauseClick = {
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Pause)
+                }
             )
         },
         collapsableVideoState = collapsableVideoState,
@@ -72,7 +75,10 @@ fun CollapsablePlayerScreen(
             CollapsablePlayerDefaults.VideoQueueItem(
                 reorderableState = reorderState,
                 trailer = trailer,
-                idx = idx
+                idx = idx,
+                onMute = {
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Mute)
+                }
             )
         }
     }

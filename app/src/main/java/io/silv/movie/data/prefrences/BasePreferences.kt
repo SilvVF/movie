@@ -7,4 +7,6 @@ class BasePreferences(
 ) {
 
     fun incognitoMode() = settings.getBoolean("incognito_mode", false)
+
+    fun autoplay() = settings.getBoolean("autoplay", true)
 }

@@ -22,6 +22,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
+import io.silv.movie.presentation.CollectEventsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.chromium.net.CronetEngine
@@ -50,7 +51,7 @@ private fun createExoPlayer(
 
 @Composable
 fun PipedApiPlayer(
-    playerViewModel: PipedApiViewModel,
+    playerViewModel: PlayerViewModel,
     modifier: Modifier,
 ) {
 
@@ -64,30 +65,32 @@ fun PipedApiPlayer(
         )
     }
 
-    val playerListener = remember {
-        object : Player.Listener {
+    val exoPlayer= remember {
+        createExoPlayer(context, playerViewModel.playerListener)
+    }
 
+    CollectEventsWithLifecycle(playerViewModel) {event ->
+        when (event) {
+            PlayerViewModel.PlayerEvent.Pause -> {
+                exoPlayer.pause()
+            }
+            PlayerViewModel.PlayerEvent.Play -> {
+                exoPlayer.play()
+            }
+            PlayerViewModel.PlayerEvent.Mute -> {
+                exoPlayer.setDeviceMuted(true, C.VOLUME_FLAG_REMOVE_SOUND_AND_VIBRATE)
+            }
         }
     }
 
-    val exoPlayer= remember {
-        createExoPlayer(context, playerListener)
-    }
-
-
     DisposableEffect(playerViewModel) {
-
-        playerViewModel.player = exoPlayer
-
         onDispose {
-            exoPlayer.pause()
-            playerViewModel.player = null
+            playerViewModel.second = exoPlayer.currentPosition
         }
     }
 
 
     LaunchedEffect(exoPlayer, playerViewModel.streams) {
-
         val streams = playerViewModel.streams ?: return@LaunchedEffect
 
          when {
@@ -108,7 +111,7 @@ fun PipedApiPlayer(
                 Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
             }
         }
-        exoPlayer.seekTo(0)
+        exoPlayer.seekTo(playerViewModel.second)
         exoPlayer.playWhenReady = true
         exoPlayer.prepare()
     }

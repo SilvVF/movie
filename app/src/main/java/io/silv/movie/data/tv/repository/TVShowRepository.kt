@@ -1,8 +1,11 @@
 package io.silv.movie.data.tv.repository
 
+
+import io.silv.movie.core.Status
 import io.silv.movie.data.tv.ShowMapper
 import io.silv.movie.data.tv.TVShow
 import io.silv.movie.data.tv.TVShowUpdate
+import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 
 interface ShowRepository {
@@ -14,7 +17,7 @@ interface ShowRepository {
 }
 
 class ShowRepositoryImpl(
-    private val handler: io.silv.movie.database.DatabaseHandler
+    private val handler: DatabaseHandler
 ): ShowRepository {
 
     override suspend fun getShowById(id: Long): TVShow? {
@@ -31,7 +34,22 @@ class ShowRepositoryImpl(
 
     override suspend fun insertShow(show: TVShow): Long? {
         return handler.awaitOneOrNullExecutable(inTransaction = true) {
-            showQueries.insert(show.id, show.title, show.posterUrl, show.posterLastUpdated, show.favorite, show.externalUrl)
+            showQueries.insert(
+                show.id,
+                show.title,
+                show.overview,
+                show.genres.ifEmpty { null },
+                show.genreIds.ifEmpty { null },
+                show.originalLanguage,
+                show.voteCount.toLong(),
+                show.releaseDate,
+                show.posterUrl,
+                show.posterLastUpdated,
+                show.favorite,
+                show.externalUrl,
+                show.popularity,
+                show.status?.let { Status.entries.indexOf(it).toLong() }
+            )
             showQueries.lastInsertRowId()
         }
     }
@@ -51,7 +69,15 @@ class ShowRepositoryImpl(
                     posterLastUpdated = update.posterLastUpdated,
                     favorite = update.favorite,
                     externalUrl = update.externalUrl,
-                    showId = update.showId
+                    showId = update.showId,
+                    overview = update.overview,
+                    genreIds = update.genreIds?.joinToString(separator = ","),
+                    genres = update.genres?.joinToString(separator = ","),
+                    originalLanguage = update.originalLanguage,
+                    voteCount = update.voteCount?.toLong(),
+                    releaseDate = update.releaseDate,
+                    popularity = update.popularity,
+                    status = update.status?.let { Status.entries.indexOf(it).toLong() }
                 )
             }
         }

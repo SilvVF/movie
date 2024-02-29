@@ -3,6 +3,8 @@ package io.silv.movie.presentation.media
 import android.net.Uri
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -13,11 +15,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.Player
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
+import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,20 +29,23 @@ import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ItemPosition
 import kotlin.time.Duration.Companion.seconds
 
-class PipedApiViewModel(
+class PlayerViewModel(
     private val pipedApi: PipedApi
-): ViewModel() {
+):
+    ViewModel(),
+    EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
 
-    var player: ExoPlayer? = null
-
-    var lastTrailer: Trailer? = null
     private var trailerToStreams by mutableStateOf<Pair<Trailer,Streams>?>(null)
 
+    var playerState by mutableIntStateOf(Player.STATE_IDLE)
 
     val trailerQueue = mutableStateListOf<Trailer>()
 
     val streams by derivedStateOf { trailerToStreams?.second }
     val currentTrailer by  derivedStateOf { trailerQueue.firstOrNull() }
+    var playing by mutableStateOf(false)
+
+    var second by mutableLongStateOf(0L)
 
     init {
         viewModelScope.launch {
@@ -54,10 +60,38 @@ class PipedApiViewModel(
                         return@collectLatest
 
                     trailerToStreams = null
+                    second = 0L
                     trailerToStreams = trailer to pipedApi.getStreams(trailer.key)
                 }
         }
     }
+
+
+    val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            super.onPlaybackStateChanged(playbackState)
+            when (playbackState) {
+                Player.STATE_ENDED -> {
+                    if (trailerQueue.size < 1) { return }
+
+                    val t = trailerQueue.first()
+
+                    trailerQueue.remove(t)
+                    trailerQueue.add(t)
+                }
+                Player.STATE_BUFFERING -> {}
+                Player.STATE_IDLE -> {}
+                Player.STATE_READY -> {}
+            }
+            playerState = playbackState
+        }
+
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            super.onIsPlayingChanged(isPlaying)
+            playing = isPlaying
+        }
+    }
+
 
     fun initialize(trailers: List<Trailer>) {
 
@@ -82,6 +116,14 @@ class PipedApiViewModel(
 
         trailerQueue.add(to.index, trailerQueue.removeAt(from.index))
     }
+
+    fun sendPlayerEvent(event: PlayerEvent) {
+        viewModelScope.launch {
+            emitEvent(event)
+        }
+    }
+
+
 
     private fun getSubtitleConfigs(): List<MediaItem.SubtitleConfiguration> = streams!!.subtitles.map {
         val roleFlags = getSubtitleRoleFlags(it)
@@ -114,5 +156,11 @@ class PipedApiViewModel(
                 .setArtworkUri(streams.thumbnailUrl.toUri())
                 .build()
         )
+    }
+
+    sealed interface PlayerEvent {
+        data object Pause: PlayerEvent
+        data object Play: PlayerEvent
+        data object Mute: PlayerEvent
     }
 }

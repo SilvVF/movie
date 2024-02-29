@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.browse
+package io.silv.movie.presentation.tv.browse
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -15,7 +14,6 @@ import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,74 +33,76 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.movie.data.movie.model.ContentPagedType
-import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.tv.TVShow
 import io.silv.movie.presentation.LocalIsScrolling
+import io.silv.movie.presentation.movie.browse.MovieScreen
+import io.silv.movie.presentation.movie.browse.RemoveEntryDialog
 import io.silv.movie.presentation.movie.browse.components.ContentBrowseTopBar
 import io.silv.movie.presentation.movie.browse.components.FilterBottomSheet
-import io.silv.movie.presentation.movie.browse.components.MovieSourcePagingContent
-import io.silv.movie.presentation.movie.view.MovieViewScreen
-import io.silv.movie.presentation.tv.browse.TVScreen
+import io.silv.movie.presentation.tv.components.TVSourcePagingContent
+import io.silv.movie.presentation.tv.view.TVViewScreen
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.parameter.parametersOf
 
-data class MovieScreen(
+data class TVScreen(
     val query: String? = null
 ): Screen {
 
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<MovieScreenModel> { parametersOf(query.orEmpty()) }
+        val screenModel = getScreenModel<TVScreenModel> { parametersOf(query.orEmpty()) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
 
         // needed for movie action to be stable
-        val stableChangeDialogRefrence = { dialog: MovieScreenModel.Dialog.RemoveMovie ->
+        val stableChangeDialogRefrence = { dialog: TVScreenModel.Dialog.RemoveShow ->
             screenModel.changeDialog(dialog)
         }
-        val toggleMovieFavorite = { movie: Movie -> screenModel.toggleMovieFavorite(movie) }
+        val toggleMovieFavorite = { show: TVShow -> screenModel.toggleShowFavorite(show) }
         val navigator = LocalNavigator.currentOrThrow
 
-        MovieStandardScreenSizeContent(
-            pagingFlowFlow = { screenModel.moviePagerFlowFlow },
+        TVStandardScreenSizeContent(
+            pagingFlowFlow = { screenModel.tvPagerFlowFlow },
             displayMode = { screenModel.displayMode },
             gridCellsCount = { screenModel.gridCells },
             query = { state.query },
             listing = { state.listing },
             changeDialog = screenModel::changeDialog,
-            actions = MovieActions(
+            actions = TVActions(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
-                movieLongClick = {
+                showLongClick = {
                     if(it.favorite) {
-                        stableChangeDialogRefrence(MovieScreenModel.Dialog.RemoveMovie(it))
+                        stableChangeDialogRefrence(TVScreenModel.Dialog.RemoveShow(it))
                     } else {
                         toggleMovieFavorite(it)
                     }
                 },
-                movieClick = { navigator.push(MovieViewScreen(it.id)) },
+                showClick = { navigator.push(TVViewScreen(it.id)) },
                 onSearch = screenModel::onSearch,
                 setDisplayMode = screenModel::changeDisplayMode,
                 changeGridCellCount = screenModel::changeGridCells
             ),
             changeResourceType = {
-                navigator.replace(TVScreen(state.query))
+                navigator.replace(MovieScreen(state.query))
             }
         )
         val onDismissRequest = { screenModel.changeDialog(null) }
         when (val dialog = state.dialog) {
-            is MovieScreenModel.Dialog.RemoveMovie -> {
+            is TVScreenModel.Dialog.RemoveShow -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.toggleMovieFavorite(dialog.movie) },
-                    entryToRemove = dialog.movie.title
+                    onConfirm = { screenModel.toggleShowFavorite(dialog.show) },
+                    entryToRemove = dialog.show.title
                 )
             }
-            MovieScreenModel.Dialog.Filter -> {
+            TVScreenModel.Dialog.Filter -> {
                 FilterBottomSheet(
                     onDismissRequest = onDismissRequest,
-                    onApplyFilter = { /*TODO*/ }) {
+                    onApplyFilter = { /*TODO*/ }
+                ) {
 
                 }
             }
@@ -111,17 +111,16 @@ data class MovieScreen(
     }
 }
 
-
 @Composable
-private fun MovieStandardScreenSizeContent(
+private fun TVStandardScreenSizeContent(
     listing: () -> ContentPagedType,
     query: () -> String,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<Movie>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<TVShow>>>,
     gridCellsCount: () -> Int,
     changeResourceType: () -> Unit,
-    changeDialog: (MovieScreenModel.Dialog?) -> Unit,
-    actions: MovieActions
+    changeDialog: (TVScreenModel.Dialog?) -> Unit,
+    actions: TVActions
 ) {
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -131,7 +130,7 @@ private fun MovieStandardScreenSizeContent(
     val isScrolling = remember { mutableStateOf(false) }
 
     CompositionLocalProvider(
-       LocalIsScrolling provides isScrolling
+        LocalIsScrolling provides isScrolling
     ) {
         Scaffold(
             contentWindowInsets = ScaffoldDefaults.contentWindowInsets
@@ -143,7 +142,7 @@ private fun MovieStandardScreenSizeContent(
                 ContentBrowseTopBar(
                     modifier = Modifier.hazeChild(hazeState),
                     query = query,
-                    isMovie = true,
+                    isMovie = false,
                     listing = listing,
                     displayMode = displayMode,
                     scrollBehavior = scrollBehavior,
@@ -157,7 +156,7 @@ private fun MovieStandardScreenSizeContent(
             floatingActionButton = {
                 val expanded by LocalIsScrolling.current
                 ExtendedFloatingActionButton(
-                    onClick = { changeDialog(MovieScreenModel.Dialog.Filter) },
+                    onClick = { changeDialog(TVScreenModel.Dialog.Filter) },
                     text = {
                         Text(text = "Filter")
                     },
@@ -174,7 +173,7 @@ private fun MovieStandardScreenSizeContent(
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { paddingValues ->
-            MovieSourcePagingContent(
+            TVSourcePagingContent(
                 paddingValues = paddingValues,
                 pagingFlowFlow = pagingFlowFlow,
                 snackbarHostState = snackBarHostState,
@@ -191,38 +190,3 @@ private fun MovieStandardScreenSizeContent(
         }
     }
 }
-
-
-
-@Composable
-fun RemoveEntryDialog(
-    onDismissRequest: () -> Unit,
-    onConfirm: () -> Unit,
-    entryToRemove: String,
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(text = "cancel")
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDismissRequest()
-                    onConfirm()
-                },
-            ) {
-                Text(text = "remove")
-            }
-        },
-        title = {
-            Text(text = "Are you sure?")
-        },
-        text = {
-            Text(text = "You are about to remove \"${entryToRemove}\" from your library")
-        },
-    )
-}
-

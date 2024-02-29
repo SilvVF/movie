@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.movie.browse
+package io.silv.movie.presentation.tv.browse
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -13,16 +13,16 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.data.movie.interactor.GetMovie
-import io.silv.movie.data.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.movie.interactor.UpdateMovie
+import io.silv.movie.data.movie.interactor.GetRemoteTVShows
 import io.silv.movie.data.movie.model.ContentPagedType
-import io.silv.movie.data.movie.model.Movie
-import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
+import io.silv.movie.data.tv.TVShow
+import io.silv.movie.data.tv.interactor.GetShow
+import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
+import io.silv.movie.data.tv.interactor.UpdateShow
+import io.silv.movie.data.tv.toDomain
+import io.silv.movie.data.tv.toShowUpdate
 import io.silv.movie.presentation.asState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -36,15 +36,15 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class MovieScreenModel(
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val getMovie: GetMovie,
-    private val updateMovie: UpdateMovie,
+class TVScreenModel(
+    private val getRemoteTVShow: GetRemoteTVShows,
+    private val networkToLocalMovie: NetworkToLocalTVShow,
+    private val getShow: GetShow,
+    private val updateMovie: UpdateShow,
     tmdbPreferences: TMDBPreferences,
     query: String
-) : StateScreenModel<MovieState>(
-    MovieState(
+) : StateScreenModel<TVState>(
+    TVState(
         listing = if (query.isNotBlank()) {
             ContentPagedType.Search(query)
         } else {
@@ -71,19 +71,19 @@ class MovieScreenModel(
             .launchIn(screenModelScope)
     }
 
-    val moviePagerFlowFlow = state.map { it.listing }
+    val tvPagerFlowFlow = state.map { it.listing }
         .combine(tmdbPreferences.hideLibraryItems().changes()) { a, b -> a to b}
         .distinctUntilChanged()
         .flatMapLatest { (listing, hideLibraryItems) ->
             Pager(
                 PagingConfig(pageSize = 25)
             ) {
-                getRemoteMovie.subscribe(listing)
+                getRemoteTVShow.subscribe(listing)
             }.flow.map { pagingData ->
                 val seenIds = mutableSetOf<Long>()
-                pagingData.map { sMovie ->
-                    networkToLocalMovie.await(sMovie.toDomain())
-                        .let { localMovie -> getMovie.subscribe(localMovie.id) }
+                pagingData.map { sTVShow ->
+                    networkToLocalMovie.await(sTVShow.toDomain())
+                        .let { localShow -> getShow.subscribe(localShow.id) }
                         .stateIn(ioCoroutineScope)
                 }
                     .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
@@ -107,6 +107,7 @@ class MovieScreenModel(
             mutableState.update { state -> state.copy(query = query) }
         }
     }
+
 
     fun changeDisplayMode(mode: PosterDisplayMode) {
         screenModelScope.launch {
@@ -135,9 +136,9 @@ class MovieScreenModel(
         }
     }
 
-    fun toggleMovieFavorite(movie: Movie) {
+    fun toggleShowFavorite(tvShow: TVShow) {
         screenModelScope.launch {
-            val update = movie.copy(favorite = !movie.favorite).toMovieUpdate()
+            val update = tvShow.copy(favorite = !tvShow.favorite).toShowUpdate()
 
             updateMovie.await(update)
         }
@@ -151,27 +152,27 @@ class MovieScreenModel(
         data object Filter : Dialog
 
         @Stable
-        data class RemoveMovie(val movie: Movie) : Dialog
+        data class RemoveShow(val show: TVShow) : Dialog
     }
 
 }
 
 @Immutable
 @Stable
-data class MovieState(
+data class TVState(
     val listing: ContentPagedType = ContentPagedType.Default.Popular,
     val query: String = "",
-    val dialog: MovieScreenModel.Dialog? = null,
+    val dialog: TVScreenModel.Dialog? = null,
 )
 
 
 @Immutable
 @Stable
-data class MovieActions(
+data class TVActions(
     val changeCategory: (ContentPagedType) -> Unit,
     val changeQuery: (String) -> Unit,
-    val movieLongClick: (movie: Movie) -> Unit,
-    val movieClick: (movie: Movie) -> Unit,
+    val showLongClick: (tvShow: TVShow) -> Unit,
+    val showClick: (tvShow: TVShow) -> Unit,
     val onSearch: (String) -> Unit,
     val setDisplayMode: (PosterDisplayMode) -> Unit,
     val changeGridCellCount: (Int) -> Unit

@@ -8,7 +8,6 @@ import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.movie.data.movie.model.Movie
-import io.silv.movie.data.tv.TVShow
 import io.silv.movie.presentation.toPoster
 
 @Composable
@@ -18,53 +17,6 @@ fun InLibraryBadge(enabled: Boolean) {
     }
 }
 
-@Composable
-fun BrowseShowSourceCoverOnlyGridItem(
-    show: TVShow,
-    onClick: (TVShow) -> Unit = {},
-    onLongClick: (TVShow) -> Unit = {},
-) {
-    EntryCompactGridItem(
-        title = null,
-        coverData = show.toPoster(),
-        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
-        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
-        onLongClick = { onLongClick(show) },
-        onClick = { onClick(show) },
-    )
-}
-
-@Composable
-fun BrowsShowSourceCompactGridItem(
-    show: TVShow,
-    onClick: (TVShow) -> Unit = {},
-    onLongClick: (TVShow) -> Unit = {},
-) {
-    EntryCompactGridItem(
-        title = show.title,
-        coverData = show.toPoster(),
-        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
-        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
-        onLongClick = { onLongClick(show) },
-        onClick = { onClick(show) },
-    )
-}
-
-@Composable
-fun BrowseShowSourceComfortableGridItem(
-    show: TVShow,
-    onClick: (TVShow) -> Unit = {},
-    onLongClick: (TVShow) -> Unit = {},
-) {
-    EntryComfortableGridItem(
-        title = show.title,
-        coverData = show.toPoster(),
-        coverAlpha = if (show.favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
-        coverBadgeStart = { InLibraryBadge(enabled = show.favorite) },
-        onLongClick = { onLongClick(show) },
-        onClick = { onClick(show) },
-    )
-}
 
 @Composable
 fun BrowseMovieSourceCoverOnlyGridItem(

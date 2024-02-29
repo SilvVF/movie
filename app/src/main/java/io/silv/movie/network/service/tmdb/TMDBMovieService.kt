@@ -13,7 +13,7 @@ import retrofit2.http.Query
 
 interface TMDBMovieService {
 
-    @GET("https://api.themoviedb.org/3/movie/{id}")
+    @GET("movie/{id}")
     fun details(
         @Path("id") id: Long,
     ): Call<MovieDetailsResponse>

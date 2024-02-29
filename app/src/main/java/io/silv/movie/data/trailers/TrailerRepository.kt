@@ -5,6 +5,7 @@ interface TrailerRepository {
     suspend fun updateTrailer(update: TrailerUpdate): Boolean
     suspend fun getById(id: Long): Trailer?
     suspend fun getTrailersByMovieId(movieId: Long): List<Trailer>
+    suspend fun getTrailersByShowId(showId: Long): List<Trailer>
 }
 
 class TrailerRepositoryImpl(
@@ -15,7 +16,8 @@ class TrailerRepositoryImpl(
         return handler.awaitOneOrNullExecutable(inTransaction = true) {
             trailerQueries.insert(
                 trailerId = trailer.trailerId,
-                movieId = trailer.movieId,
+                movieId = if (trailer.isMovie) trailer.contentId else null,
+                showId = if (!trailer.isMovie) trailer.contentId else null,
                 name = trailer.name,
                 videoKey = trailer.key,
                 site = trailer.site,
@@ -31,6 +33,11 @@ class TrailerRepositoryImpl(
     override suspend fun getTrailersByMovieId(movieId: Long): List<Trailer> {
         return handler.awaitList { trailerQueries.selectByMovieId(movieId, TrailersMapper.mapTrailer)}
     }
+
+    override suspend fun getTrailersByShowId(showId: Long): List<Trailer> {
+        return handler.awaitList { trailerQueries.selectByShowId(showId, TrailersMapper.mapTrailer)}
+    }
+
 
     override suspend fun updateTrailer(update: TrailerUpdate): Boolean {
         return runCatching {
@@ -50,6 +57,7 @@ class TrailerRepositoryImpl(
                     id = update.id,
                     trailerId = update.trailerId,
                     moveId = update.movieId,
+                    showId = update.showId,
                     name = update.name,
                     videoKey = update.key,
                     site = update.site,

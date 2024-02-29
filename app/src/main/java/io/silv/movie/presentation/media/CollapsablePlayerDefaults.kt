@@ -38,10 +38,11 @@ object CollapsablePlayerDefaults {
     @Composable
     fun VideoQueueItem(
         reorderableState: ReorderableLazyListState,
+        onMute: () -> Unit,
         trailer: Trailer,
-        idx: Int
+        idx: Int,
     ) {
-        RerorderableVideoQueueItem(reorderableState, trailer, idx)
+        RerorderableVideoQueueItem(reorderableState, onMute, trailer, idx)
     }
 
     context(RowScope)
@@ -66,8 +67,9 @@ object CollapsablePlayerDefaults {
 @Composable
 private fun RerorderableVideoQueueItem(
     reorderableState: ReorderableLazyListState,
+    mutePlayer: () -> Unit,
     trailer: Trailer,
-    idx: Int
+    idx: Int,
 ) {
     ReorderableItem(
         state = reorderableState,
@@ -93,7 +95,7 @@ private fun RerorderableVideoQueueItem(
                 )
             } else {
                 AnimatedEqualizer(
-                    onClick = { /*TODO*/ }
+                    onClick = mutePlayer
                 )
             }
             val cardShape = CardDefaults.elevatedShape
@@ -140,7 +142,7 @@ private fun RowScope.CollapsedPlayerTitleAndActions(
         overflow = TextOverflow.Ellipsis,
     )
     AnimatedContent(
-        targetState = true,
+        targetState = playing,
         label = "",
         modifier = Modifier.wrapContentSize()
     ) { isPlaying ->
