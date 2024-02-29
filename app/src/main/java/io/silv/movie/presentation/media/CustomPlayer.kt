@@ -83,15 +83,17 @@ fun PipedApiPlayer(
         }
     }
 
-    DisposableEffect(playerViewModel) {
+    DisposableEffect(Unit) {
         onDispose {
-            playerViewModel.second = exoPlayer.currentPosition
+            exoPlayer.clearMediaItems()
+            exoPlayer.release()
         }
     }
 
 
-    LaunchedEffect(exoPlayer, playerViewModel.streams) {
-        val streams = playerViewModel.streams ?: return@LaunchedEffect
+    LaunchedEffect(exoPlayer, playerViewModel.streams, playerViewModel.second) {
+        val streams = playerViewModel.streams
+            ?: return@LaunchedEffect
 
          when {
             streams.hls != null -> {

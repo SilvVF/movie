@@ -25,12 +25,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ItemPosition
 import kotlin.time.Duration.Companion.seconds
 
 class PlayerViewModel(
-    private val pipedApi: PipedApi
+    private val pipedApi: PipedApi,
 ):
     ViewModel(),
     EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
@@ -47,9 +48,12 @@ class PlayerViewModel(
 
     var second by mutableLongStateOf(0L)
 
+    private var initailized by mutableStateOf(false)
+
     init {
         viewModelScope.launch {
-            snapshotFlow { currentTrailer }
+            snapshotFlow { currentTrailer to initailized }
+                .map { pair -> pair.first.takeIf { pair.second } }
                 .filterNotNull()
                 .distinctUntilChanged()
                 .debounce {
@@ -59,8 +63,8 @@ class PlayerViewModel(
                     if (trailer == trailerToStreams?.first)
                         return@collectLatest
 
-                    trailerToStreams = null
                     second = 0L
+                    trailerToStreams = null
                     trailerToStreams = trailer to pipedApi.getStreams(trailer.key)
                 }
         }
@@ -94,17 +98,18 @@ class PlayerViewModel(
 
 
     fun initialize(trailers: List<Trailer>) {
-
-        if (trailerQueue.isNotEmpty()) {
-            trailers.forEach { trailer ->
-               if (!trailerQueue.contains(trailer)) {
-                   trailerQueue.add(trailer)
-               }
-            }
+        if (trailerQueue.isNotEmpty() &&
+            trailerQueue.containsAll(trailers) &&
+            trailers.firstOrNull() == trailerQueue.firstOrNull()
+        ) {
+            initailized = true
             return
         }
 
+        second = 0L
+        trailerQueue.clear()
         trailerQueue.addAll(trailers)
+        initailized = true
     }
 
     fun onDragEnd(from: Int, to: Int) {
@@ -123,7 +128,10 @@ class PlayerViewModel(
         }
     }
 
-
+    fun clear() {
+        trailerToStreams = null
+        initailized = false
+    }
 
     private fun getSubtitleConfigs(): List<MediaItem.SubtitleConfiguration> = streams!!.subtitles.map {
         val roleFlags = getSubtitleRoleFlags(it)

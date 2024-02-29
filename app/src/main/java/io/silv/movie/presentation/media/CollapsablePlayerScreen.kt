@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import io.silv.movie.data.trailers.Trailer
@@ -24,8 +24,10 @@ fun CollapsablePlayerScreen(
 ) {
     val playerViewModel = koinViewModel<PlayerViewModel>()
 
-    LaunchedEffect(videos) {
+    DisposableEffect(videos) {
         playerViewModel.initialize(videos)
+
+        onDispose { playerViewModel.clear() }
     }
 
     val reorderState = rememberReorderableLazyListState(
@@ -61,8 +63,8 @@ fun CollapsablePlayerScreen(
                 )
             } ?: Box(
                 modifier = Modifier
-                .aspectRatio(16f / 9f)
-                .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .fillMaxWidth()
             ) {
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
