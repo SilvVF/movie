@@ -22,6 +22,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
+import io.silv.movie.MainViewModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,7 +52,7 @@ private fun createExoPlayer(
 
 @Composable
 fun PipedApiPlayer(
-    playerViewModel: PlayerViewModel,
+    playerViewModel: MainViewModel,
     modifier: Modifier,
 ) {
 
@@ -71,13 +72,13 @@ fun PipedApiPlayer(
 
     CollectEventsWithLifecycle(playerViewModel) {event ->
         when (event) {
-            PlayerViewModel.PlayerEvent.Pause -> {
+            MainViewModel.PlayerEvent.Pause -> {
                 exoPlayer.pause()
             }
-            PlayerViewModel.PlayerEvent.Play -> {
+            MainViewModel.PlayerEvent.Play -> {
                 exoPlayer.play()
             }
-            PlayerViewModel.PlayerEvent.Mute -> {
+            MainViewModel.PlayerEvent.Mute -> {
                 exoPlayer.setDeviceMuted(true, C.VOLUME_FLAG_REMOVE_SOUND_AND_VIBRATE)
             }
         }
@@ -85,13 +86,13 @@ fun PipedApiPlayer(
 
     DisposableEffect(Unit) {
         onDispose {
-            exoPlayer.clearMediaItems()
+            playerViewModel.onExoPlayerDispose(exoPlayer.currentPosition)
             exoPlayer.release()
         }
     }
 
 
-    LaunchedEffect(exoPlayer, playerViewModel.streams, playerViewModel.second) {
+    LaunchedEffect(exoPlayer, playerViewModel.streams) {
         val streams = playerViewModel.streams
             ?: return@LaunchedEffect
 

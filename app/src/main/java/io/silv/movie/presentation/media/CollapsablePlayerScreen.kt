@@ -6,33 +6,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import io.silv.movie.data.trailers.Trailer
-import kotlinx.collections.immutable.ImmutableList
+import io.silv.movie.MainViewModel
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import org.koin.androidx.compose.koinViewModel
 
 
 @Composable
 fun CollapsablePlayerScreen(
     collapsableVideoState: CollapsableVideoState,
-    videos: ImmutableList<Trailer>,
     onDismissRequested: () -> Unit,
+    playerViewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
-    val playerViewModel = koinViewModel<PlayerViewModel>()
 
-    DisposableEffect(videos) {
-        playerViewModel.initialize(videos)
-
-        onDispose { playerViewModel.clear() }
-    }
 
     val reorderState = rememberReorderableLazyListState(
         onMove = playerViewModel::onMove,
-        onDragEnd = playerViewModel::onDragEnd,
     )
 
     CollapsableVideoLayout(
@@ -44,11 +34,11 @@ fun CollapsablePlayerScreen(
                 currentTrailer = playerViewModel.currentTrailer,
                 playing = playerViewModel.playing,
                 onPlayClick = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Play)
+                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Play)
                 },
                 onCloseClick = { collapsableVideoState.dismiss() },
                 onPauseClick = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Pause)
+                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Pause)
                 }
             )
         },
@@ -79,7 +69,7 @@ fun CollapsablePlayerScreen(
                 trailer = trailer,
                 idx = idx,
                 onMute = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Mute)
+                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Mute)
                 }
             )
         }

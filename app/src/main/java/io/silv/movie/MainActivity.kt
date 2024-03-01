@@ -24,6 +24,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -42,6 +44,7 @@ import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import org.koin.androidx.compose.defaultExtras
 import org.koin.androidx.viewmodel.resolveViewModel
 import org.koin.compose.currentKoinScope
@@ -96,9 +99,15 @@ class MainActivity : ComponentActivity() {
                 }
 
                 BackHandler(
-                    enabled = mainScreenModel.videos.isNullOrEmpty().not()
+                    enabled = mainScreenModel.trailerQueue.isNotEmpty()
                 ) {
                     mainScreenModel.clearMediaQueue()
+                }
+
+                val trailers by remember(mainScreenModel.trailerQueue) {
+                    derivedStateOf {
+                        mainScreenModel.trailerQueue.toImmutableList()
+                    }
                 }
 
                 MovieTheme {
@@ -109,7 +118,7 @@ class MainActivity : ComponentActivity() {
                                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
                                 bottomBar = {
                                     AppBottomBar(
-                                        videos = mainScreenModel.videos,
+                                        videos = trailers,
                                         progress = { collapsableVideoState.progress },
                                         tabNavigator = tabNavigator
                                     )
@@ -122,7 +131,7 @@ class MainActivity : ComponentActivity() {
                                 ) {
                                     CurrentTab()
                                     AnimatedVisibility(
-                                        visible = mainScreenModel.videos.isNullOrEmpty().not(),
+                                        visible = mainScreenModel.trailerQueue.isNotEmpty(),
                                         modifier = Modifier
                                             .wrapContentSize()
                                             .align(Alignment.BottomCenter),
@@ -131,8 +140,8 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         CollapsablePlayerScreen(
                                             collapsableVideoState = collapsableVideoState,
-                                            videos = mainScreenModel.videos ?: return@AnimatedVisibility,
-                                            onDismissRequested = mainScreenModel::clearMediaQueue
+                                            onDismissRequested = mainScreenModel::clearMediaQueue,
+                                            playerViewModel = mainScreenModel
                                         )
                                     }
                                 }
