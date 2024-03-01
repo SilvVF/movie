@@ -28,11 +28,13 @@ import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.CollapsableVideoState
 import io.silv.movie.presentation.media.PlayerHelper
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.burnoutcrew.reorderable.ItemPosition
 import kotlin.time.Duration.Companion.seconds
 
@@ -208,8 +210,12 @@ class MainViewModel(
             }
 
             second = 0L
+            trailerToStreams = null
             trailerQueue.clear()
             trailerQueue.addAll(mutableTrailers.toImmutableList())
+            withContext(Dispatchers.Main) {
+                collapsableVideoState?.state?.snapTo(CollapsableVideoAnchors.Start)
+            }
         }
     }
 

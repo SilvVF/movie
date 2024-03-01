@@ -92,7 +92,9 @@ class MainActivity : ComponentActivity() {
                 val collapsableVideoState = rememberCollapsableVideoState()
 
                 DisposableEffect(collapsableVideoState) {
+
                     mainScreenModel.collapsableVideoState = collapsableVideoState
+
                     onDispose {
                         mainScreenModel.collapsableVideoState = null
                     }
