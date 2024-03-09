@@ -13,7 +13,7 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import io.silv.movie.data.movie.model.Movie
-import io.silv.movie.data.tv.TVShow
+import io.silv.movie.data.tv.model.TVShow
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 

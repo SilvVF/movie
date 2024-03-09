@@ -2,8 +2,9 @@ package io.silv.movie.data.movie.interactor
 
 import io.silv.movie.core.SMovie
 import io.silv.movie.core.await
-import io.silv.movie.data.movie.model.Filters
-import io.silv.movie.data.movie.model.GenreMode
+import io.silv.movie.data.Filters
+import io.silv.movie.data.GenreMode
+import io.silv.movie.data.movie.SourceMoviePagingSource
 import io.silv.movie.network.model.toSMovie
 import io.silv.movie.network.service.tmdb.TMDBConstants
 import io.silv.movie.network.service.tmdb.TMDBConstants.JOIN_MODE_MASK_AND

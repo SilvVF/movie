@@ -1,7 +1,9 @@
 package io.silv.movie.data.tv.interactor
 
+import io.silv.movie.data.tv.model.TVShow
 import io.silv.movie.data.tv.repository.ShowRepository
-import io.silv.movie.data.tv.TVShow
+import io.silv.movie.data.tv.model.toShowUpdate
+import kotlinx.datetime.Clock
 
 class NetworkToLocalTVShow(
     private val showRepository: ShowRepository,
@@ -19,7 +21,21 @@ class NetworkToLocalTVShow(
                     title = show.title,
                     posterUrl = show.posterUrl ?: localShow.posterUrl
                 )
-            else -> localShow
+            else -> {
+                val updated =  localShow.copy(
+                    title = show.title,
+                    posterUrl = show.posterUrl ?: localShow.posterUrl,
+                    status = show.status ?: localShow.status,
+                    popularity = show.popularity,
+                    voteCount = show.voteCount,
+                    posterLastUpdated = Clock.System.now().epochSeconds
+                )
+                if(showRepository.updateShow(updated.toShowUpdate())) {
+                    updated
+                } else {
+                    localShow
+                }
+            }
         }
     }
 

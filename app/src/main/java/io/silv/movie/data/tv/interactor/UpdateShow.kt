@@ -1,7 +1,7 @@
 package io.silv.movie.data.tv.interactor
 
+import io.silv.movie.data.tv.model.TVShowUpdate
 import io.silv.movie.data.tv.repository.ShowRepository
-import io.silv.movie.data.tv.TVShowUpdate
 
 
 class UpdateShow(

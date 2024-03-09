@@ -3,9 +3,9 @@ package io.silv.movie.data.tv.repository
 
 import io.silv.movie.core.Status
 import io.silv.movie.data.tv.ShowMapper
-import io.silv.movie.data.tv.TVShow
-import io.silv.movie.data.tv.TVShowPoster
-import io.silv.movie.data.tv.TVShowUpdate
+import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.model.TVShowPoster
+import io.silv.movie.data.tv.model.TVShowUpdate
 import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 

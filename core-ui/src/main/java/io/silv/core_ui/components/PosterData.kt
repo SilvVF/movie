@@ -87,6 +87,7 @@ data class PosterData(
     val url: String?,
     val title: String,
     val favorite: Boolean,
+    val isMovie: Boolean
 )
 
 object CommonEntryItemDefaults {

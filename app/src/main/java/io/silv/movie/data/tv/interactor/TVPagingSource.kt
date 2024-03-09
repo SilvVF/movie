@@ -2,8 +2,8 @@ package io.silv.movie.data.tv.interactor
 
 import io.silv.movie.core.STVShow
 import io.silv.movie.core.await
-import io.silv.movie.data.movie.model.Filters
-import io.silv.movie.data.movie.model.GenreMode
+import io.silv.movie.data.Filters
+import io.silv.movie.data.GenreMode
 import io.silv.movie.data.tv.SourceTVPagingSource
 import io.silv.movie.network.model.toSTVShow
 import io.silv.movie.network.service.tmdb.TMDBConstants

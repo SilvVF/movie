@@ -21,7 +21,7 @@ import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.plus
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.tv.TVShowPoster
+import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
 import io.silv.movie.presentation.toPoster

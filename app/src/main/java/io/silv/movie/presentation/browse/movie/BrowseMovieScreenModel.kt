@@ -20,10 +20,10 @@ import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
 import io.silv.movie.data.movie.interactor.UpdateMovie
-import io.silv.movie.data.movie.model.ContentPagedType
-import io.silv.movie.data.movie.model.Filters
+import io.silv.movie.data.ContentPagedType
+import io.silv.movie.data.Filters
 import io.silv.movie.data.movie.model.MoviePoster
-import io.silv.movie.data.movie.model.SearchItem
+import io.silv.movie.data.SearchItem
 import io.silv.movie.data.movie.model.toDomain
 import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.movie.repository.SourceMovieRepository

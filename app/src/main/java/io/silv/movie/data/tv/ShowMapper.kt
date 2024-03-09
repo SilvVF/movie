@@ -1,6 +1,8 @@
 package io.silv.movie.data.tv
 
 import io.silv.movie.core.Status
+import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.model.TVShowPoster
 
 
 object ShowMapper {

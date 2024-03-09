@@ -1,4 +1,4 @@
-package io.silv.movie.data.tv
+package io.silv.movie.data.tv.model
 
 data class TVShowUpdate(
     val showId: Long,

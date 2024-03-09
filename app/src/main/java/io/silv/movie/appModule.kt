@@ -1,5 +1,7 @@
 package io.silv.movie
 
+import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.dataModule
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
@@ -8,6 +10,7 @@ import io.silv.movie.presentation.view.movie.MovieViewScreenModel
 import io.silv.movie.presentation.view.tv.TVViewScreenModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
 val appModule =
@@ -26,6 +29,10 @@ val appModule =
         factoryOf(::TVViewScreenModel)
 
         factoryOf(::LibraryScreenModel)
+
+        singleOf(::MovieCoverCache)
+
+        singleOf(::TVShowCoverCache)
 
         single {
             Json {

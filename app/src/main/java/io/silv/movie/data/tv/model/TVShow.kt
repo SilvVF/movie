@@ -1,4 +1,4 @@
-package io.silv.movie.data.tv
+package io.silv.movie.data.tv.model
 
 import android.os.Parcelable
 import androidx.compose.runtime.Stable

@@ -58,7 +58,7 @@ import io.silv.core_ui.components.SearchLargeTopBar
 import io.silv.core_ui.components.TMDBLogo
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.movie.data.movie.model.ContentPagedType
+import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.prefrences.PosterDisplayMode
 
 @Composable

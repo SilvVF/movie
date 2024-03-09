@@ -8,7 +8,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
-import io.silv.movie.data.movie.model.ContentPagedType
+import io.silv.movie.data.ContentPagedType
 import io.silv.movie.presentation.browse.movie.BrowseMovieScreen
 
 object HomeTab: Tab {

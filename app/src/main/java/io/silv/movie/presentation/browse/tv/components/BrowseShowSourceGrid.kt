@@ -4,7 +4,7 @@ import androidx.compose.runtime.Composable
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
-import io.silv.movie.data.tv.TVShowPoster
+import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
 import io.silv.movie.presentation.toPoster
 

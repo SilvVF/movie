@@ -21,39 +21,39 @@ CREATE TABLE show (
 );
 
 
-    selectById:
-    SELECT * FROM show WHERE id = :id LIMIT 1;
+selectById:
+SELECT * FROM show WHERE id = :id LIMIT 1;
 
 
-    selectAll:
-    SELECT * FROM show;
+selectAll:
+SELECT * FROM show;
 
-    selectShowPartialById:
-    SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE id = :id LIMIT 1;
+selectShowPartialById:
+SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE id = :id LIMIT 1;
 
-    insert:
-    INSERT OR IGNORE INTO show(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
-    VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status);
+insert:
+INSERT OR IGNORE INTO show(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
+VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status);
 
-    lastInsertRowId:
-    SELECT last_insert_rowid();
+lastInsertRowId:
+SELECT last_insert_rowid();
 
-    update:
-    UPDATE show SET
-        title = COALESCE(:title, title),
-        overview = COALESCE(:overview, overview),
-        genres = COALESCE(:genres, genres),
-        genreIds = COALESCE(:genreIds, genreIds),
-        originalLanguage = COALESCE(:originalLanguage, originalLanguage),
-        voteCount = COALESCE(:voteCount, voteCount),
-        releaseDate = COALESCE(:releaseDate, releaseDate),
-        posterUrl = COALESCE(:posterUrl, posterUrl),
-        posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
-        favorite = COALESCE(:favorite, favorite),
-        externalUrl = COALESCE(:externalUrl, externalUrl),
-        popularity = COALESCE(:popularity, popularity),
-        status = COALESCE(:status, status)
-    WHERE id = :showId;
+update:
+UPDATE show SET
+    title = COALESCE(:title, title),
+    overview = COALESCE(:overview, overview),
+    genres = COALESCE(:genres, genres),
+    genreIds = COALESCE(:genreIds, genreIds),
+    originalLanguage = COALESCE(:originalLanguage, originalLanguage),
+    voteCount = COALESCE(:voteCount, voteCount),
+    releaseDate = COALESCE(:releaseDate, releaseDate),
+    posterUrl = COALESCE(:posterUrl, posterUrl),
+    posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
+    favorite = COALESCE(:favorite, favorite),
+    externalUrl = COALESCE(:externalUrl, externalUrl),
+    popularity = COALESCE(:popularity, popularity),
+    status = COALESCE(:status, status)
+WHERE id = :showId;
 
 
 

@@ -1,0 +1,16 @@
+CREATE TABLE contentList(
+     _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+     name TEXT NOT NULL
+);
+
+insert:
+INSERT INTO contentList(_id, name)
+VALUES (NULL,  :name);
+
+update:
+UPDATE contentList SET
+    name = COALESCE(:name, name)
+WHERE _id = :id;
+
+delete:
+DELETE FROM contentList WHERE _id = :id;

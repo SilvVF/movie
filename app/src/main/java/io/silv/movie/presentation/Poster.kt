@@ -4,15 +4,16 @@ package io.silv.movie.presentation
 import io.silv.core_ui.components.PosterData
 import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.movie.model.MoviePoster
-import io.silv.movie.data.tv.TVShow
-import io.silv.movie.data.tv.TVShowPoster
+import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.model.TVShowPoster
 
 fun MoviePoster.toPoster(): PosterData {
     return PosterData(
         id = id,
         url = posterUrl,
         title = title,
-        favorite = favorite
+        favorite = favorite,
+        isMovie = true
     )
 }
 
@@ -22,7 +23,8 @@ fun Movie.toPoster(): PosterData {
         id = id,
         url = posterUrl,
         title = title,
-        favorite = favorite
+        favorite = favorite,
+        isMovie = true
     )
 }
 
@@ -31,7 +33,8 @@ fun TVShowPoster.toPoster(): PosterData {
         id = id,
         url = posterUrl,
         title = title,
-        favorite = favorite
+        favorite = favorite,
+        isMovie = false
     )
 }
 
@@ -40,6 +43,7 @@ fun TVShow.toPoster(): PosterData {
         id = id,
         url = posterUrl,
         title = title,
-        favorite = favorite
+        favorite = favorite,
+        isMovie = false
     )
 }

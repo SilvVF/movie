@@ -1,15 +1,15 @@
-package io.silv.movie.data.movie.model
+package io.silv.movie.data
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.KeyboardType
-import io.silv.movie.data.Genre
+import java.io.Serializable
 
 
 @Stable
-sealed interface ContentPagedType: java.io.Serializable {
+sealed interface ContentPagedType: Serializable {
 
     @Stable
     data class Discover(
@@ -38,7 +38,7 @@ data class Filters(
     val year: MutableState<String>,
     val voteCount: MutableState<String>,
     val voteAverage: MutableState<String>
-): java.io.Serializable {
+): Serializable {
     companion object {
         val default = Filters(
             genres = listOf(),
@@ -55,7 +55,7 @@ data class Filters(
 }
 
 @Stable
-enum class SortingOption(val title: String, val sort: String) {
+enum class SortingOption(val title: String, val sort: String): Serializable {
     PopularityAsc("Popularity asc", "popularity.asc"),
     PopularityDesc("Popularity desc", "popularity.desc"),
     TitleAsc("Title asc", "title.asc"),
@@ -69,7 +69,7 @@ enum class SortingOption(val title: String, val sort: String) {
 }
 
 @Stable
-sealed interface GenreMode {
+sealed interface GenreMode: Serializable {
     data object Or: GenreMode
     data object And: GenreMode
 }

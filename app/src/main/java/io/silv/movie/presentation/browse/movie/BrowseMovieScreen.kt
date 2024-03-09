@@ -33,7 +33,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import io.silv.movie.data.movie.model.ContentPagedType
+import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.LocalIsScrolling

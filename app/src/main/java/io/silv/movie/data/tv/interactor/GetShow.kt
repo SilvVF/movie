@@ -1,7 +1,7 @@
 package io.silv.movie.data.tv.interactor
 
-import io.silv.movie.data.tv.TVShow
-import io.silv.movie.data.tv.TVShowPoster
+import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.data.tv.repository.ShowRepository
 import kotlinx.coroutines.flow.Flow
 

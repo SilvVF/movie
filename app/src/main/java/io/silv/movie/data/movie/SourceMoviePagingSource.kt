@@ -1,18 +1,17 @@
-package io.silv.movie.data.movie.interactor
+package io.silv.movie.data.movie
 
-import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import io.silv.movie.core.SMovie
+import io.silv.movie.data.movie.interactor.MoviesPage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-abstract class SourceMoviePagingSource : PagingSource<Long, io.silv.movie.core.SMovie>() {
-
+abstract class SourceMoviePagingSource : PagingSource<Long, SMovie>() {
 
     abstract suspend fun getNextPage(page: Int): MoviesPage
 
-    override suspend fun load(params: LoadParams<Long>): LoadResult<Long, io.silv.movie.core.SMovie> {
+    override suspend fun load(params: LoadParams<Long>): LoadResult<Long, SMovie> {
         val page = params.key ?: 1
 
         val moviesPage = try {
@@ -22,7 +21,6 @@ abstract class SourceMoviePagingSource : PagingSource<Long, io.silv.movie.core.S
                     ?: error("Empty page")
             }
         } catch (e: Exception) {
-            Log.d("MoviePagingSource", e.stackTraceToString())
             return LoadResult.Error(e)
         }
 
@@ -33,7 +31,7 @@ abstract class SourceMoviePagingSource : PagingSource<Long, io.silv.movie.core.S
         )
     }
 
-    override fun getRefreshKey(state: PagingState<Long, io.silv.movie.core.SMovie>): Long? {
+    override fun getRefreshKey(state: PagingState<Long, SMovie>): Long? {
         return state.anchorPosition?.let { anchorPosition ->
             val anchorPage = state.closestPageToPosition(anchorPosition)
             anchorPage?.prevKey ?: anchorPage?.nextKey
