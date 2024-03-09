@@ -1,4 +1,4 @@
-CREATE TABLE contentListJuction(
+CREATE TABLE contentListJunction(
     movie_id INTEGER,
     show_id INTEGER,
     list_id INTEGER NOT NULL,
@@ -8,17 +8,20 @@ CREATE TABLE contentListJuction(
     FOREIGN KEY (list_id) REFERENCES contentList(_id) ON DELETE CASCADE
 );
 
-CREATE INDEX list_id_index ON contentListJuction(list_id);
+CREATE INDEX list_id_index ON contentListJunction(list_id);
 
 insert:
-INSERT INTO contentListJuction(movie_id, show_id, list_id)
+INSERT INTO contentListJunction(movie_id, show_id, list_id)
 VALUES (:movieId, :showId, :listId);
 
 selectByListId:
-SELECT * FROM contentListJuction WHERE list_id = :listId;
+SELECT * FROM contentListJunction WHERE list_id = :listId;
 
 deleteMovieFromList:
-DELETE FROM contentListJuction WHERE movie_id = :movieId AND list_id = :listId;
+DELETE FROM contentListJunction WHERE movie_id = :movieId AND list_id = :listId;
 
 deleteShowFromList:
-DELETE FROM contentListJuction WHERE show_id = :showId AND list_id = :listId;
+DELETE FROM contentListJunction WHERE show_id = :showId AND list_id = :listId;
+
+selectAll:
+SELECT * FROM contentListJunction;

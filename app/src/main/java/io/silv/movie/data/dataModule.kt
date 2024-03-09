@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import io.silv.movie.data.lists.ContentListRepositoryImpl
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -65,6 +66,8 @@ val dataModule =
         factoryOf(::NetworkToLocalTrailer)
 
         factoryOf(::GetRemoteTrailers)
+
+        singleOf(::ContentListRepositoryImpl)
 
         singleOf(::TrailerRepositoryImpl) { bind<TrailerRepository>() }
 

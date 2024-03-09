@@ -1,0 +1,42 @@
+CREATE VIEW contentListView AS
+SELECT
+    clj.*,
+    CASE
+        WHEN clj.movie_id IS NOT NULL THEN 'movie'  -- Indicate whether it's a movie or show
+        WHEN clj.show_id IS NOT NULL THEN 'show'
+        ELSE NULL
+    END AS contentType,
+    COALESCE(m.title, s.title) AS title,
+    COALESCE(m.posterUrl, s.posterUrl) AS posterUrl,
+    COALESCE(m.posterLastUpdated, s.posterLastUpdated) AS posterLastUpdated,
+    COALESCE(m.favorite, s.favorite) AS favorite,
+    cl.name AS listName
+FROM
+    contentListJunction clj
+JOIN
+    contentList cl ON clj.list_id = cl._id
+LEFT JOIN
+    movie m ON clj.movie_id = m.id
+LEFT JOIN
+    show s ON clj.show_id = s.id
+ORDER BY
+    clj.list_id;
+
+contentlist:
+SELECT * FROM contentListView
+WHERE list_id IN (
+     SELECT list_id
+     FROM contentListJunction sub_clj
+     LEFT JOIN
+        movie sub_m ON sub_clj.movie_id = sub_m.id
+     LEFT JOIN
+       show sub_s ON sub_clj.show_id = sub_s.id
+     WHERE
+       sub_clj.list_id = list_id
+       AND (
+            sub_m.title LIKE COALESCE(:query, '')
+            OR sub_s.title LIKE COALESCE(:query, '')
+            OR COALESCE(:query, '') = ''
+       )
+);
+
