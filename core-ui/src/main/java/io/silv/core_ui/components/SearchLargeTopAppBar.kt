@@ -56,6 +56,9 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 
+private val TopBarMaxHeight = 216.dp
+private val TopBarPinnedHeight = 64.0.dp
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchLargeTopBar(
@@ -79,8 +82,8 @@ fun SearchLargeTopBar(
         actions = actions,
         colors = colors,
         windowInsets = windowInsets,
-        maxHeight = 216.0.dp,
-        pinnedHeight = 64.0.dp,
+        maxHeight = TopBarMaxHeight,
+        pinnedHeight = TopBarPinnedHeight,
         scrollBehavior = scrollBehavior,
         extraContent = extraContent,
     )
@@ -212,8 +215,7 @@ internal fun TwoRowsTopAppBar(
                     // padding will always be applied by the layout above
                     .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
                     .clipToBounds(),
-                heightPx = maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset
-                    ?: 0f),
+                heightPx = maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f),
                 navigationIconContentColor =
                 colors.navigationIconContentColor,
                 titleContentColor = colors.titleContentColor,

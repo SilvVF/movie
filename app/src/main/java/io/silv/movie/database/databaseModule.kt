@@ -49,7 +49,8 @@ val databaseModule = module {
             driver = get(),
             movieAdapter = Movie.Adapter(
                 genreIdsAdapter = listIntAdapter,
-                genresAdapter = listStringAdapter
+                genresAdapter = listStringAdapter,
+                production_companiesAdapter = listStringAdapter
             ),
             showAdapter = Show.Adapter(
                 genreIdsAdapter = listIntAdapter,

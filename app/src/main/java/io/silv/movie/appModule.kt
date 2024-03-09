@@ -1,10 +1,11 @@
 package io.silv.movie
 
 import io.silv.movie.data.dataModule
-import io.silv.movie.presentation.movie.browse.MovieScreenModel
-import io.silv.movie.presentation.movie.view.MovieViewScreenModel
-import io.silv.movie.presentation.tv.browse.TVScreenModel
-import io.silv.movie.presentation.tv.view.TVViewScreenModel
+import io.silv.movie.presentation.browse.movie.MovieScreenModel
+import io.silv.movie.presentation.browse.tv.TVScreenModel
+import io.silv.movie.presentation.library.LibraryScreenModel
+import io.silv.movie.presentation.view.movie.MovieViewScreenModel
+import io.silv.movie.presentation.view.tv.TVViewScreenModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -16,13 +17,15 @@ val appModule =
 
         factoryOf(::MovieScreenModel)
 
-        factoryOf(::MainViewModel)
+        factoryOf(::PlayerViewModel)
 
         factoryOf(::MovieViewScreenModel)
 
         factoryOf(::TVScreenModel)
 
         factoryOf(::TVViewScreenModel)
+
+        factoryOf(::LibraryScreenModel)
 
         single {
             Json {

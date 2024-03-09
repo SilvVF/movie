@@ -2,7 +2,9 @@ package io.silv.movie.presentation.media
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.util.Base64
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -113,6 +115,28 @@ object PlayerHelper: KoinComponent {
                 DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
             )
             .build()
+    }
+
+    enum class SbSkipOptions {
+        OFF,
+        VISIBLE,
+        MANUAL,
+        AUTOMATIC,
+        AUTOMATIC_ONCE
+    }
+
+    private fun Context.supportsHdr(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val display = ContextCompat.getDisplayOrDefault(this)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                display.isHdr
+            } else {
+                @Suppress("DEPRECATION")
+                display.hdrCapabilities?.supportedHdrTypes?.isNotEmpty() ?: false
+            }
+        } else {
+            false
+        }
     }
 
     /**

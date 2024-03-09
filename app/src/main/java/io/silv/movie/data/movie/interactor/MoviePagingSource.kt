@@ -2,20 +2,34 @@ package io.silv.movie.data.movie.interactor
 
 import io.silv.movie.core.SMovie
 import io.silv.movie.core.await
+import io.silv.movie.data.movie.model.Filters
+import io.silv.movie.data.movie.model.GenreMode
 import io.silv.movie.network.model.toSMovie
 import io.silv.movie.network.service.tmdb.TMDBConstants
+import io.silv.movie.network.service.tmdb.TMDBConstants.JOIN_MODE_MASK_AND
+import io.silv.movie.network.service.tmdb.TMDBConstants.JOIN_MODE_MASK_OR
 import io.silv.movie.network.service.tmdb.TMDBMovieService
 
 data class MoviesPage(val movies: List<SMovie>, val hasNextPage: Boolean)
 
 class DiscoverMoviesPagingSource(
-    private val genres: List<String>,
+    private val filters: Filters,
     private val movieService: TMDBMovieService
 ): SourceMoviePagingSource() {
     override suspend fun getNextPage(page: Int): MoviesPage {
         val response = movieService.discover(
             page = page,
-            genres = TMDBConstants.genresString(genres, TMDBConstants.JOIN_MODE_MASK_OR)
+            genres = TMDBConstants.genresString(
+                filters.genres.map { it.name },
+                if(filters.genreMode == GenreMode.Or) JOIN_MODE_MASK_OR else JOIN_MODE_MASK_AND
+            ),
+            sortBy = filters.sortingOption.sort,
+            companies = filters.companies.value.ifBlank { null },
+            people = filters.people.value.ifBlank { null },
+            keywords = filters.keywords.value.ifBlank { null },
+            year = filters.year.value.toIntOrNull(),
+            voteAverage = filters.voteAverage.value.toFloatOrNull(),
+            voteCount = filters.voteCount.value.toFloatOrNull()
         )
             .await()
             .body()!!

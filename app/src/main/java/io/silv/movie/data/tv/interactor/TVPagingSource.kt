@@ -2,6 +2,8 @@ package io.silv.movie.data.tv.interactor
 
 import io.silv.movie.core.STVShow
 import io.silv.movie.core.await
+import io.silv.movie.data.movie.model.Filters
+import io.silv.movie.data.movie.model.GenreMode
 import io.silv.movie.data.tv.SourceTVPagingSource
 import io.silv.movie.network.model.toSTVShow
 import io.silv.movie.network.service.tmdb.TMDBConstants
@@ -11,13 +13,23 @@ import io.silv.movie.network.service.tmdb.TMDBTVShowService
 data class TVPage(val shows: List<STVShow>, val hasNextPage: Boolean)
 
 class DiscoverTVPagingSource(
-    private val genres: List<String>,
+    private val filters: Filters,
     private val movieService: TMDBTVShowService
 ): SourceTVPagingSource() {
     override suspend fun getNextPage(page: Int): TVPage {
         val response = movieService.discover(
             page = page,
-            genres = TMDBConstants.genresString(genres, TMDBConstants.JOIN_MODE_MASK_OR)
+            genres = TMDBConstants.genresString(
+                filters.genres.map { it.name },
+                if(filters.genreMode == GenreMode.Or) TMDBConstants.JOIN_MODE_MASK_OR else TMDBConstants.JOIN_MODE_MASK_AND
+            ),
+            sortBy = filters.sortingOption.sort,
+            companies = filters.companies.value.ifBlank { null },
+            people = filters.people.value.ifBlank { null },
+            keywords = filters.keywords.value.ifBlank { null },
+            year = filters.year.value.toIntOrNull(),
+            voteAverage = filters.voteAverage.value.toFloatOrNull(),
+            voteCount = filters.voteCount.value.toFloatOrNull()
         )
             .await()
             .body()!!

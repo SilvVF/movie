@@ -8,7 +8,8 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
-import io.silv.movie.presentation.movie.browse.MovieScreen
+import io.silv.movie.data.movie.model.ContentPagedType
+import io.silv.movie.presentation.browse.movie.BrowseMovieScreen
 
 object HomeTab: Tab {
     override val options: TabOptions
@@ -21,7 +22,7 @@ object HomeTab: Tab {
     @Composable
     override fun Content() {
 
-        Navigator(MovieScreen()) {
+        Navigator(BrowseMovieScreen(ContentPagedType.Default.Popular)) {
             FadeTransition(it)
         }
     }

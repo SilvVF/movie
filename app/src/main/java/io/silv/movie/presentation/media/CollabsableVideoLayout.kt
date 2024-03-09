@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -249,7 +250,7 @@ enum class VideoDragAnchors {
 }
 
 @Composable
-fun CollapsableVideoLayout(
+fun DefaultSizeCollapsableVideoLayout(
     onDismissRequested: () -> Unit,
     modifier: Modifier = Modifier,
     reorderState: ReorderableLazyListState,
@@ -258,7 +259,6 @@ fun CollapsableVideoLayout(
     collapsableVideoState: CollapsableVideoState = rememberCollapsableVideoState(),
     content: LazyListScope.() -> Unit,
 ) {
-
     val progress = collapsableVideoState.progress
     val density= LocalDensity.current
     val state = collapsableVideoState.state
@@ -271,7 +271,6 @@ fun CollapsableVideoLayout(
             }
         }
     }
-
 
     LaunchedEffect(collapsableVideoState.fullscreenState) {
         snapshotFlow { collapsableVideoState.fullscreenState.currentValue }.collect {
@@ -311,9 +310,8 @@ fun CollapsableVideoLayout(
                 .anchoredDraggable(
                     collapsableVideoState.fullscreenState,
                     Orientation.Vertical,
-                    fullscreenDraggableEnabled,
-
-                    )
+                    fullscreenDraggableEnabled
+                )
                 .anchoredDraggable(
                     state,
                     Orientation.Vertical,
@@ -323,13 +321,14 @@ fun CollapsableVideoLayout(
             ) {
                 player()
             }
-            Box(modifier = Modifier
+            Surface(modifier = Modifier
                 .layoutId("content")
                 .anchoredDraggable(
                     collapsableVideoState.fullscreenState,
                     Orientation.Vertical,
                     fullscreenDraggableEnabled
-                )
+                ),
+                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
             ) {
 
                 val nestedScrollConnection =
@@ -410,9 +409,11 @@ fun CollapsableVideoLayout(
         val height = lerp(LayoutMinHeight.roundToPx(), constraints.maxHeight, progress)
         val paddingTop = (topPadding * progress).roundToInt()
 
+        val isTablet = constraints.maxWidth > constraints.maxHeight
+
         val playerPlaceable = measurables
             .first { it.layoutId == "player" }
-            .measure(constraints.copy(maxHeight = height))
+            .measure(constraints.copy(maxHeight = height - if(isTablet) lerp(0, bottomPadding, progress) else 0))
 
         val buttonPlaceable = measurables
             .first { it.layoutId == "scrollToTop" }
@@ -439,30 +440,43 @@ fun CollapsableVideoLayout(
             val playerCenteredY = (constraints.maxHeight / 2f - playerPlaceable.height + paddingTop)
             val playerY = (playerCenteredY * collapsableVideoState.fullScreenProgress).roundToInt()
 
-            actionsPlaceable.placeRelative(
-                constraints.maxWidth - actionsPlaceable.width,
-                (playerPlaceable.height / 2) - (actionsPlaceable.height / 2)
-            )
+            if (isTablet) {
+                val playerX = lerp(0, constraints.maxWidth / 2 - playerPlaceable.width / 2, progress)
+                playerPlaceable.placeRelative(
+                    playerX,
+                    paddingTop + playerY.coerceAtLeast(0) + collapsableVideoState.dismissFullscreenOffsetPx
+                )
 
-            val contentY = paddingTop + playerY + playerPlaceable.height
+                actionsPlaceable.placeRelative(
+                    constraints.maxWidth - actionsPlaceable.width,
+                    (playerPlaceable.height / 2) - (actionsPlaceable.height / 2)
+                )
+            } else {
+                actionsPlaceable.placeRelative(
+                    constraints.maxWidth - actionsPlaceable.width,
+                    (playerPlaceable.height / 2) - (actionsPlaceable.height / 2)
+                )
 
-            if (contentY < constraints.maxHeight) {
-                contentPlaceable.placeRelative(
+                val contentY = paddingTop + playerY + playerPlaceable.height
+
+                if (contentY < constraints.maxHeight) {
+                    contentPlaceable.placeRelative(
+                        0,
+                        contentY
+                    )
+                }
+
+                playerPlaceable.placeRelative(
                     0,
-                    contentY
+                    paddingTop + playerY.coerceAtLeast(0) + collapsableVideoState.dismissFullscreenOffsetPx
                 )
-            }
 
-            playerPlaceable.placeRelative(
-                0,
-                paddingTop + playerY.coerceAtLeast(0) + collapsableVideoState.dismissFullscreenOffsetPx
-            )
-
-            if (progress == 1f) {
-                buttonPlaceable.placeRelative(
-                    x = constraints.maxWidth / 2 - buttonPlaceable.width / 2,
-                    y = constraints.maxHeight - buttonPlaceable.height - bottomPadding
-                )
+                if (progress == 1f) {
+                    buttonPlaceable.placeRelative(
+                        x = constraints.maxWidth / 2 - buttonPlaceable.width / 2,
+                        y = constraints.maxHeight - buttonPlaceable.height - bottomPadding
+                    )
+                }
             }
         }
     }

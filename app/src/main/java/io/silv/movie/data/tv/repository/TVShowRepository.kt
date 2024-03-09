@@ -4,12 +4,14 @@ package io.silv.movie.data.tv.repository
 import io.silv.movie.core.Status
 import io.silv.movie.data.tv.ShowMapper
 import io.silv.movie.data.tv.TVShow
+import io.silv.movie.data.tv.TVShowPoster
 import io.silv.movie.data.tv.TVShowUpdate
 import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 
 interface ShowRepository {
     suspend fun getShowById(id: Long): TVShow?
+    fun observeShowPartialById(id: Long): Flow<TVShowPoster>
     fun observeShowById(id: Long): Flow<TVShow>
     fun observeShowByIdOrNull(id: Long): Flow<TVShow?>
     suspend fun insertShow(show: TVShow): Long?
@@ -22,6 +24,10 @@ class ShowRepositoryImpl(
 
     override suspend fun getShowById(id: Long): TVShow? {
         return handler.awaitOneOrNull { showQueries.selectById(id, ShowMapper.mapShow) }
+    }
+
+    override fun observeShowPartialById(id: Long): Flow<TVShowPoster> {
+        return handler.subscribeToOne { showQueries.selectShowPartialById(id, ShowMapper.mapShowPoster) }
     }
 
     override fun observeShowById(id: Long): Flow<TVShow> {

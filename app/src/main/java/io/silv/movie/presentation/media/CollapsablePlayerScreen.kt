@@ -3,12 +3,17 @@ package io.silv.movie.presentation.media
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import io.silv.movie.MainViewModel
+import androidx.compose.ui.unit.dp
+import io.silv.core_ui.components.Scroller
+import io.silv.movie.PlayerViewModel
+import org.burnoutcrew.reorderable.ItemPosition
+import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
@@ -16,16 +21,17 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 fun CollapsablePlayerScreen(
     collapsableVideoState: CollapsableVideoState,
     onDismissRequested: () -> Unit,
-    playerViewModel: MainViewModel,
+    playerViewModel: PlayerViewModel,
     modifier: Modifier = Modifier
 ) {
-
-
     val reorderState = rememberReorderableLazyListState(
         onMove = playerViewModel::onMove,
+        canDragOver = { draggedOver: ItemPosition, dragging: ItemPosition ->
+            draggedOver.index != 0 || dragging.index != 0
+        }
     )
 
-    CollapsableVideoLayout(
+    DefaultSizeCollapsableVideoLayout(
         modifier = modifier,
         reorderState = reorderState,
         onDismissRequested = onDismissRequested,
@@ -34,11 +40,11 @@ fun CollapsablePlayerScreen(
                 currentTrailer = playerViewModel.currentTrailer,
                 playing = playerViewModel.playing,
                 onPlayClick = {
-                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Play)
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Play)
                 },
                 onCloseClick = { collapsableVideoState.dismiss() },
                 onPauseClick = {
-                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Pause)
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Pause)
                 }
             )
         },
@@ -60,6 +66,24 @@ fun CollapsablePlayerScreen(
             }
         },
     ) {
+        stickyHeader(
+            key = Scroller.STICKY_HEADER_KEY_PREFIX
+        ) {
+            playerViewModel.currentTrailer?.let { trailer ->
+                ReorderableItem(
+                    reorderableState = reorderState,
+                    key = "sticky-header",
+                    index = 0
+                ) {
+                    CollapsablePlayerDefaults.VideoDescription(
+                        trailer = trailer,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .fillMaxWidth()
+                    )
+                }
+            }
+        }
         itemsIndexed(
             items = playerViewModel.trailerQueue,
             key = { _, it -> it.id }
@@ -67,9 +91,9 @@ fun CollapsablePlayerScreen(
             CollapsablePlayerDefaults.VideoQueueItem(
                 reorderableState = reorderState,
                 trailer = trailer,
-                idx = idx,
+                idx = idx + 1,
                 onMute = {
-                    playerViewModel.sendPlayerEvent(MainViewModel.PlayerEvent.Mute)
+                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Mute)
                 }
             )
         }

@@ -37,4 +37,20 @@ object ShowMapper {
                 status = status?.let { Status.entries[status.toInt()] }
             )
         }
+
+    val mapShowPoster =
+        { id: Long,
+          title: String,
+          posterUrl: String?,
+          posterLastUpdated: Long,
+          favorite: Boolean,
+            ->
+            TVShowPoster(
+                id = id,
+                title = title,
+                posterUrl  = posterUrl,
+                favorite = favorite,
+                posterLastUpdated = posterLastUpdated,
+            )
+        }
 }

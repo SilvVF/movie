@@ -16,7 +16,8 @@ data class MovieUpdate(
     val posterUrl: String?,
     val posterLastUpdated: Long?,
     val favorite: Boolean?,
-    val status: Status?
+    val status: Status?,
+    val productionCompanies: List<String>?
 )
 
 fun Movie.toMovieUpdate(): MovieUpdate {
@@ -34,6 +35,7 @@ fun Movie.toMovieUpdate(): MovieUpdate {
         popularity = popularity,
         voteCount = voteCount,
         releaseDate = releaseDate,
-        status = status
+        status = status,
+        productionCompanies = productionCompanies
     )
 }

@@ -7,6 +7,16 @@ import kotlinx.parcelize.Parcelize
 
 @Stable
 @Parcelize
+data class MoviePoster(
+    val id: Long,
+    val title: String,
+    val posterLastUpdated: Long,
+    val posterUrl: String?,
+    val favorite: Boolean
+): Parcelable
+
+@Stable
+@Parcelize
 data class Movie(
     val id: Long,
     val title: String,
@@ -21,11 +31,12 @@ data class Movie(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
-    val status: io.silv.movie.core.Status?
+    val status: io.silv.movie.core.Status?,
+    val productionCompanies: List<String>?
 ): Parcelable {
 
     @IgnoredOnParcel
-    val needsInit by lazy { status == null }
+    val needsInit by lazy { status == null || productionCompanies == null }
 
     companion object {
         fun create() = Movie(
@@ -42,7 +53,8 @@ data class Movie(
             voteCount = 0,
             releaseDate = "",
             genreIds = emptyList(),
-            status = null
+            status = null,
+            productionCompanies = null
        )
     }
 }
@@ -60,7 +72,8 @@ fun io.silv.movie.core.SMovie.toDomain(): Movie {
         voteCount = voteCount,
         releaseDate = releaseDate,
         externalUrl = url,
-        status = status
+        status = status,
+        productionCompanies = productionCompanies
     )
 }
 

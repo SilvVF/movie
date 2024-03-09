@@ -17,19 +17,23 @@ CREATE TABLE movie (
     favorite INTEGER AS Boolean NOT NULL,
     externalUrl TEXT NOT NULL,
     popularity REAL NOT NULL,
-    status INTEGER
+    status INTEGER,
+    production_companies TEXT AS List<String>
 );
 
 
 selectById:
 SELECT * FROM movie WHERE id = :id LIMIT 1;
 
+selectMoviePartialById:
+SELECT id, title, posterUrl, posterLastUpdated, favorite FROM movie WHERE id = :id LIMIT 1;
+
 selectAll:
 SELECT * FROM movie;
 
 insert:
-INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
-VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status);
+INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status, production_companies)
+VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status, :productionCompanies);
 
 lastInsertRowId:
 SELECT last_insert_rowid();
@@ -48,6 +52,7 @@ UPDATE movie SET
     favorite = COALESCE(:favorite, favorite),
     externalUrl = COALESCE(:externalUrl, externalUrl),
     popularity = COALESCE(:popularity, popularity),
-    status = COALESCE(:status, status)
+    status = COALESCE(:status, status),
+    production_companies = COALESCE(:productionCompanies, production_companies)
 WHERE id = :movieId;
 

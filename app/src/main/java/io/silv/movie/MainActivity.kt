@@ -16,8 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -40,6 +40,7 @@ import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.presentation.home.HomeTab
+import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import kotlinx.collections.immutable.ImmutableList
@@ -54,8 +55,7 @@ import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
 
-val LocalMainViewModelStoreOwner =
-    staticCompositionLocalOf<ViewModelStoreOwner> { error("not provided") }
+val LocalMainViewModelStoreOwner = staticCompositionLocalOf<ViewModelStoreOwner> { error("not provided") }
 
 @OptIn(KoinInternalApi::class)
 @Composable
@@ -76,7 +76,6 @@ inline fun <reified T : ViewModel> getActivityViewModel(
     )
 }
 
-
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,21 +83,13 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-
         setContent {
-            CompositionLocalProvider(LocalMainViewModelStoreOwner provides this) {
+            CompositionLocalProvider(
+                LocalMainViewModelStoreOwner provides this,
+            ) {
 
-                val mainScreenModel = getActivityViewModel<MainViewModel>()
+                val mainScreenModel = getActivityViewModel<PlayerViewModel>()
                 val collapsableVideoState = rememberCollapsableVideoState()
-
-                DisposableEffect(collapsableVideoState) {
-
-                    mainScreenModel.collapsableVideoState = collapsableVideoState
-
-                    onDispose {
-                        mainScreenModel.collapsableVideoState = null
-                    }
-                }
 
                 BackHandler(
                     enabled = mainScreenModel.trailerQueue.isNotEmpty()
@@ -107,9 +98,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val trailers by remember(mainScreenModel.trailerQueue) {
-                    derivedStateOf {
-                        mainScreenModel.trailerQueue.toImmutableList()
-                    }
+                    derivedStateOf { mainScreenModel.trailerQueue.toImmutableList() }
                 }
 
                 MovieTheme {
@@ -122,7 +111,8 @@ class MainActivity : ComponentActivity() {
                                     AppBottomBar(
                                         videos = trailers,
                                         progress = { collapsableVideoState.progress },
-                                        tabNavigator = tabNavigator
+                                        tabNavigator = tabNavigator,
+                                        modifier = Modifier
                                     )
                                 },
                             ) { paddingValues ->
@@ -132,6 +122,7 @@ class MainActivity : ComponentActivity() {
                                         .consumeWindowInsets(paddingValues)
                                 ) {
                                     CurrentTab()
+
                                     AnimatedVisibility(
                                         visible = mainScreenModel.trailerQueue.isNotEmpty(),
                                         modifier = Modifier
@@ -151,6 +142,13 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
+                DisposableEffect(collapsableVideoState) {
+                    mainScreenModel.collapsableVideoState = collapsableVideoState
+                    onDispose {
+                        mainScreenModel.collapsableVideoState = null
+                    }
+                }
             }
         }
     }
@@ -162,17 +160,18 @@ fun AppBottomBar(
     videos: ImmutableList<Trailer>?,
     progress: () -> Float,
     tabNavigator: TabNavigator,
+    modifier: Modifier = Modifier,
 ) {
     val tabs = remember {
         persistentListOf(
-            HomeTab
+            HomeTab,
+            LibraryTab
         )
     }
-
-    NavigationBar(
-        Modifier
+    BottomAppBar(
+        modifier
             .heightIn(min = 0.dp, max = 72.dp)
-            .layout {measurable, constraints ->
+            .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
 
                 val height = if (videos.isNullOrEmpty()) {
@@ -185,7 +184,7 @@ fun AppBottomBar(
                 layout(constraints.maxWidth, height) {
                     placeable.placeRelative(0, 0)
                 }
-            }
+            },
     ) {
         tabs.fastForEach { tab ->
             NavigationBarItem(

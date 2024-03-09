@@ -8,6 +8,16 @@ import kotlinx.parcelize.Parcelize
 
 @Stable
 @Parcelize
+data class TVShowPoster(
+    val id: Long,
+    val title: String,
+    val posterLastUpdated: Long,
+    val posterUrl: String?,
+    val favorite: Boolean
+): Parcelable
+
+@Stable
+@Parcelize
 data class TVShow(
     val id: Long,
     val title: String,

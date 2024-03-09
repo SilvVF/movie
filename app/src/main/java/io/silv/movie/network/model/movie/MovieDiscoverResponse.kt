@@ -34,7 +34,7 @@ data class MovieDiscoverResponse(
         @SerialName("popularity")
         val popularity: Double = 0.0,
         @SerialName("poster_path")
-        val posterPath: String = "",
+        val posterPath: String? = null,
         @SerialName("release_date")
         val releaseDate: String = "",
         @SerialName("title")

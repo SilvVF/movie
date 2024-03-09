@@ -20,7 +20,8 @@ class NetworkToLocalMovie(
                     posterUrl = movie.posterUrl ?: localMovie.posterUrl,
                     status = movie.status ?: localMovie.status,
                     popularity = movie.popularity,
-                    voteCount = movie.voteCount
+                    voteCount = movie.voteCount,
+                    productionCompanies = movie.productionCompanies ?: localMovie.productionCompanies,
                 )
             else -> localMovie // TODO(update movie if favorite)
         }

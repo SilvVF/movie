@@ -12,6 +12,7 @@ import io.silv.movie.data.movie.interactor.SearchMoviePagingSource
 import io.silv.movie.data.movie.interactor.SourceMoviePagingSource
 import io.silv.movie.data.movie.interactor.TopRatedMoviePagingSource
 import io.silv.movie.data.movie.interactor.UpcomingMoviePagingSource
+import io.silv.movie.data.movie.model.Filters
 import io.silv.movie.data.tv.interactor.DiscoverTVPagingSource
 import io.silv.movie.data.tv.interactor.NowPlayingTVPagingSource
 import io.silv.movie.data.tv.interactor.PopularTVPagingSource
@@ -31,7 +32,7 @@ interface SourceMovieRepository {
 
     suspend fun getSourceGenres(): List<SGenre>
 
-    fun discoverMovies(genres: List<String>): SourceMoviePagingSource
+    fun discoverMovies(filters: Filters): SourceMoviePagingSource
 
     fun searchMovies(query: String): MoviePagingSourceType
 
@@ -50,7 +51,7 @@ interface SourceTVRepository {
 
     suspend fun getSourceGenres(): List<SGenre>
 
-    fun discover(genres: List<String>): TVPagingSourceType
+    fun discover(filters: Filters): TVPagingSourceType
 
     fun search(query: String): TVPagingSourceType
 
@@ -93,8 +94,8 @@ class SourceTVRepositoryImpl(
         return TMDBConstants.genres
     }
 
-    override fun discover(genres: List<String>): TVPagingSourceType {
-        return DiscoverTVPagingSource(genres, tvService)
+    override fun discover(filters: Filters): TVPagingSourceType {
+        return DiscoverTVPagingSource(filters, tvService)
     }
 
     override fun search(query: String): TVPagingSourceType {
@@ -146,8 +147,8 @@ class SourceMovieRepositoryImpl(
         return TMDBConstants.genres
     }
 
-    override fun discoverMovies(genres: List<String>): SourceMoviePagingSource {
-        return DiscoverMoviesPagingSource(genres, movieService)
+    override fun discoverMovies(filters: Filters): SourceMoviePagingSource {
+        return DiscoverMoviesPagingSource(filters, movieService)
     }
 
     override fun searchMovies(query: String): MoviePagingSourceType {

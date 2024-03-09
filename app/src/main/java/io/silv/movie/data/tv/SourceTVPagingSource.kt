@@ -1,6 +1,5 @@
 package io.silv.movie.data.tv
 
-import android.util.Log
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import io.silv.movie.data.tv.interactor.TVPage
@@ -22,7 +21,6 @@ abstract class SourceTVPagingSource : PagingSource<Long, io.silv.movie.core.STVS
                     ?: error("Empty page")
             }
         } catch (e: Exception) {
-            Log.d("MoviePagingSource", e.stackTraceToString())
             return LoadResult.Error(e)
         }
 

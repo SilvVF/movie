@@ -22,7 +22,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
-import io.silv.movie.MainViewModel
+import io.silv.movie.PlayerViewModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,7 +52,7 @@ private fun createExoPlayer(
 
 @Composable
 fun PipedApiPlayer(
-    playerViewModel: MainViewModel,
+    playerViewModel: PlayerViewModel,
     modifier: Modifier,
 ) {
 
@@ -72,13 +72,13 @@ fun PipedApiPlayer(
 
     CollectEventsWithLifecycle(playerViewModel) {event ->
         when (event) {
-            MainViewModel.PlayerEvent.Pause -> {
+            PlayerViewModel.PlayerEvent.Pause -> {
                 exoPlayer.pause()
             }
-            MainViewModel.PlayerEvent.Play -> {
+            PlayerViewModel.PlayerEvent.Play -> {
                 exoPlayer.play()
             }
-            MainViewModel.PlayerEvent.Mute -> {
+            PlayerViewModel.PlayerEvent.Mute -> {
                 exoPlayer.setDeviceMuted(true, C.VOLUME_FLAG_REMOVE_SOUND_AND_VIBRATE)
             }
         }
@@ -114,7 +114,7 @@ fun PipedApiPlayer(
                 Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
             }
         }
-        exoPlayer.seekTo(playerViewModel.second)
+        exoPlayer.seekTo(playerViewModel.secondToStream[playerViewModel.currentTrailer?.trailerId] ?: 0L)
         exoPlayer.playWhenReady = true
         exoPlayer.prepare()
     }

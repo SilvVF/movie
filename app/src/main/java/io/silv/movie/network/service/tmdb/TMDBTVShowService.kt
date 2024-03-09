@@ -44,9 +44,16 @@ interface TMDBTVShowService {
     @GET("discover/tv")
     fun discover(
         @Query("page") page: Int,
+        @Query("first_air_date_year") year: Int? = null,
         @Query("with_genres") genres: String? = null,
         @Query("include_adult") includeAdult: Boolean = false,
         @Query("language") language: String? = "en-US",
+        @Query("vote_average") voteAverage: Float? = null,
+        @Query("vote_count") voteCount: Float? = null,
+        @Query("with_keywords") keywords: String? = null,
+        @Query("with_people") people: String? = null,
+        @Query("with_companies") companies: String? = null,
+        @Query("sort_by") sortBy: String = "popularity.desc",
     ): Call<TVDiscoverResponse>
 
     enum class TVType {

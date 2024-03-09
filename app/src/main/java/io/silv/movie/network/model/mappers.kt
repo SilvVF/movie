@@ -85,7 +85,7 @@ fun MovieDiscoverResponse.Result.toSMovie(): SMovie {
     val m  = this
     return SMovie.create().apply {
         url = "https://api.themoviedb.org/3/movie/${m.id}"
-        posterPath =  "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath.isNotBlank() }
+        posterPath =  "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath.orEmpty().isNotBlank() }
         title = m.title
         genreIds = m.genreIds
         adult = m.adult

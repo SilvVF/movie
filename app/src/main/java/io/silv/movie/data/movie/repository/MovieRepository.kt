@@ -3,11 +3,14 @@ package io.silv.movie.data.movie.repository
 import io.silv.movie.core.Status
 import io.silv.movie.data.movie.MovieMapper
 import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.movie.model.MovieUpdate
+import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 
 interface MovieRepository {
     suspend fun getMovieById(id: Long): Movie?
+    suspend fun observeMoviePartialById(id: Long): Flow<MoviePoster>
     fun observeMovieById(id: Long): Flow<Movie>
     fun observeMovieByIdOrNull(id: Long): Flow<Movie?>
     suspend fun insertMovie(movie: Movie): Long?
@@ -15,11 +18,15 @@ interface MovieRepository {
 }
 
 class MovieRepositoryImpl(
-    private val handler: io.silv.movie.database.DatabaseHandler
+    private val handler: DatabaseHandler
 ): MovieRepository {
 
     override suspend fun getMovieById(id: Long): Movie? {
         return handler.awaitOneOrNull { movieQueries.selectById(id, MovieMapper.mapMovie) }
+    }
+
+    override suspend fun observeMoviePartialById(id: Long): Flow<MoviePoster> {
+        return handler.subscribeToOne { movieQueries.selectMoviePartialById(id, MovieMapper.mapMoviePoster) }
     }
 
     override fun observeMovieById(id: Long): Flow<Movie> {
@@ -46,7 +53,8 @@ class MovieRepositoryImpl(
                 movie.favorite,
                 movie.externalUrl,
                 movie.popularity,
-                movie.status?.let { Status.entries.indexOf(it).toLong() }
+                movie.status?.let { Status.entries.indexOf(it).toLong() },
+                movie.productionCompanies
             )
             movieQueries.lastInsertRowId()
         }
@@ -77,7 +85,8 @@ class MovieRepositoryImpl(
                     voteCount = update.voteCount?.toLong(),
                     releaseDate = update.releaseDate,
                     popularity = update.popularity,
-                    status = update.status?.let { Status.entries.indexOf(it).toLong() }
+                    status = update.status?.let { Status.entries.indexOf(it).toLong() },
+                    productionCompanies = update.productionCompanies?.joinToString()
                 )
             }
         }

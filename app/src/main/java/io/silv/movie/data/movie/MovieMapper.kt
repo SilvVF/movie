@@ -2,6 +2,7 @@ package io.silv.movie.data.movie
 
 import io.silv.movie.core.Status
 import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.movie.model.MoviePoster
 
 object MovieMapper {
 
@@ -19,7 +20,8 @@ object MovieMapper {
           favorite: Boolean,
           externalUrl: String,
           popularity: Double,
-          status: Long?  ->
+          status: Long?,
+          productionCompanies: List<String>?  ->
             Movie(
                 id = id,
                 title = title,
@@ -34,7 +36,24 @@ object MovieMapper {
                 popularity = popularity,
                 voteCount = voteCount.toInt(),
                 releaseDate = releaseDate,
-                status = status?.let { Status.entries[status.toInt()] }
+                status = status?.let { Status.entries[status.toInt()] },
+                productionCompanies = productionCompanies
+            )
+        }
+
+    val mapMoviePoster =
+        { id: Long,
+          title: String,
+          posterUrl: String?,
+          posterLastUpdated: Long,
+          favorite: Boolean,
+         ->
+            MoviePoster(
+                id = id,
+                title = title,
+                posterUrl  = posterUrl,
+                favorite = favorite,
+                posterLastUpdated = posterLastUpdated,
             )
         }
 }

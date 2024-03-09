@@ -46,7 +46,14 @@ interface TMDBMovieService {
     @GET("discover/movie")
     fun discover(
         @Query("page") page: Int,
+        @Query("primary_release_year") year: Int? = null,
+        @Query("vote_average") voteAverage: Float? = null,
+        @Query("vote_count") voteCount: Float? = null,
+        @Query("with_keywords") keywords: String? = null,
         @Query("with_genres") genres: String? = null,
+        @Query("with_people") people: String? = null,
+        @Query("with_companies") companies: String? = null,
+        @Query("sort_by") sortBy: String = "popularity.desc",
         @Query("certification") certification: String? = null,
         @Query("include_adult") includeAdult: Boolean = false,
         @Query("include_video") includeVideo: Boolean = false,

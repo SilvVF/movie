@@ -24,7 +24,7 @@ class GetRemoteMovie(
                     ContentPagedType.Default.Upcoming -> sourceMovieRepository.getUpcomingMovies()
                 }
             }
-            is ContentPagedType.Discover -> sourceMovieRepository.discoverMovies(type.genres)
+            is ContentPagedType.Discover -> sourceMovieRepository.discoverMovies(type.filters)
         }
     }
 }
@@ -47,7 +47,7 @@ class GetRemoteTVShows(
                     ContentPagedType.Default.Upcoming -> tvRepository.upcoming()
                 }
             }
-            is ContentPagedType.Discover -> tvRepository.discover(type.genres)
+            is ContentPagedType.Discover -> tvRepository.discover(type.filters)
         }
     }
 }

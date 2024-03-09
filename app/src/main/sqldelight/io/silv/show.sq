@@ -18,14 +18,18 @@ CREATE TABLE show (
         externalUrl TEXT NOT NULL,
         popularity REAL NOT NULL,
         status INTEGER
-    );
+);
 
 
     selectById:
     SELECT * FROM show WHERE id = :id LIMIT 1;
 
+
     selectAll:
     SELECT * FROM show;
+
+    selectShowPartialById:
+    SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE id = :id LIMIT 1;
 
     insert:
     INSERT OR IGNORE INTO show(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
@@ -50,6 +54,7 @@ CREATE TABLE show (
         popularity = COALESCE(:popularity, popularity),
         status = COALESCE(:status, status)
     WHERE id = :showId;
+
 
 
 
