@@ -4,11 +4,21 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.Scroller
 import io.silv.movie.PlayerViewModel
@@ -65,6 +75,28 @@ fun CollapsablePlayerScreen(
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         },
+        scrollToTopButton = { scrollToTop ->
+            FilledIconButton(
+                modifier = Modifier
+                    .size(48.dp)
+                    .shadow(
+                        elevation = 6.0.dp,
+                        shape = CircleShape
+                    )
+                    .padding(4.dp)
+                    .graphicsLayer { alpha = 0.92f },
+                onClick = scrollToTop,
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                shape = CircleShape
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowUpward,
+                    contentDescription = null
+                )
+            }
+        }
     ) {
         stickyHeader(
             key = Scroller.STICKY_HEADER_KEY_PREFIX

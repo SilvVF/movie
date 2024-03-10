@@ -27,10 +27,8 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -257,6 +255,7 @@ fun DefaultSizeCollapsableVideoLayout(
     player: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
     collapsableVideoState: CollapsableVideoState = rememberCollapsableVideoState(),
+    scrollToTopButton: @Composable (triggerScroll: () -> Unit) -> Unit,
     content: LazyListScope.() -> Unit,
 ) {
     val progress = collapsableVideoState.progress
@@ -374,14 +373,8 @@ fun DefaultSizeCollapsableVideoLayout(
                     derivedStateOf { reorderState.listState.firstVisibleItemIndex > 0 }
                 }
                 AnimatedVisibility(visible = visible, enter = fadeIn(),exit = fadeOut()) {
-                    Button(
-                        shape = RoundedCornerShape(12),
-                        modifier = Modifier.height(42.dp),
-                        onClick = {
-                            scope.launch { reorderState.listState.animateScrollToItem(0) }
-                        }
-                    ) {
-                        Text("Scroll to top")
+                    scrollToTopButton {
+                        scope.launch { reorderState.listState.animateScrollToItem(0) }
                     }
                 }
             }
