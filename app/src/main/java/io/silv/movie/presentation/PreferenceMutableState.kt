@@ -3,26 +3,18 @@ package io.silv.movie.presentation
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import io.silv.movie.data.prefrences.core.Preference
+import io.silv.movie.data.prefrences.core.getOrDefault
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 
 class PreferenceMutableState<T>(
     private val preference: Preference<T>,
     private val scope: CoroutineScope,
 ) : MutableState<T> {
 
-    private val state = mutableStateOf(
-        runBlocking {
-            withTimeoutOrNull(500) {
-                preference.get()
-            }
-                ?: preference.defaultValue()
-        }
-    )
+    private val state = mutableStateOf(preference.getOrDefault())
 
     init {
         preference.changes()

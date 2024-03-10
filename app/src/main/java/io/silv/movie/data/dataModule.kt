@@ -15,6 +15,7 @@ import io.silv.movie.data.movie.repository.MovieRepository
 import io.silv.movie.data.movie.repository.MovieRepositoryImpl
 import io.silv.movie.data.movie.repository.SourceMovieRepository
 import io.silv.movie.data.movie.repository.SourceMovieRepositoryImpl
+import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.prefrences.core.DatastorePreferenceStore
 import io.silv.movie.data.prefrences.core.PreferenceStore
@@ -84,6 +85,8 @@ val dataModule =
         singleOf(::ShowRepositoryImpl) { bind<ShowRepository>() }
 
         singleOf(::TMDBPreferences)
+
+        singleOf(::LibraryPreferences)
 
         single<PreferenceStore> {
             DatastorePreferenceStore(androidContext().dataStore)

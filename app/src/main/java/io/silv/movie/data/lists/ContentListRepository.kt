@@ -43,7 +43,8 @@ class ContentListRepositoryImpl(
     }
 
     override fun observeLibraryItems(query: String): Flow<List<ContentListItem>> {
-        return handler.subscribeToList { contentListViewQueries.contentlist(query, ContentListMapper.mapListItem) }
+        val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
+        return handler.subscribeToList { contentListViewQueries.contentlist(q, ContentListMapper.mapListItem) }
     }
 
     override suspend fun deleteList(contentList: ContentList) {

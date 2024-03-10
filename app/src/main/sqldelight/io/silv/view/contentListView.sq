@@ -34,10 +34,12 @@ WHERE
             AND (
                 sub_m.title LIKE :query
                 OR sub_s.title LIKE :query
+                OR list_name LIKE :query
                 OR :query = ''
             )
     )
     OR :query = ''  -- Include this condition to return all lists if the search query is empty
 ORDER BY
     contentListView.list_id;
+
 

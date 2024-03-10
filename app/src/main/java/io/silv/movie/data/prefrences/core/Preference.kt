@@ -3,6 +3,8 @@ package io.silv.movie.data.prefrences.core
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 
 
 interface Preference<T> {
@@ -65,6 +67,12 @@ inline fun <reified T : Enum<T>> PreferenceStore.getEnum(
             }
         }
     )
+}
+
+fun <T> Preference<T>.getOrDefault(): T {
+    return runBlocking {
+        withTimeoutOrNull(50) { get() } ?: defaultValue()
+    }
 }
 
 suspend inline fun <reified T, R : T> Preference<T>.getAndSet(crossinline block: (T) -> R) = set(

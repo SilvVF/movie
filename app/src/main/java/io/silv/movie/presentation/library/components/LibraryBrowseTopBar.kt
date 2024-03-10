@@ -48,14 +48,16 @@ import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.SearchLargeTopBar
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.library.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(
     scrollBehavior: TopAppBarScrollBehavior,
     query: () -> String,
-    displayMode: () -> PosterDisplayMode,
-    setDisplayMode: (PosterDisplayMode) -> Unit,
+    sortModeProvider: () -> LibrarySortMode,
+    changeSortMode: (LibrarySortMode) -> Unit,
+    isListMode: () -> Boolean,
+    setListMode: (Boolean) -> Unit,
     changeQuery: (String) -> Unit,
     onSearch: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -100,36 +102,42 @@ fun LibraryBrowseTopBar(
                     tooltip = "Create list"
                 )
                 Box(contentAlignment = Alignment.BottomCenter) {
+                    val isList = isListMode()
                     DropdownMenu(
                         expanded = dropDownVisible,
                         onDismissRequest = { dropDownVisible = false }
                     ) {
-                        PosterDisplayMode.values.forEach {
-                            DropdownMenuItem(
-                                trailingIcon = {
-                                    RadioButton(
-                                        selected = displayMode() == it,
-                                        onClick = { setDisplayMode(it) }
-                                    )
-                                },
-                                text = {
-                                    Text(
-                                        remember {
-                                            it.toString()
-                                                .split(Regex("(?<=[a-z])(?=[A-Z])"))
-                                                .joinToString(" ")
-                                        }
-                                    )
-                                },
-                                onClick = { setDisplayMode(it) }
-                            )
-                        }
+                        DropdownMenuItem(
+                            trailingIcon = {
+                                RadioButton(
+                                    selected = isList,
+                                    onClick = { setListMode(true) }
+                                )
+                            },
+                            text = {
+                                Text("List")
+                            },
+                            onClick = { setListMode(true) }
+                        )
+                        DropdownMenuItem(
+                            trailingIcon = {
+                                RadioButton(
+                                    selected = !isList,
+                                    onClick = { setListMode(false) }
+                                )
+                            },
+                            text = {
+                                Text("Grid")
+                            },
+                            onClick = { setListMode(false) }
+                        )
                     }
                     TooltipIconButton(
                         onClick = { dropDownVisible = true },
-                        imageVector = when(displayMode()) {
-                            PosterDisplayMode.List -> Icons.AutoMirrored.Filled.List
-                            else -> Icons.Filled.GridView
+                        imageVector = if(isList) {
+                            Icons.AutoMirrored.Filled.List
+                        } else{
+                            Icons.Filled.GridView
                         },
                         contentDescription = null,
                         tooltip = "Display Mode"
@@ -176,21 +184,22 @@ fun LibraryBrowseTopBar(
             else
                 appBarContainerColor
         ) {
-            LibraryFilterChips(selected = 0)
+            LibraryFilterChips(sortModeProvider, changeSortMode)
         }
     }
 }
 
 @Composable
 fun LibraryFilterChips(
-    selected: Int
+    sortModeProvider: () -> LibrarySortMode,
+    changeSortMode: (LibrarySortMode) -> Unit
 ) {
     val filters =
         remember {
             listOf(
-                Triple("Title", Icons.Filled.Title, 0),
-                Triple("Recently Added", Icons.Filled.NewReleases, 1),
-                Triple("Count", Icons.Filled.Numbers, 2)
+                Triple("Title", Icons.Filled.Title, LibrarySortMode.Title),
+                Triple("Recently Added", Icons.Filled.NewReleases, LibrarySortMode.RecentlyAdded),
+                Triple("Count", Icons.Filled.Numbers, LibrarySortMode.Count)
             )
         }
 
@@ -207,13 +216,14 @@ fun LibraryFilterChips(
             .padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
+        val sortMode = sortModeProvider()
         filters.fastForEach { (tag, icon, type) ->
             item(key = tag) {
                 ElevatedFilterChip(
                     modifier = Modifier.padding(4.dp),
-                    selected = selected == type,
+                    selected = type == sortMode,
                     onClick = {
-
+                        changeSortMode(type)
                     },
                     leadingIcon = {
                         Icon(
