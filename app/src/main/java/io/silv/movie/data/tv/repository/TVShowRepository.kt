@@ -89,7 +89,8 @@ class ShowRepositoryImpl(
                     voteCount = update.voteCount?.toLong(),
                     releaseDate = update.releaseDate,
                     popularity = update.popularity,
-                    status = update.status?.let { Status.entries.indexOf(it).toLong() }
+                    status = update.status?.let { Status.entries.indexOf(it).toLong() },
+                    productionCompanies = update.productionCompanies?.joinToString(separator = ",")
                 )
             }
         }

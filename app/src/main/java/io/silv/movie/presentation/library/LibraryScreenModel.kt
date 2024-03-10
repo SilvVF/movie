@@ -87,7 +87,7 @@ class LibraryScreenModel(
                     }
             LibrarySortMode.RecentlyAdded -> {
                 toSortedMap { a: ContentList, b: ContentList ->
-                    a.name.compareTo(b.name).takeIf { it != 0 }  ?: 1
+                    (b.lastModified - a.lastModified).toInt().takeIf { it != 0 }  ?: 1
                 }
                     .toList()
             }

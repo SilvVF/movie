@@ -8,10 +8,28 @@ CREATE TABLE contentListJunction(
     FOREIGN KEY (list_id) REFERENCES contentList(_id) ON DELETE CASCADE
 );
 
+CREATE TRIGGER update_last_modified_at_list_insert
+AFTER INSERT ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE contentList
+  SET last_modified_at = strftime('%s', 'now')
+  WHERE _id = new.list_id;
+END;
+
+CREATE TRIGGER update_last_modified_at_list_delete
+AFTER DELETE ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE contentList
+  SET last_modified_at = strftime('%s', 'now')
+  WHERE _id = old.list_id;
+END;
+
 CREATE INDEX list_id_index ON contentListJunction(list_id);
 
 insert:
-INSERT INTO contentListJunction(movie_id, show_id, list_id)
+INSERT OR IGNORE INTO contentListJunction(movie_id, show_id, list_id)
 VALUES (:movieId, :showId, :listId);
 
 selectByListId:

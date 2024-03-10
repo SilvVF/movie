@@ -2,7 +2,8 @@ package io.silv.movie.data.lists
 
 data class ContentList(
     val id: Long,
-    val name: String
+    val name: String,
+    val lastModified: Long,
 )
 
 fun ContentList.toUpdate(): ContentListUpdate {

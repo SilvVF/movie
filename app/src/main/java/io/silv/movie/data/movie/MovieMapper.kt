@@ -21,7 +21,9 @@ object MovieMapper {
           externalUrl: String,
           popularity: Double,
           status: Long?,
-          productionCompanies: List<String>?  ->
+          productionCompanies: List<String>?,
+          last_modified_at: Long,
+          favorite_modified_at: Long?->
             Movie(
                 id = id,
                 title = title,
@@ -37,7 +39,9 @@ object MovieMapper {
                 voteCount = voteCount.toInt(),
                 releaseDate = releaseDate,
                 status = status?.let { Status.entries[status.toInt()] },
-                productionCompanies = productionCompanies
+                productionCompanies = productionCompanies,
+                lastModifiedAt = last_modified_at,
+                favoriteModifiedAt = favorite_modified_at ?: -1L
             )
         }
 

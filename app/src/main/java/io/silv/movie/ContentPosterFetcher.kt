@@ -29,7 +29,20 @@ class ContentPosterFetcher(
 ): OkHttpFetcherConfig<PosterData> {
 
     override val keyer: Keyer<PosterData> =
-        Keyer { data, options ->  data.url }
+        Keyer { data, options ->
+            val hasCustomCover = if (data.isMovie) {
+                movieCoverCache.getCustomCoverFile(data.id).exists()
+            } else {
+                tvShowCoverCache.getCustomCoverFile(data.id).exists()
+            }
+            val prefix = if(data.isMovie) "movie" else "show"
+
+            if (hasCustomCover) {
+                "$prefix;${data.id};${data.lastModified}"
+            } else {
+                "$prefix;${data.url};${data.lastModified}"
+            }
+        }
 
     override val diskStore: FetcherDiskStore<PosterData> =
         FetcherDiskStoreImageFile { data, _ ->

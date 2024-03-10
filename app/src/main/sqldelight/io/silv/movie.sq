@@ -9,33 +9,54 @@ CREATE TABLE movie (
     overview TEXT NOT NULL ,
     genres TEXT AS List<String>,
     genreIds TEXT AS List<Int>,
-    originalLanguage TEXT NOT NULL,
-    voteCount INTEGER NOT NULL,
-    releaseDate TEXT NOT NULL,
-    posterUrl TEXT,
-    posterLastUpdated INTEGER NOT NULL,
+    original_language TEXT NOT NULL,
+    vote_count INTEGER NOT NULL,
+    release_date TEXT NOT NULL,
+    poster_url TEXT,
+    poster_last_updated INTEGER NOT NULL,
     favorite INTEGER AS Boolean NOT NULL,
     externalUrl TEXT NOT NULL,
     popularity REAL NOT NULL,
     status INTEGER,
-    production_companies TEXT AS List<String>
+    production_companies TEXT AS List<String>,
+    last_modified_at INTEGER NOT NULL DEFAULT 0,
+    favorite_modified_at INTEGER
 );
 
+CREATE INDEX library_favorite_index ON movie(favorite) WHERE favorite = 1;
+
+CREATE TRIGGER update_last_favorite_at_movies
+AFTER UPDATE OF favorite ON movie
+BEGIN
+  UPDATE movie
+  SET favorite_modified_at = strftime('%s', 'now')
+  WHERE id = new.id;
+END;
+
+CREATE TRIGGER update_last_modified_at_movies
+AFTER UPDATE ON movie
+FOR EACH ROW
+BEGIN
+  UPDATE movie
+  SET last_modified_at = strftime('%s', 'now')
+  WHERE id = new.id;
+END;
+
 selectFavoritesPartial:
-SELECT id, title, posterUrl, posterLastUpdated, favorite FROM movie WHERE favorite;
+SELECT id, title, poster_url, poster_last_updated, favorite FROM movie WHERE favorite;
 
 selectById:
 SELECT * FROM movie WHERE id = :id LIMIT 1;
 
 selectMoviePartialById:
-SELECT id, title, posterUrl, posterLastUpdated, favorite FROM movie WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:
 SELECT * FROM movie;
 
 insert:
-INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status, production_companies)
-VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status, :productionCompanies);
+INSERT OR IGNORE INTO movie(id, title, overview, genres, genreIds, original_language, vote_count, release_date, poster_url, poster_last_updated, favorite, externalUrl, popularity, status, production_companies, last_modified_at)
+VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status, :productionCompanies, strftime('%s', 'now'));
 
 lastInsertRowId:
 SELECT last_insert_rowid();
@@ -46,11 +67,11 @@ UPDATE movie SET
     overview = COALESCE(:overview, overview),
     genres = COALESCE(:genres, genres),
     genreIds = COALESCE(:genreIds, genreIds),
-    originalLanguage = COALESCE(:originalLanguage, originalLanguage),
-    voteCount = COALESCE(:voteCount, voteCount),
-    releaseDate = COALESCE(:releaseDate, releaseDate),
-    posterUrl = COALESCE(:posterUrl, posterUrl),
-    posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
+    original_language = COALESCE(:originalLanguage, original_language),
+    vote_count = COALESCE(:voteCount, vote_count),
+    release_date = COALESCE(:releaseDate, release_date),
+    poster_url = COALESCE(:posterUrl, poster_url),
+    poster_last_updated = COALESCE(:posterLastUpdated, poster_last_updated),
     favorite = COALESCE(:favorite, favorite),
     externalUrl = COALESCE(:externalUrl, externalUrl),
     popularity = COALESCE(:popularity, popularity),

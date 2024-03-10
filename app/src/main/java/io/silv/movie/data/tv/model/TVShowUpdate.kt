@@ -14,7 +14,8 @@ data class TVShowUpdate(
     val posterUrl: String?,
     val posterLastUpdated: Long?,
     val favorite: Boolean?,
-    val status: io.silv.movie.core.Status?
+    val status: io.silv.movie.core.Status?,
+    val productionCompanies: List<String>?
 )
 
 fun TVShow.toShowUpdate(): TVShowUpdate {
@@ -32,6 +33,7 @@ fun TVShow.toShowUpdate(): TVShowUpdate {
         popularity = popularity,
         voteCount = voteCount,
         releaseDate = releaseDate,
-        status = status
+        status = status,
+        productionCompanies = productionCompanies,
     )
 }

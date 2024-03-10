@@ -21,7 +21,10 @@ object ShowMapper {
           favorite: Boolean,
           externalUrl: String,
           popularity: Double,
-          status: Long?  ->
+          status: Long?,
+          production_companies: List<String>?,
+          last_modified_at: Long,
+          favorite_modified_at: Long?->
             TVShow(
                 id = id,
                 title = title,
@@ -36,7 +39,10 @@ object ShowMapper {
                 popularity = popularity,
                 voteCount = voteCount.toInt(),
                 releaseDate = releaseDate,
-                status = status?.let { Status.entries[status.toInt()] }
+                status = status?.let { Status.entries[status.toInt()] },
+                productionCompanies = production_companies,
+                favoriteLastModified = favorite_modified_at ?: -1L,
+                lastModifiedAt = last_modified_at,
             )
         }
 

@@ -8,33 +8,56 @@ CREATE TABLE show (
         title TEXT NOT NULL,
         overview TEXT NOT NULL ,
         genres TEXT AS List<String>,
-        genreIds TEXT AS List<Int>,
-        originalLanguage TEXT NOT NULL,
-        voteCount INTEGER NOT NULL,
-        releaseDate TEXT NOT NULL,
-        posterUrl TEXT,
-        posterLastUpdated INTEGER NOT NULL,
+        genre_ids TEXT AS List<Int>,
+        original_language TEXT NOT NULL,
+        vote_count INTEGER NOT NULL,
+        release_date TEXT NOT NULL,
+        poster_url TEXT,
+        poster_last_updated INTEGER NOT NULL,
         favorite INTEGER AS Boolean NOT NULL,
-        externalUrl TEXT NOT NULL,
+        external_url TEXT NOT NULL,
         popularity REAL NOT NULL,
-        status INTEGER
+        status INTEGER,
+        production_companies TEXT AS List<String>,
+        last_modified_at INTEGER NOT NULL DEFAULT 0,
+        favorite_modified_at INTEGER
 );
+
+
+CREATE INDEX library_show_favorite_index ON show(favorite) WHERE favorite = 1;
+
+CREATE TRIGGER update_last_favorite_at_shows
+AFTER UPDATE OF favorite ON show
+BEGIN
+  UPDATE show
+  SET favorite_modified_at = strftime('%s', 'now')
+  WHERE id = new.id;
+END;
+
+CREATE TRIGGER update_last_modified_at_shows
+AFTER UPDATE ON show
+FOR EACH ROW
+BEGIN
+  UPDATE show
+  SET last_modified_at = strftime('%s', 'now')
+  WHERE id = new.id;
+END;
 
 
 selectById:
 SELECT * FROM show WHERE id = :id LIMIT 1;
 
 selectFavoritesPartial:
-SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE favorite;
+SELECT id, title, poster_url, poster_last_updated, favorite FROM show WHERE favorite;
 
 selectAll:
 SELECT * FROM show;
 
 selectShowPartialById:
-SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite FROM show WHERE id = :id LIMIT 1;
 
 insert:
-INSERT OR IGNORE INTO show(id, title, overview, genres, genreIds, originalLanguage, voteCount, releaseDate, posterUrl, posterLastUpdated, favorite, externalUrl, popularity, status)
+INSERT OR IGNORE INTO show(id, title, overview, genres, genre_ids, original_language, vote_count, release_date, poster_url, poster_last_updated, favorite, external_url, popularity, status)
 VALUES (:id, :title,:overview,:genres, :genreIds,:originalLanguage,:voteCount,:releaseDate, :posterUrl, :posterLastUpdated, :favorite, :externalUrl, :popularity, :status);
 
 lastInsertRowId:
@@ -45,16 +68,17 @@ UPDATE show SET
     title = COALESCE(:title, title),
     overview = COALESCE(:overview, overview),
     genres = COALESCE(:genres, genres),
-    genreIds = COALESCE(:genreIds, genreIds),
-    originalLanguage = COALESCE(:originalLanguage, originalLanguage),
-    voteCount = COALESCE(:voteCount, voteCount),
-    releaseDate = COALESCE(:releaseDate, releaseDate),
-    posterUrl = COALESCE(:posterUrl, posterUrl),
-    posterLastUpdated = COALESCE(:posterLastUpdated, posterLastUpdated),
+    genre_ids = COALESCE(:genreIds, genre_ids),
+    original_language = COALESCE(:originalLanguage, original_language),
+    vote_count = COALESCE(:voteCount, vote_count),
+    release_date = COALESCE(:releaseDate, release_date),
+    poster_url = COALESCE(:posterUrl, poster_url),
+    poster_last_updated = COALESCE(:posterLastUpdated, poster_last_updated),
     favorite = COALESCE(:favorite, favorite),
-    externalUrl = COALESCE(:externalUrl, externalUrl),
+    external_url = COALESCE(:externalUrl, external_url),
     popularity = COALESCE(:popularity, popularity),
-    status = COALESCE(:status, status)
+    status = COALESCE(:status, status),
+      production_companies = COALESCE(:productionCompanies, production_companies)
 WHERE id = :showId;
 
 

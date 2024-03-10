@@ -2,11 +2,12 @@ CREATE VIEW contentListView AS
 SELECT
     cl._id AS list_id,
     cl.name AS list_name,
+    cl.last_modified_at AS lastModified,
     clj.movie_id AS movieId,
     clj.show_id AS showId,
     COALESCE(m.title, s.title) AS title,
-    COALESCE(m.posterUrl, s.posterUrl) AS posterUrl,
-    COALESCE(m.posterLastUpdated, s.posterLastUpdated) AS posterLastUpdated,
+    COALESCE(m.poster_url, s.poster_url) AS posterUrl,
+    COALESCE(m.poster_last_updated, s.poster_last_updated) AS posterLastUpdated,
     COALESCE(m.favorite, s.favorite) AS favorite
 FROM
     contentList cl

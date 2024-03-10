@@ -53,8 +53,9 @@ val databaseModule = module {
                 production_companiesAdapter = listStringAdapter
             ),
             showAdapter = Show.Adapter(
-                genreIdsAdapter = listIntAdapter,
-                genresAdapter = listStringAdapter
+                genre_idsAdapter = listIntAdapter,
+                genresAdapter = listStringAdapter,
+                production_companiesAdapter = listStringAdapter
             )
         )
     }

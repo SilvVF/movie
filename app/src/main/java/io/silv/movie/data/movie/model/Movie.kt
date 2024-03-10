@@ -32,7 +32,9 @@ data class Movie(
     val posterLastUpdated: Long,
     val favorite: Boolean,
     val status: io.silv.movie.core.Status?,
-    val productionCompanies: List<String>?
+    val productionCompanies: List<String>?,
+    val lastModifiedAt: Long,
+    val favoriteModifiedAt: Long,
 ): Parcelable {
 
     @IgnoredOnParcel
@@ -54,7 +56,9 @@ data class Movie(
             releaseDate = "",
             genreIds = emptyList(),
             status = null,
-            productionCompanies = null
+            productionCompanies = null,
+            favoriteModifiedAt = -1L,
+            lastModifiedAt = -1L
        )
     }
 }

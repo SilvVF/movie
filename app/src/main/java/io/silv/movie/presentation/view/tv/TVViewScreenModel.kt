@@ -3,16 +3,17 @@ package io.silv.movie.presentation.view.tv
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.movie.data.tv.interactor.GetRemoteTVShows
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.trailers.GetRemoteTrailers
 import io.silv.movie.data.trailers.GetTVShowTrailers
 import io.silv.movie.data.trailers.NetworkToLocalTrailer
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.trailers.toDomain
-import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.interactor.UpdateShow
+import io.silv.movie.data.tv.model.TVShow
 import io.silv.movie.data.tv.model.toDomain
 import io.silv.movie.data.tv.model.toShowUpdate
 import kotlinx.collections.immutable.ImmutableList
@@ -37,6 +38,7 @@ class TVViewScreenModel(
     private val getRemoteShow: GetRemoteTVShows,
     private val getShow: GetShow,
     private val updateShow: UpdateShow,
+    private val showCoverCache: TVShowCoverCache,
     private val showId: Long
 ): StateScreenModel<ShowDetailsState>(ShowDetailsState.Loading) {
 
@@ -58,17 +60,27 @@ class TVViewScreenModel(
 
             val show = getShow.await(id = showId)
 
-            if (show == null || show.needsInit) {
-                val sShow = getRemoteShow.awaitOne(showId)
-                if (sShow == null) {
-                    mutableState.value = ShowDetailsState.Error
-                    return@launch
+            when {
+                show == null  -> {
+                    val sshow = getRemoteShow.awaitOne(showId)
+
+                    mutableState.value = if (sshow != null) {
+                        ShowDetailsState.Success(
+                            show = networkToLocalShow.await(sshow.toDomain())
+                        )
+                    } else {
+                        ShowDetailsState.Error
+                    }
                 }
-                mutableState.value = ShowDetailsState.Success(
-                    show = networkToLocalShow.await(sShow.toDomain())
-                )
-            } else {
-                mutableState.value = ShowDetailsState.Success(show = show)
+                show.needsInit -> {
+                    mutableState.value =
+                        ShowDetailsState.Success(show = show)
+                    refreshShowInfo()
+                }
+                else -> {
+                    mutableState.value =
+                        ShowDetailsState.Success(show = show)
+                }
             }
         }
 
@@ -121,15 +133,13 @@ class TVViewScreenModel(
         }
     }
 
-    private suspend fun refreshMovieInfo() {
+    private suspend fun refreshShowInfo() {
 
-        val sShow = getRemoteShow.awaitOne(showId) ?: return
-        val localMovie = networkToLocalShow.await(sShow.toDomain())
+        val sshow = getRemoteShow.awaitOne(showId)
+        val show = state.value.success?.show
 
-        mutableState.updateSuccess {state ->
-            state.copy(
-                show = localMovie
-            )
+        if (sshow != null && show != null) {
+            updateShow.awaitUpdateFromSource(show, sshow, showCoverCache)
         }
     }
 
@@ -147,7 +157,7 @@ class TVViewScreenModel(
             mutableState.updateSuccess { it.copy(refreshing = true) }
 
             listOf(
-                launch { refreshMovieInfo() },
+                launch { refreshShowInfo() },
                 launch { refreshShowTrailers() }
             )
                 .joinAll()
