@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 Javier Tomás
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.silv.movie.data.cache
 
 import android.content.Context
@@ -32,11 +47,11 @@ class MovieCoverCache(private val context: Context) {
     /**
      * Returns the cover from cache.
      *
-     * @param mangaThumbnailUrl thumbnail url for the manga.
+     * @param posterUrl thumbnail url for the manga.
      * @return cover image.
      */
-    fun getCoverFile(mangaThumbnailUrl: String?): File? {
-        return mangaThumbnailUrl?.let {
+    fun getCoverFile(posterUrl: String?): File? {
+        return posterUrl?.let {
             File(cacheDir, DiskUtil.hashKeyForDisk(it))
         }
     }
@@ -44,17 +59,17 @@ class MovieCoverCache(private val context: Context) {
     /**
      * Returns the custom cover from cache.
      *
-     * @param mangaId the manga id.
+     * @param movieId the movie id.
      * @return cover image.
      */
-    fun getCustomCoverFile(mangaId: Long?): File {
-        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(mangaId.toString()))
+    fun getCustomCoverFile(movieId: Long?): File {
+        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(movieId.toString()))
     }
 
     /**
-     * Saves the given stream as the manga's custom cover to cache.
+     * Saves the given stream as the movie's custom cover to cache.
      *
-     * @param manga the manga.
+     * @param movie the movie.
      * @param inputStream the stream to copy.
      * @throws IOException if there's any error.
      */
@@ -66,9 +81,9 @@ class MovieCoverCache(private val context: Context) {
     }
 
     /**
-     * Delete the cover files of the manga from the cache.
+     * Delete the cover files of the movie from the cache.
      *
-     * @param manga the manga.
+     * @param movie the movie.
      * @param deleteCustomCover whether the custom cover should be deleted.
      * @return number of files that were deleted.
      */
@@ -87,13 +102,13 @@ class MovieCoverCache(private val context: Context) {
     }
 
     /**
-     * Delete custom cover of the manga from the cache
+     * Delete custom cover of the movie from the cache
      *
-     * @param mangaId the manga id.
+     * @param movieId the movie id.
      * @return whether the cover was deleted.
      */
-    fun deleteCustomCover(mangaId: Long?): Boolean {
-        return getCustomCoverFile(mangaId).let {
+    fun deleteCustomCover(movieId: Long?): Boolean {
+        return getCustomCoverFile(movieId).let {
             it.exists() && it.delete()
         }
     }

@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 Javier Tomás
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.silv.movie.data.cache
 
 import android.content.Context
@@ -32,11 +47,11 @@ class TVShowCoverCache(private val context: Context) {
     /**
      * Returns the cover from cache.
      *
-     * @param mangaThumbnailUrl thumbnail url for the manga.
+     * @param posterUrl thumbnail url for the show.
      * @return cover image.
      */
-    fun getCoverFile(mangaThumbnailUrl: String?): File? {
-        return mangaThumbnailUrl?.let {
+    fun getCoverFile(posterUrl: String?): File? {
+        return posterUrl?.let {
             File(cacheDir, DiskUtil.hashKeyForDisk(it))
         }
     }
@@ -44,56 +59,56 @@ class TVShowCoverCache(private val context: Context) {
     /**
      * Returns the custom cover from cache.
      *
-     * @param mangaId the manga id.
+     * @param showId the show id.
      * @return cover image.
      */
-    fun getCustomCoverFile(mangaId: Long?): File {
-        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(mangaId.toString()))
+    fun getCustomCoverFile(showId: Long?): File {
+        return File(customCoverCacheDir, DiskUtil.hashKeyForDisk(showId.toString()))
     }
 
     /**
-     * Saves the given stream as the manga's custom cover to cache.
+     * Saves the given stream as the show's custom cover to cache.
      *
-     * @param manga the manga.
+     * @param show the show.
      * @param inputStream the stream to copy.
      * @throws IOException if there's any error.
      */
     @Throws(IOException::class)
-    fun setCustomCoverToCache(movie: TVShow, inputStream: InputStream) {
-        getCustomCoverFile(movie.id).outputStream().use {
+    fun setCustomCoverToCache(show: TVShow, inputStream: InputStream) {
+        getCustomCoverFile(show.id).outputStream().use {
             inputStream.copyTo(it)
         }
     }
 
     /**
-     * Delete the cover files of the manga from the cache.
+     * Delete the cover files of the show from the cache.
      *
-     * @param manga the manga.
+     * @param show the show.
      * @param deleteCustomCover whether the custom cover should be deleted.
      * @return number of files that were deleted.
      */
-    fun deleteFromCache(movie: TVShow, deleteCustomCover: Boolean = false): Int {
+    fun deleteFromCache(show: TVShow, deleteCustomCover: Boolean = false): Int {
         var deleted = 0
 
-        getCoverFile(movie.posterUrl)?.let {
+        getCoverFile(show.posterUrl)?.let {
             if (it.exists() && it.delete()) ++deleted
         }
 
         if (deleteCustomCover) {
-            if (deleteCustomCover(movie.id)) ++deleted
+            if (deleteCustomCover(show.id)) ++deleted
         }
 
         return deleted
     }
 
     /**
-     * Delete custom cover of the manga from the cache
+     * Delete custom cover of the show from the cache
      *
-     * @param mangaId the manga id.
+     * @param showId the show id.
      * @return whether the cover was deleted.
      */
-    fun deleteCustomCover(mangaId: Long?): Boolean {
-        return getCustomCoverFile(mangaId).let {
+    fun deleteCustomCover(showId: Long?): Boolean {
+        return getCustomCoverFile(showId).let {
             it.exists() && it.delete()
         }
     }

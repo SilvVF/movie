@@ -21,6 +21,8 @@ CREATE TABLE movie (
     production_companies TEXT AS List<String>
 );
 
+selectFavoritesPartial:
+SELECT id, title, posterUrl, posterLastUpdated, favorite FROM movie WHERE favorite;
 
 selectById:
 SELECT * FROM movie WHERE id = :id LIMIT 1;

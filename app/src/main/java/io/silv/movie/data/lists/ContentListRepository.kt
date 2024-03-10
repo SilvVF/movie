@@ -18,6 +18,10 @@ class ContentListRepositoryImpl(
     private val handler: DatabaseHandler
 ): ContentListRepository {
 
+    init {
+
+    }
+
     override suspend fun createList(name: String) {
         handler.await { contentListQueries.insert(name) }
     }

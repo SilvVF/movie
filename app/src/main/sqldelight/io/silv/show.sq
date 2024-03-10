@@ -24,6 +24,8 @@ CREATE TABLE show (
 selectById:
 SELECT * FROM show WHERE id = :id LIMIT 1;
 
+selectFavoritesPartial:
+SELECT id, title, posterUrl, posterLastUpdated, favorite FROM show WHERE favorite;
 
 selectAll:
 SELECT * FROM show;

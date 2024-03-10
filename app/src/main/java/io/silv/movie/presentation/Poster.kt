@@ -2,6 +2,7 @@ package io.silv.movie.presentation
 
 
 import io.silv.core_ui.components.PosterData
+import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.tv.model.TVShow
@@ -35,6 +36,16 @@ fun TVShowPoster.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = false
+    )
+}
+
+fun ContentListItem.toPoster(): PosterData {
+    return PosterData(
+        id = contentId,
+        url = posterUrl,
+        isMovie = isMovie,
+        title = title,
+        favorite = favorite
     )
 }
 
