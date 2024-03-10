@@ -1,42 +1,43 @@
 CREATE VIEW contentListView AS
 SELECT
-    clj.*,
-    CASE
-        WHEN clj.movie_id IS NOT NULL THEN 'movie'  -- Indicate whether it's a movie or show
-        WHEN clj.show_id IS NOT NULL THEN 'show'
-        ELSE NULL
-    END AS contentType,
+    cl._id AS list_id,
+    cl.name AS list_name,
+    clj.movie_id AS movieId,
+    clj.show_id AS showId,
     COALESCE(m.title, s.title) AS title,
     COALESCE(m.posterUrl, s.posterUrl) AS posterUrl,
     COALESCE(m.posterLastUpdated, s.posterLastUpdated) AS posterLastUpdated,
-    COALESCE(m.favorite, s.favorite) AS favorite,
-    cl.name AS listName
+    COALESCE(m.favorite, s.favorite) AS favorite
 FROM
-    contentListJunction clj
-JOIN
-    contentList cl ON clj.list_id = cl._id
+    contentList cl
+LEFT JOIN
+    contentListJunction clj ON cl._id = clj.list_id
 LEFT JOIN
     movie m ON clj.movie_id = m.id
 LEFT JOIN
-    show s ON clj.show_id = s.id
-ORDER BY
-    clj.list_id;
+    show s ON clj.show_id = s.id;
 
 contentlist:
 SELECT * FROM contentListView
-WHERE list_id IN (
-     SELECT list_id
-     FROM contentListJunction sub_clj
-     LEFT JOIN
-        movie sub_m ON sub_clj.movie_id = sub_m.id
-     LEFT JOIN
-       show sub_s ON sub_clj.show_id = sub_s.id
-     WHERE
-       sub_clj.list_id = list_id
-       AND (
-            sub_m.title LIKE COALESCE(:query, '')
-            OR sub_s.title LIKE COALESCE(:query, '')
-            OR COALESCE(:query, '') = ''
-       )
-);
+WHERE
+    contentListView.list_id IN (
+        SELECT
+            list_id
+        FROM
+            contentListJunction sub_clj
+        LEFT JOIN
+            movie sub_m ON sub_clj.movie_id = sub_m.id
+        LEFT JOIN
+            show sub_s ON sub_clj.show_id = sub_s.id
+        WHERE
+            sub_clj.list_id = contentListView.list_id
+            AND (
+                sub_m.title LIKE :query
+                OR sub_s.title LIKE :query
+                OR :query = ''
+            )
+    )
+    OR :query = ''  -- Include this condition to return all lists if the search query is empty
+ORDER BY
+    contentListView.list_id;
 

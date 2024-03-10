@@ -7,23 +7,26 @@ object ContentListMapper {
     }
 
     val mapListItem = {
-            movie_id: Long?,
-            show_id: Long?,
             list_id: Long,
-            contentType: String,
+            list_name: String,
+            movieId: Long?,
+            showId: Long?,
             title: String?,
             posterUrl: String?,
             posterLastUpdated: Long?,
-            favorite: Boolean?,
-            listName: String ->
-        ContentListItem(
-            contentId = if (contentType == "movie") movie_id!! else show_id!!,
-            isMovie = contentType == "movie",
-            title = title ?: "",
-            posterUrl = posterUrl,
-            posterLastUpdated = posterLastUpdated ?: 0L,
-            favorite = favorite ?: false,
-            list = ContentList(list_id, listName)
-        )
+            favorite: Boolean? ->
+        if(movieId != null || showId != null) {
+            ContentListItem.Item(
+                contentId = showId ?: movieId!!,
+                isMovie = movieId != null,
+                title = title ?: "",
+                posterUrl = posterUrl,
+                posterLastUpdated = posterLastUpdated ?: 0L,
+                favorite = favorite ?: false,
+                list = ContentList(list_id, list_name)
+            )
+        } else {
+            ContentListItem.PlaceHolder(ContentList(list_id, list_name))
+        }
     }
 }

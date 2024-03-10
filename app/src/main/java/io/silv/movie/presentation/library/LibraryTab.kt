@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -91,7 +91,9 @@ class LibraryScreenModel(
             .onEach {
 
                 val grouped = it.groupBy { it.list }
-                    .mapValues { it.value.toImmutableList() }
+                    .mapValues { (list, items) ->
+                        items.toImmutableList()
+                    }
                     .toList()
                     .toImmutableList()
 
@@ -183,79 +185,180 @@ fun LibraryStandardScreenContent(
             ),
         ) {
             item {
-                Row(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .height(ListItemHeight),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val primary =   MaterialTheme.colorScheme.primary
-                    val secondary = MaterialTheme.colorScheme.secondary
-                    val tertiary = MaterialTheme.colorScheme.tertiary
-                    Box(
-                        modifier = Modifier
-                            .weight(0.2f)
-                            .aspectRatio(1f)
-                            .drawWithCache {
-                                onDrawBehind {
-                                    drawRect(
-                                        brush = Brush.verticalGradient(
-                                            listOf(
-                                                primary,
-                                                secondary,
-                                                tertiary
+                ContentListPreview(
+                    modifier = Modifier.padding(8.dp),
+                    cover = {
+                        val primary =   MaterialTheme.colorScheme.primary
+                        val secondary = MaterialTheme.colorScheme.secondary
+                        val tertiary = MaterialTheme.colorScheme.tertiary
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .aspectRatio(1f)
+                                .drawWithCache {
+                                    onDrawBehind {
+                                        drawRect(
+                                            brush = Brush.verticalGradient(
+                                                listOf(
+                                                    primary,
+                                                    secondary,
+                                                    tertiary
+                                                )
                                             )
                                         )
-                                    )
+                                    }
                                 }
-                            }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.Favorite,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(42.dp)
-                                .align(Alignment.Center)
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column(
-                        modifier = Modifier
-                            .weight(0.8f, true)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        Text(
-                            text = "Library Content",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = "${state.favorites.size} items in list",
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.graphicsLayer {
-                                alpha = 0.78f
-                            }
-                        )
-                    }
-                }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Favorite,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
+                    },
+                    name = "Library Content",
+                    count = state.favorites.size
+                )
             }
             state.contentLists.fastForEach { (list, items) ->
                 item(
                     key = list.id
                 ) {
-                    LibraryListItem(
-                        list = list,
-                        items = items,
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                            .height(ListItemHeight),
+                    ContentListPreview(
+                        modifier = Modifier.padding(8.dp),
+                        cover = {
+                            if (items.size < 4) {
+                                ContentListPreviewDefaults.SingleItemPoster(
+                                    modifier = Modifier.fillMaxSize(),
+                                    item = items.first()
+                                )
+                            } else {
+                                ContentListPreviewDefaults.MultiItemPoster(
+                                    modifier = Modifier.fillMaxSize(),
+                                    items = items
+                                )
+                            }
+                        },
+                        name = list.name,
+                        count = when(items.first()) {
+                            is ContentListItem.PlaceHolder -> 0
+                            is ContentListItem.Item -> items.size
+                        }
                     )
                 }
             }
+        }
+    }
+}
+
+object ContentListPreviewDefaults {
+
+    @Composable
+    private fun PlaceholderPoster(
+        modifier: Modifier
+    ) {
+        Box(
+            modifier = modifier
+                .aspectRatio(1f)
+                .drawWithCache {
+                    onDrawBehind {
+                        drawRect(
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+        ) {
+            Icon(
+                imageVector = Icons.Filled.MovieFilter,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(42.dp)
+                    .align(Alignment.Center)
+            )
+        }
+    }
+
+    @Composable
+    fun MultiItemPoster(
+        modifier: Modifier,
+        items: ImmutableList<ContentListItem>
+    ) {
+        val trimmed = remember(items) {
+            items.filterIsInstance<ContentListItem.Item>().take(4)
+        }
+
+        FlowRow(
+            maxItemsInEachRow = 2,
+            modifier = modifier.aspectRatio(1f)
+        ) {
+            trimmed.fastForEach {
+                ItemCover.Square(
+                    modifier = Modifier
+                        .height(ListItemHeight / 2)
+                        .weight(1f),
+                    shape = RectangleShape,
+                    data = remember(it) { it.toPoster() }
+                )
+            }
+        }
+    }
+
+    @Composable
+    fun SingleItemPoster(
+        modifier: Modifier,
+        item: ContentListItem
+    ) {
+        when (item) {
+            is ContentListItem.Item -> {
+                ItemCover.Square(
+                    modifier = Modifier.fillMaxSize(),
+                    shape = RectangleShape,
+                    data = remember(item) { item.toPoster() }
+                )
+            }
+            is ContentListItem.PlaceHolder -> PlaceholderPoster(modifier = modifier)
+        }
+    }
+}
+
+@Composable
+private fun ContentListPreview(
+    cover: @Composable () -> Unit,
+    name: String,
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.heightIn(0.dp, ListItemHeight),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(0.2f, fill = false)
+                .fillMaxHeight()
+        ) {
+            cover()
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(
+            modifier = Modifier
+                .weight(0.8f, true)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = if (count == 0) "No items in list" else "$count items in list",
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.graphicsLayer { alpha = 0.78f }
+            )
         }
     }
 }
@@ -272,68 +375,16 @@ private fun LibraryListItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (items.size >= 4) {
-            FlowRow(
-                maxItemsInEachRow = 2,
-                modifier = Modifier.weight(0.2f, false)
-            ) {
-                val trimmed = remember(items) { items.take(4) }
-                trimmed.fastForEach {
-                    ItemCover.Square(
-                        modifier = Modifier
-                            .height(ListItemHeight / 2)
-                            .weight(1f),
-                        shape = RectangleShape,
-                        data = remember(it) { it.toPoster() }
-                    )
-                }
-            }
-        } else if (items.isNotEmpty()) {
+
+        } else if (items.isNotEmpty() && items.first() !is ContentListItem.PlaceHolder) {
             ItemCover.Square(
                 modifier = Modifier.weight(0.2f, false),
-                data = remember(items) { items.first().toPoster() }
+                data = remember(items) { (items.first() as ContentListItem.Item).toPoster() }
             )
         } else {
-            Box(
-                modifier = Modifier
-                    .weight(0.2f)
-                    .aspectRatio(1f)
-                    .drawWithCache {
-                        onDrawBehind {
-                            drawRect(
-                                color = Color.DarkGray
-                            )
-                        }
-                    }
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MovieFilter,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .align(Alignment.Center)
-                )
-            }
+
         }
-        Spacer(Modifier.width(12.dp))
-        Column(
-            modifier = Modifier
-                .weight(0.8f, true)
-                .fillMaxHeight(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = list.name,
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "${items.size} items in list",
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.graphicsLayer {
-                    alpha = 0.78f
-                }
-            )
-        }
+
     }
 }
 

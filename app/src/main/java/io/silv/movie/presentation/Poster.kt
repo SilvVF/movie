@@ -39,7 +39,7 @@ fun TVShowPoster.toPoster(): PosterData {
     )
 }
 
-fun ContentListItem.toPoster(): PosterData {
+fun ContentListItem.Item.toPoster(): PosterData {
     return PosterData(
         id = contentId,
         url = posterUrl,

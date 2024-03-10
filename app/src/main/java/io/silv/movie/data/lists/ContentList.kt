@@ -14,12 +14,18 @@ data class ContentListUpdate(
     val name: String?
 )
 
-data class ContentListItem(
-    val contentId: Long,
-    val isMovie: Boolean,
-    val title: String,
-    val posterUrl: String?,
-    val posterLastUpdated: Long,
-    val favorite: Boolean,
-    val list: ContentList
-)
+sealed class ContentListItem(
+    open val list: ContentList
+) {
+    data class Item(
+        val contentId: Long,
+        val isMovie: Boolean,
+        val title: String,
+        val posterUrl: String?,
+        val posterLastUpdated: Long,
+        val favorite: Boolean,
+        override val list: ContentList
+    ): ContentListItem(list)
+
+    data class PlaceHolder(override val list: ContentList): ContentListItem(list)
+}
