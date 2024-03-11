@@ -1,6 +1,7 @@
 package io.silv.core_ui.voyager
 
 import android.os.Parcelable
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -10,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -17,10 +19,9 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.set
 
 @Composable
 inline fun <reified T: ScreenResult> rememberScreenResult(
@@ -54,17 +55,10 @@ inline fun <S, reified R: ScreenResult> rememberScreenWithResultLauncher(
         )
     }
 
-    val resultCall by rememberUpdatedState(newValue = onResult)
-
-    LaunchedEffect(screenResultLauncher.screen.key) {
-
-        val result = screenResults
-            .map { it[screenResultLauncher.screen.key] as? R }
-            .filterNotNull()
-            .first()
-
-        resultCall(result)
-    }
+    TriggerOnScreenResultEffect(
+        key = screenResultLauncher.screen.key,
+        onResult = onResult
+    )
 
     return screenResultLauncher
 }
@@ -77,7 +71,23 @@ class ScreenResultsViewModel(
         state.get<Map<ScreenKey, ScreenResult>>(SCREEN_RESULTS_SAVEDSTATE_KEY).orEmpty()
     )
 
+    private val callbacks = ConcurrentHashMap<ScreenKey, (ScreenResult) -> Unit>()
+
+    fun registerCallback(
+        key: ScreenKey,
+        onResult: (ScreenResult) -> Unit
+    ) {
+        callbacks[key] = onResult
+    }
+
+
     fun <T: ScreenResult> setResult(screenResultSourceKey: ScreenKey, result: T) {
+
+        val callback  = callbacks.remove(screenResultSourceKey)
+        callback?.invoke(result)
+
+        Log.d("d", "Callback $callback")
+
         screenResults.update { results ->
             results.toMutableMap().apply {
                 this[screenResultSourceKey] = result
@@ -99,6 +109,24 @@ class ScreenResultsViewModel(
     }
 }
 
+@Composable
+inline fun <reified R: ScreenResult> TriggerOnScreenResultEffect(
+    key: ScreenKey,
+    noinline  onResult: (R) -> Unit = {}
+) {
+    val resultCall by rememberUpdatedState(newValue = onResult)
+
+    DisposableEffectIgnoringConfiguration(key) {
+        ScreenResultsStoreProxy.screenResultModel.registerCallback(key) { screenResult ->
+            val res = screenResult as? R
+            if (res != null) {
+                resultCall(res)
+            }
+        }
+        onDispose {}
+    }
+}
+
 object ScreenResultsStoreProxy {
 
     lateinit var screenResultModel: ScreenResultsViewModel
@@ -112,8 +140,9 @@ object ScreenResultsStoreProxy {
 
 class ScreenWithResultLauncher<S, R: ScreenResult>(
     val screen: S,
-    private val navigator: Navigator
+    private val navigator: Navigator,
 ) where S: Screen, S: ScreenWithResult<R> {
+
     fun launch() {
         screen.clearScreenResult()
         navigator.push(screen)

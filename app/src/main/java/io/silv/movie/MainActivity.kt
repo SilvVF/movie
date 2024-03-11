@@ -49,7 +49,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.koin.androidx.compose.defaultExtras
-import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.resolveViewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.annotation.KoinInternalApi
@@ -86,9 +86,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        val screenResultsModel  by viewModel<ScreenResultsViewModel>()
-
-        ScreenResultsStoreProxy.screenResultModel = screenResultsModel
+        ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
         setContent {
             CompositionLocalProvider(
