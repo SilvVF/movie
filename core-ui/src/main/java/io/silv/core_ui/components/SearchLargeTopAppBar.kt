@@ -59,7 +59,7 @@ import kotlin.math.roundToInt
 private val TopBarMaxHeight = 216.dp
 private val TopBarPinnedHeight = 64.0.dp
 
-@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
 fun SearchLargeTopBar(
     title: @Composable () -> Unit,
@@ -507,7 +507,3 @@ internal val TopTitleAlphaEasing = CubicBezierEasing(.8f, 0f, .8f, .15f)
 internal val MediumTitleBottomPadding = 24.dp
 internal val LargeTitleBottomPadding = 28.dp
 internal val TopAppBarHorizontalPadding = 4.dp
-
-// A title inset when the App-Bar is a Medium or Large one. Also used to size a spacer when the
-// navigation icon is missing.
-private val TopAppBarTitleInset = 16.dp - TopAppBarHorizontalPadding

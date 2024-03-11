@@ -29,7 +29,7 @@ import kotlinx.coroutines.launch
 
 class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
-    private val preferences: LibraryPreferences,
+    preferences: LibraryPreferences,
     getFavoritesList: GetFavoritesList
 ):  StateScreenModel<LibraryState>(LibraryState()),
     EventProducer<LibraryEvent> by EventProducer.default() {

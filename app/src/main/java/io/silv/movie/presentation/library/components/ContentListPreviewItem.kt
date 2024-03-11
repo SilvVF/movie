@@ -35,16 +35,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.ItemCover
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 private val ListItemHeight = 72.dp
 
 object ContentPreviewDefaults {
 
     @Composable
-    private fun PlaceholderPoster(
+    fun PlaceholderPoster(
         modifier: Modifier
     ) {
         Box(
@@ -62,20 +64,37 @@ object ContentPreviewDefaults {
                 imageVector = Icons.Filled.MovieFilter,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(42.dp)
+                    .fillMaxSize(0.5f)
                     .align(Alignment.Center)
             )
         }
     }
 
     @Composable
+    fun MultiItemPosterContentLIst(
+        modifier: Modifier,
+        content: ImmutableList<ContentListItem>
+    ) {
+        val contentItems = remember(content) {
+            content
+                .filterIsInstance<ContentListItem.Item>()
+                .take(4)
+                .map { it.contentItem }
+                .toImmutableList()
+        }
+
+        MultiItemPoster(
+            modifier = modifier,
+            items = contentItems
+        )
+    }
+
+    @Composable
     fun MultiItemPoster(
         modifier: Modifier,
-        items: ImmutableList<ContentListItem>
+        items: ImmutableList<ContentItem>,
     ) {
-        val trimmed = remember(items) {
-            items.filterIsInstance<ContentListItem.Item>().take(4)
-        }
+        val trimmed = remember(items) { items.take(4) }
 
         FlowRow(
             maxItemsInEachRow = 2,
@@ -123,15 +142,23 @@ object ContentPreviewDefaults {
     @Composable
     fun SingleItemPoster(
         modifier: Modifier,
+        item: ContentItem
+    ) {
+        ItemCover.Square(
+            modifier = modifier.fillMaxSize(),
+            shape = RectangleShape,
+            data = remember(item) { item.toPoster() }
+        )
+    }
+
+    @Composable
+    fun SingleItemPoster(
+        modifier: Modifier,
         item: ContentListItem
     ) {
         when (item) {
             is ContentListItem.Item -> {
-                ItemCover.Square(
-                    modifier = Modifier.fillMaxSize(),
-                    shape = RectangleShape,
-                    data = remember(item) { item.toPoster() }
-                )
+                SingleItemPoster(modifier = modifier, item = item.contentItem)
             }
             is ContentListItem.PlaceHolder -> PlaceholderPoster(modifier = modifier)
         }

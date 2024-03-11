@@ -19,5 +19,9 @@ SELECT COUNT(_id) FROM contentList;
 delete:
 DELETE FROM contentList WHERE _id = :id;
 
+selectById:
+SELECT * FROM contentList WHERE _id = :id LIMIT 1;
+
 lastInsertRowId:
 SELECT last_insert_rowid();
+

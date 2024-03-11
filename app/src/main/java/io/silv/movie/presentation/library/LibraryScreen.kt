@@ -1,6 +1,5 @@
 package io.silv.movie.presentation.library
 
-import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -17,15 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.library.components.LibraryBrowseTopBar
 import io.silv.movie.presentation.library.components.LibraryGridView
@@ -39,6 +40,7 @@ class LibraryScreen: Screen {
         val screenModel = getScreenModel<LibraryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val listCount by screenModel.listCount.collectAsStateWithLifecycle()
+        val navigator = LocalNavigator.currentOrThrow
 
         val listCreateScreen = remember(listCount) { ListCreateScreen(listCount) }
 
@@ -48,12 +50,10 @@ class LibraryScreen: Screen {
             screenModel.createList(result.name)
         }
 
-        val context = LocalContext.current
-
         CollectEventsWithLifecycle(screenModel) {
             when (it) {
                 is LibraryEvent.ListCreated -> {
-                    Toast.makeText(context, "created list ${it.id}", Toast.LENGTH_SHORT).show()
+                    navigator.push(ListViewScreen(it.id))
                 }
             }
         }
@@ -66,6 +66,8 @@ class LibraryScreen: Screen {
             setListMode = screenModel::updateListMode,
             changeSortMode = screenModel::updateSortMode,
             createListClicked = { screenResultLauncher.launch() },
+            onListClick = { navigator.push(ListViewScreen(it.id)) },
+            onListLongClick = {  },
             state = state
         )
     }
@@ -80,6 +82,8 @@ private fun LibraryStandardScreenContent(
     changeQuery: (query: String) -> Unit,
     changeSortMode: (mode: LibrarySortMode) -> Unit,
     createListClicked: () -> Unit,
+    onListLongClick: (contentList: ContentList) -> Unit,
+    onListClick: (contentList: ContentList) -> Unit,
     state: LibraryState
 ) {
 
@@ -119,6 +123,8 @@ private fun LibraryStandardScreenContent(
                 LibraryListView(
                     paddingValues = paddingValues,
                     state = state,
+                    onListLongClick = onListLongClick,
+                    onListClick = onListClick,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)
@@ -128,6 +134,8 @@ private fun LibraryStandardScreenContent(
                 LibraryGridView(
                     paddingValues = paddingValues,
                     state = state,
+                    onListLongClick = onListLongClick,
+                    onListClick = onListClick,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)

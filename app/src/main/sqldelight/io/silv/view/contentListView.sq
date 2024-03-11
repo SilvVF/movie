@@ -5,10 +5,13 @@ SELECT
     cl.last_modified_at AS lastModified,
     clj.movie_id AS movieId,
     clj.show_id AS showId,
+    clj.created_at AS addedToListAt,
     COALESCE(m.title, s.title) AS title,
     COALESCE(m.poster_url, s.poster_url) AS posterUrl,
     COALESCE(m.poster_last_updated, s.poster_last_updated) AS posterLastUpdated,
-    COALESCE(m.favorite, s.favorite) AS favorite
+    COALESCE(m.favorite, s.favorite) AS favorite,
+    COALESCE(m.overview, s.overview) AS overview,
+    COALESCE(m.popularity, s.popularity) AS popularity
 FROM
     contentList cl
 LEFT JOIN
@@ -42,5 +45,6 @@ WHERE
     OR :query = ''  -- Include this condition to return all lists if the search query is empty
 ORDER BY
     contentListView.list_id;
+
 
 

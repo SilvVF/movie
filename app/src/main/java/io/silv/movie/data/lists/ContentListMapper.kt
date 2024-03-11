@@ -6,25 +6,58 @@ object ContentListMapper {
         ContentList(id, name, lastModified)
     }
 
-    val mapListItem = {
+    val mapItem = {
+            movie_id: Long?,
+            show_id: Long?,
             list_id: Long,
-            list_name: String,
-            lastModified: Long,
+            created_at: Long,
             movieId: Long?,
             showId: Long?,
             title: String?,
             posterUrl: String?,
             posterLastUpdated: Long?,
-            favorite: Boolean? ->
-        if(movieId != null || showId != null) {
-            ContentListItem.Item(
+            favorite: Boolean?,
+            overview: String?,
+            popularity: Double? -> ContentItem(
                 contentId = showId ?: movieId!!,
                 isMovie = movieId != null,
                 title = title ?: "",
                 posterUrl = posterUrl,
                 posterLastUpdated = posterLastUpdated ?: 0L,
                 favorite = favorite ?: false,
-                list = ContentList(list_id, list_name, lastModified)
+                lastModified = created_at,
+                popularity = popularity ?: 0.0,
+                description = overview ?: "",
+            )
+    }
+
+    val mapListItem = {
+            list_id: Long,
+            list_name: String,
+            lastModified: Long,
+            movieId: Long?,
+            showId: Long?,
+            addedToListAt: Long?,
+            title: String?,
+            posterUrl: String?,
+            posterLastUpdated: Long?,
+            favorite: Boolean?,
+            overview: String?,
+            popularity: Double? ->
+        if(movieId != null || showId != null) {
+            ContentListItem.Item(
+               contentItem = ContentItem(
+                   contentId = showId ?: movieId!!,
+                   isMovie = movieId != null,
+                   title = title ?: "",
+                   posterUrl = posterUrl,
+                   posterLastUpdated = posterLastUpdated ?: 0L,
+                   favorite = favorite ?: false,
+                   lastModified =  addedToListAt ?: 0L,
+                   popularity = popularity ?: 0.0,
+                   description = overview ?: "",
+               ),
+               list = ContentList(list_id, list_name, lastModified)
             )
         } else {
             ContentListItem.PlaceHolder(ContentList(list_id, list_name, lastModified))

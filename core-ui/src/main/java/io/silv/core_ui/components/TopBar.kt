@@ -340,4 +340,4 @@ private fun TopAppBarLayoutCopy(
 
 // A title inset when the App-Bar is a Medium or Large one. Also used to size a spacer when the
 // navigation icon is missing.
-private val TopAppBarTitleInset = 16.dp - TopAppBarHorizontalPadding
+internal val TopAppBarTitleInset = 16.dp - TopAppBarHorizontalPadding

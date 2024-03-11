@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.Flow
 interface ContentListRepository {
     fun observeLibraryItems(query: String): Flow<List<ContentListItem>>
     fun observeListCount(): Flow<Long>
+    fun observeListById(id: Long): Flow<ContentList>
+    fun observeListItemsByListId(id: Long): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
+    suspend fun getList(id: Long): ContentList
     suspend fun createList(name: String): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
@@ -18,6 +21,21 @@ interface ContentListRepository {
 class ContentListRepositoryImpl(
     private val handler: DatabaseHandler
 ): ContentListRepository {
+
+    init {
+//        GlobalScope.launch {
+//            val movies = handler.awaitList { movieQueries.selectAll() }
+//            val list = handler.awaitOneExecutable {
+//                contentListQueries.insert("Items list")
+//                contentListQueries.lastInsertRowId()
+//            }
+//            handler.await {
+//                movies.take(10).forEach {
+//                    contentListJunctionQueries.insert(it.id, null, list)
+//                }
+//            }
+//        }
+    }
 
     override suspend fun createList(name: String): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
@@ -55,8 +73,20 @@ class ContentListRepositoryImpl(
         return handler.subscribeToOne { contentListQueries.listCount() }
     }
 
+    override fun observeListById(id: Long): Flow<ContentList> {
+        return handler.subscribeToOne { contentListQueries.selectById(id, ContentListMapper.mapList) }
+    }
+
+    override fun observeListItemsByListId(id: Long): Flow<List<ContentItem>> {
+        return handler.subscribeToList { contentListJunctionQueries.selectByListId(id, ContentListMapper.mapItem) }
+    }
+
     override suspend fun deleteList(contentList: ContentList) {
         return handler.await { contentListQueries.delete(contentList.id) }
+    }
+
+    override suspend fun getList(id: Long): ContentList {
+        return handler.awaitOne { contentListQueries.selectById(id, ContentListMapper.mapList) }
     }
 }
 

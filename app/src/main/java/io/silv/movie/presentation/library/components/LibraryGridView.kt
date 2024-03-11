@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library.components
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.VerticalGridFastScroller
+import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.LibraryState
 
@@ -19,6 +21,8 @@ import io.silv.movie.presentation.library.LibraryState
 fun LibraryGridView(
     paddingValues: PaddingValues,
     state: LibraryState,
+    onListLongClick: (contentList: ContentList) -> Unit,
+    onListClick: (contentList: ContentList) -> Unit,
     modifier: Modifier,
 ) {
     val gridState = rememberLazyGridState()
@@ -38,7 +42,8 @@ fun LibraryGridView(
         ) {
             item(key = "Library-Content") {
                 ContentGridPreviewItem(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier
+                        .padding(8.dp),
                     cover = {
                         ContentPreviewDefaults.LibraryContentPoster()
                     },
@@ -52,6 +57,10 @@ fun LibraryGridView(
                 ) {
                     ContentGridPreviewItem(
                         modifier = Modifier
+                            .combinedClickable(
+                                onLongClick = { onListLongClick(list) },
+                                onClick = { onListClick(list) }
+                            )
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
@@ -61,9 +70,9 @@ fun LibraryGridView(
                                     item = items.first()
                                 )
                             } else {
-                                ContentPreviewDefaults.MultiItemPoster(
+                                ContentPreviewDefaults.MultiItemPosterContentLIst(
                                     modifier = Modifier.fillMaxSize(),
-                                    items = items
+                                    content = items
                                 )
                             }
                         },
