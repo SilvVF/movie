@@ -60,6 +60,7 @@ fun LibraryBrowseTopBar(
     setListMode: (Boolean) -> Unit,
     changeQuery: (String) -> Unit,
     onSearch: (String) -> Unit,
+    createListClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val barExpandedFully by remember {
@@ -96,7 +97,7 @@ fun LibraryBrowseTopBar(
             actions = {
                 var dropDownVisible by remember { mutableStateOf(false) }
                 TooltipIconButton(
-                    onClick = {  },
+                    onClick = createListClicked,
                     imageVector = Icons.Filled.Add,
                     contentDescription = null,
                     tooltip = "Create list"

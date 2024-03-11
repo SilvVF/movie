@@ -12,22 +12,27 @@ import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
+import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
     private val preferences: LibraryPreferences,
     getFavoritesList: GetFavoritesList
-): StateScreenModel<LibraryState>(LibraryState()) {
+):  StateScreenModel<LibraryState>(LibraryState()),
+    EventProducer<LibraryEvent> by EventProducer.default() {
 
     var query by mutableStateOf("")
         private set
@@ -36,8 +41,16 @@ class LibraryScreenModel(
 
     var displayInList by preferences.displayInList().asState(screenModelScope)
         private set
+
     var sortMode by preferences.sortMode().asState(screenModelScope)
         private set
+
+    val listCount = contentListRepository.observeListCount()
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            null
+        )
 
     init {
         queryFlow.flatMapLatest { query ->
@@ -73,27 +86,6 @@ class LibraryScreenModel(
             .launchIn(screenModelScope)
     }
 
-    private fun Map<ContentList, ImmutableList<ContentListItem>>.applySorting(sortMode: LibrarySortMode): List<Pair<ContentList, ImmutableList<ContentListItem>>> {
-        return when (sortMode) {
-            LibrarySortMode.Title ->
-                toSortedMap { a: ContentList, b: ContentList ->
-                    a.name.compareTo(b.name).takeIf { it != 0 }  ?: 1
-                }
-                    .toList()
-            LibrarySortMode.Count ->
-                toList()
-                    .sortedByDescending {
-                        (_, value) -> value.filterIsInstance<ContentListItem.Item>().size
-                    }
-            LibrarySortMode.RecentlyAdded -> {
-                toSortedMap { a: ContentList, b: ContentList ->
-                    (b.lastModified - a.lastModified).toInt().takeIf { it != 0 }  ?: 1
-                }
-                    .toList()
-            }
-        }
-    }
-
     fun updateSortMode(mode: LibrarySortMode) {
         sortMode = mode
     }
@@ -105,7 +97,41 @@ class LibraryScreenModel(
     fun updateQuery(query: String) {
         this.query = query
     }
+
+    fun createList(name: String) {
+        screenModelScope.launch {
+            val id = contentListRepository.createList(name)
+            emitEvent(LibraryEvent.ListCreated(id))
+        }
+    }
+
+    private fun Map<ContentList, ImmutableList<ContentListItem>>.applySorting(
+        sortMode: LibrarySortMode
+    ): List<Pair<ContentList, ImmutableList<ContentListItem>>> {
+        return when (sortMode) {
+            LibrarySortMode.Title ->
+                toSortedMap { a: ContentList, b: ContentList ->
+                    a.name.compareTo(b.name).takeIf { it != 0 }  ?: 1
+                }
+                    .toList()
+            LibrarySortMode.Count ->
+                toList()
+                    .sortedByDescending { (_, value) ->
+                        value.filterIsInstance<ContentListItem.Item>().size
+                    }
+            LibrarySortMode.RecentlyAdded -> {
+                toSortedMap { a: ContentList, b: ContentList ->
+                    (b.lastModified - a.lastModified).toInt().takeIf { it != 0 }  ?: 1
+                }
+                    .toList()
+            }
+        }
+    }
 }
+sealed interface LibraryEvent {
+    data class ListCreated(val id: Long): LibraryEvent
+}
+
 sealed interface LibrarySortMode {
     data object Title: LibrarySortMode
     data object RecentlyAdded: LibrarySortMode

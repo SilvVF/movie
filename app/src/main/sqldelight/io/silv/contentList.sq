@@ -5,13 +5,16 @@ CREATE TABLE contentList(
 );
 
 insert:
-INSERT OR IGNORE INTO contentList(_id, name)
-VALUES (NULL,  :name);
+INSERT OR IGNORE INTO contentList(_id, name, last_modified_at)
+VALUES (NULL,  :name, strftime('%s', 'now'));
 
 update:
 UPDATE contentList SET
     name = COALESCE(:name, name)
 WHERE _id = :id;
+
+listCount:
+SELECT COUNT(_id) FROM contentList;
 
 delete:
 DELETE FROM contentList WHERE _id = :id;

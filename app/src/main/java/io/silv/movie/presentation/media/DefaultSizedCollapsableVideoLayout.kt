@@ -34,8 +34,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,9 +79,13 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 
+     var initial by rememberSaveable {
+         mutableStateOf(CollapsableVideoAnchors.Start)
+     }
+
     val state = remember {
         AnchoredDraggableState(
-            initialValue = CollapsableVideoAnchors.Start,
+            initialValue = initial,
             positionalThreshold = { distance: Float -> distance * 0.5f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
             animationSpec = tween(),
@@ -93,6 +100,11 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
                 }
             )
         }
+    }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { state.currentValue }
+            .collectLatest { initial = it }
     }
 
     val fullScreenVideoDraggable = remember {

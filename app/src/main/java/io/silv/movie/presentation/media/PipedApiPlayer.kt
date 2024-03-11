@@ -30,12 +30,6 @@ import org.chromium.net.CronetEngine
 import org.koin.compose.getKoin
 import java.util.concurrent.Executors
 
-
-private inline fun DefaultTrackSelector.updateParameters(
-    actions: DefaultTrackSelector.Parameters.Builder.() -> Unit
-) = setParameters(buildUponParameters().apply(actions))
-
-
 private fun createExoPlayer(
     context: Context,
     playerListener: Player.Listener
@@ -48,7 +42,6 @@ private fun createExoPlayer(
     exoPlayer.addListener(playerListener)
     return exoPlayer
 }
-
 
 @Composable
 fun PipedApiPlayer(

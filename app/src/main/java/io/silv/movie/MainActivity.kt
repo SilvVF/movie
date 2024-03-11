@@ -38,6 +38,8 @@ import androidx.lifecycle.ViewModelStoreOwner
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
+import io.silv.core_ui.voyager.ScreenResultsStoreProxy
+import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.presentation.home.HomeTab
 import io.silv.movie.presentation.library.LibraryTab
@@ -47,6 +49,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.koin.androidx.compose.defaultExtras
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.androidx.viewmodel.resolveViewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.annotation.KoinInternalApi
@@ -82,6 +85,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
+
+        val screenResultsModel  by viewModel<ScreenResultsViewModel>()
+
+        ScreenResultsStoreProxy.screenResultModel = screenResultsModel
 
         setContent {
             CompositionLocalProvider(

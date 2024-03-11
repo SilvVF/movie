@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library
 
+import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -19,14 +20,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import cafe.adriel.voyager.transitions.FadeTransition
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.library.components.LibraryBrowseTopBar
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
@@ -43,9 +50,40 @@ object LibraryTab: Tab {
 
     @Composable
     override fun Content() {
+        Navigator(
+            LibraryScreen()
+        ) {
+            FadeTransition(it)
+        }
+    }
+}
+
+class LibraryScreen: Screen  {
+
+    @Composable
+    override fun Content() {
 
         val screenModel = getScreenModel<LibraryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
+        val listCount by screenModel.listCount.collectAsStateWithLifecycle()
+
+        val listCreateScreen = remember(listCount) { ListCreateScreen(listCount) }
+
+        val screenResultLauncher = rememberScreenWithResultLauncher(
+            screen = listCreateScreen
+        ) { result ->
+            screenModel.createList(result.name)
+        }
+
+        val context = LocalContext.current
+
+        CollectEventsWithLifecycle(screenModel) {
+            when (it) {
+                is LibraryEvent.ListCreated -> {
+                    Toast.makeText(context, "created list ${it.id}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         LibraryStandardScreenContent(
             query = { screenModel.query },
@@ -54,6 +92,7 @@ object LibraryTab: Tab {
             changeQuery = screenModel::updateQuery,
             setListMode = screenModel::updateListMode,
             changeSortMode = screenModel::updateSortMode,
+            createListClicked = { screenResultLauncher.launch() },
             state = state
         )
     }
@@ -67,6 +106,7 @@ private fun LibraryStandardScreenContent(
     setListMode: (Boolean) -> Unit,
     changeQuery: (query: String) -> Unit,
     changeSortMode: (mode: LibrarySortMode) -> Unit,
+    createListClicked: () -> Unit,
     state: LibraryState
 ) {
 
@@ -86,6 +126,7 @@ private fun LibraryStandardScreenContent(
                 changeSortMode = changeSortMode,
                 sortModeProvider =  sortModeProvider,
                 scrollBehavior = scrollBehavior,
+                createListClicked = createListClicked,
             )
         },
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
