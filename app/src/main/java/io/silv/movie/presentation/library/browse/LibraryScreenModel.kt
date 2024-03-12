@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.browse
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -6,7 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.core_ui.components.PosterData
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
@@ -141,5 +141,5 @@ sealed interface LibrarySortMode {
 
 data class LibraryState(
     val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentListItem>>> = persistentListOf(),
-    val favorites: ImmutableList<PosterData> = persistentListOf()
+    val favorites: ImmutableList<ContentItem> = persistentListOf()
 )

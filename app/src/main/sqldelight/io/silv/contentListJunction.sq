@@ -58,5 +58,18 @@ LEFT JOIN movie AS m
 ON m.id = clj.movie_id
 LEFT JOIN show AS s
 ON s.id = clj.show_id
-WHERE list_id = :listId;
-
+WHERE list_id = :listId
+AND (
+    COALESCE(m.title, s.title) LIKE :query
+    OR :query = ''
+)
+ORDER BY
+     CASE :order
+        WHEN 'title'
+            THEN COALESCE(s.title, m.title)
+        WHEN 'popularity'
+            THEN COALESCE(s.popularity, m.popularity)
+        ELSE
+            created_at
+     END
+;

@@ -1,6 +1,7 @@
 package io.silv.core_ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -35,10 +36,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.silv.core_ui.util.keyboardAsState
 import kotlin.math.roundToInt
 
 private val PosterBarPinnedHeight = 64.0.dp
 private val PosterBarMaxHeight = 364.0.dp
+private val PosterBarSearchingHeight = 164.0.dp
 private val PosterMinHeight = PosterBarMaxHeight / 3
 
 @Composable
@@ -68,7 +71,6 @@ fun PosterLargeTopBar(
         posterContent = posterContent
     )
 }
-
 /**
  * A two-rows top app bar that is designed to be called by the Large and Medium top app bar
  * composables.
@@ -97,12 +99,21 @@ internal fun TwoRowsTopAppBarPoster(
             "A TwoRowsTopAppBar max height should be greater than its pinned height"
         )
     }
+    val isKeyboardOpen by keyboardAsState()
     val pinnedHeightPx: Float
     val maxHeightPx: Float
+    val openHeight by animateDpAsState(
+        targetValue = if(!isKeyboardOpen) {
+            maxHeight
+        } else {
+            PosterBarSearchingHeight
+        },
+        label = ""
+    )
 
     LocalDensity.current.run {
         pinnedHeightPx = pinnedHeight.toPx()
-        maxHeightPx = maxHeight.toPx()
+        maxHeightPx = openHeight.toPx()
     }
 
     // Sets the app bar's height offset limit to hide just the bottom title area and keep top title
@@ -137,7 +148,7 @@ internal fun TwoRowsTopAppBarPoster(
     val hideTopRowSemantics = colorTransitionFraction < 0.5f
 
     // Set up support for resizing the top app bar when vertically dragging the bar itself.
-    val appBarDragModifier = if (scrollBehavior != null && !scrollBehavior.isPinned) {
+    val appBarDragModifier = if (scrollBehavior != null && !scrollBehavior.isPinned && !isKeyboardOpen) {
         Modifier.draggable(
             orientation = Orientation.Vertical,
             state = rememberDraggableState { delta ->
@@ -251,7 +262,100 @@ internal fun TopAppBarLayoutNoTitle(
         },
         modifier = modifier
     ) { measurables, constraints ->
+
+        val navigationIconPlaceable =
+            measurables.first { it.layoutId == "navigationIcon" }
+                .measure(constraints.copy(minWidth = 0))
+        val actionIconsPlaceable =
+            measurables.first { it.layoutId == "actionIcons" }
+                .measure(constraints.copy(minWidth = 0))
+
+        val extraContentPlaceable =
+            measurables.first { it.layoutId == "extraContent" }
+                .measure(constraints.copy(
+                    minWidth = 0,
+                    minHeight = 0,
+                    maxWidth = constraints.maxWidth,
+                    maxHeight = PosterBarSearchingHeight.roundToPx()
+                )
+        )
         val layoutHeight = heightPx.roundToInt()
+
+        val posterContentPlaceable =
+            measurables.first { it.layoutId == "posterContent" }
+                .measure(constraints.copy(
+                    minWidth = 0,
+                    minHeight = 0,
+                    maxHeight = (layoutHeight - extraContentPlaceable.height)
+                        .coerceAtLeast(PosterMinHeight.roundToPx())
+                ))
+
+
+        layout(constraints.maxWidth, layoutHeight.coerceAtLeast(0)) {
+            // Navigation icon
+            navigationIconPlaceable.placeRelative(
+                x = 0,
+                y = (layoutHeight - navigationIconPlaceable.height) / 2 - extraContentPlaceable.height
+            )
+
+            posterContentPlaceable.placeRelative(
+                x = constraints.maxWidth / 2 - posterContentPlaceable.width / 2,
+                y = layoutHeight - posterContentPlaceable.height - extraContentPlaceable.height
+            )
+
+            extraContentPlaceable.placeRelative(
+                x = 0,
+                y = layoutHeight - extraContentPlaceable.height
+            )
+
+            // Action icons
+            actionIconsPlaceable.placeRelative(
+                x = constraints.maxWidth - actionIconsPlaceable.width,
+                y = (layoutHeight - actionIconsPlaceable.height) / 2  - extraContentPlaceable.height
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TopAppBarLayoutNoTitleSearching(
+    modifier: Modifier,
+    navigationIconContentColor: Color,
+    navigationIcon: @Composable () -> Unit,
+    actionIconContentColor: Color,
+    actions: @Composable () -> Unit,
+    extraContent: @Composable () -> Unit,
+) {
+    Layout(
+        {
+            Box(
+                Modifier
+                    .layoutId("navigationIcon")
+                    .padding(start = TopAppBarHorizontalPadding)
+            ) {
+                CompositionLocalProvider(
+                    LocalContentColor provides navigationIconContentColor,
+                    content = navigationIcon
+                )
+            }
+            Box(
+                Modifier.layoutId("extraContent")
+            ) {
+                extraContent()
+            }
+            Box(
+                Modifier
+                    .layoutId("actionIcons")
+                    .padding(end = TopAppBarHorizontalPadding)
+            ) {
+                CompositionLocalProvider(
+                    LocalContentColor provides actionIconContentColor,
+                    content = actions
+                )
+            }
+        },
+        modifier = modifier
+    ) { measurables, constraints ->
 
         val navigationIconPlaceable =
             measurables.first { it.layoutId == "navigationIcon" }
@@ -268,27 +372,13 @@ internal fun TopAppBarLayoutNoTitle(
                     maxWidth = constraints.maxWidth,
                 )
             )
-        val posterContentPlaceable =
-            measurables.first { it.layoutId == "posterContent" }
-                .measure(constraints.copy(
-                    minWidth = 0,
-                    minHeight = 0,
-                    maxHeight = (layoutHeight - extraContentPlaceable.height)
-                        .coerceAtLeast(PosterMinHeight.roundToPx())
-                )
-            )
+        val layoutHeight = extraContentPlaceable.height
 
-
-        layout(constraints.maxWidth, layoutHeight) {
+        layout(constraints.maxWidth, layoutHeight.coerceAtLeast(0)) {
             // Navigation icon
             navigationIconPlaceable.placeRelative(
                 x = 0,
                 y = (layoutHeight - navigationIconPlaceable.height) / 2 - extraContentPlaceable.height
-            )
-
-            posterContentPlaceable.placeRelative(
-                x = constraints.maxWidth / 2 - posterContentPlaceable.width / 2,
-                y = layoutHeight - posterContentPlaceable.height - extraContentPlaceable.height
             )
 
             extraContentPlaceable.placeRelative(

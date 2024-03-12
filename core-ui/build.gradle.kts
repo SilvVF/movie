@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil)
 
+    implementation(libs.androidx.palette)
+
     implementation(libs.kotlin.collections.immutable)
     implementation(libs.androidx.paging.common)
     implementation(libs.androidx.paging.compose)

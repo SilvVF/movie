@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
@@ -381,7 +382,7 @@ fun EntryListItem(
     onLongClick: () -> Unit,
     onClick: () -> Unit,
     badge: @Composable (RowScope.() -> Unit),
-    onClickContinueViewing: (() -> Unit)? = null,
+    endButton: @Composable (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -410,11 +411,16 @@ fun EntryListItem(
             style = MaterialTheme.typography.bodyMedium,
         )
         BadgeGroup(content = badge)
-        if (onClickContinueViewing != null) {
-            ContinueViewingButton(
-                modifier = Modifier.padding(start = ContinueViewingButtonListSpacing),
-                onClickContinueViewing = onClickContinueViewing,
-            )
+        endButton?.let { button ->
+            Box(
+                Modifier
+                    .clip(CircleShape)
+                    .padding(ContinueViewingButtonListSpacing)
+                    .size(ContinueViewingButtonSize),
+                contentAlignment = Alignment.Center
+            ) {
+                button()
+            }
         }
     }
 }

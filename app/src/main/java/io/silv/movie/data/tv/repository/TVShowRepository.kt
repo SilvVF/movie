@@ -16,7 +16,7 @@ interface ShowRepository {
     fun observeShowByIdOrNull(id: Long): Flow<TVShow?>
     suspend fun insertShow(show: TVShow): Long?
     suspend fun updateShow(update: TVShowUpdate): Boolean
-    fun observeFavorites(): Flow<List<TVShowPoster>>
+    fun observeFavorites(query: String): Flow<List<TVShow>>
 }
 
 class ShowRepositoryImpl(
@@ -68,8 +68,9 @@ class ShowRepositoryImpl(
             .isSuccess
     }
 
-    override fun observeFavorites(): Flow<List<TVShowPoster>> {
-        return handler.subscribeToList { showQueries.selectFavoritesPartial(ShowMapper.mapShowPoster) }
+    override fun observeFavorites(query: String): Flow<List<TVShow>> {
+        val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
+        return handler.subscribeToList { showQueries.selectFavorites(q, ShowMapper.mapShow) }
     }
 
     private suspend fun partialUpdateShow(vararg updates: TVShowUpdate) {

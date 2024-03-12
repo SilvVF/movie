@@ -220,7 +220,10 @@ private fun MovieStandardScreenSizeContent(
                     .fillMaxSize()
                     .haze(
                         state = hazeState,
-                        style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                        style = HazeDefaults
+                            .style(
+                                backgroundColor = MaterialTheme.colorScheme.background
+                            ),
                     ),
                 actions = actions,
                 displayMode = displayMode,

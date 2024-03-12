@@ -1,7 +1,6 @@
 package io.silv.movie.presentation.library.components
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,39 +44,22 @@ import io.silv.core_ui.components.PosterLargeTopBar
 import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.core_ui.util.rememberDominantColor
-import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.toPoster
-import kotlinx.collections.immutable.ImmutableList
 
 @Composable
-fun ListViewTopBar(
-    scrollBehavior: TopAppBarScrollBehavior?,
+fun FavoritesViewTopBar(
+    scrollBehavior: TopAppBarScrollBehavior,
     query: () -> String,
     changeQuery: (String) -> Unit,
     onSearch: (String) -> Unit,
     displayMode: () -> PosterDisplayMode,
     setDisplayMode: (PosterDisplayMode) -> Unit,
     onListOptionClicked: () -> Unit,
-    contentListProvider: () -> ContentList,
-    items: () -> ImmutableList<ContentItem>,
     modifier: Modifier = Modifier,
 ) {
-    val content= items()
-    val primary by rememberDominantColor(
-        data = when  {
-            content.isEmpty() -> null
-            else -> content.first().toPoster()
-        }
-    )
-    val background = MaterialTheme.colorScheme.background
 
-    val primaryAnimated by animateColorAsState(
-        targetValue = primary,
-        label = ""
-    )
+    val background = MaterialTheme.colorScheme.background
+    val primary = MaterialTheme.colorScheme.primary
 
     Column(
         modifier = modifier
@@ -87,22 +69,17 @@ fun ListViewTopBar(
                 onDrawBehind {
                     drawRect(
                         Brush.verticalGradient(
-                            colors = if (items().isEmpty()) {
-                                listOf(primaryAnimated, background)
-                            } else {
-                                listOf(primaryAnimated, background)
-                            },
+                            colors = listOf(primary, background),
                             endY = size.height * 0.8f
                         ),
-                        alpha = 1f - (scrollBehavior?.state?.collapsedFraction ?: 0f)
+                        alpha = 1f - scrollBehavior.state.collapsedFraction
                     )
                 }
             },
     ) {
         PosterLargeTopBar(
             title = {
-                val list = contentListProvider()
-                Text(text = list.name)
+                Text(text = "Favorites Content")
             },
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.colors2(
@@ -169,31 +146,14 @@ fun ListViewTopBar(
                 }
             },
             posterContent = {progress ->
-                val posterModifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .fillMaxHeight()
-                    .graphicsLayer {
-                        alpha = 1f - progress
-                    }
-                when  {
-                    content.isEmpty() -> {
-                        ContentPreviewDefaults.PlaceholderPoster(
-                            modifier = posterModifier
-                        )
-                    }
-                    content.size < 4 -> {
-                        ContentPreviewDefaults.SingleItemPoster(
-                            item = content.first(),
-                            modifier = posterModifier
-                        )
-                    }
-                    else -> {
-                        ContentPreviewDefaults.MultiItemPoster(
-                            modifier = posterModifier,
-                            items = content
-                        )
-                    }
-                }
+                ContentPreviewDefaults.LibraryContentPoster(
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .fillMaxHeight()
+                        .graphicsLayer {
+                            alpha = 1f - progress
+                        }
+                )
             },
         ) { progress ->
             Column(
@@ -208,9 +168,8 @@ fun ListViewTopBar(
             ) {
 
                 val focusManager = LocalFocusManager.current
-                val list = contentListProvider()
                 Text(
-                    text = list.name,
+                    text = "Favorites Content",
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
                         .padding(16.dp)
@@ -219,7 +178,7 @@ fun ListViewTopBar(
                 SearchBarInputField(
                     query = query(),
                     placeholder = {
-                        Text( "Search list...")
+                        Text( "Search favorites...")
                     },
                     onQueryChange = { changeQuery(it) },
                     onSearch = {

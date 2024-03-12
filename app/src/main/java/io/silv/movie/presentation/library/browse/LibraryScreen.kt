@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.browse
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,9 +28,12 @@ import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.library.ListCreateScreen
 import io.silv.movie.presentation.library.components.LibraryBrowseTopBar
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
+import io.silv.movie.presentation.library.view.FavoritesViewScreen
+import io.silv.movie.presentation.library.view.ListViewScreen
 
 class LibraryScreen: Screen {
 
@@ -68,6 +71,7 @@ class LibraryScreen: Screen {
             createListClicked = { screenResultLauncher.launch() },
             onListClick = { navigator.push(ListViewScreen(it.id)) },
             onListLongClick = {  },
+            onFavoritesClicked = { navigator.push(FavoritesViewScreen) },
             state = state
         )
     }
@@ -82,6 +86,7 @@ private fun LibraryStandardScreenContent(
     changeQuery: (query: String) -> Unit,
     changeSortMode: (mode: LibrarySortMode) -> Unit,
     createListClicked: () -> Unit,
+    onFavoritesClicked: () -> Unit,
     onListLongClick: (contentList: ContentList) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     state: LibraryState
@@ -125,6 +130,7 @@ private fun LibraryStandardScreenContent(
                     state = state,
                     onListLongClick = onListLongClick,
                     onListClick = onListClick,
+                    onFavoritesClicked = onFavoritesClicked,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)
@@ -136,6 +142,7 @@ private fun LibraryStandardScreenContent(
                     state = state,
                     onListLongClick = onListLongClick,
                     onListClick = onListClick,
+                    onFavoritesClicked = onFavoritesClicked,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)

@@ -6,10 +6,11 @@ import kotlinx.coroutines.flow.Flow
 interface ContentListRepository {
     fun observeLibraryItems(query: String): Flow<List<ContentListItem>>
     fun observeListCount(): Flow<Long>
-    fun observeListById(id: Long): Flow<ContentList>
-    fun observeListItemsByListId(id: Long): Flow<List<ContentItem>>
+    fun observeListById(id: Long): Flow<ContentList?>
+    fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
     suspend fun getList(id: Long): ContentList
+    suspend fun getListItems(id: Long): List<ContentItem>
     suspend fun createList(name: String): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
@@ -22,20 +23,22 @@ class ContentListRepositoryImpl(
     private val handler: DatabaseHandler
 ): ContentListRepository {
 
-    init {
+//    init {
 //        GlobalScope.launch {
 //            val movies = handler.awaitList { movieQueries.selectAll() }
-//            val list = handler.awaitOneExecutable {
-//                contentListQueries.insert("Items list")
-//                contentListQueries.lastInsertRowId()
-//            }
-//            handler.await {
-//                movies.take(10).forEach {
-//                    contentListJunctionQueries.insert(it.id, null, list)
+//            repeat(3) {
+//                val list = handler.awaitOneExecutable {
+//                    contentListQueries.insert("Items list")
+//                    contentListQueries.lastInsertRowId()
+//                }
+//                handler.await {
+//                    movies.take(10 * it).forEach {
+//                        contentListJunctionQueries.insert(it.id, null, list)
+//                    }
 //                }
 //            }
 //        }
-    }
+//    }
 
     override suspend fun createList(name: String): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
@@ -73,12 +76,17 @@ class ContentListRepositoryImpl(
         return handler.subscribeToOne { contentListQueries.listCount() }
     }
 
-    override fun observeListById(id: Long): Flow<ContentList> {
-        return handler.subscribeToOne { contentListQueries.selectById(id, ContentListMapper.mapList) }
+    override fun observeListById(id: Long): Flow<ContentList?> {
+        return handler.subscribeToOneOrNull { contentListQueries.selectById(id, ContentListMapper.mapList) }
     }
 
-    override fun observeListItemsByListId(id: Long): Flow<List<ContentItem>> {
-        return handler.subscribeToList { contentListJunctionQueries.selectByListId(id, ContentListMapper.mapItem) }
+    override suspend fun getListItems(id: Long): List<ContentItem> {
+        return handler.awaitList { contentListJunctionQueries.selectByListId(id, "", "", ContentListMapper.mapItem) }
+    }
+
+    override fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>> {
+        val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
+        return handler.subscribeToList { contentListJunctionQueries.selectByListId(id, q, order, ContentListMapper.mapItem) }
     }
 
     override suspend fun deleteList(contentList: ContentList) {

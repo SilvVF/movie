@@ -15,7 +15,7 @@ interface MovieRepository {
     fun observeMovieByIdOrNull(id: Long): Flow<Movie?>
     suspend fun insertMovie(movie: Movie): Long?
     suspend fun updateMovie(update: MovieUpdate): Boolean
-    fun observeFavorites(): Flow<List<MoviePoster>>
+    fun observeFavorites(query: String): Flow<List<Movie>>
 }
 
 class MovieRepositoryImpl(
@@ -69,8 +69,9 @@ class MovieRepositoryImpl(
             .isSuccess
     }
 
-    override fun observeFavorites(): Flow<List<MoviePoster>> {
-        return handler.subscribeToList { movieQueries.selectFavoritesPartial(MovieMapper.mapMoviePoster) }
+    override fun observeFavorites(query: String): Flow<List<Movie>> {
+        val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
+        return handler.subscribeToList { movieQueries.selectFavorites(q, MovieMapper.mapMovie) }
     }
 
     private suspend fun partialUpdateMovie(vararg updates: MovieUpdate) {

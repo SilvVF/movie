@@ -1,7 +1,7 @@
 package io.silv.movie.data.prefrences
 
 import io.silv.movie.data.prefrences.core.PreferenceStore
-import io.silv.movie.presentation.library.LibrarySortMode
+import io.silv.movie.presentation.library.browse.LibrarySortMode
 
 class LibraryPreferences(
     private val preferenceStore: PreferenceStore
@@ -10,6 +10,13 @@ class LibraryPreferences(
     fun displayInList() = preferenceStore.getBoolean(
         "pref_display_mode_library",
         true
+    )
+
+    fun listViewDisplayMode() = preferenceStore.getObject(
+        "pref_display_mode_list_view",
+        PosterDisplayMode.List,
+        PosterDisplayMode.Serializer::serialize,
+        PosterDisplayMode.Serializer::deserialize,
     )
 
     fun sortMode() = preferenceStore.getObject(

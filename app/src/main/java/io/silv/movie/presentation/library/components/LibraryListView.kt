@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -15,12 +16,13 @@ import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.VerticalFastScroller
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
-import io.silv.movie.presentation.library.LibraryState
+import io.silv.movie.presentation.library.browse.LibraryState
 
 @Composable
 fun LibraryListView(
     paddingValues: PaddingValues,
     state: LibraryState,
+    onFavoritesClicked: () -> Unit,
     onListLongClick: (contentList: ContentList) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     modifier: Modifier = Modifier,
@@ -43,7 +45,9 @@ fun LibraryListView(
         ) {
             item(key = "Library-Content") {
                 ContentListPreview(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier
+                        .clickable { onFavoritesClicked() }
+                        .padding(8.dp),
                     cover = {
                         ContentPreviewDefaults.LibraryContentPoster()
                     },

@@ -45,6 +45,9 @@ END;
 selectFavoritesPartial:
 SELECT id, title, poster_url, poster_last_updated, favorite FROM movie WHERE favorite;
 
+selectFavorites:
+SELECT * FROM movie WHERE favorite AND (title LIKE :query OR :query = '');
+
 selectById:
 SELECT * FROM movie WHERE id = :id LIMIT 1;
 

@@ -48,7 +48,7 @@ import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.SearchLargeTopBar
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.movie.presentation.library.LibrarySortMode
+import io.silv.movie.presentation.library.browse.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(

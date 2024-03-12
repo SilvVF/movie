@@ -50,6 +50,9 @@ SELECT * FROM show WHERE id = :id LIMIT 1;
 selectFavoritesPartial:
 SELECT id, title, poster_url, poster_last_updated, favorite FROM show WHERE favorite;
 
+selectFavorites:
+SELECT * FROM show WHERE favorite AND (title LIKE :query OR :query = '');
+
 selectAll:
 SELECT * FROM show;
 

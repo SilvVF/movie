@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
@@ -111,13 +110,14 @@ object ContentPreviewDefaults {
     }
 
     @Composable
-    fun LibraryContentPoster() {
+    fun LibraryContentPoster(
+        modifier: Modifier = Modifier
+    ) {
         val primary = MaterialTheme.colorScheme.primary
         val secondary = MaterialTheme.colorScheme.secondary
         val tertiary = MaterialTheme.colorScheme.tertiary
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = modifier
                 .aspectRatio(1f)
                 .drawWithCache {
                     onDrawBehind {
@@ -133,7 +133,7 @@ object ContentPreviewDefaults {
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(42.dp)
+                    .fillMaxSize(0.5f)
                     .align(Alignment.Center)
             )
         }
