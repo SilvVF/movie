@@ -44,6 +44,7 @@ import io.silv.core_ui.components.PosterLargeTopBar
 import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
+import io.silv.core_ui.util.keyboardAsState
 import io.silv.movie.data.prefrences.PosterDisplayMode
 
 @Composable
@@ -58,6 +59,7 @@ fun FavoritesViewTopBar(
     modifier: Modifier = Modifier,
 ) {
 
+    val isKeyboardOpen by keyboardAsState()
     val background = MaterialTheme.colorScheme.background
     val primary = MaterialTheme.colorScheme.primary
 
@@ -72,7 +74,7 @@ fun FavoritesViewTopBar(
                             colors = listOf(primary, background),
                             endY = size.height * 0.8f
                         ),
-                        alpha = 1f - scrollBehavior.state.collapsedFraction
+                        alpha = if(isKeyboardOpen) 0f else 1f - scrollBehavior.state.collapsedFraction
                     )
                 }
             },
@@ -84,9 +86,7 @@ fun FavoritesViewTopBar(
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.colors2(
                 containerColor = Color.Transparent,
-                scrolledContainerColor = primary.copy(
-                    alpha = 0.2f
-                )
+                scrolledContainerColor = primary.copy(alpha = 0.2f)
             ),
             navigationIcon = {
                 val navigator = LocalNavigator.current
@@ -162,19 +162,12 @@ fun FavoritesViewTopBar(
                     .fillMaxWidth()
                     .graphicsLayer {
                         alpha = 1f - progress
-                    },
+                    }
+                    .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom
             ) {
-
                 val focusManager = LocalFocusManager.current
-                Text(
-                    text = "Favorites Content",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Start)
-                )
                 SearchBarInputField(
                     query = query(),
                     placeholder = {

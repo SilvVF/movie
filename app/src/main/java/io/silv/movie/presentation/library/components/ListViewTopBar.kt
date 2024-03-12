@@ -45,6 +45,7 @@ import io.silv.core_ui.components.PosterLargeTopBar
 import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
+import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
@@ -65,6 +66,7 @@ fun ListViewTopBar(
     items: () -> ImmutableList<ContentItem>,
     modifier: Modifier = Modifier,
 ) {
+    val isKeyboardOpen by keyboardAsState()
     val content= items()
     val primary by rememberDominantColor(
         data = when  {
@@ -94,7 +96,7 @@ fun ListViewTopBar(
                             },
                             endY = size.height * 0.8f
                         ),
-                        alpha = 1f - (scrollBehavior?.state?.collapsedFraction ?: 0f)
+                        alpha = if(isKeyboardOpen) 0f else 1f - (scrollBehavior?.state?.collapsedFraction ?: 0f)
                     )
                 }
             },
@@ -202,20 +204,12 @@ fun ListViewTopBar(
                     .fillMaxWidth()
                     .graphicsLayer {
                         alpha = 1f - progress
-                    },
+                    }
+                    .padding(vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom
             ) {
-
                 val focusManager = LocalFocusManager.current
-                val list = contentListProvider()
-                Text(
-                    text = list.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Start)
-                )
                 SearchBarInputField(
                     query = query(),
                     placeholder = {
