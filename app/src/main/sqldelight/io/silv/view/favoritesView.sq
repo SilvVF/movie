@@ -1,0 +1,29 @@
+
+
+favoritesOrderByRecent:
+   SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        1 AS isMovie
+    FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
+
+    UNION
+
+    SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        0 AS isMovie
+    FROM show WHERE favorite AND (title LIKE :query OR :query = '')
+ORDER BY last_modified_at DESC;

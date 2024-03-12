@@ -2,6 +2,7 @@ package io.silv.core_ui.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -110,8 +111,10 @@ internal fun TwoRowsTopAppBarPoster(
         )
     }
     val isKeyboardOpen by keyboardAsState()
+
     val pinnedHeightPx: Float
     val maxHeightPx: Float
+
     val openHeight by animateDpAsState(
         targetValue = if(!isKeyboardOpen) {
             maxHeight
@@ -176,7 +179,14 @@ internal fun TwoRowsTopAppBarPoster(
     } else {
         Modifier
     }
-    val alphaTransform = FastOutSlowInEasing.transform(colorTransitionFraction)
+    val progress by    animateFloatAsState(
+        if(isKeyboardOpen) 1f else colorTransitionFraction,
+        label = "alpha-progress"
+    )
+
+    val alphaTransform = FastOutSlowInEasing.transform(progress)
+    val contentTransform = FastOutSlowInEasing.transform(colorTransitionFraction)
+
     Column {
         Surface(
             modifier = modifier.then(appBarDragModifier),
@@ -211,22 +221,25 @@ internal fun TwoRowsTopAppBarPoster(
                         // padding will always be applied by the layout above
                         .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
                         .clipToBounds(),
-                    heightPx = if (isKeyboardOpen) with(LocalDensity.current) { PosterBarSearchingHeight.toPx() - PosterBarPinnedHeight.toPx() }
-                    else maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f),
+                    heightPx = if (isKeyboardOpen) {
+                        with(LocalDensity.current) { openHeight.toPx() - PosterBarPinnedHeight.toPx() }
+                    } else {
+                        maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f)
+                    },
                     navigationIconContentColor = colors.navigationIconContentColor,
                     navigationIcon = {},
                     title = title,
                     titleTextStyle = titleTextStyle,
                     actionIconContentColor = colors.actionIconContentColor,
                     extraContent = {
-                        extraContent(if (isKeyboardOpen) 0f else alphaTransform)
+                        extraContent(contentTransform)
                     },
                     posterContent = {
-                        posterContent(if (isKeyboardOpen) 1f else alphaTransform)
+                        posterContent(alphaTransform)
                     },
                     actions = {},
                     titleContentColor = colors.titleContentColor,
-                    titleAlpha = (if (isKeyboardOpen) 0f else 1f - alphaTransform)
+                    titleAlpha = 1f - alphaTransform
                 )
             }
         }

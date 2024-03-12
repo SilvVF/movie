@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import io.silv.core_ui.components.PosterLargeTopBar
@@ -90,8 +91,17 @@ fun FavoritesViewTopBar(
             ),
             navigationIcon = {
                 val navigator = LocalNavigator.current
+                val keyboardController = LocalSoftwareKeyboardController.current
                 if (navigator?.canPop == true) {
-                    IconButton(onClick = { navigator.pop() }) {
+                    IconButton(
+                        onClick = {
+                            if (isKeyboardOpen) {
+                                keyboardController?.hide()
+                            } else {
+                                navigator.pop()
+                            }
+                        }
+                    ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = null
@@ -145,7 +155,7 @@ fun FavoritesViewTopBar(
                     )
                 }
             },
-            posterContent = {progress ->
+            posterContent = { progress ->
                 ContentPreviewDefaults.LibraryContentPoster(
                     modifier = Modifier
                         .padding(vertical = 12.dp)

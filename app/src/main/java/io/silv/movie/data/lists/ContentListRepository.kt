@@ -8,6 +8,7 @@ interface ContentListRepository {
     fun observeListCount(): Flow<Long>
     fun observeListById(id: Long): Flow<ContentList?>
     fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>>
+    fun observeFavorites(query: String): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
     suspend fun getList(id: Long): ContentList
     suspend fun getListItems(id: Long): List<ContentItem>
@@ -87,6 +88,11 @@ class ContentListRepositoryImpl(
     override fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
         return handler.subscribeToList { contentListJunctionQueries.selectByListId(id, q, order, ContentListMapper.mapItem) }
+    }
+
+    override fun observeFavorites(query: String): Flow<List<ContentItem>> {
+        val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
+        return handler.subscribeToList { favoritesViewQueries.favoritesOrderByRecent(q, ContentListMapper.mapFavoriteItem) }
     }
 
     override suspend fun deleteList(contentList: ContentList) {
