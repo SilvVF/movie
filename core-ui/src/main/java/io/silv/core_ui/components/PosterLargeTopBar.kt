@@ -26,7 +26,9 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,16 +52,41 @@ private val PosterBarSearchingHeight = 144.dp
 private val PosterMinHeight = PosterBarMaxHeight / 3
 
 @Composable
+fun rememberPosterTopBarState(
+    scrollBehavior: TopAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+): PosterTopBarState {
+    val isKeyboardOpen by keyboardAsState()
+
+    return remember(isKeyboardOpen, scrollBehavior) {
+        PosterTopBarState(
+            scrollBehavior,
+            isKeyboardOpen
+        )
+    }
+}
+
+class PosterTopBarState(
+    val scrollBehavior: TopAppBarScrollBehavior,
+    val isKeyboardOpen: Boolean
+) {
+
+    val progress by derivedStateOf {
+        scrollBehavior.state.collapsedFraction
+    }
+}
+
+
+@Composable
 fun PosterLargeTopBar(
+    state: PosterTopBarState,
     title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors2 = TopAppBarDefaults.colors2(),
-    scrollBehavior: TopAppBarScrollBehavior? = null,
-    posterContent: @Composable (fraction: Float) -> Unit = {},
-    extraContent: @Composable (fraction: Float) -> Unit = {},
+    posterContent: @Composable () -> Unit = {},
+    extraContent: @Composable () -> Unit = {},
 ) {
     TwoRowsTopAppBarPoster(
         smallTitleTextStyle = MaterialTheme.typography.titleSmall,
@@ -71,12 +98,12 @@ fun PosterLargeTopBar(
         windowInsets = windowInsets,
         maxHeight = PosterBarMaxHeight,
         pinnedHeight = PosterBarPinnedHeight,
-        scrollBehavior = scrollBehavior,
+        scrollBehavior = state.scrollBehavior,
         extraContent = extraContent,
         posterContent = posterContent,
         title = title,
-        titleBottomPadding = MediumTitleBottomPadding,
         titleTextStyle = MaterialTheme.typography.titleLarge,
+        isKeyboardOpen = state.isKeyboardOpen
     )
 }
 /**
@@ -90,10 +117,9 @@ fun PosterLargeTopBar(
 @Composable
 internal fun TwoRowsTopAppBarPoster(
     modifier: Modifier = Modifier,
-    extraContent: @Composable (progress: Float) -> Unit,
-    posterContent: @Composable (progress: Float) -> Unit,
+    extraContent: @Composable () -> Unit,
+    posterContent: @Composable () -> Unit,
     titleTextStyle: TextStyle,
-    titleBottomPadding: Dp,
     smallTitle: @Composable () -> Unit,
     title: @Composable () -> Unit,
     smallTitleTextStyle: TextStyle,
@@ -103,14 +129,14 @@ internal fun TwoRowsTopAppBarPoster(
     colors: TopAppBarColors2,
     maxHeight: Dp,
     pinnedHeight: Dp,
-    scrollBehavior: TopAppBarScrollBehavior?
+    scrollBehavior: TopAppBarScrollBehavior?,
+    isKeyboardOpen: Boolean,
 ) {
     if (maxHeight <= pinnedHeight) {
         throw IllegalArgumentException(
             "A TwoRowsTopAppBar max height should be greater than its pinned height"
         )
     }
-    val isKeyboardOpen by keyboardAsState()
 
     val pinnedHeightPx: Float
     val maxHeightPx: Float
@@ -179,7 +205,7 @@ internal fun TwoRowsTopAppBarPoster(
     } else {
         Modifier
     }
-    val progress by    animateFloatAsState(
+    val progress by animateFloatAsState(
         if(isKeyboardOpen) 1f else colorTransitionFraction,
         label = "alpha-progress"
     )
@@ -232,10 +258,20 @@ internal fun TwoRowsTopAppBarPoster(
                     titleTextStyle = titleTextStyle,
                     actionIconContentColor = colors.actionIconContentColor,
                     extraContent = {
-                        extraContent(contentTransform)
+                        Box(
+                            Modifier
+                                .graphicsLayer { alpha = 1f - contentTransform }
+                        ) {
+                            extraContent()
+                        }
                     },
                     posterContent = {
-                        posterContent(alphaTransform)
+                        Box(
+                            Modifier
+                                .graphicsLayer { alpha = 1f - alphaTransform }
+                        ) {
+                            posterContent()
+                        }
                     },
                     actions = {},
                     titleContentColor = colors.titleContentColor,

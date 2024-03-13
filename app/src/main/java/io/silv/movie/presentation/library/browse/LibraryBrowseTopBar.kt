@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.components
+package io.silv.movie.presentation.library.browse
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +48,6 @@ import io.silv.core_ui.components.SearchBarInputField
 import io.silv.core_ui.components.SearchLargeTopBar
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.colors2
-import io.silv.movie.presentation.library.browse.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(
@@ -147,11 +146,10 @@ fun LibraryBrowseTopBar(
             },
         ) {
             val focusManager = LocalFocusManager.current
-
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text( "Search your library...")
+                    Text("Search you library...")
                 },
                 onQueryChange = { changeQuery(it) },
                 onSearch = {
@@ -176,7 +174,8 @@ fun LibraryBrowseTopBar(
                         }
                     }
                 },
-                modifier = Modifier.padding(horizontal = 12.dp)
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
             )
         }
         Surface(

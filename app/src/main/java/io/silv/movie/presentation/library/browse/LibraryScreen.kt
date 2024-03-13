@@ -29,11 +29,10 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.library.ListCreateScreen
-import io.silv.movie.presentation.library.components.LibraryBrowseTopBar
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
-import io.silv.movie.presentation.library.view.FavoritesViewScreen
-import io.silv.movie.presentation.library.view.ListViewScreen
+import io.silv.movie.presentation.library.view.favorite.FavoritesViewScreen
+import io.silv.movie.presentation.library.view.list.ListViewScreen
 
 class LibraryScreen: Screen {
 

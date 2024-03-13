@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view
+package io.silv.movie.presentation.library.view.list
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf

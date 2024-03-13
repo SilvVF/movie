@@ -7,8 +7,8 @@ import io.silv.movie.data.dataModule
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
 import io.silv.movie.presentation.library.browse.LibraryScreenModel
-import io.silv.movie.presentation.library.view.FavoritesScreenModel
-import io.silv.movie.presentation.library.view.ListViewScreenModel
+import io.silv.movie.presentation.library.view.favorite.FavoritesScreenModel
+import io.silv.movie.presentation.library.view.list.ListViewScreenModel
 import io.silv.movie.presentation.view.movie.MovieViewScreenModel
 import io.silv.movie.presentation.view.tv.TVViewScreenModel
 import kotlinx.serialization.json.Json
