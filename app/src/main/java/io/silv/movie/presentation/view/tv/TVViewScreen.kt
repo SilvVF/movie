@@ -23,7 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import io.silv.core_ui.components.PullRefresh
-import io.silv.core_ui.components.VerticalFastScroller
+import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.getActivityViewModel

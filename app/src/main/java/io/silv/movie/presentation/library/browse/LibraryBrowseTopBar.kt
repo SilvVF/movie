@@ -42,10 +42,10 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import io.silv.core_ui.components.SearchBarInputField
-import io.silv.core_ui.components.SearchLargeTopBar
+import io.silv.core_ui.components.topbar.SearchBarInputField
+import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.TooltipIconButton
-import io.silv.core_ui.components.colors2
+import io.silv.core_ui.components.topbar.colors2
 
 @Composable
 fun LibraryBrowseTopBar(

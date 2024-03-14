@@ -1,7 +1,6 @@
 package io.silv.movie.coil
 
 import android.graphics.BitmapFactory
-import android.util.Log
 import coil.annotation.ExperimentalCoilApi
 import coil.decode.ImageSource
 import coil.disk.DiskCache
@@ -10,6 +9,7 @@ import coil.request.Options
 import okio.Source
 import okio.buffer
 import okio.sink
+import timber.log.Timber
 import java.io.File
 
 internal object CoilDiskUtils {
@@ -31,26 +31,6 @@ internal object CoilDiskUtils {
                 )
             }
             memCache[memCacheKey] = MemoryCache.Value(bitmap = bmp)
-        }
-    }
-
-    fun writeResponseToCoverCache(
-        response: Source,
-        cacheFile: File?,
-        options: Options
-    ): File? {
-        if (cacheFile == null || !options.diskCachePolicy.writeEnabled) return null
-        return try {
-            response.use { input ->
-                writeSourceToCoverCache(input, cacheFile)
-            }
-            cacheFile.takeIf { it.exists() }
-        } catch (e: Exception) {
-            Log.e(
-                "writeResponseToCoverCache",
-                "Failed to write response data to cover cache ${cacheFile.name}"
-            )
-            null
         }
     }
 
@@ -100,7 +80,7 @@ internal object CoilDiskUtils {
             }
             cacheFile.takeIf { it.exists() }
         } catch (e: Exception) {
-            Log.e(
+            Timber.e(
                 "moveSnapshotToCoverCache",
                 "Failed to write snapshot data to cover cache ${cacheFile.name}"
             )
@@ -115,23 +95,5 @@ internal object CoilDiskUtils {
             diskCacheKey = key,
             closeable = this
         )
-    }
-
-    @OptIn(ExperimentalCoilApi::class)
-    fun writeToDiskCache(
-        response: ByteArray,
-        diskCache: DiskCache,
-        diskCacheKey: String
-    ): DiskCache.Snapshot? {
-        val editor = diskCache.openEditor(diskCacheKey) ?: return null
-        try {
-            diskCache.fileSystem.write(editor.data) {
-                write(response)
-            }
-            return editor.commitAndOpenSnapshot()
-        } catch (e: Exception) {
-            runCatching { editor.abort() }
-            throw e
-        }
     }
 }

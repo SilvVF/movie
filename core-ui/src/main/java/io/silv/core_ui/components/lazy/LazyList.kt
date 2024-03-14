@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.components.lazy
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues

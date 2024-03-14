@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.components.lazy
 
 import android.view.ViewConfiguration
 import androidx.compose.animation.core.Animatable
@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMaxBy
-import io.silv.core_ui.components.Scroller.STICKY_HEADER_KEY_PREFIX
+import io.silv.core_ui.components.lazy.Scroller.STICKY_HEADER_KEY_PREFIX
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest

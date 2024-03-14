@@ -28,9 +28,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import io.silv.core_ui.components.PosterLargeTopBar
-import io.silv.core_ui.components.PosterTopBarState
-import io.silv.core_ui.components.colors2
+import io.silv.core_ui.components.topbar.PosterLargeTopBar
+import io.silv.core_ui.components.topbar.PosterTopBarState
+import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.library.components.PosterLargeTopBarDefaults

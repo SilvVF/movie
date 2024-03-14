@@ -13,7 +13,7 @@ import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.core_ui.components.PosterData
-import io.silv.core_ui.components.VerticalGridFastScroller
+import io.silv.core_ui.components.lazy.VerticalGridFastScroller
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge

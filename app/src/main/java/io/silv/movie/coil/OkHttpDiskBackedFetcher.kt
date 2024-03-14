@@ -1,7 +1,6 @@
 package io.silv.movie.coil
 
 import android.content.Context
-import android.util.Log
 import coil.annotation.ExperimentalCoilApi
 import coil.decode.DataSource
 import coil.decode.ImageSource
@@ -14,6 +13,7 @@ import coil.request.Options
 import io.silv.movie.coil.CoilDiskUtils.toImageSource
 import io.silv.movie.coil.CoilDiskUtils.writeSourceToCoverCache
 import okhttp3.Response
+import timber.log.Timber
 import java.io.File
 
 
@@ -108,7 +108,7 @@ class OkHttpDiskBackedFetcher<T: Any>(
             }
             cacheFile.takeIf { it.exists() }
         } catch (e: Exception) {
-            Log.e("DiskBackedFetcher", "Failed to write response data to cover cache ${cacheFile.name}")
+            Timber.e("DiskBackedFetcher", "Failed to write response data to cover cache ${cacheFile.name}")
             null
         }
     }

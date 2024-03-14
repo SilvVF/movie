@@ -51,11 +51,11 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.core_ui.components.SearchBarInputField
-import io.silv.core_ui.components.SearchLargeTopBar
+import io.silv.core_ui.components.topbar.SearchBarInputField
+import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.TMDBLogo
 import io.silv.core_ui.components.TooltipIconButton
-import io.silv.core_ui.components.colors2
+import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.prefrences.PosterDisplayMode
 

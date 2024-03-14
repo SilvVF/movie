@@ -54,7 +54,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import io.silv.core_ui.components.FastScrollLazyColumn
+import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.util.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay

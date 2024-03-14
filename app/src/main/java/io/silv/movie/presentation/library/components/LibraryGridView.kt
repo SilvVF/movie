@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import io.silv.core_ui.components.VerticalGridFastScroller
+import io.silv.core_ui.components.lazy.VerticalGridFastScroller
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.browse.LibraryState

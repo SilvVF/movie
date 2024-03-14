@@ -27,7 +27,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import io.silv.core_ui.components.PullRefresh
-import io.silv.core_ui.components.VerticalFastScroller
+import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.getActivityViewModel

@@ -24,7 +24,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import io.silv.core_ui.components.rememberPosterTopBarState
+import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode

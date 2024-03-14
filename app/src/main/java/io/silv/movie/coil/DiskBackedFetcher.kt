@@ -13,10 +13,6 @@ interface FetcherConfig<T: Any> {
     suspend fun overrideFetch(options: Options, data: T): FetchResult? { return null }
 }
 
-interface ByteArrayFetcherConfig<T : Any>: FetcherConfig<T> {
-    suspend fun fetch(options: Options, data: T): ByteArray
-}
-
 interface OkHttpFetcherConfig<T : Any>: FetcherConfig<T> {
     suspend fun fetch(options: Options, data: T): Response
 }

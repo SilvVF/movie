@@ -30,9 +30,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import io.silv.core_ui.components.PosterLargeTopBar
-import io.silv.core_ui.components.PosterTopBarState
-import io.silv.core_ui.components.colors2
+import io.silv.core_ui.components.topbar.PosterLargeTopBar
+import io.silv.core_ui.components.topbar.PosterTopBarState
+import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList

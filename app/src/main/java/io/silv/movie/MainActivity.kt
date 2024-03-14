@@ -41,7 +41,7 @@ import io.silv.core_ui.theme.MovieTheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
-import io.silv.movie.presentation.home.HomeTab
+import io.silv.movie.presentation.home.BrowseTab
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 MovieTheme {
-                    TabNavigator(HomeTab) { tabNavigator ->
+                    TabNavigator(LibraryTab) { tabNavigator ->
                         Surface(Modifier.fillMaxSize()) {
                             Scaffold(
                                 modifier = Modifier.fillMaxSize(),
@@ -169,8 +169,8 @@ fun AppBottomBar(
 ) {
     val tabs = remember {
         persistentListOf(
-            HomeTab,
-            LibraryTab
+            LibraryTab,
+            BrowseTab
         )
     }
     BottomAppBar(

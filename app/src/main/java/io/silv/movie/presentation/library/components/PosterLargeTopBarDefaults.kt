@@ -33,7 +33,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.core_ui.components.SearchBarInputField
+import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.movie.data.prefrences.PosterDisplayMode
 

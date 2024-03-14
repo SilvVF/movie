@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.components.lazy
 /*
  * MIT License
  *
@@ -54,7 +54,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastSumBy
-import io.silv.core_ui.components.Scroller.STICKY_HEADER_KEY_PREFIX
+import io.silv.core_ui.components.lazy.Scroller.STICKY_HEADER_KEY_PREFIX
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -177,7 +177,7 @@ private fun Modifier.drawScrollbar(
         color: Color,
         alpha: () -> Float,
     ) -> Unit,
-): Modifier = composed {
+): Modifier = this.composed {
     val scrolled = remember {
         MutableSharedFlow<Unit>(
             extraBufferCapacity = 1,

@@ -1,4 +1,4 @@
-package io.silv.core_ui.components
+package io.silv.core_ui.components.topbar
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable

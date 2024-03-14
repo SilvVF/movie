@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryListItem
-import io.silv.core_ui.components.FastScrollLazyColumn
+import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.components.PosterData
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
