@@ -15,15 +15,15 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.movie.data.ContentPagedType
+import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
+import io.silv.movie.data.SearchItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
 import io.silv.movie.data.movie.interactor.UpdateMovie
-import io.silv.movie.data.ContentPagedType
-import io.silv.movie.data.Filters
 import io.silv.movie.data.movie.model.MoviePoster
-import io.silv.movie.data.SearchItem
 import io.silv.movie.data.movie.model.toDomain
 import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.movie.repository.SourceMovieRepository
@@ -237,7 +237,6 @@ class MovieScreenModel(
         @Stable
         data class RemoveMovie(val movie: MoviePoster) : Dialog
     }
-
 }
 
 @Immutable

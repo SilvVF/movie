@@ -9,7 +9,8 @@ object ContentListMapper {
     val mapFavoriteItem = {
             id: Long, title: String, poster_url: String?,
             poster_last_updated: Long, overview: String, popularity: Double,
-            last_modified_at: Long,favorite: Boolean,  isMovie: Long ->
+            last_modified_at: Long,favorite: Boolean,  isMovie: Long,
+            favorite_last_modified: Long? ->
         ContentItem(
             contentId = id,
             isMovie = isMovie == 1L,

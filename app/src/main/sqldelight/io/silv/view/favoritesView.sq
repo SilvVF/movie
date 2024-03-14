@@ -1,5 +1,4 @@
 
-
 favoritesOrderByRecent:
    SELECT
         id,
@@ -10,7 +9,8 @@ favoritesOrderByRecent:
         popularity,
         last_modified_at,
         favorite,
-        1 AS isMovie
+        1 AS isMovie,
+        favorite_modified_at
     FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
 
     UNION
@@ -24,6 +24,67 @@ favoritesOrderByRecent:
         popularity,
         last_modified_at,
         favorite,
-        0 AS isMovie
+        0 AS isMovie,
+        favorite_modified_at
     FROM show WHERE favorite AND (title LIKE :query OR :query = '')
-ORDER BY last_modified_at DESC;
+ORDER BY favorite_modified_at DESC;
+
+favoritesOrderByTitle:
+   SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        1 AS isMovie,
+        favorite_modified_at
+    FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
+
+    UNION
+
+    SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        0 AS isMovie,
+        favorite_modified_at
+    FROM show WHERE favorite AND (title LIKE :query OR :query = '')
+ORDER BY title DESC;
+
+favoritesOrderByMovieOrShow:
+   SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        1 AS isMovie,
+        favorite_modified_at
+    FROM movie WHERE :showsOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
+
+    UNION
+
+    SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        0 AS isMovie,
+        favorite_modified_at
+    FROM show WHERE :moviesOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
+ORDER BY title DESC;

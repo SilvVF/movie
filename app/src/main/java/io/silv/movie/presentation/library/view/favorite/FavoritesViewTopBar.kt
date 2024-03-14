@@ -1,19 +1,33 @@
 package io.silv.movie.presentation.library.view.favorite
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.Tv
+import androidx.compose.material3.ElevatedFilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.PosterLargeTopBar
 import io.silv.core_ui.components.PosterTopBarState
 import io.silv.core_ui.components.colors2
@@ -30,6 +44,8 @@ fun FavoritesViewTopBar(
     displayMode: () -> PosterDisplayMode,
     setDisplayMode: (PosterDisplayMode) -> Unit,
     onListOptionClicked: () -> Unit,
+    sortModeProvider: () -> FavoritesSortMode,
+    changeSortMode: (FavoritesSortMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val background = MaterialTheme.colorScheme.background
@@ -46,7 +62,11 @@ fun FavoritesViewTopBar(
                             colors = listOf(primary, background),
                             endY = size.height * 0.8f
                         ),
-                        alpha = if (state.isKeyboardOpen) { 0f } else { 1f - state.progress }
+                        alpha = if (state.isKeyboardOpen) {
+                            0f
+                        } else {
+                            1f - state.progress
+                        }
                     )
                 }
             },
@@ -77,6 +97,14 @@ fun FavoritesViewTopBar(
                         .fillMaxHeight()
                 )
             },
+            pinnedContent = {
+                AnimatedVisibility(visible = !state.isKeyboardOpen) {
+                    FavoritesFilterChips(
+                        sortModeProvider = sortModeProvider,
+                        changeSortMode = changeSortMode
+                    )
+                }
+            }
         ) {
             PosterLargeTopBarDefaults.SearchInputField(
                 query = query,
@@ -89,4 +117,54 @@ fun FavoritesViewTopBar(
 }
 
 
+@Composable
+fun FavoritesFilterChips(
+    sortModeProvider: () -> FavoritesSortMode,
+    changeSortMode: (FavoritesSortMode) -> Unit
+) {
+    val filters =
+        remember {
+            listOf(
+                Triple("Title", Icons.Filled.Title, FavoritesSortMode.Title),
+                Triple("Recently Added", Icons.Filled.NewReleases, FavoritesSortMode.RecentlyAdded),
+                Triple("Movies", Icons.Filled.Movie, FavoritesSortMode.Movie),
+                Triple("Shows", Icons.Filled.Tv, FavoritesSortMode.Show)
+            )
+        }
 
+    val layoutDirection = LocalLayoutDirection.current
+
+    val paddingHorizontal = with(LocalDensity.current) {
+        TopAppBarDefaults.windowInsets.getLeft(this, layoutDirection).toDp() to
+                TopAppBarDefaults.windowInsets.getRight(this, layoutDirection).toDp()
+    }
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        val sortMode = sortModeProvider()
+        filters.fastForEach { (tag, icon, type) ->
+            item(key = tag) {
+                ElevatedFilterChip(
+                    modifier = Modifier.padding(4.dp),
+                    selected = type == sortMode,
+                    onClick = {
+                        changeSortMode(type)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = icon.name,
+                        )
+                    },
+                    label = {
+                        Text(text = tag)
+                    },
+                )
+            }
+        }
+    }
+}

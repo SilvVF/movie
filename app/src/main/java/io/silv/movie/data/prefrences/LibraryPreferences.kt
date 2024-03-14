@@ -2,6 +2,8 @@ package io.silv.movie.data.prefrences
 
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.presentation.library.browse.LibrarySortMode
+import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
+import io.silv.movie.presentation.library.view.list.ListSortMode
 
 class LibraryPreferences(
     private val preferenceStore: PreferenceStore
@@ -17,6 +19,48 @@ class LibraryPreferences(
         PosterDisplayMode.List,
         PosterDisplayMode.Serializer::serialize,
         PosterDisplayMode.Serializer::deserialize,
+    )
+
+    fun sortModeFavorites() = preferenceStore.getObject(
+        "pref_sort_mode_library_favorites",
+        FavoritesSortMode.Title,
+        serializer = { mode: FavoritesSortMode ->
+            when(mode) {
+                FavoritesSortMode.Title -> "T"
+                FavoritesSortMode.Show -> "S"
+                FavoritesSortMode.Movie -> "M"
+                FavoritesSortMode.RecentlyAdded -> "R"
+            }
+        },
+        deserializer = {
+            when (it) {
+                "S" -> FavoritesSortMode.Show
+                "M" -> FavoritesSortMode.Movie
+                "R" -> FavoritesSortMode.RecentlyAdded
+                else -> FavoritesSortMode.Title
+            }
+        }
+    )
+
+    fun sortModeList() = preferenceStore.getObject(
+        "pref_sort_mode_library_list",
+        ListSortMode.Title,
+        serializer = { mode: ListSortMode ->
+            when(mode) {
+                ListSortMode.Title -> "T"
+                ListSortMode.Show -> "S"
+                ListSortMode.Movie -> "M"
+                ListSortMode.RecentlyAdded -> "R"
+            }
+        },
+        deserializer = {
+            when (it) {
+                "S" -> ListSortMode.Show
+                "M" -> ListSortMode.Movie
+                "R" -> ListSortMode.RecentlyAdded
+                else -> ListSortMode.Title
+            }
+        }
     )
 
     fun sortMode() = preferenceStore.getObject(

@@ -42,6 +42,46 @@ DELETE FROM contentListJunction WHERE show_id = :showId AND list_id = :listId;
 selectAll:
 SELECT * FROM contentListJunction;
 
+selectMoviesByListId:
+SELECT
+    clj.*,
+    m.id AS movieId,
+    clj.show_id AS showId,
+    m.title AS title,
+    m.poster_url AS posterUrl,
+    m.poster_last_updated AS posterLastUpdated,
+    m.favorite AS favorite,
+    m.overview  AS overview,
+    m.popularity AS popularity
+FROM contentListJunction AS clj
+LEFT JOIN movie AS m
+ON m.id = clj.movie_id
+WHERE list_id = :listId
+AND (
+    m.title LIKE :query
+    OR :query = ''
+);
+
+selectShowsByListId:
+SELECT
+    clj.*,
+    clj.movie_id AS movieId,
+    s.id AS showId,
+    s.title AS title,
+    s.poster_url AS posterUrl,
+    s.poster_last_updated AS posterLastUpdated,
+    s.favorite AS favorite,
+    s.overview  AS overview,
+    s.popularity AS popularity
+FROM contentListJunction AS clj
+LEFT JOIN show AS s
+ON s.id = clj.movie_id
+WHERE list_id = :listId
+AND (
+    s.title LIKE :query
+    OR :query = ''
+);
+
 selectByListId:
 SELECT
     clj.*,
@@ -58,7 +98,8 @@ LEFT JOIN movie AS m
 ON m.id = clj.movie_id
 LEFT JOIN show AS s
 ON s.id = clj.show_id
-WHERE list_id = :listId
+WHERE
+    list_id = :listId
 AND (
     COALESCE(m.title, s.title) LIKE :query
     OR :query = ''

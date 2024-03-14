@@ -48,7 +48,9 @@ fun LibraryGridView(
                         .clickable { onFavoritesClicked() }
                         .padding(8.dp),
                     cover = {
-                        ContentPreviewDefaults.LibraryContentPoster()
+                        ContentPreviewDefaults.LibraryContentPoster(
+                            modifier = Modifier.fillMaxSize()
+                        )
                     },
                     name = "Library Content",
                     count = state.favorites.size

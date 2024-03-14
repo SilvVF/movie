@@ -100,7 +100,7 @@ data class BrowseMovieScreen(
                 )
             }
         )
-        val onDismissRequest = { screenModel.changeDialog(null) }
+        val onDismissRequest = remember {{ screenModel.changeDialog(null) }}
         when (val dialog = state.dialog) {
             is MovieScreenModel.Dialog.RemoveMovie -> {
                 RemoveEntryDialog(

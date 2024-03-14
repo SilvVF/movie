@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library.view.list
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -12,6 +13,7 @@ import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toUpdate
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -29,12 +31,15 @@ import kotlinx.coroutines.launch
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
-    private val libraryPreferences: LibraryPreferences,
+    libraryPreferences: LibraryPreferences,
     listId: Long
-): StateScreenModel<ListViewState>(ListViewState.Loading) {
+): StateScreenModel<ListViewState>(ListViewState.Loading),
+    EventProducer<ListViewEvent> by EventProducer.default() {
 
     private val stateSuccessTrigger =
         state.map { it.success?.list?.id }.filterNotNull().distinctUntilChanged()
+
+    private val listSortMode = libraryPreferences.sortModeList()
 
     var query by mutableStateOf("")
         private set
@@ -48,7 +53,8 @@ class ListViewScreenModel(
             if (list != null) {
                 mutableState.value = ListViewState.Success(
                     list = list,
-                    allItems = contentListRepository.getListItems(listId).toImmutableList()
+                    allItems = contentListRepository.getListItems(listId).toImmutableList(),
+                    sortMode = listSortMode.get()
                 )
             } else {
                 mutableState.value = ListViewState.Error("No list found")
@@ -68,21 +74,19 @@ class ListViewScreenModel(
             }
             .launchIn(screenModelScope)
 
-        contentListRepository.observeListItemsByListId(listId, "", "",)
-            .onEach { list ->
-                mutableState.updateSuccess { state ->
-                    state.copy(allItems = list.toImmutableList())
-                }
+        listSortMode.changes()
+            .onEach { mode ->
+                mutableState.updateSuccess {state -> state.copy(sortMode = mode) }
             }
             .launchIn(screenModelScope)
 
-        state.map { it.success?.list }
+        state.map { it.success?.sortMode }
             .filterNotNull()
             .combine(
                 snapshotFlow { query }
             ) { a, b ->  a to b }
-            .flatMapLatest {  (list, query) ->
-                contentListRepository.observeListItemsByListId(listId, query, "title")
+            .flatMapLatest {  (sortMode, query) ->
+                contentListRepository.observeListItemsByListId(listId, query, sortMode)
                     .onEach { content ->
 
                         val items = content.toImmutableList()
@@ -111,6 +115,13 @@ class ListViewScreenModel(
         }
     }
 
+    fun updateSortMode(sortMode: ListSortMode) {
+        screenModelScope.launch {
+            listSortMode.set(sortMode)
+        }
+    }
+
+
     private fun MutableStateFlow<ListViewState>.updateSuccess(
         function: (ListViewState.Success) -> ListViewState.Success
     ) {
@@ -121,14 +132,59 @@ class ListViewScreenModel(
             }
         }
     }
+
+    fun deleteList() {
+        screenModelScope.launch {
+            val list = state.value.success?.list ?: return@launch
+            runCatching { contentListRepository.deleteList(list) }
+                .onSuccess {
+                    emitEvent(ListViewEvent.ListDeleted)
+                }
+        }
+    }
+
+    fun changeDialog(dialog: Dialog?) {
+        screenModelScope.launch {
+            mutableState.updateSuccess { state -> state.copy(dialog = dialog) }
+        }
+    }
+
+    @Stable
+    sealed interface Dialog {
+
+        @Stable
+        data object DeleteList : Dialog
+
+        @Stable
+        data object ListOptions : Dialog
+
+        @Stable
+        data class ContentOptions(val item: ContentItem): Dialog
+    }
+}
+
+sealed interface ListViewEvent {
+    data object ListDeleted: ListViewEvent
+}
+
+sealed interface ListSortMode {
+    data object Title: ListSortMode
+    data object RecentlyAdded: ListSortMode
+    data object Movie: ListSortMode
+    data object Show: ListSortMode
 }
 
 sealed interface ListViewState {
+
     data object Loading: ListViewState
+
     data class Error(val message: String): ListViewState
+
     data class Success(
         val list: ContentList,
         val allItems: ImmutableList<ContentItem>,
+        val sortMode: ListSortMode,
+        val dialog: ListViewScreenModel.Dialog? = null,
         val items: ImmutableList<ContentItem> = persistentListOf()
     ): ListViewState
 

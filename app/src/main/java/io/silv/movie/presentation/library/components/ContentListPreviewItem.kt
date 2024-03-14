@@ -116,6 +116,7 @@ object ContentPreviewDefaults {
         val primary = MaterialTheme.colorScheme.primary
         val secondary = MaterialTheme.colorScheme.secondary
         val tertiary = MaterialTheme.colorScheme.tertiary
+
         Box(
             modifier = modifier
                 .aspectRatio(1f)
@@ -158,7 +159,10 @@ object ContentPreviewDefaults {
     ) {
         when (item) {
             is ContentListItem.Item -> {
-                SingleItemPoster(modifier = modifier, item = item.contentItem)
+                SingleItemPoster(
+                    modifier = modifier,
+                    item = item.contentItem
+                )
             }
             is ContentListItem.PlaceHolder -> PlaceholderPoster(modifier = modifier)
         }

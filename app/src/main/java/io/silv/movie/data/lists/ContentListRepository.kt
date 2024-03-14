@@ -1,14 +1,16 @@
 package io.silv.movie.data.lists
 
 import io.silv.movie.database.DatabaseHandler
+import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
+import io.silv.movie.presentation.library.view.list.ListSortMode
 import kotlinx.coroutines.flow.Flow
 
 interface ContentListRepository {
     fun observeLibraryItems(query: String): Flow<List<ContentListItem>>
     fun observeListCount(): Flow<Long>
     fun observeListById(id: Long): Flow<ContentList?>
-    fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>>
-    fun observeFavorites(query: String): Flow<List<ContentItem>>
+    fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>>
+    fun observeFavorites(query: String, sortMode: FavoritesSortMode): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
     suspend fun getList(id: Long): ContentList
     suspend fun getListItems(id: Long): List<ContentItem>
@@ -85,15 +87,30 @@ class ContentListRepositoryImpl(
         return handler.awaitList { contentListJunctionQueries.selectByListId(id, "", "", ContentListMapper.mapItem) }
     }
 
-    override fun observeListItemsByListId(id: Long, query: String, order: String): Flow<List<ContentItem>> {
+    override fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
-        return handler.subscribeToList { contentListJunctionQueries.selectByListId(id, q, order, ContentListMapper.mapItem) }
+        return handler.subscribeToList {
+            when(sortMode) {
+                ListSortMode.Movie -> contentListJunctionQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
+                ListSortMode.Show -> contentListJunctionQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
+                ListSortMode.RecentlyAdded -> contentListJunctionQueries.selectByListId(id, q, "recent", ContentListMapper.mapItem)
+                ListSortMode.Title -> contentListJunctionQueries.selectByListId(id, q, "title", ContentListMapper.mapItem)
+            }
+        }
     }
 
-    override fun observeFavorites(query: String): Flow<List<ContentItem>> {
+    override fun observeFavorites(query: String, sortMode: FavoritesSortMode): Flow<List<ContentItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
-        return handler.subscribeToList { favoritesViewQueries.favoritesOrderByRecent(q, ContentListMapper.mapFavoriteItem) }
+        return handler.subscribeToList {
+            when (sortMode) {
+                FavoritesSortMode.Movie -> favoritesViewQueries.favoritesOrderByMovieOrShow(0L, q, 1L,  ContentListMapper.mapFavoriteItem)
+                FavoritesSortMode.RecentlyAdded -> favoritesViewQueries.favoritesOrderByRecent(q, ContentListMapper.mapFavoriteItem)
+                FavoritesSortMode.Show -> favoritesViewQueries.favoritesOrderByMovieOrShow(1L, q, 0L,  ContentListMapper.mapFavoriteItem)
+                FavoritesSortMode.Title -> favoritesViewQueries.favoritesOrderByTitle(q,  ContentListMapper.mapFavoriteItem)
+            }
+        }
     }
+
 
     override suspend fun deleteList(contentList: ContentList) {
         return handler.await { contentListQueries.delete(contentList.id) }

@@ -69,6 +69,7 @@ fun SearchLargeTopBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors2 = TopAppBarDefaults.colors2(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    pinnedContent: @Composable () -> Unit = {},
     extraContent: @Composable () -> Unit = {},
 ) {
     TwoRowsTopAppBar(
@@ -86,6 +87,7 @@ fun SearchLargeTopBar(
         pinnedHeight = TopBarPinnedHeight,
         scrollBehavior = scrollBehavior,
         extraContent = extraContent,
+        pinnedContent = pinnedContent
     )
 }
 
@@ -108,6 +110,7 @@ internal fun TwoRowsTopAppBar(
     smallTitleTextStyle: TextStyle,
     navigationIcon: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit,
+    pinnedContent: @Composable () -> Unit,
     windowInsets: WindowInsets,
     colors: TopAppBarColors2,
     maxHeight: Dp,
@@ -232,6 +235,7 @@ internal fun TwoRowsTopAppBar(
                 actions = {},
                 extraContent = extraContent
             )
+            pinnedContent()
         }
     }
 }

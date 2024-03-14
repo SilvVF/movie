@@ -32,7 +32,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -41,7 +40,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,26 +74,10 @@ fun ContentBrowseTopBar(
     onFilterClick: () -> Unit,
     isMovie: Boolean,
 ) {
-    val barExpandedFully by remember {
-        derivedStateOf { scrollBehavior.state.collapsedFraction == 0.0f }
-    }
-
     val barFullyCollapsed by remember {
         derivedStateOf { scrollBehavior.state.collapsedFraction == 1f }
     }
 
-    val colors = TopAppBarDefaults.colors2(
-        containerColor = MaterialTheme.colorScheme.surface,
-        scrolledContainerColor = if (barFullyCollapsed)
-            Color.Transparent
-        else {
-            MaterialTheme.colorScheme.surface
-        }
-    )
-
-    val appBarContainerColor by rememberUpdatedState(
-        colors.containerColor(scrollBehavior.state.collapsedFraction)
-    )
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -111,7 +93,14 @@ fun ContentBrowseTopBar(
                 )
             },
             scrollBehavior = scrollBehavior,
-            colors = colors,
+            colors = TopAppBarDefaults.colors2(
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = if (barFullyCollapsed)
+                    Color.Transparent
+                else {
+                    MaterialTheme.colorScheme.surface
+                }
+            ),
             navigationIcon = {
                 val navigator = LocalNavigator.current
                 if (navigator?.canPop == true) {
@@ -167,6 +156,13 @@ fun ContentBrowseTopBar(
                     )
                 }
             },
+            pinnedContent = {
+                MovieFilterChips(
+                    selected = listing(),
+                    changeMovePagesType = { changePagedType(it) },
+                    onFilterClick = onFilterClick
+                )
+            }
         ) {
             val focusManager = LocalFocusManager.current
 
@@ -199,20 +195,6 @@ fun ContentBrowseTopBar(
                     }
                 },
                 modifier = Modifier.padding(horizontal = 12.dp)
-            )
-        }
-        Surface(
-            color = if(barExpandedFully)
-                colors.containerColor
-            else
-                appBarContainerColor
-        ) {
-            MovieFilterChips(
-                selected = listing(),
-                changeMovePagesType = {
-                    changePagedType(it)
-                },
-                onFilterClick = onFilterClick
             )
         }
     }

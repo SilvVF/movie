@@ -43,13 +43,18 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.util.keyboardAsState
-import kotlin.math.max
 import kotlin.math.roundToInt
 
+
 private val PosterBarPinnedHeight = 64.0.dp
-private val PosterBarMaxHeight = 364.0.dp
+// Clipped
+// private val PosterBarMaxHeight = 312.0.dp
+// Not Clipped
+private val PosterBarMaxHeight = 354.0.dp
+
 private val PosterBarSearchingHeight = 144.dp
 private val PosterMinHeight = PosterBarMaxHeight / 3
+private val PosterBottomPadding = 4.dp
 
 @Composable
 fun rememberPosterTopBarState(
@@ -73,6 +78,10 @@ class PosterTopBarState(
     val progress by derivedStateOf {
         scrollBehavior.state.collapsedFraction
     }
+
+    val barExpandedFully by  derivedStateOf {
+        progress == 0.0f
+    }
 }
 
 
@@ -86,7 +95,8 @@ fun PosterLargeTopBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors2 = TopAppBarDefaults.colors2(),
     posterContent: @Composable () -> Unit = {},
-    extraContent: @Composable () -> Unit = {},
+    pinnedContent: @Composable () -> Unit = {},
+    searchBar: @Composable () -> Unit = {}
 ) {
     TwoRowsTopAppBarPoster(
         smallTitleTextStyle = MaterialTheme.typography.titleSmall,
@@ -99,11 +109,12 @@ fun PosterLargeTopBar(
         maxHeight = PosterBarMaxHeight,
         pinnedHeight = PosterBarPinnedHeight,
         scrollBehavior = state.scrollBehavior,
-        extraContent = extraContent,
+        extraContent = searchBar,
         posterContent = posterContent,
         title = title,
         titleTextStyle = MaterialTheme.typography.titleLarge,
-        isKeyboardOpen = state.isKeyboardOpen
+        isKeyboardOpen = state.isKeyboardOpen,
+        pinnedContent = pinnedContent
     )
 }
 /**
@@ -131,6 +142,7 @@ internal fun TwoRowsTopAppBarPoster(
     pinnedHeight: Dp,
     scrollBehavior: TopAppBarScrollBehavior?,
     isKeyboardOpen: Boolean,
+    pinnedContent: @Composable () -> Unit
 ) {
     if (maxHeight <= pinnedHeight) {
         throw IllegalArgumentException(
@@ -213,77 +225,199 @@ internal fun TwoRowsTopAppBarPoster(
     val alphaTransform = FastOutSlowInEasing.transform(progress)
     val contentTransform = FastOutSlowInEasing.transform(colorTransitionFraction)
 
-    Column {
-        Surface(
-            modifier = modifier.then(appBarDragModifier),
-            color = appBarContainerColor
-        ) {
-            Column {
-                TopAppBarLayout(
-                    modifier = Modifier
-                        .windowInsetsPadding(windowInsets)
-                        // clip after padding so we don't show the title over the inset area
-                        .clipToBounds(),
-                    heightPx = if (isKeyboardOpen) with(LocalDensity.current) { PosterBarPinnedHeight.toPx() } else pinnedHeightPx,
-                    navigationIconContentColor =
-                    colors.navigationIconContentColor,
-                    titleContentColor = colors.titleContentColor,
-                    actionIconContentColor =
-                    colors.actionIconContentColor,
-                    title = smallTitle,
-                    titleTextStyle = smallTitleTextStyle,
-                    titleAlpha = if (isKeyboardOpen) 1f else topTitleAlpha,
-                    titleVerticalArrangement = Arrangement.Center,
-                    titleHorizontalArrangement = Arrangement.Start,
-                    titleBottomPadding = 0,
-                    hideTitleSemantics = hideTopRowSemantics,
-                    navigationIcon = navigationIcon,
-                    actions = actionsRow,
-                    extraContent = {}
-                )
-                TopAppBarLayoutNoTitle(
-                    modifier = Modifier
-                        // only apply the horizontal sides of the window insets padding, since the top
-                        // padding will always be applied by the layout above
-                        .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
-                        .clipToBounds(),
-                    heightPx = if (isKeyboardOpen) {
-                        with(LocalDensity.current) { openHeight.toPx() - PosterBarPinnedHeight.toPx() }
-                    } else {
-                        maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f)
-                    },
-                    navigationIconContentColor = colors.navigationIconContentColor,
-                    navigationIcon = {},
-                    title = title,
-                    titleTextStyle = titleTextStyle,
-                    actionIconContentColor = colors.actionIconContentColor,
-                    extraContent = {
-                        Box(
-                            Modifier
-                                .graphicsLayer { alpha = 1f - contentTransform }
-                        ) {
-                            extraContent()
-                        }
-                    },
-                    posterContent = {
-                        Box(
-                            Modifier
-                                .graphicsLayer { alpha = 1f - alphaTransform }
-                        ) {
-                            posterContent()
-                        }
-                    },
-                    actions = {},
-                    titleContentColor = colors.titleContentColor,
-                    titleAlpha = 1f - alphaTransform
-                )
-            }
+    Surface(
+        modifier = modifier.then(appBarDragModifier),
+        color = appBarContainerColor
+    ) {
+        Column {
+            TopAppBarLayout(
+                modifier = Modifier
+                    .windowInsetsPadding(windowInsets)
+                    // clip after padding so we don't show the title over the inset area
+                    .clipToBounds(),
+                heightPx = if (isKeyboardOpen) with(LocalDensity.current) { PosterBarPinnedHeight.toPx() } else pinnedHeightPx,
+                navigationIconContentColor = colors.navigationIconContentColor,
+                titleContentColor = colors.titleContentColor,
+                actionIconContentColor = colors.actionIconContentColor,
+                title = smallTitle,
+                titleTextStyle = smallTitleTextStyle,
+                titleAlpha = if (isKeyboardOpen) 1f else topTitleAlpha,
+                titleVerticalArrangement = Arrangement.Center,
+                titleHorizontalArrangement = Arrangement.Start,
+                titleBottomPadding = 0,
+                hideTitleSemantics = hideTopRowSemantics,
+                navigationIcon = navigationIcon,
+                actions = actionsRow,
+                extraContent = {}
+            )
+            TopAppBarLayoutNoTitlePosterClipped(
+                modifier = Modifier
+                    // only apply the horizontal sides of the window insets padding, since the top
+                    // padding will always be applied by the layout above
+                    .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal))
+                    .clipToBounds(),
+                heightPx = if (isKeyboardOpen) {
+                    with(LocalDensity.current) { openHeight.toPx() - PosterBarPinnedHeight.toPx() }
+                } else {
+                    maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f)
+                },
+                title = title,
+                titleTextStyle = titleTextStyle,
+                extraContent = {
+                    Box(
+                        Modifier
+                            .graphicsLayer { alpha = 1f - contentTransform }
+                    ) {
+                        extraContent()
+                    }
+                },
+                posterContent = {
+                    Box(
+                        Modifier.graphicsLayer { alpha = 1f - alphaTransform }
+                    ) {
+                        posterContent()
+                    }
+                },
+                titleContentColor = colors.titleContentColor,
+                titleAlpha = 1f - alphaTransform,
+            )
+            pinnedContent()
+//                TopAppBarLayoutNoTitlePosterNotClipped(
+//                    modifier = Modifier
+//                        // only apply the horizontal sides of the window insets padding, since the top
+//                        // padding will always be applied by the layout above
+//                        .windowInsetsPadding(windowInsets.only(WindowInsetsSides.Horizontal)),
+//                    heightPx = if (isKeyboardOpen) {
+//                        with(LocalDensity.current) { openHeight.toPx() - PosterBarPinnedHeight.toPx() }
+//                    } else {
+//                        maxHeightPx - pinnedHeightPx + (scrollBehavior?.state?.heightOffset ?: 0f)
+//                    },
+//                    navigationIconContentColor = colors.navigationIconContentColor,
+//                    navigationIcon = navigationIcon,
+//                    title = title,
+//                    titleTextStyle = titleTextStyle,
+//                    actionIconContentColor = colors.actionIconContentColor,
+//                    extraContent = {
+//                        Box(
+//                            Modifier
+//                                .graphicsLayer { alpha = 1f - contentTransform }
+//                        ) {
+//                            extraContent()
+//                        }
+//                    },
+//                    posterContent = {
+//                        Box(
+//                            Modifier.graphicsLayer { alpha = 1f - alphaTransform }
+//                        ) {
+//                            posterContent()
+//                        }
+//                    },
+//                    actions = {},
+//                    titleContentColor = colors.titleContentColor,
+//                    titleAlpha = 1f - alphaTransform,
+//                )
         }
     }
 }
 
 @Composable
-internal fun TopAppBarLayoutNoTitle(
+internal fun TopAppBarLayoutNoTitlePosterClipped(
+    modifier: Modifier,
+    heightPx: Float,
+    title: @Composable () -> Unit,
+    titleAlpha: Float,
+    titleTextStyle: TextStyle,
+    titleContentColor: Color,
+    extraContent: @Composable () -> Unit,
+    posterContent: @Composable () -> Unit,
+) {
+    Layout(
+        {
+            Box(
+                Modifier.layoutId("extraContent")
+            ) {
+                extraContent()
+            }
+            Box(
+                Modifier
+                    .padding(bottom = PosterBottomPadding)
+                    .layoutId("posterContent")
+            ) {
+                posterContent()
+            }
+            Box(
+                Modifier
+                    .layoutId("title")
+                    .padding(horizontal = TopAppBarHorizontalPadding)
+                    .graphicsLayer(alpha = titleAlpha)
+            ) {
+                ProvideTextStyle(value = titleTextStyle) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides titleContentColor,
+                        content = title
+                    )
+                }
+            }
+        },
+        modifier = modifier
+    ) { measurables, constraints ->
+
+
+        val extraContentPlaceable =
+            measurables.first { it.layoutId == "extraContent" }
+                .measure(constraints.copy(
+                    minWidth = 0,
+                    minHeight = 0,
+                    maxWidth = constraints.maxWidth,
+                    maxHeight = PosterBarSearchingHeight.roundToPx()
+                )
+                )
+        val layoutHeight = heightPx.roundToInt()
+
+        val maxTitleWidth = constraints.maxWidth
+
+        val titlePlaceable =
+            measurables.first { it.layoutId == "title" }
+                .measure(constraints.copy(minWidth = 0, maxWidth = maxTitleWidth))
+
+
+        val posterContentPlaceable =
+            measurables.first { it.layoutId == "posterContent" }
+                .measure(constraints.copy(
+                    minWidth = 0,
+                    minHeight = 0,
+                    maxHeight = (
+                            layoutHeight -
+                                    extraContentPlaceable.height -
+                                    titlePlaceable.height
+                            )
+                        .coerceAtLeast(PosterMinHeight.roundToPx())
+                ))
+        layout(constraints.maxWidth, layoutHeight.coerceAtLeast(0)) {
+
+            posterContentPlaceable.place(
+                x = constraints.maxWidth / 2 - posterContentPlaceable.width / 2,
+                y = layoutHeight -
+                        posterContentPlaceable.height -
+                        extraContentPlaceable.height -
+                        titlePlaceable.height
+            )
+
+            extraContentPlaceable.placeRelative(
+                x = 0,
+                y = layoutHeight - extraContentPlaceable.height
+            )
+
+            titlePlaceable.placeRelative(
+                x = TopAppBarTitleInset.roundToPx(),
+                y = layoutHeight - extraContentPlaceable.height - titlePlaceable.height
+            )
+        }
+    }
+}
+
+@Composable
+internal fun TopAppBarLayoutNoTitlePosterNotClipped(
     modifier: Modifier,
     heightPx: Float,
     title: @Composable () -> Unit,
@@ -315,7 +449,9 @@ internal fun TopAppBarLayoutNoTitle(
                 extraContent()
             }
             Box(
-                Modifier.layoutId("posterContent")
+                Modifier
+                    .layoutId("posterContent")
+                    .padding(vertical = PosterBottomPadding)
             ) {
                 posterContent()
             }
@@ -349,6 +485,8 @@ internal fun TopAppBarLayoutNoTitle(
         val navigationIconPlaceable =
             measurables.first { it.layoutId == "navigationIcon" }
                 .measure(constraints.copy(minWidth = 0))
+        val topStart = (PosterBarPinnedHeight.roundToPx() - navigationIconPlaceable.height) / 2
+
         val actionIconsPlaceable =
             measurables.first { it.layoutId == "actionIcons" }
                 .measure(constraints.copy(minWidth = 0))
@@ -374,26 +512,29 @@ internal fun TopAppBarLayoutNoTitle(
             measurables.first { it.layoutId == "title" }
                 .measure(constraints.copy(minWidth = 0, maxWidth = maxTitleWidth))
 
+
         val posterContentPlaceable =
             measurables.first { it.layoutId == "posterContent" }
                 .measure(constraints.copy(
                     minWidth = 0,
                     minHeight = 0,
-                    maxHeight = (layoutHeight - extraContentPlaceable.height - titlePlaceable.height)
+                    maxHeight = (
+                            layoutHeight -
+                            extraContentPlaceable.height -
+                            titlePlaceable.height +
+                            PosterBarPinnedHeight.roundToPx() - (navigationIconPlaceable.height / 2)
+                        )
                         .coerceAtLeast(PosterMinHeight.roundToPx())
                 ))
-
-
         layout(constraints.maxWidth, layoutHeight.coerceAtLeast(0)) {
-            // Navigation icon
-            navigationIconPlaceable.placeRelative(
-                x = 0,
-                y = (layoutHeight - navigationIconPlaceable.height) / 2 - extraContentPlaceable.height
-            )
 
-            posterContentPlaceable.placeRelative(
+            posterContentPlaceable.place(
                 x = constraints.maxWidth / 2 - posterContentPlaceable.width / 2,
-                y = layoutHeight - posterContentPlaceable.height - extraContentPlaceable.height - titlePlaceable.height
+                y = layoutHeight -
+                        posterContentPlaceable.height -
+                        extraContentPlaceable.height -
+                        titlePlaceable.height +
+                        topStart
             )
 
             extraContentPlaceable.placeRelative(
@@ -401,14 +542,8 @@ internal fun TopAppBarLayoutNoTitle(
                 y = layoutHeight - extraContentPlaceable.height
             )
 
-            // Action icons
-            actionIconsPlaceable.placeRelative(
-                x = constraints.maxWidth - actionIconsPlaceable.width,
-                y = (layoutHeight - actionIconsPlaceable.height) / 2  - extraContentPlaceable.height
-            )
-
             titlePlaceable.placeRelative(
-                x = max(TopAppBarTitleInset.roundToPx(), navigationIconPlaceable.width),
+                x = TopAppBarTitleInset.roundToPx(),
                 y = layoutHeight - extraContentPlaceable.height - titlePlaceable.height
             )
         }

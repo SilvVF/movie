@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
@@ -34,7 +33,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,26 +60,10 @@ fun LibraryBrowseTopBar(
     createListClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val barExpandedFully by remember {
-        derivedStateOf { scrollBehavior.state.collapsedFraction == 0.0f }
-    }
-
     val barFullyCollapsed by remember {
         derivedStateOf { scrollBehavior.state.collapsedFraction == 1f }
     }
 
-    val colors = TopAppBarDefaults.colors2(
-        containerColor = MaterialTheme.colorScheme.surface,
-        scrolledContainerColor = if (barFullyCollapsed)
-            Color.Transparent
-        else {
-            MaterialTheme.colorScheme.surface
-        }
-    )
-
-    val appBarContainerColor by rememberUpdatedState(
-        colors.containerColor(scrollBehavior.state.collapsedFraction)
-    )
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -92,7 +74,14 @@ fun LibraryBrowseTopBar(
                 Text(text = "Your Library")
             },
             scrollBehavior = scrollBehavior,
-            colors = colors,
+            colors = TopAppBarDefaults.colors2(
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = if (barFullyCollapsed)
+                    Color.Transparent
+                else {
+                    MaterialTheme.colorScheme.surface
+                }
+            ),
             actions = {
                 var dropDownVisible by remember { mutableStateOf(false) }
                 TooltipIconButton(
@@ -144,6 +133,9 @@ fun LibraryBrowseTopBar(
                     )
                 }
             },
+            pinnedContent = {
+                LibraryFilterChips(sortModeProvider, changeSortMode)
+            }
         ) {
             val focusManager = LocalFocusManager.current
             SearchBarInputField(
@@ -177,14 +169,6 @@ fun LibraryBrowseTopBar(
                 modifier = Modifier
                     .padding(horizontal = 12.dp)
             )
-        }
-        Surface(
-            color = if(barExpandedFully)
-                colors.containerColor
-            else
-                appBarContainerColor
-        ) {
-            LibraryFilterChips(sortModeProvider, changeSortMode)
         }
     }
 }

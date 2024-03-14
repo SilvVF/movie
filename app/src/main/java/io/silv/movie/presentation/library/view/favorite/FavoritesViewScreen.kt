@@ -32,17 +32,33 @@ object FavoritesViewScreen : Screen {
         val screenModel = getScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
 
+        val changeDialog = remember { { dialog: FavoritesScreenModel.Dialog? -> screenModel.changeDialog(dialog) } }
         FavoritesScreenContent(
             updateQuery = screenModel::updateQuery,
-            onListOptionClick = { /*TODO*/ },
+            onListOptionClick = { changeDialog(FavoritesScreenModel.Dialog.ListOptions) },
             listViewDisplayMode = { screenModel.listViewDisplayMode },
             updateListViewDisplayMode = screenModel::updateDisplayMode,
             query = screenModel.query,
             onLongClick = {},
             onClick = {},
             onOptionsClick = {},
+            changeSortMode = screenModel::setSortMode,
             state = state
         )
+        val onDismissRequest = remember { { screenModel.changeDialog(null) } }
+        when (val dialog = screenModel.currentDialog) {
+            is FavoritesScreenModel.Dialog.ContentOptions -> {
+
+            }
+            FavoritesScreenModel.Dialog.ListOptions -> {
+                FavoriteOptionsBottomSheet(
+                    onDismissRequest = onDismissRequest,
+                    onAddClick = { /*TODO*/ },
+                    onShareClick = {}
+                )
+            }
+            null -> Unit
+        }
     }
 }
 
@@ -56,6 +72,7 @@ private fun FavoritesScreenContent(
     onLongClick: (item: ContentItem) -> Unit,
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
+    changeSortMode: (FavoritesSortMode) -> Unit,
     state: FavoritesListState
 ) {
     val hazeState = remember { HazeState() }
@@ -71,6 +88,8 @@ private fun FavoritesScreenContent(
                 displayMode = listViewDisplayMode,
                 setDisplayMode = updateListViewDisplayMode,
                 onListOptionClicked = onListOptionClick,
+                sortModeProvider = { state.sortMode },
+                changeSortMode = changeSortMode,
                 modifier = Modifier.hazeChild(hazeState)
             )
         },
