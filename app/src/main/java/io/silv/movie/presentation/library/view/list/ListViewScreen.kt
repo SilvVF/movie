@@ -80,6 +80,7 @@ data class ListViewScreen(
                     onOptionsClick = { changeDialog(ListViewScreenModel.Dialog.ContentOptions(it)) },
                     updateDialog = { changeDialog(it) },
                     changeSortMode = screenModel::updateSortMode,
+                    refreshRecommendations = screenModel::refreshRecommendations,
                     state = s
                 )
 
@@ -132,6 +133,7 @@ private fun SuccessScreenContent(
     onOptionsClick: (item: ContentItem) -> Unit,
     changeSortMode: (ListSortMode) -> Unit,
     updateDialog: (ListViewScreenModel.Dialog?) -> Unit,
+    refreshRecommendations: () -> Unit,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
@@ -163,10 +165,13 @@ private fun SuccessScreenContent(
                 ContentListPosterGrid(
                     mode = mode,
                     items = state.items,
+                    recommendations = state.recommendations,
                     onOptionsClick = onOptionsClick,
                     onLongClick = onLongClick,
                     onClick = onClick,
                     paddingValues = paddingValues,
+                    onRefreshClick = refreshRecommendations,
+                    refreshingRecommendations = state.refreshingRecommendations,
                     modifier = Modifier
                         .haze(
                             state = hazeState,
@@ -183,6 +188,9 @@ private fun SuccessScreenContent(
                     onLongClick = onLongClick,
                     onClick = onClick,
                     paddingValues = paddingValues,
+                    onRefreshClick = refreshRecommendations,
+                    recommendations = state.recommendations,
+                    refreshingRecommendations = state.refreshingRecommendations,
                     modifier = Modifier
                         .haze(
                             state = hazeState,

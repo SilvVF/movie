@@ -1,3 +1,32 @@
+favoritesMostRecent:
+   SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        1 AS isMovie,
+        favorite_modified_at
+    FROM movie WHERE favorite
+
+    UNION
+
+    SELECT
+        id,
+        title,
+        poster_url,
+        poster_last_updated,
+        overview,
+        popularity,
+        last_modified_at,
+        favorite,
+        0 AS isMovie,
+        favorite_modified_at
+    FROM show WHERE favorite
+ORDER BY favorite_modified_at DESC LIMIT :limit;
 
 favoritesOrderByRecent:
    SELECT
@@ -88,3 +117,15 @@ favoritesOrderByMovieOrShow:
         favorite_modified_at
     FROM show WHERE :moviesOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
 ORDER BY title DESC;
+
+selectFavoriteMostRecent:
+  SELECT
+        favorite_modified_at
+    FROM movie
+
+    UNION
+
+    SELECT
+        favorite_modified_at
+    FROM show
+  ORDER BY favorite_modified_at DESC LIMIT 1;

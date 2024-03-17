@@ -8,6 +8,7 @@ import io.silv.movie.network.ratelimit.rateLimit
 import io.silv.movie.network.service.piped.PipedApi
 import io.silv.movie.network.service.tmdb.TMDBAuthInterceptor
 import io.silv.movie.network.service.tmdb.TMDBMovieService
+import io.silv.movie.network.service.tmdb.TMDBRecommendationService
 import io.silv.movie.network.service.tmdb.TMDBTVShowService
 import kotlinx.serialization.json.Json
 import okhttp3.Cache
@@ -82,6 +83,8 @@ val networkModule =
                 .client(get<TMDBClient>())
                 .build()
         }
+
+        single { get<Retrofit>().create<TMDBRecommendationService>() }
 
         single {
             get<Retrofit>().create<TMDBTVShowService>()

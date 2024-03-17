@@ -69,13 +69,15 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+    androidResources {
+        noCompress.add("tflite")
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 }
-
 
 dependencies {
 
@@ -163,6 +165,10 @@ dependencies {
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
     implementation(libs.sqldelight.primitive.adapters)
+
+    // Work Manager
+    implementation(libs.androidx.work.runtime.ktx)
+
 }
 
 tasks {

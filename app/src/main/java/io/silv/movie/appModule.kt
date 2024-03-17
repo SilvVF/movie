@@ -4,6 +4,7 @@ import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.dataModule
+import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
 import io.silv.movie.presentation.library.browse.LibraryScreenModel
@@ -41,6 +42,8 @@ val appModule =
         singleOf(::MovieCoverCache)
 
         singleOf(::TVShowCoverCache)
+
+        singleOf(::RecommendationManager)
 
         viewModelOf(::ScreenResultsViewModel)
 

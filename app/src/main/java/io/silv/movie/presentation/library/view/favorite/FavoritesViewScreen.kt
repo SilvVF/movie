@@ -22,6 +22,7 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import kotlinx.collections.immutable.persistentListOf
 
 
 object FavoritesViewScreen : Screen {
@@ -107,13 +108,13 @@ private fun FavoritesScreenContent(
                     onClick = onClick,
                     showFavorite = false,
                     paddingValues = paddingValues,
+                    recommendations = persistentListOf(),
                     modifier = Modifier
                         .haze(
                             state = hazeState,
                             style = HazeDefaults.style(MaterialTheme.colorScheme.background),
                         )
                         .padding(top = 12.dp),
-
                     )
             }
             PosterDisplayMode.List -> {

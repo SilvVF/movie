@@ -13,6 +13,7 @@ import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toUpdate
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -31,8 +32,9 @@ import kotlinx.coroutines.launch
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
+    private val recommendationManager: RecommendationManager,
     libraryPreferences: LibraryPreferences,
-    listId: Long
+    private val listId: Long
 ): StateScreenModel<ListViewState>(ListViewState.Loading),
     EventProducer<ListViewEvent> by EventProducer.default() {
 
@@ -97,6 +99,27 @@ class ListViewScreenModel(
                     }
             }
             .launchIn(screenModelScope)
+
+        var refreshed = false
+        combine(
+            stateSuccessTrigger,
+            recommendationManager.subscribe(listId),
+            recommendationManager.isRunning(listId)
+        ) { _, recommendations, isRunning ->
+
+            if (recommendations.isEmpty() && !refreshed) {
+                refreshRecommendations()
+                refreshed = true
+            }
+
+            mutableState.updateSuccess { state ->
+                state.copy(
+                    refreshingRecommendations = isRunning,
+                    recommendations = recommendations.toImmutableList()
+                )
+            }
+        }
+            .launchIn(screenModelScope)
     }
 
     fun updateQuery(q: String) {
@@ -118,6 +141,12 @@ class ListViewScreenModel(
     fun updateSortMode(sortMode: ListSortMode) {
         screenModelScope.launch {
             listSortMode.set(sortMode)
+        }
+    }
+
+    fun refreshRecommendations() {
+        screenModelScope.launch {
+            recommendationManager.refreshListRecommendations(listId)
         }
     }
 
@@ -185,7 +214,9 @@ sealed interface ListViewState {
         val allItems: ImmutableList<ContentItem>,
         val sortMode: ListSortMode,
         val dialog: ListViewScreenModel.Dialog? = null,
-        val items: ImmutableList<ContentItem> = persistentListOf()
+        val items: ImmutableList<ContentItem> = persistentListOf(),
+        val recommendations: ImmutableList<ContentItem> = persistentListOf(),
+        val refreshingRecommendations: Boolean = false,
     ): ListViewState
 
     val success: Success?

@@ -6,6 +6,30 @@ object ContentListMapper {
         ContentList(id, name, lastModified)
     }
 
+    val mapRecommendation = {
+        movieId: Long?,
+        showId: Long?,
+        title: String?,
+        posterUrl: String?,
+        posterLastUpdated: Long?,
+        favorite: Boolean?,
+        overview: String?,
+        popularity: Double?,
+        last_modified_at: Long?
+        ->
+        ContentItem(
+            contentId = movieId ?: showId!!,
+            isMovie = movieId != null,
+            title = title ?: "",
+            posterUrl = posterUrl,
+            posterLastUpdated = posterLastUpdated ?: 0L,
+            favorite = favorite ?: false,
+            lastModified = last_modified_at ?: 0L,
+            popularity = popularity ?: 0.0,
+            description = overview ?: "",
+        )
+    }
+
     val mapFavoriteItem = {
             id: Long, title: String, poster_url: String?,
             poster_last_updated: Long, overview: String, popularity: Double,

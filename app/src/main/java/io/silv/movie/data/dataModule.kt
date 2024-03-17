@@ -19,6 +19,7 @@ import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.prefrences.core.DatastorePreferenceStore
 import io.silv.movie.data.prefrences.core.PreferenceStore
+import io.silv.movie.data.recommendation.RecommendationWorker
 import io.silv.movie.data.trailers.GetMovieTrailers
 import io.silv.movie.data.trailers.GetRemoteTrailers
 import io.silv.movie.data.trailers.GetTVShowTrailers
@@ -35,6 +36,7 @@ import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.data.tv.repository.SourceTVRepositoryImpl
 import io.silv.movie.network.networkModule
 import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -91,6 +93,8 @@ val dataModule =
         single<PreferenceStore> {
             DatastorePreferenceStore(androidContext().dataStore)
         }
+
+        worker { RecommendationWorker(get(), get(), get(), get(), androidContext(), get()) }
 }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

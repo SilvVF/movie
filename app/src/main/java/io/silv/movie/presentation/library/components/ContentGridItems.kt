@@ -2,13 +2,27 @@ package io.silv.movie.presentation.library.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
@@ -19,6 +33,30 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+
+@Composable
+fun EntryGridItemIconButton(
+    onClick: () -> Unit,
+    contentDescription: String? = null,
+    icon: ImageVector,
+) {
+    FilledIconButton(
+        onClick = onClick,
+        modifier = Modifier.size(28.dp),
+        shape = MaterialTheme.shapes.small,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f),
+            contentColor = contentColorFor(MaterialTheme.colorScheme.primaryContainer),
+        ),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(16.dp),
+        )
+    }
+}
 
 @Composable
 fun ContentItemSourceCoverOnlyGridItem(
@@ -26,7 +64,7 @@ fun ContentItemSourceCoverOnlyGridItem(
     poster: PosterData,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onOptionsClick: () -> Unit,
+    content: (@Composable () -> Unit)? = null
 ) {
     EntryCompactGridItem(
         title = null,
@@ -35,6 +73,7 @@ fun ContentItemSourceCoverOnlyGridItem(
         coverBadgeStart = { InLibraryBadge(enabled = favorite) },
         onLongClick = { onLongClick() },
         onClick = { onClick() },
+        content = content
     )
 }
 
@@ -45,7 +84,7 @@ fun ContentItemCompactGridItem(
     poster: PosterData,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onOptionsClick: () -> Unit,
+    content: (@Composable () -> Unit)? = null
 ) {
     EntryCompactGridItem(
         title = title,
@@ -54,6 +93,7 @@ fun ContentItemCompactGridItem(
         coverBadgeStart = { InLibraryBadge(enabled = favorite) },
         onLongClick = { onLongClick() },
         onClick = { onClick() },
+        content = content
     )
 }
 
@@ -64,15 +104,16 @@ fun ContentItemComfortableGridItem(
     poster: PosterData,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onOptionsClick: () -> Unit,
+    content: (@Composable () -> Unit)? = null
 ) {
     EntryComfortableGridItem(
         title = title,
         coverData = poster,
         coverAlpha = if (favorite) CommonEntryItemDefaults.BrowseFavoriteCoverAlpha else 1f,
         coverBadgeStart = { InLibraryBadge(enabled = favorite) },
-        onLongClick = { onLongClick() },
-        onClick = { onClick() },
+        onLongClick = onLongClick,
+        onClick = onClick,
+        content = content
     )
 }
 
@@ -85,7 +126,10 @@ fun ContentListPosterGrid(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     modifier: Modifier = Modifier,
-    showFavorite: Boolean = true
+    showFavorite: Boolean = true,
+    recommendations: ImmutableList<ContentItem> = persistentListOf(),
+    refreshingRecommendations: Boolean = false,
+    onRefreshClick: () -> Unit = {}
 ) {
     val gridState = rememberLazyGridState()
     val cols = GridCells.Fixed(2)
@@ -102,7 +146,7 @@ fun ContentListPosterGrid(
             contentPadding = paddingValues,
             modifier = modifier,
         ) {
-            items(items, { it.contentId }) {
+            items(items, { "${it.contentId}${it.isMovie}" }) {
                 val poster = remember(it) { it.toPoster() }
                 val favorite = showFavorite && it.favorite
                 when (mode) {
@@ -113,8 +157,12 @@ fun ContentListPosterGrid(
                             poster = poster,
                             onClick = { onClick(it) },
                             onLongClick = { onLongClick(it) },
-                            onOptionsClick = { onOptionsClick(it) }
-                        )
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.MoreVert
+                            )
+                        }
                     }
                     PosterDisplayMode.Grid.CompactGrid -> {
                         ContentItemCompactGridItem(
@@ -123,8 +171,12 @@ fun ContentListPosterGrid(
                             poster = poster,
                             onClick = { onClick(it) },
                             onLongClick = { onLongClick(it) },
-                            onOptionsClick = { onOptionsClick(it) }
-                        )
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.MoreVert
+                            )
+                        }
                     }
                     PosterDisplayMode.Grid.CoverOnlyGrid -> {
                         ContentItemSourceCoverOnlyGridItem(
@@ -132,9 +184,71 @@ fun ContentListPosterGrid(
                             poster = poster,
                             onClick = { onClick(it) },
                             onLongClick = { onLongClick(it) },
-                            onOptionsClick = { onOptionsClick(it) }
-                        )
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.MoreVert
+                            )
+                        }
                     }
+                }
+            }
+            item(key = "recommendation-header", span = { GridItemSpan(maxCurrentLineSpan) }) {
+                Text("Recommendations")
+            }
+            items(recommendations, { r -> "rec${r.contentId}${r.isMovie}"}) {
+                val poster = remember(it) { it.toPoster() }
+                val favorite = showFavorite && it.favorite
+                when (mode) {
+                    PosterDisplayMode.Grid.ComfortableGrid -> {
+                        ContentItemComfortableGridItem(
+                            title = it.title,
+                            favorite = favorite,
+                            poster = poster,
+                            onClick = { onClick(it) },
+                            onLongClick = { onLongClick(it) },
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.AddCircleOutline
+                            )
+                        }
+                    }
+                    PosterDisplayMode.Grid.CompactGrid -> {
+                        ContentItemCompactGridItem(
+                            title = it.title,
+                            favorite = favorite,
+                            poster = poster,
+                            onClick = { onClick(it) },
+                            onLongClick = { onLongClick(it) },
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.AddCircleOutline
+                            )
+                        }
+                    }
+                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                        ContentItemSourceCoverOnlyGridItem(
+                            favorite = favorite,
+                            poster = poster,
+                            onClick = { onClick(it) },
+                            onLongClick = { onLongClick(it) },
+                        ) {
+                            EntryGridItemIconButton(
+                                onClick = { onOptionsClick(it)},
+                                icon = Icons.Default.AddCircleOutline
+                            )
+                        }
+                    }
+                }
+            }
+            item(key = "recommendation-refresh", span = { GridItemSpan(maxCurrentLineSpan) }) {
+                Button(
+                    onClick = onRefreshClick,
+                    enabled = !refreshingRecommendations
+                ) {
+                    Text("Refresh")
                 }
             }
         }

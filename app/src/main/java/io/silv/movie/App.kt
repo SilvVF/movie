@@ -10,14 +10,13 @@ import io.silv.movie.coil.CoilMemoryCache
 import io.silv.movie.coil.addDiskFetcher
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
-import io.silv.movie.data.lists.ContentListRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.OkHttpClient
-import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import timber.log.Timber
 
@@ -34,6 +33,7 @@ class App: Application(), ImageLoaderFactory {
         startKoin {
             androidLogger()
             androidContext(this@App)
+            workManagerFactory()
             modules(appModule)
         }
     }
@@ -46,8 +46,6 @@ class App: Application(), ImageLoaderFactory {
         val client by inject<OkHttpClient>()
         val movieCoverCache by inject<MovieCoverCache>()
         val tvShowCoverCache by inject<TVShowCoverCache>()
-
-        val libraryRepositoryImpl = get<ContentListRepository>()
 
         return ImageLoader.Builder(this)
             .diskCache(diskCacheInit)

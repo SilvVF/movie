@@ -116,10 +116,10 @@ fun EntryCompactGridItem(
     onLongClick: () -> Unit,
     isSelected: Boolean = false,
     title: String? = null,
-    onClickContinueViewing: (() -> Unit)? = null,
     coverAlpha: Float = 1f,
     coverBadgeStart: @Composable (RowScope.() -> Unit)? = null,
     coverBadgeEnd: @Composable (RowScope.() -> Unit)? = null,
+    content: (@Composable () -> Unit)? = null,
 ) {
     GridItemSelectable(
         isSelected = isSelected,
@@ -141,15 +141,16 @@ fun EntryCompactGridItem(
                 if (title != null) {
                     CoverTextOverlay(
                         title = title,
-                        onClickContinueViewing = onClickContinueViewing,
+                        content = content,
                     )
-                } else if (onClickContinueViewing != null) {
-                    ContinueViewingButton(
-                        modifier = Modifier
+                } else if (content != null) {
+                    Box(
+                        modifier =  Modifier
                             .padding(ContinueViewingButtonGridPadding)
-                            .align(Alignment.BottomEnd),
-                        onClickContinueViewing = onClickContinueViewing,
-                    )
+                            .align(Alignment.BottomEnd)
+                    ) {
+                        content()
+                    }
                 }
             },
         )
@@ -162,7 +163,7 @@ fun EntryCompactGridItem(
 @Composable
 private fun BoxScope.CoverTextOverlay(
     title: String,
-    onClickContinueViewing: (() -> Unit)? = null,
+    content: (@Composable () -> Unit)?
 ) {
     Box(
         modifier = Modifier
@@ -205,14 +206,15 @@ private fun BoxScope.CoverTextOverlay(
             ),
             minLines = 1,
         )
-        if (onClickContinueViewing != null) {
-            ContinueViewingButton(
+        if (content != null) {
+            Box(
                 modifier = Modifier.padding(
                     end = ContinueViewingButtonGridPadding,
                     bottom = ContinueViewingButtonGridPadding,
-                ),
-                onClickContinueViewing = onClickContinueViewing,
-            )
+                )
+            ) {
+                content()
+            }
         }
     }
 }
@@ -231,7 +233,7 @@ fun EntryComfortableGridItem(
     coverAlpha: Float = 1f,
     coverBadgeStart: (@Composable RowScope.() -> Unit)? = null,
     coverBadgeEnd: (@Composable RowScope.() -> Unit)? = null,
-    onClickContinueViewing: (() -> Unit)? = null,
+    content: (@Composable () -> Unit)? = null,
 ) {
     GridItemSelectable(
         isSelected = isSelected,
@@ -251,13 +253,14 @@ fun EntryComfortableGridItem(
                 badgesStart = coverBadgeStart,
                 badgesEnd = coverBadgeEnd,
                 content = {
-                    if (onClickContinueViewing != null) {
-                        ContinueViewingButton(
-                            modifier = Modifier
+                    if (content != null) {
+                        Box(
+                            modifier =  Modifier
                                 .padding(ContinueViewingButtonGridPadding)
-                                .align(Alignment.BottomEnd),
-                            onClickContinueViewing = onClickContinueViewing,
-                        )
+                                .align(Alignment.BottomEnd)
+                        ) {
+                            content()
+                        }
                     }
                 },
             )
@@ -382,7 +385,8 @@ fun EntryListItem(
     onLongClick: () -> Unit,
     onClick: () -> Unit,
     badge: @Composable (RowScope.() -> Unit),
-    endButton: @Composable (() -> Unit)? = null
+    endButton: @Composable (() -> Unit)? = null,
+    onEndButtonClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -416,7 +420,8 @@ fun EntryListItem(
                 Modifier
                     .clip(CircleShape)
                     .padding(ContinueViewingButtonListSpacing)
-                    .size(ContinueViewingButtonSize),
+                    .size(ContinueViewingButtonSize)
+                    .clickable { onEndButtonClick?.invoke() },
                 contentAlignment = Alignment.Center
             ) {
                 button()
