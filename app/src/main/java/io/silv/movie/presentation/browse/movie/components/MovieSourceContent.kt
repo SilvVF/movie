@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
@@ -29,6 +30,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.core_ui.util.isScrollingUp
+import io.silv.movie.R
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.LocalIsScrolling
@@ -48,15 +50,17 @@ fun MovieSourcePagingContent(
     modifier: Modifier = Modifier,
 ) {
     val pagingItems = pagingFlowFlow().collectAsLazyPagingItems()
+    val failedToLoad = stringResource(id = R.string.paging_load_failed)
+    val retry = stringResource(id = R.string.paging_load_failed)
 
     LaunchedEffect(pagingItems) {
         snapshotFlow { pagingItems.loadState.append }.collectLatest { loadState ->
             when(loadState) {
                 is LoadState.Error -> {
                     val result = snackbarHostState.showSnackbar(
-                        message = "Failed to load items",
+                        message = failedToLoad,
                         withDismissAction = false,
-                        actionLabel = "Retry",
+                        actionLabel = retry,
                         duration = SnackbarDuration.Indefinite
                     )
                     when (result) {
@@ -76,7 +80,7 @@ fun MovieSourcePagingContent(
     }
     if (pagingItems.loadState.refresh is LoadState.Error) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("error")
+            Text(stringResource(id = R.string.error))
         }
         return
     }

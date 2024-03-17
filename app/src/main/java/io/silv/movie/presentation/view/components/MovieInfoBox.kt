@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -49,7 +50,9 @@ import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.util.clickableNoIndication
 import io.silv.core_ui.util.copyToClipboard
+import io.silv.movie.R
 import io.silv.movie.core.Status
+import io.silv.movie.core.getString
 
 @Composable
 fun MovieInfoBox(
@@ -144,7 +147,7 @@ private fun MovieAndSourceTitlesLarge(
         ItemCover.Book(
             modifier = Modifier.fillMaxWidth(0.65f),
             data = coverDataProvider(),
-            contentDescription = "cover",
+            contentDescription = stringResource(id = R.string.cover),
             onClick = onCoverClick,
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -186,7 +189,7 @@ private fun MovieAndSourceTitlesSmall(
                 .sizeIn(maxWidth = 100.dp)
                 .align(Alignment.Top),
             data = coverDataProvider(),
-            contentDescription = "cover",
+            contentDescription = stringResource(id = R.string.cover),
             onClick = onCoverClick,
         )
         Column(
@@ -217,7 +220,7 @@ private fun ColumnScope.MovieContentInfo(
 ) {
     val context = LocalContext.current
     Text(
-        text = title.ifBlank { "unknown" },
+        text = title.ifBlank { stringResource(id = R.string.unknown) },
         style = MaterialTheme.typography.titleLarge,
         modifier = Modifier.clickableNoIndication(
             onLongClick = {
@@ -246,8 +249,9 @@ private fun ColumnScope.MovieContentInfo(
             modifier = Modifier.size(16.dp),
         )
         Text(
-            text = author?.takeIf { it.isNotBlank() }
-                ?: "unknown",
+            text = author.orEmpty().ifBlank {
+                stringResource(id = R.string.unknown)
+            },
             style = MaterialTheme.typography.titleSmall,
             modifier = Modifier
                 .clickableNoIndication(
@@ -312,7 +316,7 @@ private fun ColumnScope.MovieContentInfo(
         )
         ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
             Text(
-                text = status?.toString() ?: "",
+                text = status?.getString().orEmpty(),
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
             )

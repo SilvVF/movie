@@ -11,9 +11,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.lazy.VerticalFastScroller
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.browse.LibraryState
@@ -51,7 +53,7 @@ fun LibraryListView(
                     cover = {
                         ContentPreviewDefaults.LibraryContentPoster(Modifier.fillMaxSize())
                     },
-                    name = "Library Content",
+                    name = stringResource(id = R.string.library_content_name),
                     count = state.favorites.size
                 )
             }

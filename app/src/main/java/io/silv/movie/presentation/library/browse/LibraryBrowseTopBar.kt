@@ -40,12 +40,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
-import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.topbar.colors2
+import io.silv.movie.R
 
 @Composable
 fun LibraryBrowseTopBar(
@@ -71,7 +73,7 @@ fun LibraryBrowseTopBar(
     ) {
         SearchLargeTopBar(
             title = {
-                Text(text = "Your Library")
+                Text(text = stringResource(id = R.string.library_top_bar_title))
             },
             scrollBehavior = scrollBehavior,
             colors = TopAppBarDefaults.colors2(
@@ -88,7 +90,7 @@ fun LibraryBrowseTopBar(
                     onClick = createListClicked,
                     imageVector = Icons.Filled.Add,
                     contentDescription = null,
-                    tooltip = "Create list"
+                    tooltip = stringResource(id = R.string.create_list)
                 )
                 Box(contentAlignment = Alignment.BottomCenter) {
                     val isList = isListMode()
@@ -104,7 +106,7 @@ fun LibraryBrowseTopBar(
                                 )
                             },
                             text = {
-                                Text("List")
+                                Text(stringResource(id = R.string.list))
                             },
                             onClick = { setListMode(true) }
                         )
@@ -116,7 +118,7 @@ fun LibraryBrowseTopBar(
                                 )
                             },
                             text = {
-                                Text("Grid")
+                                Text(stringResource(id = R.string.grid))
                             },
                             onClick = { setListMode(false) }
                         )
@@ -129,7 +131,7 @@ fun LibraryBrowseTopBar(
                             Icons.Filled.GridView
                         },
                         contentDescription = null,
-                        tooltip = "Display Mode"
+                        tooltip = stringResource(id = R.string.display_mode)
                     )
                 }
             },
@@ -141,7 +143,7 @@ fun LibraryBrowseTopBar(
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text("Search you library...")
+                    Text(stringResource(id = R.string.library_top_bar_placeholder))
                 },
                 onQueryChange = { changeQuery(it) },
                 onSearch = {
@@ -154,14 +156,14 @@ fun LibraryBrowseTopBar(
                             IconButton(onClick = { changeQuery("") }) {
                                 Icon(
                                     imageVector = Icons.Filled.Clear,
-                                    contentDescription = null
+                                    contentDescription = stringResource(id = R.string.clear)
                                 )
                             }
                         }
                         IconButton(onClick = { onSearch(query()) }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
-                                contentDescription = null
+                                contentDescription = stringResource(id = R.string.search)
                             )
                         }
                     }
@@ -181,9 +183,9 @@ fun LibraryFilterChips(
     val filters =
         remember {
             listOf(
-                Triple("Title", Icons.Filled.Title, LibrarySortMode.Title),
-                Triple("Recently Added", Icons.Filled.NewReleases, LibrarySortMode.RecentlyAdded),
-                Triple("Count", Icons.Filled.Numbers, LibrarySortMode.Count)
+                Triple(R.string.title, Icons.Filled.Title, LibrarySortMode.Title),
+                Triple(R.string.recently_added, Icons.Filled.NewReleases, LibrarySortMode.RecentlyAdded),
+                Triple(R.string.count, Icons.Filled.Numbers, LibrarySortMode.Count)
             )
         }
 
@@ -216,7 +218,7 @@ fun LibraryFilterChips(
                         )
                     },
                     label = {
-                        Text(text = tag)
+                        Text(text = stringResource(tag))
                     },
                 )
             }

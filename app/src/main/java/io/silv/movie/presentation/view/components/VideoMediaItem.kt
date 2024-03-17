@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.view.movie.components
+package io.silv.movie.presentation.view.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import compose.icons.FontAwesomeIcons
@@ -33,6 +34,7 @@ import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.playOnYoutube
+import io.silv.movie.R
 import io.silv.movie.data.trailers.Trailer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -63,7 +65,7 @@ fun VideoMediaItem(
                     modifier = Modifier
                         .sizeIn(maxWidth = 160.dp),
                     data = thumbnailProvider(),
-                    contentDescription = "cover",
+                    contentDescription = stringResource(id = R.string.cover),
                     onClick = onThumbnailClick,
                 )
                 Column(
@@ -90,7 +92,7 @@ fun VideoMediaItem(
                         onClick = {
                             context.playOnYoutube(item.key)
                         },
-                        tooltip = "Verified",
+                        tooltip = stringResource(id = R.string.verified),
                         imageVector = Icons.Filled.CheckCircle,
                         modifier = Modifier.align(Alignment.BottomEnd)
                     )
@@ -138,12 +140,12 @@ fun MediaItemInfo(
             ) {
                 TooltipIconButton(
                     onClick = { /*TODO*/ },
-                    tooltip = "View on YouTube",
+                    tooltip = stringResource(id = R.string.view_on_youtube),
                     imageVector = FontAwesomeIcons.Brands.Youtube,
                     modifier = Modifier.size(22.dp)
                 )
                 DotSeparatorText(modifier = Modifier.align(Alignment.CenterVertically))
-                Text("YouTube", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(id = R.string.youtube), style = MaterialTheme.typography.labelSmall)
             }
         }
     }

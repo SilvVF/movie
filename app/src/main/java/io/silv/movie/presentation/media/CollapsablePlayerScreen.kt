@@ -19,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.lazy.Scroller
 import io.silv.movie.PlayerViewModel
+import io.silv.movie.R
 import org.burnoutcrew.reorderable.ItemPosition
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
@@ -93,7 +95,7 @@ fun CollapsablePlayerScreen(
             ) {
                 Icon(
                     imageVector = Icons.Filled.ArrowUpward,
-                    contentDescription = null
+                    contentDescription = stringResource(id = R.string.scroll_to_top)
                 )
             }
         }

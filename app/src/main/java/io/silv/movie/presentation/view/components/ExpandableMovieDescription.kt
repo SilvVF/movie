@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.view.movie.components
+package io.silv.movie.presentation.view.components
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -36,14 +36,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.util.clickableNoIndication
+import io.silv.movie.R
 import kotlin.math.roundToInt
 
 private val whitespaceLineRegex = Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTILINE))
-
-
 
 @Composable
 fun ExpandableMovieDescription(
@@ -89,14 +89,14 @@ fun ExpandableMovieDescription(
                     onDismissRequest = { showMenu = false },
                 ) {
                     DropdownMenuItem(
-                        text = { Text(text = "search") },
+                        text = { Text(text = stringResource(id = R.string.search)) },
                         onClick = {
                             onTagSearch(tagSelected)
                             showMenu = false
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(text = "copy") },
+                        text = { Text(text = stringResource(id = R.string.copy)) },
                         onClick = {
                             onCopyTagToClipboard(tagSelected)
                             showMenu = false

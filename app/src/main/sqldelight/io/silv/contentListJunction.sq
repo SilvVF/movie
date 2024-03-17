@@ -113,4 +113,5 @@ ORDER BY
         ELSE
             created_at
      END
+DESC
 ;

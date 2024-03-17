@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -30,6 +31,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
 import io.silv.core_ui.voyager.setScreenResult
+import io.silv.movie.R
 import kotlinx.parcelize.Parcelize
 
 class ListEditScreen(
@@ -73,7 +75,7 @@ class ListEditScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = "Change the name of your list",
+                    text = stringResource(id = R.string.edit_list_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -87,7 +89,7 @@ class ListEditScreen(
                     TextButton(
                         onClick = { navigator.pop() }
                     ) {
-                        Text("Cancel")
+                        Text(stringResource(id = R.string.cancel))
                     }
                     Spacer(modifier = Modifier.width(22.dp))
                     Button(
@@ -98,7 +100,7 @@ class ListEditScreen(
                             navigator.pop()
                         }
                     ) {
-                        Text(text = "Save")
+                        Text(text = stringResource(id = R.string.save))
                     }
                 }
             }

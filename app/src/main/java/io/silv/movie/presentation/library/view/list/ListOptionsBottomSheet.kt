@@ -12,7 +12,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.library.components.BottomSheetDragHandlerNoPadding
@@ -67,22 +69,22 @@ fun ListOptionsBottomSheet(
         )
         HorizontalDivider()
         BottomSheetItem(
-            title = { Text("Add to this list") },
+            title = { Text(stringResource(id = R.string.options_add_to_list)) },
             icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
             onClick = onAddClick
         )
         BottomSheetItem(
-            title = { Text("Edit List") },
+            title = { Text(stringResource(id = R.string.options_edit_list)) },
             icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = null) },
             onClick = onEditClick
         )
         BottomSheetItem(
-            title = { Text("Delete List") },
+            title = { Text(stringResource(id = R.string.options_delete_list)) },
             icon = { Icon(imageVector = Icons.Filled.Close, contentDescription = null) },
             onClick = onDeleteClick
         )
         BottomSheetItem(
-            title = { Text("Share") },
+            title = { Text(stringResource(id = R.string.share)) },
             icon = { Icon(imageVector = Icons.Filled.Share, contentDescription = null) },
             onClick = onShareClick
         )

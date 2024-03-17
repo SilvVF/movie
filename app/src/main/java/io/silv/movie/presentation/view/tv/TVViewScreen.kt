@@ -15,10 +15,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -26,11 +28,12 @@ import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.PlayerViewModel
+import io.silv.movie.R
 import io.silv.movie.getActivityViewModel
-import io.silv.movie.presentation.view.movie.components.ExpandableMovieDescription
-import io.silv.movie.presentation.view.components.MovieInfoBox
-import io.silv.movie.presentation.view.movie.components.VideoMediaItem
 import io.silv.movie.presentation.toPoster
+import io.silv.movie.presentation.view.components.ExpandableMovieDescription
+import io.silv.movie.presentation.view.components.MovieInfoBox
+import io.silv.movie.presentation.view.components.VideoMediaItem
 import org.koin.core.parameter.parametersOf
 
 data class TVViewScreen(
@@ -106,9 +109,11 @@ fun TVDetailsContent(
                             isTabletUi = false,
                             appBarPadding = topPadding,
                             title = state.show.title,
-                            author = "",
+                            author = remember (state.show.productionCompanies) {
+                                state.show.productionCompanies?.joinToString()
+                            },
                             artist = "",
-                            sourceName = "TMDB",
+                            sourceName = stringResource(id = R.string.tmdb),
                             isStubSource = false,
                             coverDataProvider = { state.show.toPoster() },
                             status = state.show.status,

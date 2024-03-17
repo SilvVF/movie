@@ -29,7 +29,10 @@ data class ContentItem(
     val lastModified: Long,
     val description: String,
     val popularity: Double,
-)
+) {
+
+    val itemKey by lazy { "$isMovie$contentId" }
+}
 
 sealed class ContentListItem(
     open val list: ContentList

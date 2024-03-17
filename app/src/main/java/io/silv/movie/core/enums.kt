@@ -1,6 +1,9 @@
 package io.silv.movie.core
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.ui.res.stringResource
+import io.silv.movie.R
 
 @Stable
 enum class Status {
@@ -72,3 +75,18 @@ enum class Status {
         }
     }
 }
+@Composable
+fun Status.getString() = stringResource(
+    id = when(this) {
+        Status.ReturningSeries -> R.string.status_returning
+        Status.Planned -> R.string.status_planned
+        Status.Pilot -> R.string.status_pilot
+        Status.InProduction -> R.string.status_in_production
+        Status.Ended -> R.string.status_ended
+        Status.Canceled -> R.string.status_canceled
+        Status.PostProduction -> R.string.status_post_production
+        Status.Rumored -> R.string.status_rumored
+        Status.Released -> R.string.status_released
+        Status.None -> R.string.status_none
+    }
+)

@@ -20,12 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.lazy.FastScrollLazyColumn
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
 import io.silv.movie.presentation.toPoster
@@ -40,6 +42,9 @@ fun ContentListPosterList(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     modifier: Modifier = Modifier,
+    onRecommendationClick: (item: ContentItem) -> Unit = {},
+    onRecommendationLongClick: (item: ContentItem) -> Unit = {},
+    onAddRecommendation: (item: ContentItem) -> Unit = {},
     recommendations: ImmutableList<ContentItem> = persistentListOf(),
     refreshingRecommendations: Boolean = false,
     onRefreshClick: () -> Unit = {},
@@ -49,24 +54,25 @@ fun ContentListPosterList(
         modifier = modifier.fillMaxSize(),
         contentPadding = paddingValues
     ) {
-        items(items, { "${it.contentId}${it.isMovie}"}) {
-            ContentListItem(
-                title = it.title,
-                favorite = showFavorite && it.favorite,
-                poster = remember(it) { it.toPoster() },
-                onClick = { onClick(it) },
-                onLongClick = { onLongClick(it) },
-                onContentClick = { onOptionsClick(it) }
-            ) {
-                IconButton(
-                    onClick = { onOptionsClick(it) },
-                    modifier = Modifier.size(28.dp),
+        items(items, { it.itemKey }) {
+            Box(Modifier.animateItemPlacement()) {
+                ContentListItem(
+                    title = it.title,
+                    favorite = showFavorite && it.favorite,
+                    poster = remember(it) { it.toPoster() },
+                    onClick = { onClick(it) },
+                    onLongClick = { onLongClick(it) },
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.MoreVert,
-                        contentDescription = "Options",
-                        modifier = Modifier.size(16.dp),
-                    )
+                    IconButton(
+                        onClick = { onOptionsClick(it) },
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Options",
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
             }
         }
@@ -75,15 +81,15 @@ fun ContentListPosterList(
                 modifier = Modifier.padding(22.dp)
             ) {
                 Text(
-                    text = "Recommended Content",
+                    text = stringResource(id = R.string.recommended_content_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text = if(items.isEmpty())
-                        "Based on the most recent favorites"
+                        stringResource(id = R.string.recommended_content_description_favorites)
                     else
-                        "Based on the most recent additions to this list",
+                        stringResource(id = R.string.recommended_content_description),
                     style = MaterialTheme.typography.labelSmall.copy(
                         color = MaterialTheme.colorScheme.onBackground.copy(
                             alpha = 0.78f
@@ -93,24 +99,25 @@ fun ContentListPosterList(
 
             }
         }
-        items(recommendations, { "rec${it.contentId}${it.isMovie}" }) {
-            ContentListItem(
-                title = it.title,
-                favorite = showFavorite && it.favorite,
-                poster = remember(it) { it.toPoster() },
-                onClick = { onClick(it) },
-                onLongClick = { onLongClick(it) },
-                onContentClick = { onOptionsClick(it) }
-            ) {
-                IconButton(
-                    onClick = { onOptionsClick(it) },
-                    modifier = Modifier.size(28.dp),
+        items(recommendations, { "recommendation" + it.itemKey }) {
+            Box(Modifier.animateItemPlacement()) {
+                ContentListItem(
+                    title = it.title,
+                    favorite = showFavorite && it.favorite,
+                    poster = remember(it) { it.toPoster() },
+                    onClick = { onRecommendationClick(it) },
+                    onLongClick = { onRecommendationLongClick(it) },
                 ) {
-                    Icon(
-                        imageVector = Icons.Filled.AddCircleOutline,
-                        contentDescription = "add",
-                        modifier = Modifier.size(16.dp),
-                    )
+                    IconButton(
+                        onClick = { onAddRecommendation(it) },
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AddCircleOutline,
+                            contentDescription = stringResource(id = R.string.add),
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
             }
         }
@@ -124,7 +131,7 @@ fun ContentListPosterList(
                     enabled = !refreshingRecommendations,
                     modifier = Modifier.align(Alignment.Center),
                 ) {
-                    Text("Refresh")
+                    Text(stringResource(id = R.string.refresh))
                 }
             }
         }
@@ -138,7 +145,6 @@ private fun ContentListItem(
     poster: PosterData,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onContentClick: (() -> Unit)?  = null,
     content: (@Composable () -> Unit)? = null,
 ) {
     EntryListItem(
@@ -151,6 +157,5 @@ private fun ContentListItem(
         onLongClick = onLongClick,
         onClick = onClick,
         endButton = content,
-        onEndButtonClick = onContentClick
     )
 }

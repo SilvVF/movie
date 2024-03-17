@@ -1,7 +1,9 @@
 package io.silv.movie.presentation.library.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -22,12 +24,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.lazy.VerticalGridFastScroller
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
@@ -126,6 +131,9 @@ fun ContentListPosterGrid(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     modifier: Modifier = Modifier,
+    onRecommendationClick: (item: ContentItem) -> Unit = {},
+    onRecommendationLongClick: (item: ContentItem) -> Unit = {},
+    onAddRecommendation: (item: ContentItem) -> Unit = {},
     showFavorite: Boolean = true,
     recommendations: ImmutableList<ContentItem> = persistentListOf(),
     refreshingRecommendations: Boolean = false,
@@ -146,7 +154,7 @@ fun ContentListPosterGrid(
             contentPadding = paddingValues,
             modifier = modifier,
         ) {
-            items(items, { "${it.contentId}${it.isMovie}" }) {
+            items(items, { it.itemKey }) {
                 val poster = remember(it) { it.toPoster() }
                 val favorite = showFavorite && it.favorite
                 when (mode) {
@@ -193,10 +201,30 @@ fun ContentListPosterGrid(
                     }
                 }
             }
-            item(key = "recommendation-header", span = { GridItemSpan(maxCurrentLineSpan) }) {
-                Text("Recommendations")
+            item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+                Column(
+                    modifier = Modifier.padding(22.dp)
+                ) {
+                    Text(
+                        text = stringResource(id = R.string.recommended_content_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = if(items.isEmpty())
+                            stringResource(id = R.string.recommended_content_description_favorites)
+                        else
+                            stringResource(id = R.string.recommended_content_description),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground.copy(
+                                alpha = 0.78f
+                            )
+                        ),
+                    )
+
+                }
             }
-            items(recommendations, { r -> "rec${r.contentId}${r.isMovie}"}) {
+            items(recommendations, { r -> "recommendation" + r.itemKey }) {
                 val poster = remember(it) { it.toPoster() }
                 val favorite = showFavorite && it.favorite
                 when (mode) {
@@ -205,11 +233,12 @@ fun ContentListPosterGrid(
                             title = it.title,
                             favorite = favorite,
                             poster = poster,
-                            onClick = { onClick(it) },
-                            onLongClick = { onLongClick(it) },
+                            onClick = { onRecommendationClick(it) },
+                            onLongClick = { onRecommendationLongClick(it) },
                         ) {
                             EntryGridItemIconButton(
-                                onClick = { onOptionsClick(it)},
+                                onClick = { onAddRecommendation(it)},
+                                contentDescription = stringResource(id = R.string.add),
                                 icon = Icons.Default.AddCircleOutline
                             )
                         }
@@ -219,11 +248,12 @@ fun ContentListPosterGrid(
                             title = it.title,
                             favorite = favorite,
                             poster = poster,
-                            onClick = { onClick(it) },
-                            onLongClick = { onLongClick(it) },
+                            onClick = { onRecommendationClick(it) },
+                            onLongClick = { onRecommendationLongClick(it) },
                         ) {
                             EntryGridItemIconButton(
-                                onClick = { onOptionsClick(it)},
+                                onClick = { onAddRecommendation(it)},
+                                contentDescription = stringResource(id = R.string.add),
                                 icon = Icons.Default.AddCircleOutline
                             )
                         }
@@ -232,11 +262,12 @@ fun ContentListPosterGrid(
                         ContentItemSourceCoverOnlyGridItem(
                             favorite = favorite,
                             poster = poster,
-                            onClick = { onClick(it) },
-                            onLongClick = { onLongClick(it) },
+                            onClick = { onRecommendationClick(it) },
+                            onLongClick = { onRecommendationLongClick(it) },
                         ) {
                             EntryGridItemIconButton(
-                                onClick = { onOptionsClick(it)},
+                                onClick = { onAddRecommendation(it)},
+                                contentDescription = stringResource(id = R.string.add),
                                 icon = Icons.Default.AddCircleOutline
                             )
                         }
@@ -248,7 +279,7 @@ fun ContentListPosterGrid(
                     onClick = onRefreshClick,
                     enabled = !refreshingRecommendations
                 ) {
-                    Text("Refresh")
+                    Text(stringResource(id = R.string.refresh))
                 }
             }
         }

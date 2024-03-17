@@ -4,6 +4,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import io.silv.movie.R
 
 @Composable
 fun RemoveEntryDialog(
@@ -15,7 +17,7 @@ fun RemoveEntryDialog(
         onDismissRequest = onDismissRequest,
         dismissButton = {
             TextButton(onClick = onDismissRequest) {
-                Text(text = "cancel")
+                Text(text = stringResource(id = R.string.cancel))
             }
         },
         confirmButton = {
@@ -25,14 +27,14 @@ fun RemoveEntryDialog(
                     onConfirm()
                 },
             ) {
-                Text(text = "remove")
+                Text(text = stringResource(R.string.remove))
             }
         },
         title = {
-            Text(text = "Are you sure?")
+            Text(text = stringResource(id = R.string.remove_entry_title))
         },
         text = {
-            Text(text = "You are about to remove \"${entryToRemove}\" from your library")
+            Text(text = stringResource(id = R.string.remove_entry_text, entryToRemove))
         },
     )
 }

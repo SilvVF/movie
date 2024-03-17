@@ -39,7 +39,7 @@ data class MovieDetailsResponse(
     @SerialName("release_date")
     val releaseDate: String = "",
     @SerialName("revenue")
-    val revenue: Int = 0,
+    val revenue: Double = 0.0,
     @SerialName("runtime")
     val runtime: Int = 0,
     @SerialName("spoken_languages")

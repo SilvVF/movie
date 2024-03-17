@@ -4,6 +4,15 @@ CREATE TABLE contentList(
      last_modified_at INTEGER NOT NULL DEFAULT 0
 );
 
+
+CREATE TRIGGER deleteRecommedationsForList
+AFTER DELETE ON contentList
+FOR EACH ROW
+BEGIN
+  DELETE FROM recommendation
+  WHERE recommendation.list_id = old._id;
+END;
+
 insert:
 INSERT OR IGNORE INTO contentList(_id, name, last_modified_at)
 VALUES (NULL,  :name, strftime('%s', 'now'));

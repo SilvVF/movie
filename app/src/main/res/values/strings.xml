@@ -1,3 +1,83 @@
 <resources>
     <string name="app_name">movie</string>
+
+    <string name="browse_tab_title">Browse</string>
+    <string name="library_tab_title">Library</string>
+
+    <string name="paging_load_failed">Failed to load items</string>
+    <string name="retry">Retry</string>
+    <string name="error">Error</string>
+    <string name="filter">Filter</string>
+    <string name="search">Search</string>
+    <string name="movies">Movies</string>
+    <string name="shows">TV-Shows</string>
+    <string name="popular">Popular</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="upcoming">Upcoming</string>
+    <string name="sort">Sort</string>
+    <string name="reset">Reset</string>
+    <string name="genres">Genres</string>
+    <string name="genre_mode">Genre mode</string>
+    <string name="and">And</string>
+    <string name="cancel">Cancel</string>
+    <string name="clear">Clear</string>
+    <string name="remove">Remove</string>
+    <string name="remove_entry_title">Are you sure?</string>
+    <string name="remove_entry_text">
+        "You are about to remove %1s from your library"
+    </string>
+    <string name="or">Or</string>
+    <string name="display_mode">Display Mode</string>
+    <string name="library_top_bar_title">Your Library</string>
+    <string name="create_list">Create list</string>
+    <string name="list">List</string>
+    <string name="title">Title</string>
+    <string name="recently_added">Recently Added</string>
+    <string name="add">Add</string>
+    <string name="save">Save</string>
+    <string name="create">Create</string>
+    <string name="count">Count</string>
+    <string name="grid">Grid</string>
+    <string name="library_top_bar_placeholder">Search you library…</string>
+    <string name="library_content_name">Library Content</string>
+    <string name="content_preview_no_items">No items in list</string>
+    <string name="content_preview_items">%1d items in list</string>
+    <string name="filter_text_ignored_hint">Search Text ignored when filtering</string>
+    <string name="refresh">Refresh</string>
+    <string name="recommended_content_title">Recommended Content</string>
+    <string name="recommended_content_description">Based on the most recent additions to this list</string>
+    <string name="recommended_content_description_favorites">Based on the most recent favorites</string>
+    <string name="create_list_title">Give your list a name</string>
+    <string name="edit_list_title">Change the name of your list</string>
+    <string name="search_browse_top_bar_hint">Search for %1s…</string>
+    <string name="options_add_to_list">Add to this list</string>
+    <string name="options_edit_list">Edit list</string>
+    <string name="options_delete_list">Delete list</string>
+    <string name="share">Share</string>
+    <string name="search_placeholder">Search %1s…</string>
+    <string name="favorites_top_bar_title">Favorites Content</string>
+    <string name="favorites_bottom_sheet_header">Favorites List</string>
+    <string name="view_on_youtube">View on YouTube</string>
+    <string name="youtube">YouTube</string>
+    <string name="verified">Verified</string>
+    <string name="pause">Pause</string>
+    <string name="play">Play</string>
+    <string name="close">Close</string>
+    <string name="copy">Copy</string>
+    <string name="cover">Cover</string>
+    <string name="unknown">Unknown</string>
+    <string name="scroll_to_top">Scroll to top</string>
+    <string name="player_error">Network error</string>
+
+    <string name="status_returning">Returning Series</string>
+    <string name="status_planned">Planned</string>
+    <string name="status_pilot">Pilot</string>
+    <string name="status_in_production">In Production</string>
+    <string name="status_ended">Ended</string>
+    <string name="status_canceled">Canceled</string>
+    <string name="status_post_production">Post Production</string>
+    <string name="status_rumored">Rumored</string>
+    <string name="status_released">Released</string>
+    <string name="status_none">None</string>
+    <string name="tmdb">TMDB</string>
 </resources>

@@ -28,12 +28,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.rememberDominantColor
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -85,7 +87,7 @@ fun ListViewTopBar(
                             },
                             endY = size.height * 0.8f
                         ),
-                        alpha = if(state.isKeyboardOpen) 0f else 1f - state.progress
+                        alpha = if (state.isKeyboardOpen) 0f else 1f - state.progress
                     )
                 }
             },
@@ -148,7 +150,7 @@ fun ListViewTopBar(
                 query = query,
                 onSearch = onSearch,
                 changeQuery = changeQuery,
-                placeholder = "Search ${contentList.name}"
+                placeholder = stringResource(id = R.string.search_placeholder, contentList.name)
             )
         }
     }
@@ -164,10 +166,10 @@ fun ListFilterChips(
     val filters =
         remember {
             listOf(
-                Triple("Title", Icons.Filled.Title, ListSortMode.Title),
-                Triple("Recently Added", Icons.Filled.NewReleases, ListSortMode.RecentlyAdded),
-                Triple("Movies", Icons.Filled.Movie, ListSortMode.Movie),
-                Triple("Shows", Icons.Filled.Tv, ListSortMode.Show)
+                Triple(R.string.title, Icons.Filled.Title, ListSortMode.Title),
+                Triple(R.string.recently_added, Icons.Filled.NewReleases, ListSortMode.RecentlyAdded),
+                Triple(R.string.movies, Icons.Filled.Movie, ListSortMode.Movie),
+                Triple(R.string.shows, Icons.Filled.Tv, ListSortMode.Show)
             )
         }
 
@@ -200,7 +202,7 @@ fun ListFilterChips(
                         )
                     },
                     label = {
-                        Text(text = tag)
+                        Text(text = stringResource(tag))
                     },
                 )
             }

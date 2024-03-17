@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -42,8 +43,9 @@ import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.conditional
 import io.silv.core_ui.util.playOnYoutube
+import io.silv.movie.R
 import io.silv.movie.data.trailers.Trailer
-import io.silv.movie.presentation.view.movie.components.VideoMediaItem
+import io.silv.movie.presentation.view.components.VideoMediaItem
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.ReorderableLazyListState
 import org.burnoutcrew.reorderable.detectReorder
@@ -213,16 +215,16 @@ private fun MediaItemInfo(
                         ) {
                             TooltipIconButton(
                                 onClick = { /*TODO*/ },
-                                tooltip = "View on YouTube",
+                                tooltip = stringResource(id = R.string.view_on_youtube),
                                 imageVector = FontAwesomeIcons.Brands.Youtube,
                                 modifier = Modifier.size(22.dp)
                             )
                             DotSeparatorText(modifier = Modifier.align(Alignment.CenterVertically))
-                            Text("YouTube", style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(id = R.string.youtube), style = MaterialTheme.typography.labelSmall)
                         }
                     }
                     Text(
-                        "Verified",
+                        stringResource(id = R.string.verified),
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.alpha(0.78f)
                     )
@@ -230,7 +232,7 @@ private fun MediaItemInfo(
                         onClick = {
                             context.playOnYoutube(item.key)
                         },
-                        tooltip = "Verified",
+                        tooltip = stringResource(id = R.string.verified),
                         imageVector = Icons.Filled.CheckCircle,
                     )
                 }
@@ -265,7 +267,7 @@ private fun RowScope.CollapsedPlayerTitleAndActions(
             ) {
                 Icon(
                     imageVector = Icons.Filled.PlayArrow,
-                    contentDescription = null
+                    contentDescription = stringResource(id = R.string.play)
                 )
             }
         } else {
@@ -278,7 +280,7 @@ private fun RowScope.CollapsedPlayerTitleAndActions(
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Pause,
-                        contentDescription = null
+                        contentDescription = stringResource(id = R.string.pause)
                     )
                 }
             }
@@ -289,7 +291,7 @@ private fun RowScope.CollapsedPlayerTitleAndActions(
     ) {
         Icon(
             imageVector = Icons.Filled.Close,
-            contentDescription = null
+            contentDescription = stringResource(id = R.string.close)
         )
     }
 }

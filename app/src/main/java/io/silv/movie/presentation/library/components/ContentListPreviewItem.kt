@@ -30,10 +30,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.ItemCover
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.toPoster
@@ -61,7 +63,7 @@ object ContentPreviewDefaults {
         ) {
             Icon(
                 imageVector = Icons.Filled.MovieFilter,
-                contentDescription = null,
+                contentDescription = stringResource(id = R.string.filter),
                 modifier = Modifier
                     .fillMaxSize(0.5f)
                     .align(Alignment.Center)
@@ -203,7 +205,10 @@ fun LazyGridItemScope.ContentGridPreviewItem(
             Text(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                text = if (count == 0) "No items in list" else "$count items in list",
+                text = if (count == 0)
+                    stringResource(id = R.string.content_preview_no_items)
+                else
+                    stringResource(id = R.string.content_preview_items, count),
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.graphicsLayer { alpha = 0.78f }
             )
@@ -244,7 +249,10 @@ fun LazyItemScope.ContentListPreview(
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = if (count == 0) "No items in list" else "$count items in list",
+                text = if (count == 0)
+                    stringResource(id = R.string.content_preview_no_items)
+                else
+                    stringResource(id = R.string.content_preview_items, count),
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 modifier = Modifier.graphicsLayer { alpha = 0.78f }

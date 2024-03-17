@@ -23,6 +23,7 @@ import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.ui.PlayerView
 import io.silv.movie.PlayerViewModel
+import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -104,7 +105,7 @@ fun PipedApiPlayer(
             }
             // NO STREAM FOUND
             else -> {
-                Toast.makeText(context, "Network error", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.player_error), Toast.LENGTH_SHORT).show()
             }
         }
         exoPlayer.seekTo(playerViewModel.secondToStream[playerViewModel.currentTrailer?.trailerId] ?: 0L)

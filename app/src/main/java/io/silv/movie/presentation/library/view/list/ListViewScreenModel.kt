@@ -11,9 +11,15 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toUpdate
+import io.silv.movie.data.movie.interactor.GetMovie
+import io.silv.movie.data.movie.interactor.UpdateMovie
+import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.recommendation.RecommendationManager
+import io.silv.movie.data.tv.interactor.GetShow
+import io.silv.movie.data.tv.interactor.UpdateShow
+import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -33,10 +39,25 @@ import kotlinx.coroutines.launch
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
     private val recommendationManager: RecommendationManager,
+    private val updateShow: UpdateShow,
+    private val updateMovie: UpdateMovie,
+    private val getMovie: GetMovie,
+    private val getShow: GetShow,
     libraryPreferences: LibraryPreferences,
     private val listId: Long
 ): StateScreenModel<ListViewState>(ListViewState.Loading),
     EventProducer<ListViewEvent> by EventProducer.default() {
+
+    private fun MutableStateFlow<ListViewState>.updateSuccess(
+        function: (ListViewState.Success) -> ListViewState.Success
+    ) {
+        update {
+            when (it) {
+                is ListViewState.Success -> function(it)
+                else -> it
+            }
+        }
+    }
 
     private val stateSuccessTrigger =
         state.map { it.success?.list?.id }.filterNotNull().distinctUntilChanged()
@@ -150,14 +171,14 @@ class ListViewScreenModel(
         }
     }
 
-
-    private fun MutableStateFlow<ListViewState>.updateSuccess(
-        function: (ListViewState.Success) -> ListViewState.Success
-    ) {
-        update {
-            when (it) {
-                is ListViewState.Success -> function(it)
-                else -> it
+    fun toggleItemFavorite(contentItem: ContentItem) {
+        screenModelScope.launch {
+            if (contentItem.isMovie) {
+                val movie = getMovie.await(contentItem.contentId) ?: return@launch
+                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+            } else {
+                val show = getShow.await(contentItem.contentId) ?: return@launch
+                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
             }
         }
     }
@@ -169,6 +190,20 @@ class ListViewScreenModel(
                 .onSuccess {
                     emitEvent(ListViewEvent.ListDeleted)
                 }
+        }
+    }
+
+    fun addToList(contentItem: ContentItem) {
+        screenModelScope.launch {
+            val list = state.value.success?.list ?: return@launch
+
+            if (contentItem.isMovie) {
+                contentListRepository.addMovieToList(contentItem.contentId, list)
+            } else {
+                contentListRepository.addShowToList(contentItem.contentId, list)
+            }
+
+            recommendationManager.removeRecommendation(contentItem, listId)
         }
     }
 
@@ -189,6 +224,9 @@ class ListViewScreenModel(
 
         @Stable
         data class ContentOptions(val item: ContentItem): Dialog
+
+        @Stable
+        data class RemoveFromFavorites(val item: ContentItem): Dialog
     }
 }
 

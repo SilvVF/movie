@@ -52,6 +52,7 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,6 +62,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.conditional
+import io.silv.movie.R
 import io.silv.movie.data.Genre
 import io.silv.movie.data.GenreMode
 import io.silv.movie.data.SearchItem
@@ -103,7 +105,7 @@ fun FilterBottomSheet(
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = "Search text ignored when filtering",
+                    text = stringResource(id = R.string.filter_text_ignored_hint),
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier.padding(4.dp)
                 )
@@ -136,7 +138,7 @@ fun FilterBottomSheet(
                     textChanged = { selectedSearchItem.text.value = it },
                     search = { onApplyFilter() }
                 )
-                FilterDropDown(label = "Genres") {
+                FilterDropDown(label = stringResource(id = R.string.genres)) {
                     FlowRow {
                         genres.fastForEach { (selected, genre) ->
                             FilterChipWrapper(
@@ -147,7 +149,7 @@ fun FilterBottomSheet(
                         }
                     }
                 }
-                FilterDropDown(label = "Sort") {
+                FilterDropDown(label = stringResource(id = R.string.sort)) {
                     val items = remember { SortingOption.entries }
                     FlowRow {
                        items.fastForEach {
@@ -159,15 +161,15 @@ fun FilterBottomSheet(
                         }
                     }
                 }
-                FilterDropDown(label = "Genre mode") {
+                FilterDropDown(label = stringResource(id = R.string.genre_mode)) {
                     Column {
                         ToggleItem(
-                            label = "Or",
+                            label = stringResource(id = R.string.or),
                             checked = genreMode == GenreMode.Or,
                             onCheckChange = { changeGenreMode(GenreMode.Or) }
                         )
                         ToggleItem(
-                            label = "And",
+                            label = stringResource(id = R.string.and),
                             checked = genreMode == GenreMode.And,
                             onCheckChange = { changeGenreMode(GenreMode.And) }
                         )
@@ -190,13 +192,13 @@ fun FilterBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onResetFilter) {
-                    Text("Reset")
+                    Text(stringResource(id = R.string.reset))
                 }
                 Button(
                     onClick = onApplyFilter,
                     enabled = searchItems.fastAll { it.error.value == null }
                 ) {
-                    Text(text = "Filter")
+                    Text(text = stringResource(id = R.string.filter))
                 }
             }
         }
@@ -303,7 +305,7 @@ private fun ColumnScope.SearchFooter(
                 IconButton(onClick = { textChanged("") }) {
                     Icon(
                         imageVector = Icons.Default.Cancel,
-                        contentDescription = null,
+                        contentDescription = stringResource(id = R.string.cancel),
                         tint = MaterialTheme.colorScheme.primaryContainer
                     )
                 }

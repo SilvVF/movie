@@ -31,10 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.TooltipIconButton
+import io.silv.core_ui.components.topbar.SearchBarInputField
+import io.silv.movie.R
 import io.silv.movie.data.prefrences.PosterDisplayMode
 
 object PosterLargeTopBarDefaults {
@@ -106,8 +108,8 @@ object PosterLargeTopBarDefaults {
                     PosterDisplayMode.List -> Icons.AutoMirrored.Filled.List
                     else -> Icons.Filled.GridView
                 },
-                contentDescription = null,
-                tooltip = "Display Mode"
+                contentDescription = stringResource(id = R.string.display_mode),
+                tooltip = stringResource(id = R.string.display_mode)
             )
         }
         IconButton(onClick = onListOptionClicked) {
@@ -137,7 +139,7 @@ object PosterLargeTopBarDefaults {
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text( placeholder)
+                    Text(placeholder)
                 },
                 onQueryChange = { changeQuery(it) },
                 onSearch = {
@@ -157,7 +159,7 @@ object PosterLargeTopBarDefaults {
                         IconButton(onClick = { onSearch(query()) }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
-                                contentDescription = null
+                                contentDescription = stringResource(id = R.string.search)
                             )
                         }
                     }

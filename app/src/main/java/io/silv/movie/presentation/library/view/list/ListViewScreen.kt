@@ -33,6 +33,8 @@ import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.ListEditScreen
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import io.silv.movie.presentation.view.movie.MovieViewScreen
+import io.silv.movie.presentation.view.tv.TVViewScreen
 import org.koin.core.parameter.parametersOf
 
 data class ListViewScreen(
@@ -68,6 +70,9 @@ data class ListViewScreen(
                 val changeDialog = remember {
                     { sheet: ListViewScreenModel.Dialog? -> screenModel.changeDialog(sheet) }
                 }
+                val toggleItemFavorite = remember {
+                    { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
+                }
 
                 SuccessScreenContent(
                     query = screenModel.query,
@@ -75,12 +80,37 @@ data class ListViewScreen(
                     onListOptionClick = { changeDialog(ListViewScreenModel.Dialog.ListOptions) },
                     updateListViewDisplayMode = screenModel::updateListViewDisplayMode,
                     listViewDisplayMode = { screenModel.listViewDisplayMode },
-                    onClick = { },
-                    onLongClick = { },
+                    onClick = { item ->
+                        if (item.isMovie)
+                            navigator.push(MovieViewScreen(item.contentId))
+                        else
+                            navigator.push(TVViewScreen(item.contentId))
+                    },
+                    onLongClick = { item ->
+                        if (item.favorite) {
+                            changeDialog(ListViewScreenModel.Dialog.RemoveFromFavorites(item))
+                        } else {
+                            toggleItemFavorite(item)
+                        }
+                    },
                     onOptionsClick = { changeDialog(ListViewScreenModel.Dialog.ContentOptions(it)) },
                     updateDialog = { changeDialog(it) },
                     changeSortMode = screenModel::updateSortMode,
                     refreshRecommendations = screenModel::refreshRecommendations,
+                    onAddRecommendation = screenModel::addToList,
+                    onRecommendationLongClick = { item ->
+                        if (item.favorite) {
+                            changeDialog(ListViewScreenModel.Dialog.RemoveFromFavorites(item))
+                        } else {
+                            toggleItemFavorite(item)
+                        }
+                    },
+                    onRecommendationClick = { item ->
+                        if (item.isMovie)
+                            navigator.push(MovieViewScreen(item.contentId))
+                        else
+                            navigator.push(TVViewScreen(item.contentId))
+                    },
                     state = s
                 )
 
@@ -114,6 +144,13 @@ data class ListViewScreen(
                             content = s.allItems
                         )
                     }
+                    is ListViewScreenModel.Dialog.RemoveFromFavorites -> {
+                        RemoveEntryDialog(
+                            onDismissRequest = onDismissRequest,
+                            onConfirm = { toggleItemFavorite(dialog.item) },
+                            entryToRemove = dialog.item.title
+                        )
+                    }
                     null -> Unit
                 }
             }
@@ -133,6 +170,9 @@ private fun SuccessScreenContent(
     onOptionsClick: (item: ContentItem) -> Unit,
     changeSortMode: (ListSortMode) -> Unit,
     updateDialog: (ListViewScreenModel.Dialog?) -> Unit,
+    onRecommendationClick: (item: ContentItem) -> Unit ,
+    onRecommendationLongClick: (item: ContentItem) -> Unit,
+    onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
     state: ListViewState.Success
 ) {
@@ -191,6 +231,9 @@ private fun SuccessScreenContent(
                     onRefreshClick = refreshRecommendations,
                     recommendations = state.recommendations,
                     refreshingRecommendations = state.refreshingRecommendations,
+                    onAddRecommendation = onAddRecommendation,
+                    onRecommendationClick = onRecommendationClick,
+                    onRecommendationLongClick = onRecommendationLongClick,
                     modifier = Modifier
                         .haze(
                             state = hazeState,

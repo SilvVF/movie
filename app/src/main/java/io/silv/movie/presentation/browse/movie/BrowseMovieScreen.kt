@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
@@ -33,6 +34,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -197,12 +199,12 @@ private fun MovieStandardScreenSizeContent(
                 ExtendedFloatingActionButton(
                     onClick = { changeDialog(MovieScreenModel.Dialog.Filter) },
                     text = {
-                        Text(text = "Filter")
+                        Text(text = stringResource(id = R.string.filter))
                     },
                     icon = {
                         Icon(
                             imageVector = Icons.Filled.FilterList,
-                            contentDescription = null
+                            contentDescription = stringResource(id = R.string.filter)
                         )
                     },
                     expanded = expanded,

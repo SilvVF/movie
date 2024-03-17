@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -20,9 +22,11 @@ import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
-import kotlinx.collections.immutable.persistentListOf
+import io.silv.movie.presentation.view.movie.MovieViewScreen
+import io.silv.movie.presentation.view.tv.TVViewScreen
 
 
 object FavoritesViewScreen : Screen {
@@ -32,18 +36,42 @@ object FavoritesViewScreen : Screen {
 
         val screenModel = getScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
-
+        val navigator = LocalNavigator.currentOrThrow
         val changeDialog = remember { { dialog: FavoritesScreenModel.Dialog? -> screenModel.changeDialog(dialog) } }
+        val toggleItemFavorite = remember {
+            { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
+        }
+
         FavoritesScreenContent(
             updateQuery = screenModel::updateQuery,
             onListOptionClick = { changeDialog(FavoritesScreenModel.Dialog.ListOptions) },
             listViewDisplayMode = { screenModel.listViewDisplayMode },
             updateListViewDisplayMode = screenModel::updateDisplayMode,
             query = screenModel.query,
-            onLongClick = {},
-            onClick = {},
+            onClick = { item ->
+                if (item.isMovie)
+                    navigator.push(MovieViewScreen(item.contentId))
+                else
+                    navigator.push(TVViewScreen(item.contentId))
+            },
+            onLongClick = { item ->
+                if (item.favorite) {
+                    changeDialog(FavoritesScreenModel.Dialog.RemoveFromFavorites(item))
+                } else {
+                    toggleItemFavorite(item)
+                }
+            },
             onOptionsClick = {},
             changeSortMode = screenModel::setSortMode,
+            refreshRecommendations = screenModel::refreshRecommendations,
+            onRecommendationClick = { item ->
+                if (item.isMovie)
+                    navigator.push(MovieViewScreen(item.contentId))
+                else
+                    navigator.push(TVViewScreen(item.contentId))
+            },
+            onAddRecommendation = screenModel::addRecommendationToList,
+            onRecommendationLongClick = screenModel::addRecommendationToList,
             state = state
         )
         val onDismissRequest = remember { { screenModel.changeDialog(null) } }
@@ -56,6 +84,13 @@ object FavoritesViewScreen : Screen {
                     onDismissRequest = onDismissRequest,
                     onAddClick = { /*TODO*/ },
                     onShareClick = {}
+                )
+            }
+            is FavoritesScreenModel.Dialog.RemoveFromFavorites -> {
+                RemoveEntryDialog(
+                    onDismissRequest = onDismissRequest,
+                    onConfirm = { toggleItemFavorite(dialog.item) },
+                    entryToRemove = dialog.item.title
                 )
             }
             null -> Unit
@@ -74,6 +109,10 @@ private fun FavoritesScreenContent(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     changeSortMode: (FavoritesSortMode) -> Unit,
+    onRecommendationClick: (item: ContentItem) -> Unit ,
+    onRecommendationLongClick: (item: ContentItem) -> Unit,
+    onAddRecommendation: (item: ContentItem) -> Unit,
+    refreshRecommendations: () -> Unit,
     state: FavoritesListState
 ) {
     val hazeState = remember { HazeState() }
@@ -108,7 +147,12 @@ private fun FavoritesScreenContent(
                     onClick = onClick,
                     showFavorite = false,
                     paddingValues = paddingValues,
-                    recommendations = persistentListOf(),
+                    recommendations = state.recommendations,
+                    onRecommendationLongClick = onRecommendationLongClick,
+                    onRecommendationClick = onRecommendationClick,
+                    onAddRecommendation = onAddRecommendation,
+                    refreshingRecommendations = state.refreshingRecommendations,
+                    onRefreshClick = refreshRecommendations,
                     modifier = Modifier
                         .haze(
                             state = hazeState,
@@ -125,6 +169,12 @@ private fun FavoritesScreenContent(
                     onClick = onClick,
                     showFavorite = false,
                     paddingValues = paddingValues,
+                    recommendations = state.recommendations,
+                    onRecommendationLongClick = onRecommendationLongClick,
+                    onRecommendationClick = onRecommendationClick,
+                    onAddRecommendation = onAddRecommendation,
+                    refreshingRecommendations = state.refreshingRecommendations,
+                    onRefreshClick = refreshRecommendations,
                     modifier = Modifier
                         .haze(
                             state = hazeState,

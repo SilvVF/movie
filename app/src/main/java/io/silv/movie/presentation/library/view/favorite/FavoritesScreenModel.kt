@@ -7,11 +7,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.silv.movie.core.Quad
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.GetFavoritesList
+import io.silv.movie.data.movie.interactor.GetMovie
+import io.silv.movie.data.movie.interactor.UpdateMovie
+import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.core.getOrDefault
+import io.silv.movie.data.recommendation.RecommendationManager
+import io.silv.movie.data.tv.interactor.GetShow
+import io.silv.movie.data.tv.interactor.UpdateShow
+import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -25,6 +33,11 @@ import kotlinx.coroutines.launch
 
 class FavoritesScreenModel(
     getFavoritesList: GetFavoritesList,
+    private val recommendationManager: RecommendationManager,
+    private val getMovie: GetMovie,
+    private val getShow: GetShow,
+    private val updateShow: UpdateShow,
+    private val updateMovie: UpdateMovie,
     private val libraryPreferences: LibraryPreferences
 ): ScreenModel {
 
@@ -40,16 +53,20 @@ class FavoritesScreenModel(
     var query by mutableStateOf("")
         private set
 
-    val state = snapshotFlow { query }
-        .combine(
-            sortModeFavorites.stateIn(screenModelScope)
-        ) { a: String, b: FavoritesSortMode -> a to b }
-        .flatMapLatest { (query, sortMode) ->
+    val state = combine(
+            snapshotFlow { query },
+            sortModeFavorites.stateIn(screenModelScope),
+            recommendationManager.subscribe(-1L),
+            recommendationManager.isRunning(-1L),
+        ) { a: String, b: FavoritesSortMode, c: List<ContentItem>, d: Boolean -> Quad(a, b, c, d) }
+        .flatMapLatest { (query, sortMode, recommendations, refreshing) ->
             getFavoritesList.subscribe(query, sortMode)
                 .map { content ->
                     FavoritesListState(
                         sortMode,
-                        content.toImmutableList()
+                        content.toImmutableList(),
+                        recommendations.toImmutableList(),
+                        refreshing
                     )
                 }
         }
@@ -79,6 +96,38 @@ class FavoritesScreenModel(
         listViewDisplayMode = displayMode
     }
 
+    fun refreshRecommendations() {
+        screenModelScope.launch {
+            recommendationManager.refreshFavoritesRecommendations()
+        }
+    }
+
+    fun toggleItemFavorite(contentItem: ContentItem) {
+        screenModelScope.launch {
+            if (contentItem.isMovie) {
+                val movie = getMovie.await(contentItem.contentId) ?: return@launch
+                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+            } else {
+                val show = getShow.await(contentItem.contentId) ?: return@launch
+                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
+            }
+        }
+    }
+
+    fun addRecommendationToList(contentItem: ContentItem) {
+        screenModelScope.launch {
+            if (contentItem.isMovie) {
+                val movie = getMovie.await(contentItem.contentId) ?: return@launch
+                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+            } else {
+                val show = getShow.await(contentItem.contentId) ?: return@launch
+                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
+            }
+            recommendationManager.removeRecommendation(contentItem, -1)
+        }
+    }
+
+
     @Stable
     sealed interface Dialog {
 
@@ -87,6 +136,9 @@ class FavoritesScreenModel(
 
         @Stable
         data class ContentOptions(val item: ContentItem): Dialog
+
+        @Stable
+        data class RemoveFromFavorites(val item: ContentItem): Dialog
     }
 }
 
@@ -101,5 +153,7 @@ sealed interface FavoritesSortMode {
 data class FavoritesListState(
     val sortMode: FavoritesSortMode,
     val items: ImmutableList<ContentItem> = persistentListOf(),
+    val recommendations: ImmutableList<ContentItem> = persistentListOf(),
+    val refreshingRecommendations: Boolean = false,
 )
 

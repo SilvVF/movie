@@ -26,11 +26,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
+import io.silv.movie.R
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.library.components.PosterLargeTopBarDefaults
@@ -73,7 +75,7 @@ fun FavoritesViewTopBar(
     ) {
         PosterLargeTopBar(
             state = state,
-            title = { Text(text = "Favorites Content") },
+            title = { Text(text = stringResource(id = R.string.favorites_top_bar_title)) },
             colors = TopAppBarDefaults.colors2(
                 containerColor = Color.Transparent,
                 scrolledContainerColor = primary.copy(alpha = 0.2f)
@@ -110,7 +112,7 @@ fun FavoritesViewTopBar(
                 query = query,
                 onSearch = onSearch,
                 changeQuery = changeQuery,
-                placeholder = "Search favorites..."
+                placeholder = stringResource(id = R.string.search_placeholder, "Favorites")
             )
         }
     }
@@ -125,10 +127,10 @@ fun FavoritesFilterChips(
     val filters =
         remember {
             listOf(
-                Triple("Title", Icons.Filled.Title, FavoritesSortMode.Title),
-                Triple("Recently Added", Icons.Filled.NewReleases, FavoritesSortMode.RecentlyAdded),
-                Triple("Movies", Icons.Filled.Movie, FavoritesSortMode.Movie),
-                Triple("Shows", Icons.Filled.Tv, FavoritesSortMode.Show)
+                Triple(R.string.title, Icons.Filled.Title, FavoritesSortMode.Title),
+                Triple(R.string.recently_added, Icons.Filled.NewReleases, FavoritesSortMode.RecentlyAdded),
+                Triple(R.string.movies, Icons.Filled.Movie, FavoritesSortMode.Movie),
+                Triple(R.string.shows, Icons.Filled.Tv, FavoritesSortMode.Show)
             )
         }
 
@@ -161,7 +163,7 @@ fun FavoritesFilterChips(
                         )
                     },
                     label = {
-                        Text(text = tag)
+                        Text(text = stringResource(tag))
                     },
                 )
             }

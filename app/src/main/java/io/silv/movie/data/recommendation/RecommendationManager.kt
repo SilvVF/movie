@@ -28,6 +28,16 @@ class RecommendationManager(
         }
     }
 
+    suspend fun removeRecommendation(contentItem: ContentItem, listId: Long) {
+        handler.await {
+            recommendationQueries.deleteFromList(
+                listId = listId,
+                movieId = contentItem.takeIf { it.isMovie }?.contentId,
+                showId = contentItem.takeIf { !it.isMovie }?.contentId
+            )
+        }
+    }
+
     fun refreshListRecommendations(listId: Long) {
         workManager.enqueueUniqueWork(
             RecommendationWorker.WorkInfoTag + listId,

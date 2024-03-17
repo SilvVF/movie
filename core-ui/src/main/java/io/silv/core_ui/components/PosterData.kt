@@ -386,7 +386,6 @@ fun EntryListItem(
     onClick: () -> Unit,
     badge: @Composable (RowScope.() -> Unit),
     endButton: @Composable (() -> Unit)? = null,
-    onEndButtonClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
@@ -420,8 +419,7 @@ fun EntryListItem(
                 Modifier
                     .clip(CircleShape)
                     .padding(ContinueViewingButtonListSpacing)
-                    .size(ContinueViewingButtonSize)
-                    .clickable { onEndButtonClick?.invoke() },
+                    .size(ContinueViewingButtonSize),
                 contentAlignment = Alignment.Center
             ) {
                 button()

@@ -10,7 +10,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.silv.movie.R
 import io.silv.movie.presentation.library.components.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.library.components.BottomSheetHeader
 import io.silv.movie.presentation.library.components.BottomSheetItem
@@ -34,17 +36,17 @@ fun FavoriteOptionsBottomSheet(
                     .padding(vertical = 12.dp)
                ContentPreviewDefaults.LibraryContentPoster(posterModifier)
             },
-            title = { Text("Favorite list") },
+            title = { Text(stringResource(id = R.string.favorites_bottom_sheet_header)) },
             description = { Text("dkjfalksdjfklajsfklj") }
         )
         HorizontalDivider()
         BottomSheetItem(
-            title = { Text("Add to this list") },
+            title = { Text(stringResource(id = R.string.options_add_to_list)) },
             icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
             onClick = onAddClick
         )
         BottomSheetItem(
-            title = { Text("Share") },
+            title = { Text(stringResource(id = R.string.share)) },
             icon = { Icon(imageVector = Icons.Filled.Share, contentDescription = null) },
             onClick = onShareClick
         )

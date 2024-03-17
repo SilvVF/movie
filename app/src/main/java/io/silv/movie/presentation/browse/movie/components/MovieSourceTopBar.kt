@@ -48,14 +48,16 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import cafe.adriel.voyager.navigator.LocalNavigator
-import io.silv.core_ui.components.topbar.SearchBarInputField
-import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.TMDBLogo
 import io.silv.core_ui.components.TooltipIconButton
+import io.silv.core_ui.components.topbar.SearchBarInputField
+import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
+import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.prefrences.PosterDisplayMode
 
@@ -152,7 +154,7 @@ fun ContentBrowseTopBar(
                             else -> Icons.Filled.GridView
                         },
                         contentDescription = null,
-                        tooltip = "Display Mode"
+                        tooltip = stringResource(id = R.string.display_mode)
                     )
                 }
             },
@@ -169,7 +171,12 @@ fun ContentBrowseTopBar(
             SearchBarInputField(
                 query = query(),
                 placeholder = {
-                    Text(remember(isMovie) { "Search for ${if (isMovie) "Movies" else "TV-Shows"}..." })
+                    Text(
+                        text = stringResource(
+                            id = R.string.search_browse_top_bar_hint,
+                            if (isMovie) "Movies" else "TV-Shows"
+                        )
+                    )
                 },
                 onQueryChange = { changeQuery(it) },
                 onSearch = {
@@ -189,7 +196,7 @@ fun ContentBrowseTopBar(
                         IconButton(onClick = { onSearch(query()) }) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
-                                contentDescription = null
+                                contentDescription = stringResource(id = R.string.search)
                             )
                         }
                     }
@@ -213,7 +220,7 @@ fun RowScope.ResourceFilterChips(
             }
         },
         imageVector = Icons.Filled.Movie,
-        tooltip = "Movies",
+        tooltip = stringResource(id = R.string.movies),
         tint = animateColorAsState(
             targetValue = if (isMovie) {
                 MaterialTheme.colorScheme.primary
@@ -230,7 +237,7 @@ fun RowScope.ResourceFilterChips(
             }
         },
         imageVector = Icons.Filled.Tv,
-        tooltip = "TV Shows",
+        tooltip = stringResource(id = R.string.shows),
         contentDescription = null,
         tint = animateColorAsState(
             targetValue = if (!isMovie) {
@@ -252,9 +259,9 @@ fun MovieFilterChips(
     val filters =
         remember {
             listOf(
-                Triple("Popular", Icons.Filled.Whatshot, ContentPagedType.Default.Popular),
-                Triple("Top Rated", Icons.Filled.AutoAwesome, ContentPagedType.Default.TopRated),
-                Triple("Upcoming", Icons.Filled.NewReleases, ContentPagedType.Default.Upcoming)
+                Triple(R.string.popular, Icons.Filled.Whatshot, ContentPagedType.Default.Popular),
+                Triple(R.string.top_rated, Icons.Filled.AutoAwesome, ContentPagedType.Default.TopRated),
+                Triple(R.string.upcoming, Icons.Filled.NewReleases, ContentPagedType.Default.Upcoming)
             )
         }
 
@@ -266,7 +273,9 @@ fun MovieFilterChips(
     }
 
     LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         filters.fastForEach { (tag, icon, type) ->
@@ -284,7 +293,7 @@ fun MovieFilterChips(
                         )
                     },
                     label = {
-                        Text(text = tag)
+                        Text(text = stringResource(tag))
                     },
                 )
             }
@@ -297,11 +306,11 @@ fun MovieFilterChips(
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.FilterList,
-                        contentDescription = null,
+                        contentDescription = stringResource(id = R.string.filter),
                     )
                 },
                 label = {
-                    Text(text = "Filter")
+                    Text(text = stringResource(id = R.string.filter))
                 },
             )
         }
