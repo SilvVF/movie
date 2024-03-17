@@ -84,12 +84,18 @@ class ListViewScreenModel(
             }
         }
 
-        contentListRepository.observeListById(listId)
-            .combine(stateSuccessTrigger) { a, b ->  a  }
-            .onEach { list ->
+        combine(
+                stateSuccessTrigger,
+                contentListRepository.observeListById(listId),
+                contentListRepository.observeListItemsByListId(listId, "", ListSortMode.Title)
+            ) { a, b, c ->  Triple(a, b, c)  }
+            .onEach { ( _, list, content) ->
                 if (list != null) {
                     mutableState.updateSuccess { state ->
-                        state.copy(list = list)
+                        state.copy(
+                            list = list,
+                            allItems = content.toImmutableList()
+                        )
                     }
                 } else {
                     mutableState.value = ListViewState.Error("No list found")

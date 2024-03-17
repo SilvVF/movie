@@ -148,7 +148,7 @@ object ContentPreviewDefaults {
         item: ContentItem
     ) {
         ItemCover.Square(
-            modifier = modifier.fillMaxSize(),
+            modifier = modifier,
             shape = RectangleShape,
             data = remember(item) { item.toPoster() }
         )
