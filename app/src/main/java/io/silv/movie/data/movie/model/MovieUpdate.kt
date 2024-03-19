@@ -4,20 +4,20 @@ import io.silv.movie.core.Status
 
 data class MovieUpdate(
     val movieId: Long,
-    val title: String?,
-    val overview: String?,
-    val genres: List<String>?,
-    val genreIds: List<Int>?,
-    val originalLanguage: String?,
-    val popularity: Double?,
-    val voteCount: Int?,
-    val releaseDate: String?,
-    val externalUrl: String?,
-    val posterUrl: String?,
-    val posterLastUpdated: Long?,
-    val favorite: Boolean?,
-    val status: Status?,
-    val productionCompanies: List<String>?
+    val title: String? = null,
+    val overview: String? = null,
+    val genres: List<String>? = null,
+    val genreIds: List<Int>? = null,
+    val originalLanguage: String? = null,
+    val popularity: Double? = null,
+    val voteCount: Int? = null,
+    val releaseDate: String? = null,
+    val externalUrl: String? = null,
+    val posterUrl: String? = null,
+    val posterLastUpdated: Long? = null,
+    val favorite: Boolean? = null,
+    val status: Status? = null,
+    val productionCompanies: List<String>? = null,
 )
 
 fun Movie.toMovieUpdate(): MovieUpdate {

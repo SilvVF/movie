@@ -1,6 +1,8 @@
 package io.silv.movie.data.lists
 
 import android.os.Parcelable
+import io.silv.movie.data.movie.model.MoviePoster
+import io.silv.movie.data.tv.model.TVShowPoster
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -18,6 +20,36 @@ data class ContentListUpdate(
     val id: Long,
     val name: String?
 )
+
+fun MoviePoster.toContentItem(): ContentItem {
+    val it = this
+    return ContentItem(
+        title = it.title,
+        isMovie = true,
+        contentId = it.id,
+        posterUrl = it.posterUrl,
+        posterLastUpdated = it.posterLastUpdated,
+        favorite = it.favorite,
+        lastModified = -1L,
+        description = "",
+        popularity = 0.0
+    )
+}
+
+fun TVShowPoster.toContentItem(): ContentItem {
+    val it = this
+    return ContentItem(
+        title = it.title,
+        isMovie = false,
+        contentId = it.id,
+        posterUrl = it.posterUrl,
+        posterLastUpdated = it.posterLastUpdated,
+        favorite = it.favorite,
+        lastModified = -1L,
+        description = "",
+        popularity = 0.0
+    )
+}
 
 data class ContentItem(
     val contentId: Long,

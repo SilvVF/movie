@@ -1,9 +1,12 @@
 package io.silv.movie
 
 import android.app.Application
+import android.os.Build.VERSION.SDK_INT
 import android.provider.Settings
 import coil.ImageLoader
 import coil.ImageLoaderFactory
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
@@ -61,6 +64,11 @@ class App: Application(), ImageLoaderFactory {
                         tvShowCoverCache
                     ),
                 )
+                if (SDK_INT >= 28) {
+                    add(ImageDecoderDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
             }
             .crossfade(
                     300 *

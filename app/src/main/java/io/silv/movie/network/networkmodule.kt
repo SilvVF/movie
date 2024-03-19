@@ -2,6 +2,17 @@ package io.silv.movie.network
 
 import com.google.net.cronet.okhttptransport.CronetCallFactory
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.compose.auth.ComposeAuth
+import io.github.jan.supabase.compose.auth.composeAuth
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.postgrest
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.okhttp.OkHttp
+import io.silv.movie.BuildConfig
 import io.silv.movie.core.MB
 import io.silv.movie.core.toBytes
 import io.silv.movie.network.ratelimit.rateLimit
@@ -34,6 +45,23 @@ val networkModule =
                 isLenient = true
             }
         }
+
+        single { HttpClient(OkHttp) }
+
+        single<SupabaseClient> {
+            createSupabaseClient(
+                supabaseUrl = BuildConfig.SUPABASE_URL,
+                supabaseKey =  BuildConfig.SUPABSE_ANON_KEY,
+            ) {
+                install(Postgrest)
+                install(Auth)
+                install(ComposeAuth)
+            }
+        }
+
+        single<Auth> { get<SupabaseClient>().auth }
+        single<Postgrest> { get<SupabaseClient>().postgrest }
+        single<ComposeAuth> { get<SupabaseClient>().composeAuth }
 
         single<TMDBClient> {
             OkHttpClient()

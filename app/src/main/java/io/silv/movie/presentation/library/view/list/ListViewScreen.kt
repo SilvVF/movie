@@ -30,6 +30,7 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.library.ListAddScreen
 import io.silv.movie.presentation.library.ListEditScreen
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
@@ -111,6 +112,7 @@ data class ListViewScreen(
                         else
                             navigator.push(TVViewScreen(item.contentId))
                     },
+                    startAddingClick = { navigator.push(ListAddScreen(listId)) },
                     state = s
                 )
 
@@ -136,7 +138,7 @@ data class ListViewScreen(
                     ListViewScreenModel.Dialog.ListOptions -> {
                         ListOptionsBottomSheet(
                             onDismissRequest = onDismissRequest,
-                            onAddClick = {},
+                            onAddClick = { navigator.push(ListAddScreen(listId)) },
                             onEditClick = { screenResultLauncher.launch() },
                             onDeleteClick = { changeDialog(ListViewScreenModel.Dialog.DeleteList) },
                             onShareClick = {},
@@ -174,6 +176,7 @@ private fun SuccessScreenContent(
     onRecommendationLongClick: (item: ContentItem) -> Unit,
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
+    startAddingClick: () -> Unit,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
@@ -212,6 +215,7 @@ private fun SuccessScreenContent(
                     paddingValues = paddingValues,
                     onRefreshClick = refreshRecommendations,
                     refreshingRecommendations = state.refreshingRecommendations,
+                    startAddingClick = startAddingClick,
                     modifier = Modifier
                         .haze(
                             state = hazeState,
@@ -234,6 +238,7 @@ private fun SuccessScreenContent(
                     onAddRecommendation = onAddRecommendation,
                     onRecommendationClick = onRecommendationClick,
                     onRecommendationLongClick = onRecommendationLongClick,
+                    startAddingClick = startAddingClick,
                     modifier = Modifier
                         .haze(
                             state = hazeState,

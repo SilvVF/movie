@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.view.movie
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -15,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,8 +37,11 @@ import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.toPoster
+import io.silv.movie.presentation.view.MovieCoverScreenModel
+import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.components.ExpandableMovieDescription
 import io.silv.movie.presentation.view.components.MovieInfoBox
+import io.silv.movie.presentation.view.components.PosterCoverDialog
 import io.silv.movie.presentation.view.components.VideoMediaItem
 import org.koin.core.parameter.parametersOf
 
@@ -47,7 +53,9 @@ data class MovieViewScreen(
     override fun Content() {
         val screenModel = getScreenModel<MovieViewScreenModel> { parametersOf(id) }
         val mainScreenModel = getActivityViewModel<PlayerViewModel>()
-
+        val changeDialog = remember {
+            { dialog: MovieViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
+        }
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
             MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
                 Icon(
@@ -65,8 +73,41 @@ data class MovieViewScreen(
                 MovieDetailsContent(
                     state = state,
                     refresh = screenModel::refresh,
+                    onPosterClick = { changeDialog(MovieViewScreenModel.Dialog.FullCover) },
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue
                 )
+                val onDismissRequest =  { changeDialog(null) }
+                when (state.dialog) {
+                    null -> Unit
+                    MovieViewScreenModel.Dialog.FullCover -> {
+                        val sm = getScreenModel<MovieCoverScreenModel> { parametersOf(state.movie.id) }
+                        val movie by sm.state.collectAsStateWithLifecycle()
+                        val context = LocalContext.current
+
+                        if (movie != null) {
+                            val getContent = rememberLauncherForActivityResult(
+                                ActivityResultContracts.GetContent(),
+                            ) {
+                                if (it == null) return@rememberLauncherForActivityResult
+                                sm.editCover(context, it)
+                            }
+                            PosterCoverDialog(
+                                coverDataProvider = { movie!!.toPoster() },
+                                isCustomCover = remember(movie) { sm.hasCustomCover(movie!!) },
+                                onShareClick = { sm.shareCover(context) },
+                                onSaveClick = { sm.saveCover(context) },
+                                snackbarHostState = sm.snackbarHostState,
+                                onEditClick = {
+                                    when (it) {
+                                        EditCoverAction.EDIT -> getContent.launch("image/*")
+                                        EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    }
+                                },
+                                onDismissRequest = onDismissRequest,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -76,6 +117,7 @@ data class MovieViewScreen(
 fun MovieDetailsContent(
     state: MovieDetailsState.Success,
     refresh: () -> Unit,
+    onPosterClick: () -> Unit,
     onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: Long) -> Unit
 ) {
     Scaffold { paddingValues ->
@@ -127,7 +169,7 @@ fun MovieDetailsContent(
                             isStubSource = false,
                             coverDataProvider = { state.movie.toPoster() },
                             status = state.movie.status,
-                            onCoverClick = { },
+                            onCoverClick = onPosterClick,
                             doSearch = { _, _ -> },
                         )
                     }

@@ -63,7 +63,7 @@ class LibraryScreenModel(
 
                 val grouped = contentListItems
                     .groupBy { item -> item.list }
-                    .mapValues { (_, items) -> items.toImmutableList() }
+                    .mapValues { (_, items) -> items.sortedByDescending { (it as? ContentListItem.Item)?.contentItem?.title.orEmpty() }.toImmutableList() }
                     .applySorting(sortMode)
                     .toImmutableList()
 

@@ -48,12 +48,38 @@ fun ContentListPosterList(
     recommendations: ImmutableList<ContentItem> = persistentListOf(),
     refreshingRecommendations: Boolean = false,
     onRefreshClick: () -> Unit = {},
+    startAddingClick: () -> Unit = {},
     showFavorite: Boolean = true,
 ) {
     FastScrollLazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = paddingValues
     ) {
+        if (items.isEmpty()) {
+            item(key = "Empty-hint") {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        modifier = Modifier.padding(6.dp),
+                        text = stringResource(id = R.string.empty_list_hint),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Button(
+                        onClick = startAddingClick,
+                        modifier = Modifier.padding(6.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.add_to_list),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
         items(items, { it.itemKey }) {
             Box(Modifier.animateItemPlacement()) {
                 ContentListItem(
@@ -139,7 +165,7 @@ fun ContentListPosterList(
 }
 
 @Composable
-private fun ContentListItem(
+fun ContentListItem(
     title: String,
     favorite: Boolean,
     poster: PosterData,

@@ -51,8 +51,9 @@ SELECT * FROM movie WHERE favorite AND (title LIKE :query OR :query = '');
 selectById:
 SELECT * FROM movie WHERE id = :id LIMIT 1;
 
+
 selectMoviePartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite FROM movie WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:
 SELECT * FROM movie;

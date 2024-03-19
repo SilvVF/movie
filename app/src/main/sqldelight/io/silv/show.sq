@@ -57,7 +57,7 @@ selectAll:
 SELECT * FROM show;
 
 selectShowPartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite FROM show WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity FROM show WHERE id = :id LIMIT 1;
 
 insert:
 INSERT OR IGNORE INTO show(id, title, overview, genres, genre_ids, original_language, vote_count, release_date, poster_url, poster_last_updated, favorite, external_url, popularity, status)

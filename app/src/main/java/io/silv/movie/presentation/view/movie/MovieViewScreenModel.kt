@@ -139,6 +139,14 @@ class MovieViewScreenModel(
         }
     }
 
+    fun updateDialog(dialog: Dialog?) {
+        screenModelScope.launch {
+            mutableState.updateSuccess {state ->
+                state.copy(dialog = dialog)
+            }
+        }
+    }
+
     fun toggleMovieFavorite(movie: Movie) {
         screenModelScope.launch {
             val update = movie.copy(favorite = !movie.favorite).toMovieUpdate()
@@ -161,6 +169,13 @@ class MovieViewScreenModel(
             mutableState.updateSuccess { it.copy(refreshing = false) }
         }
     }
+
+    @Stable
+    sealed interface Dialog {
+
+        @Stable
+        data object FullCover: Dialog
+    }
 }
 
 
@@ -176,7 +191,8 @@ sealed class MovieDetailsState {
     data class Success(
         val movie: Movie,
         val trailers: ImmutableList<Trailer> = persistentListOf(),
-        val refreshing: Boolean = false
+        val refreshing: Boolean = false,
+        val dialog: MovieViewScreenModel.Dialog? = null
     ): MovieDetailsState()
 
     val success

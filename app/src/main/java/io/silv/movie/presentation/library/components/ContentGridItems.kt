@@ -3,6 +3,7 @@ package io.silv.movie.presentation.library.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -22,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -137,6 +139,7 @@ fun ContentListPosterGrid(
     showFavorite: Boolean = true,
     recommendations: ImmutableList<ContentItem> = persistentListOf(),
     refreshingRecommendations: Boolean = false,
+    startAddingClick: () -> Unit = {},
     onRefreshClick: () -> Unit = {}
 ) {
     val gridState = rememberLazyGridState()
@@ -154,6 +157,31 @@ fun ContentListPosterGrid(
             contentPadding = paddingValues,
             modifier = modifier,
         ) {
+            if (items.isEmpty()) {
+                item(key = "Empty-hint", span = { GridItemSpan(maxLineSpan) }) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            modifier = Modifier.padding(6.dp),
+                            text = stringResource(id = R.string.empty_list_hint),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Button(
+                            onClick = startAddingClick,
+                            modifier = Modifier.padding(6.dp)
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.add_to_list),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
             items(items, { it.itemKey }) {
                 val poster = remember(it) { it.toPoster() }
                 val favorite = showFavorite && it.favorite
@@ -201,7 +229,7 @@ fun ContentListPosterGrid(
                     }
                 }
             }
-            item(span = { GridItemSpan(maxCurrentLineSpan) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(
                     modifier = Modifier.padding(22.dp)
                 ) {
@@ -274,7 +302,7 @@ fun ContentListPosterGrid(
                     }
                 }
             }
-            item(key = "recommendation-refresh", span = { GridItemSpan(maxCurrentLineSpan) }) {
+            item(key = "recommendation-refresh", span = { GridItemSpan(maxLineSpan) }) {
                 Button(
                     onClick = onRefreshClick,
                     enabled = !refreshingRecommendations

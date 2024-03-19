@@ -45,6 +45,7 @@ import io.silv.movie.presentation.home.BrowseTab
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
+import io.silv.movie.presentation.profile.ProfileTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -170,7 +171,8 @@ fun AppBottomBar(
     val tabs = remember {
         persistentListOf(
             LibraryTab,
-            BrowseTab
+            BrowseTab,
+            ProfileTab
         )
     }
     BottomAppBar(

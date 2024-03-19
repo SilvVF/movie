@@ -6,6 +6,8 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentListMapper
+import io.silv.movie.data.recommendation.RecommendationWorker.Companion.DEFAULT_MAX_SIZE
+import io.silv.movie.data.recommendation.RecommendationWorker.Companion.DEFAULT_MIN_TAKE_SIZE
 import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -38,19 +40,19 @@ class RecommendationManager(
         }
     }
 
-    fun refreshListRecommendations(listId: Long) {
+    fun refreshListRecommendations(listId: Long, amount: Int = DEFAULT_MAX_SIZE, perItem: Int = DEFAULT_MIN_TAKE_SIZE) {
         workManager.enqueueUniqueWork(
             RecommendationWorker.WorkInfoTag + listId,
             ExistingWorkPolicy.KEEP,
-            RecommendationWorker.workRequest(listId)
+            RecommendationWorker.workRequest(listId, amount, perItem)
         )
     }
 
-    fun refreshFavoritesRecommendations() {
+    fun refreshFavoritesRecommendations(amount: Int = DEFAULT_MAX_SIZE, perItem: Int = DEFAULT_MIN_TAKE_SIZE) {
         workManager.enqueueUniqueWork(
             RecommendationWorker.WorkInfoTag,
             ExistingWorkPolicy.KEEP,
-            RecommendationWorker.workRequest(-1L)
+            RecommendationWorker.workRequest(-1L, amount, perItem)
         )
     }
 }

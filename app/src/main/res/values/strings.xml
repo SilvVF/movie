@@ -68,6 +68,8 @@
     <string name="unknown">Unknown</string>
     <string name="scroll_to_top">Scroll to top</string>
     <string name="player_error">Network error</string>
+    <string name="empty_list_hint">Let\'s start building your list</string>
+    <string name="add_to_list">Add to this list</string>
 
     <string name="status_returning">Returning Series</string>
     <string name="status_planned">Planned</string>
@@ -80,4 +82,11 @@
     <string name="status_released">Released</string>
     <string name="status_none">None</string>
     <string name="tmdb">TMDB</string>
+    <string name="edit">edit\n</string>
+    <string name="delete">delete\n</string>
+    <string name="cover_updated">poster updated</string>
+    <string name="notification_cover_update_failed">poster update failed</string>
+    <string name="profile_tab_title">" Profile"</string>
+    <string name="sign_in_success">Signed in successfully</string>
+    <string name="reset_password_title">Enter the email associated with the account to reset</string>
 </resources>

@@ -7,9 +7,13 @@ import io.silv.movie.data.dataModule
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
+import io.silv.movie.presentation.library.ListAddScreenModel
 import io.silv.movie.presentation.library.browse.LibraryScreenModel
 import io.silv.movie.presentation.library.view.favorite.FavoritesScreenModel
 import io.silv.movie.presentation.library.view.list.ListViewScreenModel
+import io.silv.movie.presentation.profile.ProfileScreenModel
+import io.silv.movie.presentation.view.ImageSaver
+import io.silv.movie.presentation.view.MovieCoverScreenModel
 import io.silv.movie.presentation.view.movie.MovieViewScreenModel
 import io.silv.movie.presentation.view.tv.TVViewScreenModel
 import kotlinx.serialization.json.Json
@@ -39,9 +43,17 @@ val appModule =
 
         factoryOf(::ListViewScreenModel)
 
+        factoryOf(::ListAddScreenModel)
+
+        factoryOf(::MovieCoverScreenModel)
+
+        factoryOf(::ProfileScreenModel)
+
         singleOf(::MovieCoverCache)
 
         singleOf(::TVShowCoverCache)
+
+        singleOf(::ImageSaver)
 
         singleOf(::RecommendationManager)
 

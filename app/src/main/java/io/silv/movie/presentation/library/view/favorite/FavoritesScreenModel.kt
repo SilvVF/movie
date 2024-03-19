@@ -56,7 +56,7 @@ class FavoritesScreenModel(
     val state = combine(
             snapshotFlow { query },
             sortModeFavorites.stateIn(screenModelScope),
-            recommendationManager.subscribe(-1L),
+            recommendationManager.subscribe(-1L).map { it.take(6) },
             recommendationManager.isRunning(-1L),
         ) { a: String, b: FavoritesSortMode, c: List<ContentItem>, d: Boolean -> Quad(a, b, c, d) }
         .flatMapLatest { (query, sortMode, recommendations, refreshing) ->

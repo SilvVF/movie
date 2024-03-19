@@ -15,6 +15,15 @@ class UpdateMovie(
         return movieRepository.updateMovie(movieUpdate)
     }
 
+    suspend fun awaitUpdateCoverLastModified(id: Long): Boolean {
+        return movieRepository.updateMovie(
+            MovieUpdate(
+                movieId = id,
+                posterLastUpdated = Clock.System.now().toEpochMilliseconds()
+            )
+        )
+    }
+
     suspend fun awaitUpdateFromSource(
         local: Movie,
         network: SMovie,

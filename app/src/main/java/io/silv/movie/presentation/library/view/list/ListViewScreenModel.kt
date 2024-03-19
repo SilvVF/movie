@@ -130,7 +130,7 @@ class ListViewScreenModel(
         var refreshed = false
         combine(
             stateSuccessTrigger,
-            recommendationManager.subscribe(listId),
+            recommendationManager.subscribe(listId).map { it.take(6) },
             recommendationManager.isRunning(listId)
         ) { _, recommendations, isRunning ->
 

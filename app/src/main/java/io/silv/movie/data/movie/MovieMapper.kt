@@ -48,16 +48,18 @@ object MovieMapper {
     val mapMoviePoster =
         { id: Long,
           title: String,
-          posterUrl: String?,
-          posterLastUpdated: Long,
+          poster_url: String?,
+          poster_last_updated: Long,
           favorite: Boolean,
+          last_modified_at: Long,
+          popularity: Double
          ->
             MoviePoster(
                 id = id,
                 title = title,
-                posterUrl  = posterUrl,
+                posterUrl  = poster_url,
                 favorite = favorite,
-                posterLastUpdated = posterLastUpdated,
+                posterLastUpdated = poster_last_updated,
             )
         }
 }

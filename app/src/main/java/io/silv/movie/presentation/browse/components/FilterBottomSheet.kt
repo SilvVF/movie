@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -139,7 +139,10 @@ fun FilterBottomSheet(
                     search = { onApplyFilter() }
                 )
                 FilterDropDown(label = stringResource(id = R.string.genres)) {
-                    FlowRow {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                         genres.fastForEach { (selected, genre) ->
                             FilterChipWrapper(
                                 selected = selected,
@@ -151,7 +154,10 @@ fun FilterBottomSheet(
                 }
                 FilterDropDown(label = stringResource(id = R.string.sort)) {
                     val items = remember { SortingOption.entries }
-                    FlowRow {
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
                        items.fastForEach {
                             FilterChipWrapper(
                                 selected = selectedSortingOption == it,
@@ -220,10 +226,10 @@ private fun ToggleItem(
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Checkbox(
+        RadioButton(
             enabled = true,
-            onCheckedChange = onCheckChange,
-            checked = checked
+            onClick = { onCheckChange(!checked) },
+            selected = checked
         )
         Spacer(Modifier.padding(12.dp))
         Text(label)

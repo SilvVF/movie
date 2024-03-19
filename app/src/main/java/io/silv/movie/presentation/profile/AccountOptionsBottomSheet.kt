@@ -1,0 +1,41 @@
+package io.silv.movie.presentation.profile
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import io.silv.movie.presentation.library.components.BottomSheetItem
+
+@Composable
+fun AccountOptionsBottomSheet(
+    resetPasswordClick: () -> Unit,
+    onDismiss: () -> Unit
+) {
+   ModalBottomSheet(
+       onDismissRequest = onDismiss,
+       windowInsets = WindowInsets(0, 0 ,0,0)
+   ) {
+       Surface {
+           Column {
+               BottomSheetItem(
+                   title = { Text("Reset Password") },
+                   icon = { Icon(imageVector = Icons.AutoMirrored.Filled.Logout, null) },
+                   onClick = resetPasswordClick
+               )
+               Spacer(
+                   modifier = Modifier
+                       .windowInsetsPadding(WindowInsets.systemBars)
+               )
+           }
+       }
+   }
+}

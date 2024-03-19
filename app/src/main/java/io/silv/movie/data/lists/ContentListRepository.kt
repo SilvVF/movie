@@ -87,7 +87,11 @@ class ContentListRepositoryImpl(
         return handler.awaitList { contentListJunctionQueries.selectByListId(id, "", "", ContentListMapper.mapItem) }
     }
 
-    override fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>> {
+    override fun observeListItemsByListId(
+        id: Long,
+        query: String,
+        sortMode: ListSortMode,
+    ): Flow<List<ContentItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
         return handler.subscribeToList {
             when(sortMode) {

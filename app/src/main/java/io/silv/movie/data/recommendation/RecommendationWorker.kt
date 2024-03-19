@@ -168,8 +168,8 @@ class RecommendationWorker(
         private const val KEY_LIST_ID = "key_list_id"
         private const val KEY_MAX_SIZE = "key_take_size"
         private const val KEY_TAKE_SIZE = "key_max_size"
-        private const val DEFAULT_MAX_SIZE = 6
-        private const val DEFAULT_MIN_TAKE_SIZE = 3
+        const val DEFAULT_MAX_SIZE = 6
+        const val DEFAULT_MIN_TAKE_SIZE = 3
 
         fun workRequest(
             listId: Long? = null,

@@ -52,6 +52,9 @@ android {
     buildTypes.onEach { buildType ->
         buildType.buildConfigField("String", "TMDB_API_KEY", properties.getProperty("TMDB_API_KEY"))
         buildType.buildConfigField("String", "TMDB_ACCESS_TOKEN", properties.getProperty("TMDB_ACCESS_TOKEN"))
+        buildType.buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
+        buildType.buildConfigField("String", "SUPABSE_ANON_KEY", properties.getProperty("SUPABSE_ANON_KEY"))
+        buildType.buildConfigField("String", "SUPABASE_SERVICE_ROLE", properties.getProperty("SUPABASE_SERVICE_ROLE"))
     }
 
     compileOptions {
@@ -120,6 +123,7 @@ dependencies {
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)
+    implementation(libs.coil.gif)
 
     // Media3
     implementation(libs.androidx.media3.exoplayer)
@@ -168,6 +172,15 @@ dependencies {
 
     // Work Manager
     implementation(libs.androidx.work.runtime.ktx)
+
+
+    // Supbase
+    implementation(platform("io.github.jan-tennert.supabase:bom:2.2.2"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.ktor:ktor-client-okhttp:2.3.8")
+    implementation("io.github.jan-tennert.supabase:gotrue-kt")
+    implementation("io.github.jan-tennert.supabase:compose-auth")
+    implementation("io.github.jan-tennert.supabase:compose-auth-ui")
 
 }
 
