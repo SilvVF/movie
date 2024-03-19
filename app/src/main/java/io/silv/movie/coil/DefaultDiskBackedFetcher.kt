@@ -67,6 +67,8 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                     memCacheKey = memCacheKey,
                     memCache = memCache
                 )
+
+
                 return@Fetcher overrideData
             }
 

@@ -78,6 +78,7 @@ cronetApi = "119.6045.31"
 cronetOkhttp = "0.1.0"
 media3DatasourceCronet = "1.2.1"
 media3ExoplayerHls = "1.2.1"
+zoomableImageCoil = "0.8.0"
 
 [libraries]
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
@@ -191,6 +192,7 @@ cronet-api = { group = "org.chromium.net", name = "cronet-api", version.ref = "c
 cronet-okhttp = { group = "com.google.net.cronet", name = "cronet-okhttp", version.ref = "cronetOkhttp" }
 androidx-media3-datasource-cronet = { group = "androidx.media3", name = "media3-datasource-cronet", version.ref = "media3DatasourceCronet" }
 androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "media3ExoplayerHls" }
+zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }

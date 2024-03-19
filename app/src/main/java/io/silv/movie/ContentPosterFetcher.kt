@@ -70,7 +70,9 @@ class ContentPosterFetcher(
                 return SourceResult(
                     source = ImageSource(
                         file = customCoverFile.toOkioPath(),
-                        diskCacheKey = keyer.key(data, options)
+                        diskCacheKey = keyer.key(data, options).takeIf {
+                            !(options.parameters.value(DISABLE_KEYS) ?: false)
+                        }
                     ),
                     mimeType = "image/*",
                     dataSource = DataSource.DISK,
@@ -106,6 +108,7 @@ class ContentPosterFetcher(
 
     companion object {
         const val USE_CUSTOM_COVER = "use_custom_cover"
+        const val DISABLE_KEYS = "disable_keys"
 
         private val CACHE_CONTROL_NO_STORE = CacheControl.Builder().noStore().build()
         private val CACHE_CONTROL_NO_NETWORK_NO_CACHE = CacheControl.Builder().noCache().onlyIfCached().build()
