@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.view.tv
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
@@ -15,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,8 +34,11 @@ import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.toPoster
+import io.silv.movie.presentation.view.TVCoverScreenModel
+import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.components.ExpandableMovieDescription
 import io.silv.movie.presentation.view.components.MovieInfoBox
+import io.silv.movie.presentation.view.components.PosterCoverDialog
 import io.silv.movie.presentation.view.components.VideoMediaItem
 import org.koin.core.parameter.parametersOf
 
@@ -44,7 +50,9 @@ data class TVViewScreen(
     override fun Content() {
         val screenModel = getScreenModel<TVViewScreenModel> { parametersOf(id) }
         val mainScreenModel = getActivityViewModel<PlayerViewModel>()
-
+        val changeDialog = remember {
+            { dialog: TVViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
+        }
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
             ShowDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
                 Icon(
@@ -62,8 +70,41 @@ data class TVViewScreen(
                 TVDetailsContent(
                     state = state,
                     refresh = screenModel::refresh,
+                    onPosterClick = { changeDialog(TVViewScreenModel.Dialog.FullCover) },
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue
                 )
+                val onDismissRequest =  { changeDialog(null) }
+                when (state.dialog) {
+                    null -> Unit
+                    TVViewScreenModel.Dialog.FullCover -> {
+                        val sm = getScreenModel<TVCoverScreenModel> { parametersOf(state.show.id) }
+                        val tvShow by sm.state.collectAsStateWithLifecycle()
+                        val context = LocalContext.current
+
+                        if (tvShow != null) {
+                            val getContent = rememberLauncherForActivityResult(
+                                ActivityResultContracts.GetContent(),
+                            ) {
+                                if (it == null) return@rememberLauncherForActivityResult
+                                sm.editCover(context, it)
+                            }
+                            PosterCoverDialog(
+                                coverDataProvider = { tvShow!!.toPoster() },
+                                isCustomCover = remember(tvShow) { sm.hasCustomCover(tvShow!!) },
+                                onShareClick = { sm.shareCover(context) },
+                                onSaveClick = { sm.saveCover(context) },
+                                snackbarHostState = sm.snackbarHostState,
+                                onEditClick = {
+                                    when (it) {
+                                        EditCoverAction.EDIT -> getContent.launch("image/*")
+                                        EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    }
+                                },
+                                onDismissRequest = onDismissRequest,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -73,6 +114,7 @@ data class TVViewScreen(
 fun TVDetailsContent(
     state: ShowDetailsState.Success,
     refresh: () -> Unit,
+    onPosterClick: () -> Unit,
     onVideoThumbnailClick: (showId: Long, isMovie: Boolean, trailerId: Long) -> Unit
 ) {
     Scaffold { paddingValues ->
@@ -117,7 +159,7 @@ fun TVDetailsContent(
                             isStubSource = false,
                             coverDataProvider = { state.show.toPoster() },
                             status = state.show.status,
-                            onCoverClick = {  },
+                            onCoverClick = onPosterClick,
                             doSearch = { _, _ -> },
                         )
                     }

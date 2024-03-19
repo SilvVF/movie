@@ -14,6 +14,7 @@ import io.silv.movie.presentation.library.view.list.ListViewScreenModel
 import io.silv.movie.presentation.profile.ProfileScreenModel
 import io.silv.movie.presentation.view.ImageSaver
 import io.silv.movie.presentation.view.MovieCoverScreenModel
+import io.silv.movie.presentation.view.TVCoverScreenModel
 import io.silv.movie.presentation.view.movie.MovieViewScreenModel
 import io.silv.movie.presentation.view.tv.TVViewScreenModel
 import kotlinx.serialization.json.Json
@@ -48,6 +49,8 @@ val appModule =
         factoryOf(::MovieCoverScreenModel)
 
         factoryOf(::ProfileScreenModel)
+
+        factoryOf(::TVCoverScreenModel)
 
         singleOf(::MovieCoverCache)
 

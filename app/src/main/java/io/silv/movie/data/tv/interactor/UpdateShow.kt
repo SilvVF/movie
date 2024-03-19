@@ -16,6 +16,15 @@ class UpdateShow(
         return showRepository.updateShow(showUpdate)
     }
 
+    suspend fun awaitUpdateCoverLastModified(id: Long): Boolean {
+        return showRepository.updateShow(
+            TVShowUpdate(
+                showId = id,
+                posterLastUpdated = Clock.System.now().toEpochMilliseconds()
+            )
+        )
+    }
+
     suspend fun awaitUpdateFromSource(
         local: TVShow,
         network: STVShow,

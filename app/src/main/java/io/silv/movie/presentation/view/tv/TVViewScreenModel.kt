@@ -151,6 +151,15 @@ class TVViewScreenModel(
         }
     }
 
+    fun updateDialog(dialog: Dialog?) {
+        screenModelScope.launch {
+            mutableState.updateSuccess {state ->
+                state.copy(dialog = dialog)
+            }
+        }
+    }
+
+
     fun refresh() {
         screenModelScope.launch {
 
@@ -164,6 +173,13 @@ class TVViewScreenModel(
 
             mutableState.updateSuccess { it.copy(refreshing = false) }
         }
+    }
+
+    @Stable
+    sealed interface Dialog {
+
+        @Stable
+        data object FullCover: Dialog
     }
 }
 
@@ -180,7 +196,8 @@ sealed class ShowDetailsState {
     data class Success(
         val show: TVShow,
         val trailers: ImmutableList<Trailer> = persistentListOf(),
-        val refreshing: Boolean = false
+        val refreshing: Boolean = false,
+        val dialog: TVViewScreenModel.Dialog? = null,
     ): ShowDetailsState()
 
     val success
