@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
@@ -48,6 +49,9 @@ import org.koin.core.parameter.parametersOf
 data class MovieViewScreen(
     val id: Long,
 ): Screen {
+
+    override val key: ScreenKey
+        get() = super.key + id
 
     @Composable
     override fun Content() {
@@ -91,8 +95,9 @@ data class MovieViewScreen(
                                 if (it == null) return@rememberLauncherForActivityResult
                                 sm.editCover(context, it)
                             }
+                            val poster = remember(movie) { movie!!.toPoster() }
                             PosterCoverDialog(
-                                coverDataProvider = { movie!!.toPoster() },
+                                coverDataProvider = { poster },
                                 isCustomCover = remember(movie) { sm.hasCustomCover(movie!!) },
                                 onShareClick = { sm.shareCover(context) },
                                 onSaveClick = { sm.saveCover(context) },

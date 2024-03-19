@@ -94,8 +94,7 @@ class RecommendationWorker(
                     for (smovie in movieRecommendations) {
                         if (taken == maxSize) { break }
 
-                        val movie = smovie.toDomain()
-                        networkToLocalMovie.await(movie)
+                        val movie = networkToLocalMovie.await(smovie.toDomain())
                         recommendationQueries.insert(listId, movie.id, null)
                         Timber.d("inserted recommendation movie ${movie.id}")
                         taken++
@@ -109,8 +108,7 @@ class RecommendationWorker(
                     for (sshow in showRecommendations) {
                         if (taken == maxSize) { break }
 
-                        val show = sshow.toDomain()
-                        networkToLocalTVShow.await(show)
+                        val show = networkToLocalTVShow.await(sshow.toDomain())
                         recommendationQueries.insert(listId,null, show.id)
                         Timber.d("inserted recommendation show ${show.id}")
                         taken++

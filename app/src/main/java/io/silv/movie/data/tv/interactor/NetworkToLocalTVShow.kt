@@ -17,7 +17,7 @@ class NetworkToLocalTVShow(
             !localShow.favorite ->
                 localShow.copy(
                     title = show.title
-                    )
+                )
             else -> localShow
         }
     }

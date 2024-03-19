@@ -86,9 +86,9 @@ class TVCoverScreenModel(
      * @return the uri to saved file
      */
     private suspend fun saveCoverInternal(context: Context, temp: Boolean): Uri? {
-        val movie = state.value ?: return null
+        val show = state.value ?: return null
         val req = ImageRequest.Builder(context)
-            .data(movie.toPoster())
+            .data(show.toPoster())
             .size(Size.ORIGINAL)
             .build()
 
@@ -99,7 +99,7 @@ class TVCoverScreenModel(
             imageSaver.save(
                 Image.Cover(
                     bitmap = bitmap,
-                    name = movie.title,
+                    name = show.title,
                     location = if (temp) Location.Cache else Location.Pictures.create(),
                 ),
             )
@@ -113,11 +113,11 @@ class TVCoverScreenModel(
      * @param data uri of the cover resource.
      */
     fun editCover(context: Context, data: Uri) {
-        val movie = state.value ?: return
+        val show = state.value ?: return
         ioCoroutineScope.launch {
             context.contentResolver.openInputStream(data)?.use {
                 try {
-                    movie.editCover(it, updateShow, coverCache)
+                    show.editCover(it, updateShow, coverCache)
                     notifyCoverUpdated(context)
                 } catch (e: Exception) {
                     notifyFailedCoverUpdate(context, e)

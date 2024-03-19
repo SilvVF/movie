@@ -19,7 +19,7 @@ clearByListId:
 DELETE FROM recommendation WHERE list_id = :id;
 
 selectRecommendationContentByListId:
-SELECT DISTINCT
+SELECT
      recommendation.movie_id AS movieId,
      recommendation.show_id AS showId,
      COALESCE(m.title, s.title) AS title,

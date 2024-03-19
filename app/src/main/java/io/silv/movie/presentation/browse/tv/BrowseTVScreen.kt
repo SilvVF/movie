@@ -79,7 +79,7 @@ data class BrowseTVScreen(
             pagingFlowFlow = { screenModel.tvPagerFlowFlow },
             displayMode = { screenModel.displayMode },
             gridCellsCount = { screenModel.gridCells },
-            query = { state.query },
+            query = { screenModel.query },
             listing = { state.listing },
             changeDialog = screenModel::changeDialog,
             actions = TVActions(

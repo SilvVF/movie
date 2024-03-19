@@ -4,7 +4,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -66,13 +68,17 @@ class MovieScreenModel(
     var gridCells by tmdbPreferences.gridCellsCount().asState(screenModelScope)
         private set
 
+    var query by mutableStateOf("")
+        private set
+
+
     init {
         screenModelScope.launch {
             val genres = sourceRepository.getSourceGenres().map { it.toDomain() }.toImmutableList()
             mutableState.update {state -> state.copy(genres = genres) }
         }
 
-        state.map { it.query }
+        snapshotFlow { query }
             .debounce(1000)
             .onEach {
                 if (it.isNotBlank()) {
@@ -116,9 +122,7 @@ class MovieScreenModel(
     }
 
     fun changeQuery(query: String) {
-        screenModelScope.launch {
-            mutableState.update { state -> state.copy(query = query) }
-        }
+        this.query = query
     }
 
     fun changeDisplayMode(mode: PosterDisplayMode) {
@@ -243,7 +247,6 @@ class MovieScreenModel(
 @Stable
 data class MovieState(
     val listing: ContentPagedType = ContentPagedType.Default.Popular,
-    val query: String = "",
     val dialog: MovieScreenModel.Dialog? = null,
     val genres: ImmutableList<Genre> = persistentListOf(),
     val filters: Filters = Filters.default

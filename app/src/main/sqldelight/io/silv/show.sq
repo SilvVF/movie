@@ -81,7 +81,7 @@ UPDATE show SET
     external_url = COALESCE(:externalUrl, external_url),
     popularity = COALESCE(:popularity, popularity),
     status = COALESCE(:status, status),
-      production_companies = COALESCE(:productionCompanies, production_companies)
+    production_companies = COALESCE(:productionCompanies, production_companies)
 WHERE id = :showId;
 
 

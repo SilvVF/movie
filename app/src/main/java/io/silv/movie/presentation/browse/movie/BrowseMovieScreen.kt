@@ -78,7 +78,7 @@ data class BrowseMovieScreen(
             pagingFlowFlow = { screenModel.moviePagerFlowFlow },
             displayMode = { screenModel.displayMode },
             gridCellsCount = { screenModel.gridCells },
-            query = { state.query },
+            query = { screenModel.query },
             listing = { state.listing },
             changeDialog = screenModel::changeDialog,
             actions = MovieActions(

@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
@@ -45,6 +46,9 @@ import org.koin.core.parameter.parametersOf
 data class TVViewScreen(
     val id: Long,
 ): Screen {
+
+    override val key: ScreenKey
+        get() = super.key + id
 
     @Composable
     override fun Content() {
@@ -88,8 +92,9 @@ data class TVViewScreen(
                                 if (it == null) return@rememberLauncherForActivityResult
                                 sm.editCover(context, it)
                             }
+                            val poster = remember(tvShow) { tvShow!!.toPoster() }
                             PosterCoverDialog(
-                                coverDataProvider = { tvShow!!.toPoster() },
+                                coverDataProvider = { poster },
                                 isCustomCover = remember(tvShow) { sm.hasCustomCover(tvShow!!) },
                                 onShareClick = { sm.shareCover(context) },
                                 onSaveClick = { sm.saveCover(context) },

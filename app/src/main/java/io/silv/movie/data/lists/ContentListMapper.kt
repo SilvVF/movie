@@ -22,9 +22,9 @@ object ContentListMapper {
             isMovie = movieId != null,
             title = title ?: "",
             posterUrl = posterUrl,
-            posterLastUpdated = posterLastUpdated ?: 0L,
+            posterLastUpdated = posterLastUpdated ?: -1L,
             favorite = favorite ?: false,
-            lastModified = last_modified_at ?: 0L,
+            lastModified = last_modified_at ?: -1L,
             popularity = popularity ?: 0.0,
             description = overview ?: "",
         )

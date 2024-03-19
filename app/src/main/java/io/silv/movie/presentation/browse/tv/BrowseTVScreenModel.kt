@@ -4,7 +4,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -15,21 +17,21 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.data.Genre
-import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
+import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
-import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
-import io.silv.movie.data.tv.model.TVShowPoster
+import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.interactor.UpdateShow
+import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.data.tv.model.toDomain
 import io.silv.movie.data.tv.model.toShowUpdate
+import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -66,13 +68,16 @@ class TVScreenModel(
     var gridCells by tmdbPreferences.gridCellsCount().asState(screenModelScope)
         private set
 
+    var query by mutableStateOf("")
+        private set
+
     init {
         screenModelScope.launch {
             val genres = sourceRepository.getSourceGenres().map { it.toDomain() }.toImmutableList()
             mutableState.update {state -> state.copy(genres = genres) }
         }
 
-        state.map { it.query }
+        snapshotFlow { query }
             .debounce(1000)
             .onEach {
                 if (it.isNotBlank()) {
@@ -116,9 +121,7 @@ class TVScreenModel(
     }
 
     fun changeQuery(query: String) {
-        screenModelScope.launch {
-            mutableState.update { state -> state.copy(query = query) }
-        }
+        this.query = query
     }
 
 
@@ -247,7 +250,6 @@ class TVScreenModel(
 @Stable
 data class TVState(
     val listing: ContentPagedType = ContentPagedType.Default.Popular,
-    val query: String = "",
     val dialog: TVScreenModel.Dialog? = null,
     val genres: ImmutableList<Genre> = persistentListOf(),
     val filters: Filters = Filters.default
