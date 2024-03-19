@@ -57,7 +57,7 @@ class OkHttpDiskBackedFetcher<T: Any>(
                         memCacheKey,
                         memCache
                     )
-                    return fileLoader(responseCoverCache, diskCacheKey)
+                    return fileLoader(responseCoverCache, diskCacheKey, options)
                 }
                 // Read from disk cache
                 snapshot = writeToDiskCache(response, diskCacheKey)

@@ -17,6 +17,7 @@ import coil.key.Keyer
 import coil.memory.MemoryCache
 import coil.request.Options
 import coil.size.isOriginal
+import io.silv.movie.ContentPosterFetcher
 import io.silv.movie.coil.CoilDiskUtils.toImageSource
 import okio.Path.Companion.toOkioPath
 import okio.buffer
@@ -82,7 +83,7 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                     memCacheKey,
                     memCache
                 )
-                return@Fetcher fileLoader(imageCacheFile, diskCacheKey)
+                return@Fetcher fileLoader(imageCacheFile, diskCacheKey, options)
             }
 
             val snapshot =
@@ -134,11 +135,13 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
         is SourceResult -> this.source.source().buffer.readByteArray()
     }
 
-    protected fun fileLoader(file: File, diskCacheKey: String): FetchResult {
+    protected fun fileLoader(file: File, diskCacheKey: String, options: Options): FetchResult {
         return SourceResult(
             source = ImageSource(
                 file = file.toOkioPath(),
-                diskCacheKey = diskCacheKey
+                diskCacheKey = diskCacheKey.takeIf {
+                    !(options.parameters.value(ContentPosterFetcher.DISABLE_KEYS) ?: false)
+                }
             ),
             mimeType = "image/*",
             dataSource = DataSource.DISK,
@@ -167,7 +170,7 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                 memCache
             )
             // Read from cover cache after added to library
-            return fileLoader(snapshotCoverCache, diskCacheKey)
+            return fileLoader(snapshotCoverCache, diskCacheKey, options)
         }
         CoilDiskUtils.writeToMemCache(
             options,
