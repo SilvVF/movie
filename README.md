@@ -1,3 +1,16 @@
+#Movie tracker
+Movie tracker is a movie and tvshow list creator and trailer player.
+
+## Features
+Features include:
+* Watch trailers through piped api.
+* View images
+* Local creating of watch lists.
+* Recommendations from: [TMDB](https://www.themoviedb.org/),
+* Light and dark themes
+* Sync lists through supabase to view on web or on mobile app.
+
+
 <img src="https://github.com/SilvVF/movie/assets/98186105/e33a4a0d-0d8c-4048-830a-c2c894d4811d" width="200">
 <img src="https://github.com/SilvVF/movie/assets/98186105/28ee9f9f-835b-4da3-a2da-8655f513fa3d" width="200">
 <img src="https://github.com/SilvVF/movie/assets/98186105/d6cc5bca-16be-47eb-b323-746051edde50" width="200">
