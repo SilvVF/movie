@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.library.browse
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
@@ -16,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -27,12 +30,19 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentList
+import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.library.ListCoverScreenModel
 import io.silv.movie.presentation.library.ListCreateScreen
+import io.silv.movie.presentation.library.components.LibraryCoverDialog
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
 import io.silv.movie.presentation.library.view.favorite.FavoritesViewScreen
 import io.silv.movie.presentation.library.view.list.ListViewScreen
+import io.silv.movie.presentation.view.components.EditCoverAction
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import org.koin.core.parameter.parametersOf
 
 class LibraryScreen: Screen {
 
@@ -45,6 +55,9 @@ class LibraryScreen: Screen {
         val navigator = LocalNavigator.currentOrThrow
 
         val listCreateScreen = remember(listCount) { ListCreateScreen(listCount) }
+        val changeDialog = remember {
+            { dialog: LibraryScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
+        }
 
         val screenResultLauncher = rememberScreenWithResultLauncher(
             screen = listCreateScreen
@@ -71,8 +84,50 @@ class LibraryScreen: Screen {
             onListClick = { navigator.push(ListViewScreen(it.id)) },
             onListLongClick = {  },
             onFavoritesClicked = { navigator.push(FavoritesViewScreen) },
+            onPosterClick = {
+                changeDialog(LibraryScreenModel.Dialog.FullCover(it))
+            },
             state = state
         )
+        val onDismissRequest =  { changeDialog(null) }
+        when (val dialog = state.dialog) {
+            null -> Unit
+            is LibraryScreenModel.Dialog.FullCover -> {
+                val sm = getScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
+                val list by sm.state.collectAsStateWithLifecycle()
+                val context = LocalContext.current
+
+                if (list != null) {
+                    val getContent = rememberLauncherForActivityResult(
+                        ActivityResultContracts.GetContent(),
+                    ) {
+                        if (it == null) return@rememberLauncherForActivityResult
+                        sm.editCover(context, it)
+                    }
+                    val items: ImmutableList<ContentListItem> = remember(list!!.posterLastModified) {
+                         state.contentLists
+                            .firstOrNull { it.first.id == list!!.id }
+                            ?.second
+                            ?: persistentListOf()
+                    }
+                    LibraryCoverDialog(
+                        items = items,
+                        list = list!!,
+                        isCustomCover = remember(list) { sm.hasCustomCover(list!!) },
+                        onShareClick = { sm.shareCover(context) },
+                        onSaveClick = { sm.saveCover(context) },
+                        snackbarHostState = sm.snackbarHostState,
+                        onEditClick = {
+                            when (it) {
+                                EditCoverAction.EDIT -> getContent.launch("image/*")
+                                EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                            }
+                        },
+                        onDismissRequest = onDismissRequest,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -88,6 +143,7 @@ private fun LibraryStandardScreenContent(
     onFavoritesClicked: () -> Unit,
     onListLongClick: (contentList: ContentList) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
+    onPosterClick: (contentList: ContentList) -> Unit,
     state: LibraryState
 ) {
 
@@ -130,6 +186,7 @@ private fun LibraryStandardScreenContent(
                     onListLongClick = onListLongClick,
                     onListClick = onListClick,
                     onFavoritesClicked = onFavoritesClicked,
+                    onPosterClick = onPosterClick,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)
@@ -142,6 +199,7 @@ private fun LibraryStandardScreenContent(
                     onListLongClick = onListLongClick,
                     onListClick = onListClick,
                     onFavoritesClicked = onFavoritesClicked,
+                    onPosterClick = onPosterClick,
                     modifier = Modifier.haze(
                         hazeState,
                         HazeDefaults.style(MaterialTheme.colorScheme.background)

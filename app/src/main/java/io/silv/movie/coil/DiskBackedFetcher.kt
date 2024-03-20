@@ -16,3 +16,8 @@ interface FetcherConfig<T: Any> {
 interface OkHttpFetcherConfig<T : Any>: FetcherConfig<T> {
     suspend fun fetch(options: Options, data: T): Response
 }
+
+interface ByteArrayFetcherConfig<T : Any>: FetcherConfig<T> {
+    suspend fun fetch(options: Options, data: T): ByteArray
+}
+

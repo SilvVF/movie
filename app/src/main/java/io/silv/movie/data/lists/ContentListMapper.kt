@@ -2,8 +2,17 @@ package io.silv.movie.data.lists
 
 object ContentListMapper {
 
-    val mapList = { id: Long, name: String, lastModified: Long ->
-        ContentList(id, name, lastModified)
+    val mapList = {
+        _id: Long,
+        name: String,
+        last_modified_at: Long,
+        poster_last_updated: Long? ->
+        ContentList(
+            _id,
+            name,
+            last_modified_at,
+            poster_last_updated ?: -1L
+        )
     }
 
     val mapRecommendation = {
@@ -77,6 +86,7 @@ object ContentListMapper {
             list_id: Long,
             list_name: String,
             lastModified: Long,
+            listPosterLastUpdated: Long?,
             movieId: Long?,
             showId: Long?,
             addedToListAt: Long?,
@@ -99,10 +109,21 @@ object ContentListMapper {
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
                ),
-               list = ContentList(list_id, list_name, lastModified)
+               list = ContentList(
+                   list_id,
+                   list_name,
+                   lastModified,
+                   listPosterLastUpdated ?: -1L
+               )
             )
         } else {
-            ContentListItem.PlaceHolder(ContentList(list_id, list_name, lastModified))
+            ContentListItem.PlaceHolder(
+                ContentList(
+                    list_id,
+                    list_name,
+                    lastModified,
+                    listPosterLastUpdated ?: -1L)
+            )
         }
     }
 }

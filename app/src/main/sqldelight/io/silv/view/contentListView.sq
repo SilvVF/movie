@@ -3,6 +3,7 @@ SELECT
     cl._id AS list_id,
     cl.name AS list_name,
     cl.last_modified_at AS lastModified,
+    cl.poster_last_updated AS listPosterLastUpdated,
     clj.movie_id AS movieId,
     clj.show_id AS showId,
     clj.created_at AS addedToListAt,

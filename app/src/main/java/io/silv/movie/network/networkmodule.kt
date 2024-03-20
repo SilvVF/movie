@@ -10,6 +10,8 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.Storage
+import io.github.jan.supabase.storage.storage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.silv.movie.BuildConfig
@@ -56,9 +58,11 @@ val networkModule =
                 install(Postgrest)
                 install(Auth)
                 install(ComposeAuth)
+                install(Storage)
             }
         }
 
+        single<Storage>{ get<SupabaseClient>().storage }
         single<Auth> { get<SupabaseClient>().auth }
         single<Postgrest> { get<SupabaseClient>().postgrest }
         single<ComposeAuth> { get<SupabaseClient>().composeAuth }

@@ -95,11 +95,18 @@ object ProfileScreen: Screen {
                 }
 
                 is ProfileState.LoggedIn -> {
+                    val imageSelectScreen = remember { SelectProfileImageScreen }
+                    val imageSelectScreenLauncher = rememberScreenWithResultLauncher(
+                        screen = imageSelectScreen
+                    ) {
+
+                    }
                     SignedInScreen(
                         showOptionsClick = {
                             screenModel.changeLoggedInDialog(ProfileState.LoggedIn.Dialog.UserOptions)
                         },
                         snackbarHostState = snackbarHostState,
+                        onProfileImageClicked = { imageSelectScreenLauncher.launch() },
                         state = targetState
                     )
                     when (targetState.dialog) {

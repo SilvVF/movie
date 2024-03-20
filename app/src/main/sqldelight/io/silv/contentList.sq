@@ -1,7 +1,8 @@
 CREATE TABLE contentList(
      _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
      name TEXT NOT NULL,
-     last_modified_at INTEGER NOT NULL DEFAULT 0
+     last_modified_at INTEGER NOT NULL DEFAULT 0,
+     poster_last_updated INTEGER
 );
 
 
@@ -14,12 +15,13 @@ BEGIN
 END;
 
 insert:
-INSERT OR IGNORE INTO contentList(_id, name, last_modified_at)
-VALUES (NULL,  :name, strftime('%s', 'now'));
+INSERT OR IGNORE INTO contentList(_id, name, last_modified_at, poster_last_updated)
+VALUES (NULL,  :name, strftime('%s', 'now'), NULL);
 
 update:
 UPDATE contentList SET
-    name = COALESCE(:name, name)
+    name = COALESCE(:name, name),
+    poster_last_updated = COALESCE(:posterLastUpdated, poster_last_updated)
 WHERE _id = :id;
 
 listCount:

@@ -23,10 +23,17 @@ import okio.Path.Companion.toOkioPath
 
 class ContentPosterFetcher(
     override val context: Context,
-    private val client: OkHttpClient,
-    private val movieCoverCache: MovieCoverCache,
-    private val tvShowCoverCache: TVShowCoverCache
+    private val clientLazy: Lazy<OkHttpClient>,
+    private val movieCoverCacheLazy: Lazy<MovieCoverCache>,
+    private val tvShowCoverCacheLazy: Lazy<TVShowCoverCache>
 ): OkHttpFetcherConfig<PosterData> {
+
+    private val client
+        get() = clientLazy.value
+    private val movieCoverCache
+        get() = movieCoverCacheLazy.value
+    private val tvShowCoverCache
+        get() = tvShowCoverCacheLazy.value
 
     override val keyer: Keyer<PosterData> =
         Keyer { data, options ->

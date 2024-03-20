@@ -182,8 +182,10 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:gotrue-kt")
     implementation("io.github.jan-tennert.supabase:compose-auth")
     implementation("io.github.jan-tennert.supabase:compose-auth-ui")
-
+    implementation("io.github.jan-tennert.supabase:storage-kt")
 }
+
+
 
 tasks {
     // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)

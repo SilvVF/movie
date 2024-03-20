@@ -233,6 +233,9 @@ class ListViewScreenModel(
 
         @Stable
         data class RemoveFromFavorites(val item: ContentItem): Dialog
+
+        @Stable
+        data object FullCover : Dialog
     }
 }
 

@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library.components
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,10 +31,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import coil.request.ImageRequest
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
@@ -140,6 +143,21 @@ object ContentPreviewDefaults {
                     .align(Alignment.Center)
             )
         }
+    }
+
+    @Composable
+    fun CustomListPoster(
+        modifier: Modifier,
+        uri: Uri,
+    ) {
+        val context = LocalContext.current
+        ItemCover.Square(
+            modifier = modifier,
+            shape = RectangleShape,
+            data = ImageRequest.Builder(context)
+                .data(uri)
+                .build()
+        )
     }
 
     @Composable

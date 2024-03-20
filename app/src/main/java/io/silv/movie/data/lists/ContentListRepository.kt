@@ -1,5 +1,6 @@
 package io.silv.movie.data.lists
 
+import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.database.DatabaseHandler
 import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
 import io.silv.movie.presentation.library.view.list.ListSortMode
@@ -23,25 +24,9 @@ interface ContentListRepository {
 }
 
 class ContentListRepositoryImpl(
-    private val handler: DatabaseHandler
+    private val handler: DatabaseHandler,
+    private val listCoverCache: ListCoverCache
 ): ContentListRepository {
-
-//    init {
-//        GlobalScope.launch {
-//            val movies = handler.awaitList { movieQueries.selectAll() }
-//            repeat(3) {
-//                val list = handler.awaitOneExecutable {
-//                    contentListQueries.insert("Items list")
-//                    contentListQueries.lastInsertRowId()
-//                }
-//                handler.await {
-//                    movies.take(10 * it).forEach {
-//                        contentListJunctionQueries.insert(it.id, null, list)
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     override suspend fun createList(name: String): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
@@ -51,7 +36,7 @@ class ContentListRepositoryImpl(
     }
 
     override suspend fun updateList(update: ContentListUpdate) {
-        handler.await { contentListQueries.update(update.name, update.id) }
+        handler.await { contentListQueries.update(update.name, update.posterLastUpdated,  update.id) }
     }
 
     override suspend fun addMovieToList(movieId: Long, contentList: ContentList) {
@@ -117,6 +102,7 @@ class ContentListRepositoryImpl(
 
 
     override suspend fun deleteList(contentList: ContentList) {
+        listCoverCache.deleteCustomCover(contentList.id)
         return handler.await { contentListQueries.delete(contentList.id) }
     }
 

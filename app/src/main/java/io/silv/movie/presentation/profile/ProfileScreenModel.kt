@@ -15,6 +15,7 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import io.github.jan.supabase.postgrest.Postgrest
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.BuildConfig
+import io.silv.movie.UserProfileImageData
 import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -76,7 +77,13 @@ class ProfileScreenModel(
                     SessionStatus.LoadingFromStorage -> ProfileState.Loading
                     SessionStatus.NetworkError -> ProfileState.LoggedOut("Network Error")
                     is SessionStatus.Authenticated ->
-                        ProfileState.LoggedIn(status.session.user ?: return@onEach)
+                        ProfileState.LoggedIn(
+                            status.session.user ?: return@onEach,
+                            profileImageData = UserProfileImageData(
+                                status.session.user?.id ?: return@onEach,
+                                imageLastUpdated = -1L
+                            ),
+                        )
                     is SessionStatus.NotAuthenticated -> ProfileState.LoggedOut()
                 }
             }
@@ -221,7 +228,8 @@ sealed interface ProfileState {
     @Immutable
     data class LoggedIn(
         val user: UserInfo,
-        val dialog: Dialog? = null
+        val dialog: Dialog? = null,
+        val profileImageData: UserProfileImageData
     ): ProfileState {
 
         @Stable

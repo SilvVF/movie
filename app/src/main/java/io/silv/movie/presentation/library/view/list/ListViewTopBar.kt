@@ -2,6 +2,7 @@ package io.silv.movie.presentation.library.view.list
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -31,11 +33,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.core.net.toUri
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.R
+import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -43,6 +47,7 @@ import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.library.components.PosterLargeTopBarDefaults
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
+import org.koin.compose.koinInject
 
 @Composable
 fun ListViewTopBar(
@@ -57,11 +62,24 @@ fun ListViewTopBar(
     items: () -> ImmutableList<ContentItem>,
     sortModeProvider: () -> ListSortMode,
     changeSortMode: (ListSortMode) -> Unit,
+    onPosterClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val content= items()
+    val cache = koinInject<ListCoverCache>()
+    val list = contentListProvider()
+    val file by remember("${list.id};${list.posterLastModified}") {
+        derivedStateOf {
+            cache.getCustomCoverFile(list.id)
+        }
+    }
+    val fileExists by remember("${list.id};${list.posterLastModified}") {
+        derivedStateOf { file.exists() }
+    }
+
     val primary by rememberDominantColor(
         data = when  {
+            fileExists -> file.toUri()
             content.isEmpty() -> null
             else -> content.first().toPoster()
         }
@@ -92,10 +110,9 @@ fun ListViewTopBar(
                 }
             },
     ) {
-        val contentList = contentListProvider()
         PosterLargeTopBar(
             state = state,
-            title = { Text(text = contentList.name) },
+            title = { Text(text = list.name) },
             colors = TopAppBarDefaults.colors2(
                 containerColor = Color.Transparent,
                 scrolledContainerColor = primary.copy(alpha = 0.2f)
@@ -116,7 +133,16 @@ fun ListViewTopBar(
                 val posterModifier = Modifier
                     .padding(vertical = 12.dp)
                     .fillMaxHeight()
+                    .clickable { onPosterClick() }
+
+
                 when {
+                    fileExists -> {
+                        ContentPreviewDefaults.CustomListPoster(
+                            modifier = posterModifier,
+                            uri = file.toUri()
+                        )
+                    }
                     content.isEmpty() -> {
                         ContentPreviewDefaults.PlaceholderPoster(
                             modifier = posterModifier
@@ -150,7 +176,7 @@ fun ListViewTopBar(
                 query = query,
                 onSearch = onSearch,
                 changeQuery = changeQuery,
-                placeholder = stringResource(id = R.string.search_placeholder, contentList.name)
+                placeholder = stringResource(id = R.string.search_placeholder, list.name)
             )
         }
     }

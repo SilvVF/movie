@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.library.browse
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -127,6 +128,21 @@ class LibraryScreenModel(
             }
         }
     }
+
+    fun updateDialog(dialog: Dialog?) {
+        screenModelScope.launch {
+            mutableState.update { state ->
+                state.copy(dialog = dialog)
+            }
+        }
+    }
+
+    @Stable
+    sealed interface Dialog {
+
+        @Stable
+        data class FullCover(val contentList: ContentList) : Dialog
+    }
 }
 sealed interface LibraryEvent {
     data class ListCreated(val id: Long): LibraryEvent
@@ -140,6 +156,7 @@ sealed interface LibrarySortMode {
 
 
 data class LibraryState(
+    val dialog: LibraryScreenModel.Dialog? = null,
     val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentListItem>>> = persistentListOf(),
     val favorites: ImmutableList<ContentItem> = persistentListOf()
 )

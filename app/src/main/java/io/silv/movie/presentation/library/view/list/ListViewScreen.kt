@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.library.view.list
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -31,9 +34,12 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.ListAddScreen
+import io.silv.movie.presentation.library.ListCoverScreenModel
 import io.silv.movie.presentation.library.ListEditScreen
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import io.silv.movie.presentation.library.components.ListViewCoverDialog
+import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 import org.koin.core.parameter.parametersOf
@@ -113,6 +119,7 @@ data class ListViewScreen(
                             navigator.push(TVViewScreen(item.contentId))
                     },
                     startAddingClick = { navigator.push(ListAddScreen(listId)) },
+                    onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                     state = s
                 )
 
@@ -153,6 +160,35 @@ data class ListViewScreen(
                             entryToRemove = dialog.item.title
                         )
                     }
+                    ListViewScreenModel.Dialog.FullCover -> {
+                        val sm = getScreenModel<ListCoverScreenModel> { parametersOf(s.list.id) }
+                        val list by sm.state.collectAsStateWithLifecycle()
+                        val context = LocalContext.current
+
+                        if (list != null) {
+                            val getContent = rememberLauncherForActivityResult(
+                                ActivityResultContracts.GetContent(),
+                            ) {
+                                if (it == null) return@rememberLauncherForActivityResult
+                                sm.editCover(context, it)
+                            }
+                            ListViewCoverDialog(
+                                items = s.allItems,
+                                list = list!!,
+                                isCustomCover = remember(list) { sm.hasCustomCover(list!!) },
+                                onShareClick = { sm.shareCover(context) },
+                                onSaveClick = { sm.saveCover(context) },
+                                snackbarHostState = sm.snackbarHostState,
+                                onEditClick = {
+                                    when (it) {
+                                        EditCoverAction.EDIT -> getContent.launch("image/*")
+                                        EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                    }
+                                },
+                                onDismissRequest = onDismissRequest,
+                            )
+                        }
+                    }
                     null -> Unit
                 }
             }
@@ -177,6 +213,7 @@ private fun SuccessScreenContent(
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
     startAddingClick: () -> Unit,
+    onPosterClick: () -> Unit,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
@@ -196,6 +233,7 @@ private fun SuccessScreenContent(
                 onListOptionClicked = onListOptionClick,
                 sortModeProvider = { state.sortMode },
                 changeSortMode = changeSortMode,
+                onPosterClick = onPosterClick,
                 modifier = Modifier.hazeChild(hazeState)
             )
         },

@@ -10,13 +10,19 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.core.net.toUri
 import io.silv.core_ui.components.lazy.VerticalGridFastScroller
+import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.browse.LibraryState
+import org.koin.compose.koinInject
 
 @Composable
 fun LibraryGridView(
@@ -25,10 +31,12 @@ fun LibraryGridView(
     onFavoritesClicked: () -> Unit,
     onListLongClick: (contentList: ContentList) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
+    onPosterClick: (contentList: ContentList) -> Unit,
     modifier: Modifier,
 ) {
     val gridState = rememberLazyGridState()
     val cols = GridCells.Fixed(3)
+    val cache = koinInject<ListCoverCache>()
 
     VerticalGridFastScroller(
         state = gridState,
@@ -69,16 +77,38 @@ fun LibraryGridView(
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            if (items.size < 4) {
-                                ContentPreviewDefaults.SingleItemPoster(
-                                    modifier = Modifier.fillMaxSize(),
-                                    item = items.first()
+                            val file by remember("${list.id};${list.posterLastModified}") {
+                                derivedStateOf {
+                                    cache.getCustomCoverFile(list.id)
+                                }
+                            }
+                            val fileExists by remember("${list.id};${list.posterLastModified}") {
+                                derivedStateOf { file.exists() }
+                            }
+
+                            if (fileExists) {
+                                ContentPreviewDefaults.CustomListPoster(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable { onPosterClick(list) },
+                                    uri = file.toUri()
                                 )
                             } else {
-                                ContentPreviewDefaults.MultiItemPosterContentLIst(
-                                    modifier = Modifier.fillMaxSize(),
-                                    content = items
-                                )
+                                if (items.size < 4) {
+                                    ContentPreviewDefaults.SingleItemPoster(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable { onPosterClick(list) },
+                                        item = items.first()
+                                    )
+                                } else {
+                                    ContentPreviewDefaults.MultiItemPosterContentLIst(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clickable { onPosterClick(list) },
+                                        content = items
+                                    )
+                                }
                             }
                         },
                         name = list.name,

@@ -10,15 +10,17 @@ data class ContentList(
     val id: Long,
     val name: String,
     val lastModified: Long,
+    val posterLastModified: Long
 ): Parcelable
 
 fun ContentList.toUpdate(): ContentListUpdate {
-    return ContentListUpdate(id, name)
+    return ContentListUpdate(id, name, posterLastModified)
 }
 
 data class ContentListUpdate(
     val id: Long,
-    val name: String?
+    val name: String? = null,
+    val posterLastUpdated: Long? = null
 )
 
 fun MoviePoster.toContentItem(): ContentItem {

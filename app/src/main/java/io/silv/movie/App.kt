@@ -8,10 +8,13 @@ import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
+import io.github.jan.supabase.storage.Storage
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
+import io.silv.movie.coil.addByteArrayDiskFetcher
 import io.silv.movie.coil.addDiskFetcher
 import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.cache.ProfileImageCache
 import io.silv.movie.data.cache.TVShowCoverCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,9 +49,6 @@ class App: Application(), ImageLoaderFactory {
 
         val diskCacheInit = { CoilDiskCache.get(this) }
         val memCacheInit = { CoilMemoryCache.get(this) }
-        val client by inject<OkHttpClient>()
-        val movieCoverCache by inject<MovieCoverCache>()
-        val tvShowCoverCache by inject<TVShowCoverCache>()
 
         return ImageLoader.Builder(this)
             .diskCache(diskCacheInit)
@@ -59,10 +59,27 @@ class App: Application(), ImageLoaderFactory {
                     memoryCache = memCacheInit,
                     fetcher = ContentPosterFetcher(
                         this@App,
-                        client,
-                        movieCoverCache,
-                        tvShowCoverCache
+                        inject<OkHttpClient>(),
+                        inject<MovieCoverCache>(),
+                        inject<TVShowCoverCache>()
                     ),
+                )
+                addByteArrayDiskFetcher(
+                    diskCache = diskCacheInit,
+                    memoryCache = memCacheInit,
+                    fetcher = UserProfileImageFetcher(
+                        this@App,
+                            inject<Storage>(),
+                            inject<ProfileImageCache>()
+                    )
+                )
+                addByteArrayDiskFetcher(
+                    diskCache = diskCacheInit,
+                    memoryCache = memCacheInit,
+                    fetcher = BucketItemFetcher(
+                        this@App,
+                        inject<Storage>()
+                    )
                 )
                 if (SDK_INT >= 28) {
                     add(ImageDecoderDecoder.Factory())
