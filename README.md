@@ -1,4 +1,4 @@
-#Movie tracker
+# Movie tracker
 Movie tracker is a movie and tvshow list creator and trailer player.
 
 ## Features
