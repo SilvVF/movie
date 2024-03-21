@@ -4,6 +4,8 @@ object ContentListMapper {
 
     val mapList = {
         _id: Long,
+        supabase_id: String?,
+        created_by: String?,
         name: String,
         last_modified_at: Long,
         poster_last_updated: Long? ->

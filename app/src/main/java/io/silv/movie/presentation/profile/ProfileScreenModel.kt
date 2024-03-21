@@ -4,17 +4,14 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.SignOutScope
-import io.github.jan.supabase.gotrue.admin.AdminApi
-import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.user.UserInfo
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.BuildConfig
 import io.silv.movie.UserProfileImageData
 import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.Job
@@ -27,7 +24,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -53,24 +49,6 @@ class ProfileScreenModel(
     EventProducer<ProfileEvent> by EventProducer.default() {
 
     var authJob: Job? = null
-    private val adminClient: AdminApi by lazy {
-        runBlocking {
-            val supabase = createSupabaseClient(
-                supabaseKey = BuildConfig.SUPABASE_SERVICE_ROLE,
-                supabaseUrl = BuildConfig.SUPABASE_URL
-            ) {
-                install(Auth) {
-                    autoLoadFromStorage = false
-                    alwaysAutoRefresh = false
-                }
-                // install other plugins (these will use the service role key)
-            }
-            supabase.auth.importAuthToken(BuildConfig.SUPABASE_SERVICE_ROLE)
-
-            // Access auth admin api
-            supabase.auth.admin
-        }
-    }
 
     val authJobInProgress = flow {
         while (true) {
@@ -111,6 +89,7 @@ class ProfileScreenModel(
                     filter {
                         Users::userId eq info.id
                     }
+                    limit(1)
                 }
                 .decodeSingle<Users>()
         }
@@ -130,6 +109,7 @@ class ProfileScreenModel(
                 )
                 {
                     select()
+                    limit(1)
                 }
                 .decodeSingle<Users>()
 
@@ -154,6 +134,7 @@ class ProfileScreenModel(
                         filter {
                             eq("user_id", user.id)
                         }
+                        limit(1)
                     }
                     .decodeSingle<Users>()
 
@@ -206,9 +187,7 @@ class ProfileScreenModel(
     fun deleteAccount() {
         ioCoroutineScope.launch {
             runCatching {
-                adminClient.deleteUser(
-                    auth.currentUserOrNull()?.id ?: return@launch,
-                )
+                postgrest.rpc("deleteUser")
             }
                 .onFailure { Timber.e(it) }
                 .onSuccess {

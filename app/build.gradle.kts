@@ -54,7 +54,6 @@ android {
         buildType.buildConfigField("String", "TMDB_ACCESS_TOKEN", properties.getProperty("TMDB_ACCESS_TOKEN"))
         buildType.buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
         buildType.buildConfigField("String", "SUPABSE_ANON_KEY", properties.getProperty("SUPABSE_ANON_KEY"))
-        buildType.buildConfigField("String", "SUPABASE_SERVICE_ROLE", properties.getProperty("SUPABASE_SERVICE_ROLE"))
     }
 
     compileOptions {

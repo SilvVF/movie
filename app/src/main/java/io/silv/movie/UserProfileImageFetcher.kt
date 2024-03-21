@@ -43,8 +43,9 @@ data class UserProfileImageData(
                     columns = Columns.list("profile_image")
                 ) {
                     filter {
-                        isIn("user_id", listOf(userId))
+                        eq("user_id", userId)
                     }
+                    limit(1)
             }
                 .decodeSingle<UserProfileImageResponse>()
                 .profileImage
