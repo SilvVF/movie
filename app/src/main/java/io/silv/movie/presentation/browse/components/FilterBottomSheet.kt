@@ -90,7 +90,7 @@ fun FilterBottomSheet(
             skipPartiallyExpanded = true
         ),
         onDismissRequest = onDismissRequest,
-        windowInsets = WindowInsets(0)
+        windowInsets = WindowInsets(0, 0, 0, 0)
     ) {
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val selectedSearchItem by remember {
@@ -208,6 +208,13 @@ fun FilterBottomSheet(
                 }
             }
         }
+        Spacer(
+            Modifier.height(
+                with(LocalDensity.current) {
+                    WindowInsets.systemBars.getBottom(LocalDensity.current).toDp()
+                }
+            )
+        )
     }
 }
 

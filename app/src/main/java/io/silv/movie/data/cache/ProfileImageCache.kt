@@ -18,6 +18,7 @@ package io.silv.movie.data.cache
 import android.content.Context
 import io.silv.movie.core.DiskUtil
 import okio.IOException
+import timber.log.Timber
 import java.io.File
 import java.io.InputStream
 
@@ -41,7 +42,6 @@ class ProfileImageCache(private val context: Context) {
     private val cacheDir = getCacheDir(COVERS_DIR)
 
     private val customCoverCacheDir = getCacheDir(CUSTOM_COVERS_DIR)
-
     /**
      * Returns the cover from cache.
      *
@@ -96,6 +96,33 @@ class ProfileImageCache(private val context: Context) {
         }
 
         return deleted
+    }
+
+    fun clearOldProfilePicturesFromCache(paths: List<String>): Int {
+
+        var deleted = 0
+
+        val filesPaths = cacheDir.list().orEmpty().toMutableSet()
+
+        filesPaths.remove("custom")
+
+        paths.forEach { path ->
+            val hash =  DiskUtil.hashKeyForDisk(path)
+            filesPaths.remove(hash)
+        }
+
+        filesPaths.forEach {
+            if(deleteFileFromCache(it)) {
+                Timber.d("Deleted from cache $it")
+                deleted++
+            }
+        }
+        Timber.d("deleted $deleted items from cache")
+        return deleted
+    }
+
+    private fun deleteFileFromCache(filePath: String): Boolean {
+        return File(cacheDir, filePath).delete()
     }
     /**
      * Delete custom cover of the movie from the cache

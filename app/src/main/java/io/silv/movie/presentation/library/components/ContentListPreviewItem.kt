@@ -23,7 +23,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -36,16 +41,93 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.core.net.toUri
 import coil.request.ImageRequest
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
+import io.silv.movie.data.cache.ListCoverCache
+import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.lists.ContentItem
+import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import org.koin.compose.koinInject
 
 private val ListItemHeight = 72.dp
+
+@Composable
+fun ContentListPoster(
+    list: ContentList,
+    items: ImmutableList<ContentListItem>,
+    modifier: Modifier = Modifier
+) {
+    val cache = koinInject<ListCoverCache>()
+    var semaphor by remember { mutableIntStateOf(0) }
+    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+
+    val fileExists by remember(semaphor) {
+        derivedStateOf { file.exists() }
+    }
+
+    LaunchedEffect(list.posterLastModified) {
+        semaphor++
+    }
+
+    if (fileExists) {
+        ContentPreviewDefaults.CustomListPoster(
+            modifier = modifier,
+            uri = file.toUri()
+        )
+    } else {
+        if (items.size < 4) {
+            ContentPreviewDefaults.SingleItemPoster(
+                modifier = modifier,
+                item = items.first()
+            )
+        } else {
+            ContentPreviewDefaults.MultiItemPosterContentLIst(
+                modifier = modifier,
+                content = items
+            )
+        }
+    }
+}
+
+@Composable
+fun ContentListPosterItems(
+    list: ContentList,
+    items: ImmutableList<ContentItem>,
+    modifier: Modifier = Modifier
+) {
+    val cache = koinInject<MovieCoverCache>()
+    var semaphor by remember { mutableIntStateOf(0) }
+    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+
+    LaunchedEffect(list.posterLastModified) {
+        semaphor++
+    }
+
+    if (file.exists()) {
+        ContentPreviewDefaults.CustomListPoster(
+            modifier = Modifier,
+            uri = file.toUri()
+        )
+    } else {
+        if (items.size < 4) {
+            ContentPreviewDefaults.SingleItemPoster(
+                modifier = modifier,
+                item = items.first()
+            )
+        } else {
+            ContentPreviewDefaults.MultiItemPoster(
+                modifier = modifier,
+                items = items
+            )
+        }
+    }
+}
 
 object ContentPreviewDefaults {
 

@@ -1,8 +1,6 @@
 package io.silv.core_ui.components.topbar
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
@@ -24,12 +22,12 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.LastBaseline
 import androidx.compose.ui.layout.Layout
@@ -39,7 +37,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
-import io.silv.core_ui.theme.containerColor
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -134,10 +131,11 @@ private fun SingleRowTopAppBarCopy(
     // container's scrolled-color according to the app bar's scroll state.
     val colorTransitionFraction = scrollBehavior?.state?.overlappedFraction ?: 0f
     val fraction = if (colorTransitionFraction > 0.01f) 1f else 0f
-    val appBarContainerColor by animateColorAsState(
-        targetValue = containerColor(fraction),
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "",
+
+    val appBarContainerColor =  lerp(
+        colors.containerColor,
+        colors.scrolledContainerColor,
+        FastOutLinearInEasing.transform(colorTransitionFraction)
     )
 
     // Wrap the given actions in a Row.

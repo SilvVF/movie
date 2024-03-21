@@ -21,9 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
@@ -66,20 +68,18 @@ fun ListViewTopBar(
     modifier: Modifier = Modifier,
 ) {
     val content= items()
-    val cache = koinInject<ListCoverCache>()
     val list = contentListProvider()
-    val file by remember("${list.id};${list.posterLastModified}") {
-        derivedStateOf {
-            cache.getCustomCoverFile(list.id)
-        }
-    }
-    val fileExists by remember("${list.id};${list.posterLastModified}") {
-        derivedStateOf { file.exists() }
+    val cache= koinInject<ListCoverCache>()
+    var semaphor by remember { mutableIntStateOf(0) }
+    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+
+    LaunchedEffect(list.posterLastModified) {
+        semaphor++
     }
 
     val primary by rememberDominantColor(
         data = when  {
-            fileExists -> file.toUri()
+            file.exists() -> file.toUri()
             content.isEmpty() -> null
             else -> content.first().toPoster()
         }
@@ -137,7 +137,7 @@ fun ListViewTopBar(
 
 
                 when {
-                    fileExists -> {
+                    file.exists() -> {
                         ContentPreviewDefaults.CustomListPoster(
                             modifier = posterModifier,
                             uri = file.toUri()

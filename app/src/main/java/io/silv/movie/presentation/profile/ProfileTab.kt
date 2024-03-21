@@ -99,8 +99,17 @@ object ProfileScreen: Screen {
                     val imageSelectScreenLauncher = rememberScreenWithResultLauncher(
                         screen = imageSelectScreen
                     ) {
-
+                        screenModel.updateProfilePicture(it.path)
                     }
+                    val editUsernameScreen = remember(targetState.user?.username.orEmpty()) {
+                        UsernameEditScreen(targetState.user?.username.orEmpty())
+                    }
+                    val editUsernameScreenLauncher = rememberScreenWithResultLauncher(
+                        screen = editUsernameScreen,
+                    ) {
+                        screenModel.updateUsername(it.name)
+                    }
+
                     SignedInScreen(
                         showOptionsClick = {
                             screenModel.changeLoggedInDialog(ProfileState.LoggedIn.Dialog.UserOptions)
@@ -119,6 +128,7 @@ object ProfileScreen: Screen {
                                 logOutClick = {
                                     screenModel.signOut()
                                 },
+                                changeUsername = { editUsernameScreenLauncher.launch() },
                                 onDismiss = { screenModel.changeLoggedInDialog(null) }
                             )
                         }
@@ -126,7 +136,7 @@ object ProfileScreen: Screen {
                         ProfileState.LoggedIn.Dialog.ConfirmDeleteAccount -> RemoveEntryDialog(
                             onDismissRequest = { screenModel.changeLoggedInDialog(null) },
                             onConfirm = { screenModel.deleteAccount() },
-                            entryToRemove = targetState.user.email.orEmpty()
+                            entryToRemove = targetState.info.email.orEmpty()
                         )
                     }
                 }

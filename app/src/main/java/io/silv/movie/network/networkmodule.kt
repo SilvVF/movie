@@ -48,7 +48,22 @@ val networkModule =
             }
         }
 
-        single { HttpClient(OkHttp) }
+        single {
+            Cache(
+                directory = File(androidContext().cacheDir, "network_cache"),
+                maxSize = 5L.MB.toBytes()
+            )
+        }
+
+        single {
+            HttpClient(OkHttp) {
+                engine {
+                    config {
+                        cache(get())
+                    }
+                }
+            }
+        }
 
         single<SupabaseClient> {
             createSupabaseClient(
@@ -70,12 +85,7 @@ val networkModule =
         single<TMDBClient> {
             OkHttpClient()
                 .newBuilder()
-                .cache(
-                    Cache(
-                        directory = File(androidContext().cacheDir, "network_cache"),
-                        maxSize = 5L.MB.toBytes()
-                    )
-                )
+                .cache(get())
                 .addInterceptor(TMDBAuthInterceptor())
                 .rateLimit(
                     permits = 50,

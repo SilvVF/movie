@@ -17,6 +17,8 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.Quad
 import io.silv.movie.data.ContentPagedType
+import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
@@ -69,6 +71,8 @@ class ListAddScreenModel(
     private val getMovie: GetMovie,
     private val updateMovie: UpdateMovie,
     private val updateShow: UpdateShow,
+    private val tvCoverCache: TVShowCoverCache,
+    private val movieCoverCache: MovieCoverCache,
     private val listId: Long,
 ): StateScreenModel<ListAddState>(ListAddState.Loading),
     EventProducer<ListAddEvent> by EventProducer.default() {
@@ -239,10 +243,22 @@ class ListAddScreenModel(
         screenModelScope.launch {
             if (contentItem.isMovie) {
                 val movie = getMovie.await(contentItem.contentId) ?: return@launch
-                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+
+                val new = movie.copy(favorite = !movie.favorite)
+
+                if(!new.favorite) {
+                    movieCoverCache.deleteFromCache(movie)
+                }
+                updateMovie .await(new.toMovieUpdate())
             } else {
                 val show = getShow.await(contentItem.contentId) ?: return@launch
-                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
+
+                val new = show.copy(favorite = !show.favorite)
+
+                if(!new.favorite) {
+                    tvCoverCache.deleteFromCache(show)
+                }
+                updateShow.await(new.toShowUpdate())
             }
         }
     }

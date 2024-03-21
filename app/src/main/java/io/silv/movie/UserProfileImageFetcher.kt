@@ -31,12 +31,20 @@ data class UserProfileImageData(
     val userId: String,
     val imageLastUpdated: Long = -1L
 ) {
+
     val path by lazy {
         runBlocking {
+
             val koin = object : KoinComponent {}
             val postgrest by koin.inject<Postgrest>()
-            postgrest["users"].select(columns = Columns.list("profile_image")) {
-                filter { isIn("user_id", listOf(userId)) }
+
+            postgrest["users"]
+                .select(
+                    columns = Columns.list("profile_image")
+                ) {
+                    filter {
+                        isIn("user_id", listOf(userId))
+                    }
             }
                 .decodeSingle<UserProfileImageResponse>()
                 .profileImage
@@ -52,16 +60,26 @@ data class BucketFetchItem(
 class BucketItemFetcher(
     override val context: Context,
     private val storageLazy: Lazy<Storage>,
+    private val profileImageCacheLazy: Lazy<ProfileImageCache>,
 ): ByteArrayFetcherConfig<BucketFetchItem> {
 
     private val storage
         get() = storageLazy.value
 
+    private val profileImageCache
+        get() = profileImageCacheLazy.value
+
     override val keyer: Keyer<BucketFetchItem> =
         Keyer { data, options -> "${data.bucket};${data.path}" }
 
     override val diskStore: FetcherDiskStore<BucketFetchItem>
-        get() = FetcherDiskStoreImageFile { data, options -> null }
+        get() = FetcherDiskStoreImageFile { data, options ->
+            if (data.bucket == "profile_pictures") {
+                profileImageCache.getCoverFile(data.path)
+            } else {
+                null
+            }
+        }
 
     override suspend fun fetch(options: Options, data: BucketFetchItem): ByteArray {
         val bucket = storage[data.bucket]

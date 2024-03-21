@@ -8,6 +8,8 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.core.Quad
+import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.movie.interactor.GetMovie
@@ -38,6 +40,8 @@ class FavoritesScreenModel(
     private val getShow: GetShow,
     private val updateShow: UpdateShow,
     private val updateMovie: UpdateMovie,
+    private val tvCoverCache: TVShowCoverCache,
+    private val movieCoverCache: MovieCoverCache,
     private val libraryPreferences: LibraryPreferences
 ): ScreenModel {
 
@@ -106,10 +110,22 @@ class FavoritesScreenModel(
         screenModelScope.launch {
             if (contentItem.isMovie) {
                 val movie = getMovie.await(contentItem.contentId) ?: return@launch
-                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+
+                val new = movie.copy(favorite = !movie.favorite)
+
+                if(!new.favorite) {
+                    movieCoverCache.deleteFromCache(movie)
+                }
+                updateMovie .await(new.toMovieUpdate())
             } else {
                 val show = getShow.await(contentItem.contentId) ?: return@launch
-                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
+
+                val new = show.copy(favorite = !show.favorite)
+
+                if(!new.favorite) {
+                    tvCoverCache.deleteFromCache(show)
+                }
+                updateShow.await(new.toShowUpdate())
             }
         }
     }

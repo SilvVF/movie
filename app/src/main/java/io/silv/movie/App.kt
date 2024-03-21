@@ -78,7 +78,8 @@ class App: Application(), ImageLoaderFactory {
                     memoryCache = memCacheInit,
                     fetcher = BucketItemFetcher(
                         this@App,
-                        inject<Storage>()
+                        inject<Storage>(),
+                        inject<ProfileImageCache>()
                     )
                 )
                 if (SDK_INT >= 28) {

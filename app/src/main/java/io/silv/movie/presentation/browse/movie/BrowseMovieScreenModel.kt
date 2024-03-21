@@ -21,6 +21,7 @@ import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
+import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -55,6 +56,7 @@ class MovieScreenModel(
     private val getMovie: GetMovie,
     private val updateMovie: UpdateMovie,
     private val sourceRepository: SourceMovieRepository,
+    private val coverCache: MovieCoverCache,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<MovieState>(
@@ -168,12 +170,15 @@ class MovieScreenModel(
 
     fun toggleMovieFavorite(movie: MoviePoster) {
         screenModelScope.launch {
-            val update = getMovie.await(movie.id)
-                ?.copy(favorite = !movie.favorite)
-                ?.toMovieUpdate()
-                ?: return@launch
+            val update = getMovie.await(movie.id) ?: return@launch
 
-            updateMovie.await(update)
+            val new = update.copy(favorite = !movie.favorite)
+
+            if(!new.favorite) {
+                coverCache.deleteFromCache(update)
+            }
+
+            updateMovie.await(new.toMovieUpdate())
         }
     }
 

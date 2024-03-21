@@ -143,11 +143,16 @@ class TVViewScreenModel(
         }
     }
 
-    fun toggleShowFavorite(show: TVShow) {
+    fun toggleShowFavorite(tvShow: TVShow) {
         screenModelScope.launch {
-            val update = show.copy(favorite = !show.favorite).toShowUpdate()
+            val show = getShow.await(tvShow.id) ?: return@launch
 
-            updateShow.await(update)
+            val new = show.copy(favorite = !show.favorite)
+
+            if(!new.favorite) {
+                showCoverCache.deleteFromCache(show)
+            }
+            updateShow.await(new.toShowUpdate())
         }
     }
 

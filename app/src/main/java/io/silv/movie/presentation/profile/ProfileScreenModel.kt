@@ -28,8 +28,22 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.Clock
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import timber.log.Timber
 
+@Serializable
+data class Users(
+    @SerialName("user_id")
+    val userId: String,
+    val email: String,
+    val username: String,
+    @SerialName("genre_ratings")
+    val genreRatings: String? = null,
+    @SerialName("profile_image")
+    val profileImage: String? = null
+)
 
 class ProfileScreenModel(
     private val auth: Auth,
@@ -76,18 +90,117 @@ class ProfileScreenModel(
                 mutableState.value = when(status) {
                     SessionStatus.LoadingFromStorage -> ProfileState.Loading
                     SessionStatus.NetworkError -> ProfileState.LoggedOut("Network Error")
-                    is SessionStatus.Authenticated ->
+                    is SessionStatus.Authenticated -> {
+                        val info =  status.session.user ?: return@onEach
                         ProfileState.LoggedIn(
-                            status.session.user ?: return@onEach,
-                            profileImageData = UserProfileImageData(
-                                status.session.user?.id ?: return@onEach,
-                                imageLastUpdated = -1L
-                            ),
+                            info = info,
+                            user = getUser(info),
+                            profileImageData = UserProfileImageData(info.id)
                         )
+                    }
                     is SessionStatus.NotAuthenticated -> ProfileState.LoggedOut()
                 }
             }
             .launchIn(screenModelScope)
+    }
+
+    private suspend fun getUser(info: UserInfo): Users? {
+        val user =  runCatching {
+            postgrest["users"]
+                .select {
+                    filter {
+                        Users::userId eq info.id
+                    }
+                }
+                .decodeSingle<Users>()
+        }
+            .getOrNull()
+
+        if (user != null)
+            return user
+
+        return runCatching {
+            postgrest["users"]
+                .insert(
+                    Users(
+                        userId = info.id,
+                        email = info.email!!,
+                        username = info.email!!.replaceAfter("@", "").dropLast(1)
+                    )
+                )
+                {
+                    select()
+                }
+                .decodeSingle<Users>()
+
+        }
+            .onFailure { Timber.d(it) }
+            .getOrNull()
+    }
+
+    fun updateUsername(name: String) {
+        screenModelScope.launch {
+            runCatching {
+                val user = state.value.loggedIn?.info
+                    ?: error("not signed in")
+
+                val new = postgrest["users"]
+                    .update(
+                        {
+                            set("username", name)
+                        }
+                    ) {
+                        select()
+                        filter {
+                            eq("user_id", user.id)
+                        }
+                    }
+                    .decodeSingle<Users>()
+
+
+
+                mutableState.updateLoggedIn { state ->
+                    state.copy(
+                        user = new
+                    )
+                }
+            }
+                .onFailure { Timber.e(it) }
+                .onSuccess {
+
+                }
+        }
+    }
+
+    fun updateProfilePicture(path: String) {
+        screenModelScope.launch {
+            runCatching {
+                val user = state.value.loggedIn?.info ?: error("not signed in")
+
+               postgrest["users"]
+                    .update(
+                        {
+                            Users::profileImage setTo path
+                        }
+                    ) {
+                        filter {
+                            Users::userId eq user.id
+                        }
+                    }
+                mutableState.updateLoggedIn { state ->
+                    state.copy(
+                        profileImageData = state.profileImageData.copy(
+                            userId = user.id,
+                            imageLastUpdated = Clock.System.now().toEpochMilliseconds()
+                        )
+                    )
+                }
+            }
+                .onFailure { Timber.e(it) }
+                .onSuccess {
+
+                }
+        }
     }
 
     fun deleteAccount() {
@@ -95,7 +208,6 @@ class ProfileScreenModel(
             runCatching {
                 adminClient.deleteUser(
                     auth.currentUserOrNull()?.id ?: return@launch,
-
                 )
             }
                 .onFailure { Timber.e(it) }
@@ -227,7 +339,9 @@ sealed interface ProfileState {
 
     @Immutable
     data class LoggedIn(
-        val user: UserInfo,
+        val info: UserInfo,
+        val user: Users? = null,
+        val updatingPicture: Boolean = false,
         val dialog: Dialog? = null,
         val profileImageData: UserProfileImageData
     ): ProfileState {
@@ -253,4 +367,6 @@ sealed interface ProfileState {
             data object AccountOptions: Dialog
         }
     }
+
+    val loggedIn get() = this as? LoggedIn
 }

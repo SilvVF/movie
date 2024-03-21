@@ -147,11 +147,16 @@ class MovieViewScreenModel(
         }
     }
 
-    fun toggleMovieFavorite(movie: Movie) {
+    fun toggleMovieFavorite(m: Movie) {
         screenModelScope.launch {
-            val update = movie.copy(favorite = !movie.favorite).toMovieUpdate()
+            val movie = getMovie.await(m.id) ?: return@launch
 
-            updateMovie.await(update)
+            val new = movie.copy(favorite = !movie.favorite)
+
+            if(!new.favorite) {
+                movieCoverCache.deleteFromCache(movie)
+            }
+            updateMovie.await(new.toMovieUpdate())
         }
     }
 

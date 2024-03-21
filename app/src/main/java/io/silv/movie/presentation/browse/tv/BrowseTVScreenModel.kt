@@ -21,6 +21,7 @@ import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
@@ -53,8 +54,9 @@ class TVScreenModel(
     private val getRemoteTVShow: GetRemoteTVShows,
     private val networkToLocalMovie: NetworkToLocalTVShow,
     private val getShow: GetShow,
-    private val updateMovie: UpdateShow,
+    private val updateShow: UpdateShow,
     private val sourceRepository: SourceTVRepository,
+    private val coverCache: TVShowCoverCache,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<TVState>(
@@ -154,12 +156,14 @@ class TVScreenModel(
 
     fun toggleShowFavorite(tvShow: TVShowPoster) {
         screenModelScope.launch {
-            val update = getShow.await(tvShow.id)
-                ?.copy(favorite = !tvShow.favorite)
-                ?.toShowUpdate()
-                ?: return@launch
+            val update = getShow.await(tvShow.id) ?: return@launch
 
-            updateMovie.await(update)
+            val new = update.copy(favorite = !tvShow.favorite)
+
+            if(!new.favorite) {
+                coverCache.deleteFromCache(update)
+            }
+            updateShow.await(update.toShowUpdate())
         }
     }
 
