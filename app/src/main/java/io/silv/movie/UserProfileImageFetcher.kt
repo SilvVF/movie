@@ -24,7 +24,7 @@ import org.koin.core.component.inject
 @Serializable
 private data class UserProfileImageResponse(
     @SerialName("profile_image")
-    val profileImage: String
+    val profileImage: String? = null
 )
 
 data class UserProfileImageData(
@@ -138,7 +138,7 @@ class UserProfileImageFetcher(
 
     override suspend fun fetch(options: Options, data: UserProfileImageData): ByteArray {
         val bucket = storage["profile_pictures"]
-        return bucket.downloadPublic(data.path)
+        return bucket.downloadPublic(data.path ?: error("profile image blank"))
     }
 
     companion object {

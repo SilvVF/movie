@@ -89,7 +89,8 @@ data class PosterData(
     val title: String,
     val favorite: Boolean,
     val isMovie: Boolean,
-    val lastModified: Long
+    val lastModified: Long,
+    val inList: Boolean = false
 )
 
 object CommonEntryItemDefaults {

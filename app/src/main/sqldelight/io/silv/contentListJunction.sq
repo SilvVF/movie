@@ -18,6 +18,42 @@ BEGIN
   WHERE _id = new.list_id;
 END;
 
+CREATE TRIGGER update_movie_in_list
+AFTER INSERT ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE movie
+  SET inList = 1
+  WHERE movie.id = new.movie_id;
+END;
+
+CREATE TRIGGER update_show_in_list
+AFTER INSERT ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE show
+  SET inList = 1
+  WHERE show.id = new.show_id;
+END;
+
+CREATE TRIGGER update_movie_in_list_delete
+AFTER DELETE ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE movie
+  SET inList = 0
+  WHERE movie.id = old.movie_id;
+END;
+
+CREATE TRIGGER update_show_in_list_delete
+AFTER DELETE ON contentListJunction
+FOR EACH ROW
+BEGIN
+  UPDATE show
+  SET inList = 0
+  WHERE show.id = old.show_id;
+END;
+
 CREATE TRIGGER update_last_modified_at_list_delete
 AFTER DELETE ON contentListJunction
 FOR EACH ROW
@@ -52,7 +88,8 @@ SELECT
     m.poster_last_updated AS posterLastUpdated,
     m.favorite AS favorite,
     m.overview  AS overview,
-    m.popularity AS popularity
+    m.popularity AS popularity,
+    m.inList AS inList
 FROM contentListJunction AS clj
 LEFT JOIN movie AS m
 ON m.id = clj.movie_id
@@ -72,7 +109,8 @@ SELECT
     s.poster_last_updated AS posterLastUpdated,
     s.favorite AS favorite,
     s.overview  AS overview,
-    s.popularity AS popularity
+    s.popularity AS popularity,
+    s.inList AS inList
 FROM contentListJunction AS clj
 LEFT JOIN show AS s
 ON s.id = clj.movie_id
@@ -92,7 +130,8 @@ SELECT
     COALESCE(m.poster_last_updated, s.poster_last_updated) AS posterLastUpdated,
     COALESCE(m.favorite, s.favorite) AS favorite,
     COALESCE(m.overview, s.overview) AS overview,
-    COALESCE(m.popularity, s.popularity) AS popularity
+    COALESCE(m.popularity, s.popularity) AS popularity,
+    COALESCE(m.inList, s.inList) AS inList
 FROM contentListJunction AS clj
 LEFT JOIN movie AS m
 ON m.id = clj.movie_id

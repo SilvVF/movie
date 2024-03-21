@@ -34,7 +34,8 @@ fun MoviePoster.toContentItem(): ContentItem {
         favorite = it.favorite,
         lastModified = -1L,
         description = "",
-        popularity = 0.0
+        popularity = 0.0,
+        inList = inList
     )
 }
 
@@ -49,7 +50,8 @@ fun TVShowPoster.toContentItem(): ContentItem {
         favorite = it.favorite,
         lastModified = -1L,
         description = "",
-        popularity = 0.0
+        popularity = 0.0,
+        inList = inList
     )
 }
 
@@ -60,6 +62,7 @@ data class ContentItem(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
+    val inList: Boolean,
     val lastModified: Long,
     val description: String,
     val popularity: Double,

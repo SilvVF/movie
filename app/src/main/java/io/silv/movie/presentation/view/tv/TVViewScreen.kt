@@ -99,12 +99,14 @@ data class TVViewScreen(
                                 onShareClick = { sm.shareCover(context) },
                                 onSaveClick = { sm.saveCover(context) },
                                 snackbarHostState = sm.snackbarHostState,
-                                onEditClick = {
-                                    when (it) {
-                                        EditCoverAction.EDIT -> getContent.launch("image/*")
-                                        EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                onEditClick = if (tvShow!!.favorite || tvShow!!.inList) {
+                                    {
+                                        when (it) {
+                                            EditCoverAction.EDIT -> getContent.launch("image/*")
+                                            EditCoverAction.DELETE -> sm.deleteCustomCover(context)
+                                        }
                                     }
-                                },
+                                } else null,
                                 onDismissRequest = onDismissRequest,
                             )
                         }

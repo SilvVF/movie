@@ -92,6 +92,8 @@ class SelectProfileImageScreenModel(
     fun refreshImages() {
         refreshing = true
         ioCoroutineScope.launch {
+
+
             runCatching {
                 val profilePictures = storage["profile_pictures"]
                 val folders = profilePictures.list()

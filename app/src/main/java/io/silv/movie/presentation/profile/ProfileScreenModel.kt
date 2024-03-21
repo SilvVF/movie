@@ -6,73 +6,42 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.SessionStatus
-import io.github.jan.supabase.gotrue.SignOutScope
-import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.gotrue.user.UserInfo
-import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.UserProfileImageData
+import io.silv.movie.data.user.User
+import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import timber.log.Timber
 
-@Serializable
-data class Users(
-    @SerialName("user_id")
-    val userId: String,
-    val email: String,
-    val username: String,
-    @SerialName("genre_ratings")
-    val genreRatings: String? = null,
-    @SerialName("profile_image")
-    val profileImage: String? = null
-)
 
 class ProfileScreenModel(
+    private val userRepository: UserRepository,
     private val auth: Auth,
-    private val postgrest: Postgrest,
 ):
     StateScreenModel<ProfileState>(ProfileState.Loading),
     EventProducer<ProfileEvent> by EventProducer.default() {
-
-    var authJob: Job? = null
-
-    val authJobInProgress = flow {
-        while (true) {
-            emit(authJob?.isActive ?: false)
-            delay(10)
-        }
-    }
-        .stateIn(
-            screenModelScope,
-            SharingStarted.WhileSubscribed(5_000L),
-            false
-        )
 
     init {
         auth.sessionStatus
             .onEach { status ->
                 mutableState.value = when(status) {
                     SessionStatus.LoadingFromStorage -> ProfileState.Loading
-                    SessionStatus.NetworkError -> ProfileState.LoggedOut("Network Error")
+                    SessionStatus.NetworkError -> ProfileState.LoggedOut(
+                        "Network Error"
+                    )
                     is SessionStatus.Authenticated -> {
                         val info =  status.session.user ?: return@onEach
                         ProfileState.LoggedIn(
                             info = info,
-                            user = getUser(info),
+                            user = userRepository.getUser(info.id) ?: return@onEach,
                             profileImageData = UserProfileImageData(info.id)
                         )
                     }
@@ -82,173 +51,84 @@ class ProfileScreenModel(
             .launchIn(screenModelScope)
     }
 
-    private suspend fun getUser(info: UserInfo): Users? {
-        val user =  runCatching {
-            postgrest["users"]
-                .select {
-                    filter {
-                        Users::userId eq info.id
-                    }
-                    limit(1)
-                }
-                .decodeSingle<Users>()
-        }
-            .getOrNull()
 
-        if (user != null)
-            return user
-
-        return runCatching {
-            postgrest["users"]
-                .insert(
-                    Users(
-                        userId = info.id,
-                        email = info.email!!,
-                        username = info.email!!.replaceAfter("@", "").dropLast(1)
-                    )
-                )
-                {
-                    select()
-                    limit(1)
-                }
-                .decodeSingle<Users>()
-
-        }
-            .onFailure { Timber.d(it) }
-            .getOrNull()
-    }
 
     fun updateUsername(name: String) {
         screenModelScope.launch {
-            runCatching {
-                val user = state.value.loggedIn?.info
-                    ?: error("not signed in")
+            val user = state.value.loggedIn?.user ?: return@launch
 
-                val new = postgrest["users"]
-                    .update(
-                        {
-                            set("username", name)
-                        }
-                    ) {
-                        select()
-                        filter {
-                            eq("user_id", user.id)
-                        }
-                        limit(1)
-                    }
-                    .decodeSingle<Users>()
+            val new = userRepository.updateUser(user.copy(username = name))
+                ?: return@launch
 
-
-
-                mutableState.updateLoggedIn { state ->
-                    state.copy(
-                        user = new
-                    )
-                }
+            mutableState.updateLoggedIn {state ->
+                state.copy(user = new)
             }
-                .onFailure { Timber.e(it) }
-                .onSuccess {
-
-                }
         }
     }
 
     fun updateProfilePicture(path: String) {
         screenModelScope.launch {
-            runCatching {
-                val user = state.value.loggedIn?.info ?: error("not signed in")
 
-               postgrest["users"]
-                    .update(
-                        {
-                            Users::profileImage setTo path
-                        }
-                    ) {
-                        filter {
-                            Users::userId eq user.id
-                        }
-                    }
-                mutableState.updateLoggedIn { state ->
-                    state.copy(
-                        profileImageData = state.profileImageData.copy(
-                            userId = user.id,
-                            imageLastUpdated = Clock.System.now().toEpochMilliseconds()
-                        )
+            val user = state.value.loggedIn?.user ?: return@launch
+
+            val new = userRepository.updateUser(user.copy(profileImage = path))
+                ?: return@launch
+
+            mutableState.updateLoggedIn { state ->
+                state.copy(
+                    user = new,
+                    profileImageData = UserProfileImageData(
+                        userId = new.userId,
+                        imageLastUpdated = Clock.System.now().toEpochMilliseconds()
                     )
-                }
+                )
             }
-                .onFailure { Timber.e(it) }
-                .onSuccess {
-
-                }
         }
     }
 
     fun deleteAccount() {
         ioCoroutineScope.launch {
-            runCatching {
-                postgrest.rpc("deleteUser")
+            if(userRepository.deleteAccount()) {
+                emitEvent(ProfileEvent.AccountDeleted)
+                auth.clearSession()
             }
-                .onFailure { Timber.e(it) }
-                .onSuccess {
-                    emitEvent(ProfileEvent.AccountDeleted)
-                    auth.clearSession()
-                }
         }
     }
 
     fun signOut() {
-        authJob?.cancel()
-        authJob = ioCoroutineScope.launch {
-            runCatching {
-                auth.signOut(
-                    scope = SignOutScope.LOCAL
-                )
-            }
-                .onFailure { Timber.e(it) }
+        ioCoroutineScope.launch {
+            userRepository.signOut()
         }
     }
 
     fun registerWithEmailAndPassword(email: String, password: String) {
-        authJob?.cancel()
-        authJob = ioCoroutineScope.launch {
-            runCatching {
-                auth.signUpWith(Email) {
-                    this.email = email
-                    this.password = password
+        ioCoroutineScope.launch {
+            updateJob(true)
+            val result = userRepository.registerWithEmailAndPassword(email, password)
+            if (result) {
+                mutableState.updateLoggedOut { state ->
+                    state.copy(error =  "Failed to create an account")
                 }
+            } else {
+                mutableState.updateLoggedOut { state ->
+                    state.copy(error = null)
+                }
+                emitEvent(ProfileEvent.AccountCreated(email))
             }
-                .onFailure { t ->
-                    Timber.e(t)
-                    mutableState.updateLoggedOut { state ->
-                        state.copy(error =  "Failed to create an account")
-                    }
-                }
-                .onSuccess { result ->
-                    mutableState.updateLoggedOut { state ->
-                        state.copy(error = null)
-                    }
-                    emitEvent(ProfileEvent.AccountCreated(result?.email.orEmpty()))
-                }
+            updateJob(false)
         }
     }
 
     fun signInWithEmailAndPassword(email: String, password: String) {
-        authJob?.cancel()
-        authJob = ioCoroutineScope.launch {
-
-            runCatching {
-                auth.signInWith(Email) {
-                    this.email = email
-                    this.password = password
+        ioCoroutineScope.launch {
+            updateJob(true)
+            val result = userRepository.signInWithEmailAndPassword(email, password)
+            if (!result) {
+                mutableState.updateLoggedOut {state ->
+                    state.copy(error = "Failed to login")
                 }
             }
-                .onFailure { t ->
-                    Timber.e(t)
-                    mutableState.updateLoggedOut {state ->
-                        state.copy(error = "Failed to login")
-                    }
-                }
+            updateJob(false)
         }
     }
 
@@ -270,12 +150,17 @@ class ProfileScreenModel(
 
     fun resetPassword(email: String) {
         ioCoroutineScope.launch {
-            runCatching {
-                auth.resetPasswordForEmail(email)
+            updateJob(true)
+            if (userRepository.resetPassword(email)) {
+                emitEvent(ProfileEvent.PasswordResetSent)
             }
-                .onSuccess {
-                    emitEvent(ProfileEvent.PasswordResetSent)
-                }
+            updateJob(false)
+        }
+    }
+
+    private suspend fun updateJob(inProgress: Boolean) = withContext(Dispatchers.Main){
+        mutableState.updateLoggedOut { state ->
+            state.copy(jobInProgress = inProgress)
         }
     }
 
@@ -319,8 +204,7 @@ sealed interface ProfileState {
     @Immutable
     data class LoggedIn(
         val info: UserInfo,
-        val user: Users? = null,
-        val updatingPicture: Boolean = false,
+        val user: User,
         val dialog: Dialog? = null,
         val profileImageData: UserProfileImageData
     ): ProfileState {
@@ -337,7 +221,8 @@ sealed interface ProfileState {
     @Immutable
     data class LoggedOut(
         val error: String? = null,
-        val dialog: Dialog? = null
+        val dialog: Dialog? = null,
+        val jobInProgress: Boolean = false
     ): ProfileState {
 
         @Stable

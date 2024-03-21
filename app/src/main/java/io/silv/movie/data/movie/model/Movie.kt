@@ -12,7 +12,8 @@ data class MoviePoster(
     val title: String,
     val posterLastUpdated: Long,
     val posterUrl: String?,
-    val favorite: Boolean
+    val favorite: Boolean,
+    val inList: Boolean = false
 ): Parcelable
 
 @Stable
@@ -31,6 +32,7 @@ data class Movie(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
+    val inList: Boolean,
     val status: io.silv.movie.core.Status?,
     val productionCompanies: List<String>?,
     val lastModifiedAt: Long,
@@ -58,7 +60,8 @@ data class Movie(
             status = null,
             productionCompanies = null,
             favoriteModifiedAt = -1L,
-            lastModifiedAt = -1L
+            lastModifiedAt = -1L,
+            inList = false
        )
     }
 }

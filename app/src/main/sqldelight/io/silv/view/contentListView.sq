@@ -12,7 +12,8 @@ SELECT
     COALESCE(m.poster_last_updated, s.poster_last_updated) AS posterLastUpdated,
     COALESCE(m.favorite, s.favorite) AS favorite,
     COALESCE(m.overview, s.overview) AS overview,
-    COALESCE(m.popularity, s.popularity) AS popularity
+    COALESCE(m.popularity, s.popularity) AS popularity,
+    COALESCE(m.inList, s.inList) AS inList
 FROM
     contentList cl
 LEFT JOIN

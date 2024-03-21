@@ -163,7 +163,7 @@ class TVScreenModel(
             if(!new.favorite) {
                 coverCache.deleteFromCache(update)
             }
-            updateShow.await(update.toShowUpdate())
+            updateShow.await(new.toShowUpdate())
         }
     }
 

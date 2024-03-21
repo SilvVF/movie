@@ -26,7 +26,8 @@ object ContentListMapper {
         favorite: Boolean?,
         overview: String?,
         popularity: Double?,
-        last_modified_at: Long?
+        last_modified_at: Long?,
+        inList: Boolean?
         ->
         ContentItem(
             contentId = movieId ?: showId!!,
@@ -38,6 +39,7 @@ object ContentListMapper {
             lastModified = last_modified_at ?: -1L,
             popularity = popularity ?: 0.0,
             description = overview ?: "",
+            inList = inList ?: false
         )
     }
 
@@ -56,6 +58,7 @@ object ContentListMapper {
             lastModified = last_modified_at,
             popularity = popularity,
             description = overview,
+            inList = true
         )
     }
 
@@ -71,7 +74,8 @@ object ContentListMapper {
             posterLastUpdated: Long?,
             favorite: Boolean?,
             overview: String?,
-            popularity: Double? -> ContentItem(
+            popularity: Double?,
+            inList: Boolean? -> ContentItem(
                 contentId = showId ?: movieId!!,
                 isMovie = movieId != null,
                 title = title ?: "",
@@ -81,6 +85,7 @@ object ContentListMapper {
                 lastModified = created_at,
                 popularity = popularity ?: 0.0,
                 description = overview ?: "",
+                inList = inList ?: false
             )
     }
 
@@ -97,7 +102,8 @@ object ContentListMapper {
             posterLastUpdated: Long?,
             favorite: Boolean?,
             overview: String?,
-            popularity: Double? ->
+            popularity: Double?,
+            inList: Boolean?    ->
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
@@ -110,6 +116,7 @@ object ContentListMapper {
                    lastModified =  addedToListAt ?: 0L,
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
+                   inList = inList ?: false
                ),
                list = ContentList(
                    list_id,

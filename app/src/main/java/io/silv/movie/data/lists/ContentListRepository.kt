@@ -25,7 +25,7 @@ interface ContentListRepository {
 
 class ContentListRepositoryImpl(
     private val handler: DatabaseHandler,
-    private val listCoverCache: ListCoverCache
+    private val listCoverCache: ListCoverCache,
 ): ContentListRepository {
 
     override suspend fun createList(name: String): Long {

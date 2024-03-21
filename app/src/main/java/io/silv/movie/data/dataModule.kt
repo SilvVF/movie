@@ -34,6 +34,8 @@ import io.silv.movie.data.tv.repository.ShowRepository
 import io.silv.movie.data.tv.repository.ShowRepositoryImpl
 import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.data.tv.repository.SourceTVRepositoryImpl
+import io.silv.movie.data.user.UserRepository
+import io.silv.movie.data.user.UserRepositoryImpl
 import io.silv.movie.network.networkModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
@@ -85,6 +87,8 @@ val dataModule =
         singleOf(::MovieRepositoryImpl) { bind<MovieRepository>() }
 
         singleOf(::ShowRepositoryImpl) { bind<ShowRepository>() }
+
+        singleOf(::UserRepositoryImpl) { bind<UserRepository>() }
 
         singleOf(::TMDBPreferences)
 

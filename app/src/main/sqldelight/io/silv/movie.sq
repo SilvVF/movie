@@ -15,6 +15,7 @@ CREATE TABLE movie (
     poster_url TEXT,
     poster_last_updated INTEGER NOT NULL,
     favorite INTEGER AS Boolean NOT NULL,
+    inList INTEGER AS Boolean NOT NULL DEFAULT 0,
     externalUrl TEXT NOT NULL,
     popularity REAL NOT NULL,
     status INTEGER,
@@ -53,7 +54,7 @@ SELECT * FROM movie WHERE id = :id LIMIT 1;
 
 
 selectMoviePartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity FROM movie WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity, inList FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:
 SELECT * FROM movie;

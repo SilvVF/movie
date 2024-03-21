@@ -15,6 +15,7 @@ fun MoviePoster.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = true,
+        inList = inList,
         lastModified = posterLastUpdated
     )
 }
@@ -27,6 +28,7 @@ fun Movie.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = true,
+        inList = inList,
         lastModified = posterLastUpdated
     )
 }
@@ -38,6 +40,7 @@ fun TVShowPoster.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = false,
+        inList = inList,
         lastModified = posterLastUpdated
     )
 }
@@ -49,7 +52,7 @@ fun ContentItem.toPoster(): PosterData {
         isMovie = isMovie,
         title =  title,
         favorite = favorite,
-        lastModified = posterLastUpdated
+        lastModified = posterLastUpdated,
     )
 }
 
@@ -60,6 +63,7 @@ fun TVShow.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = false,
+        inList = inList,
         lastModified = posterLastUpdated
     )
 }

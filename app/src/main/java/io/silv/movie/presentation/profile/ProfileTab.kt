@@ -60,7 +60,6 @@ object ProfileScreen: Screen {
     override fun Content() {
         val screenModel = getScreenModel<ProfileScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
-        val authJobInProgress by screenModel.authJobInProgress.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
         CollectEventsWithLifecycle(screenModel) { event ->
@@ -102,7 +101,7 @@ object ProfileScreen: Screen {
                         screenModel.updateProfilePicture(it.path)
                     }
                     val editUsernameScreen = remember(targetState.user?.username.orEmpty()) {
-                        UsernameEditScreen(targetState.user?.username.orEmpty())
+                        UsernameEditScreen(targetState.user.username)
                     }
                     val editUsernameScreenLauncher = rememberScreenWithResultLauncher(
                         screen = editUsernameScreen,
@@ -205,7 +204,7 @@ object ProfileScreen: Screen {
                             signInWithGoogle.startFlow()
                         },
                         error = targetState.error,
-                        inProgress = authJobInProgress,
+                        inProgress = targetState.jobInProgress,
                         signInWithEmailAndPassword = { signIn(email, password) },
                         registerWithEmailAndPassword = { register(email, password) },
                         optionsButtonClick = { screenModel.changeLoggedOutDialog(ProfileState.LoggedOut.Dialog.AccountOptions) },

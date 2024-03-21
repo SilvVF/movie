@@ -53,7 +53,7 @@ class ContentPosterFetcher(
 
     override val diskStore: FetcherDiskStore<PosterData> =
         FetcherDiskStoreImageFile { data, _ ->
-            if (data.favorite) {
+            if (data.favorite || data.inList) {
                 if (data.isMovie) {
                     movieCoverCache.getCoverFile(data.url)
                 } else {
@@ -67,7 +67,7 @@ class ContentPosterFetcher(
     override suspend fun overrideFetch(options: Options, data: PosterData): FetchResult? {
         // Use custom cover if exists
         val useCustomCover = options.parameters.value(USE_CUSTOM_COVER) ?: true
-        if (useCustomCover) {
+        if (useCustomCover && (data.inList || data.favorite)) {
             val customCoverFile = if(data.isMovie){
                 movieCoverCache.getCustomCoverFile(data.id)
             } else {
