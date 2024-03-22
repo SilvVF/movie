@@ -1,11 +1,9 @@
 CREATE TABLE contentListJunction(
-    movie_id INTEGER,
-    show_id INTEGER,
+    movie_id INTEGER NOT NULL DEFAULT -1,
+    show_id INTEGER NOT NULL DEFAULT -1,
     list_id INTEGER NOT NULL,
     created_at INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(movie_id, show_id, list_id),
-    FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE,
-    FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
     FOREIGN KEY (list_id) REFERENCES contentList(_id) ON DELETE CASCADE
 );
 
@@ -93,7 +91,7 @@ SELECT
 FROM contentListJunction AS clj
 LEFT JOIN movie AS m
 ON m.id = clj.movie_id
-WHERE list_id = :listId
+WHERE list_id = :listId AND movie_id != -1
 AND (
     m.title LIKE :query
     OR :query = ''
@@ -113,8 +111,8 @@ SELECT
     s.inList AS inList
 FROM contentListJunction AS clj
 LEFT JOIN show AS s
-ON s.id = clj.movie_id
-WHERE list_id = :listId
+ON s.id = clj.show_id
+WHERE list_id = :listId AND show_id != -1
 AND (
     s.title LIKE :query
     OR :query = ''
@@ -134,9 +132,9 @@ SELECT
     COALESCE(m.inList, s.inList) AS inList
 FROM contentListJunction AS clj
 LEFT JOIN movie AS m
-ON m.id = clj.movie_id
+ON m.id = clj.movie_id AND movie_id != -1
 LEFT JOIN show AS s
-ON s.id = clj.show_id
+ON s.id = clj.show_id AND show_id != -1
 WHERE
     list_id = :listId
 AND (

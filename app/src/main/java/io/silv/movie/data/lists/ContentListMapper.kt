@@ -40,8 +40,8 @@ object ContentListMapper {
         inList: Boolean?
         ->
         ContentItem(
-            contentId = movieId ?: showId!!,
-            isMovie = movieId != null,
+            contentId = movieId.takeIf { it != -1L } ?: showId!!,
+            isMovie = movieId.takeIf { it != -1L } != null,
             title = title ?: "",
             posterUrl = posterUrl,
             posterLastUpdated = posterLastUpdated ?: -1L,
@@ -86,8 +86,8 @@ object ContentListMapper {
             overview: String?,
             popularity: Double?,
             inList: Boolean? -> ContentItem(
-                contentId = showId ?: movieId!!,
-                isMovie = movieId != null,
+                contentId = showId.takeIf { it != -1L } ?: movieId!!,
+                isMovie = movieId.takeIf { it != -1L } != null,
                 title = title ?: "",
                 posterUrl = posterUrl,
                 posterLastUpdated = posterLastUpdated ?: 0L,
@@ -117,8 +117,8 @@ object ContentListMapper {
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
-                   contentId = showId ?: movieId!!,
-                   isMovie = movieId != null,
+                   contentId = showId.takeIf { it != -1L } ?: movieId!!,
+                   isMovie = movieId.takeIf { it != -1L } != null,
                    title = title ?: "",
                    posterUrl = posterUrl,
                    posterLastUpdated = posterLastUpdated ?: 0L,

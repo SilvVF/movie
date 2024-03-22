@@ -47,7 +47,7 @@ class ContentListRepositoryImpl(
     }
 
     override suspend fun addMovieToList(movieId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.insert(movieId, null, contentList.id) }
+        handler.await { contentListJunctionQueries.insert(movieId, -1, contentList.id) }
     }
 
     override suspend fun removeMovieFromList(movieId: Long, contentList: ContentList) {
@@ -55,7 +55,7 @@ class ContentListRepositoryImpl(
     }
 
     override suspend fun addShowToList(showId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.insert(null, showId, contentList.id) }
+        handler.await { contentListJunctionQueries.insert(-1, showId, contentList.id) }
     }
 
     override suspend fun removeShowFromList(showId: Long, contentList: ContentList) {

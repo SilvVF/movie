@@ -34,6 +34,14 @@ BEGIN
   WHERE id = new.id;
 END;
 
+CREATE TRIGGER delete_movie_from_lists
+AFTER DELETE ON movie
+FOR EACH ROW
+BEGIN
+  DELETE FROM contentListJunction
+  WHERE movie_id = old.id;
+END;
+
 CREATE TRIGGER update_last_modified_at_movies
 AFTER UPDATE ON movie
 FOR EACH ROW

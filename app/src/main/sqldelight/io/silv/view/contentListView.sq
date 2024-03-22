@@ -19,9 +19,9 @@ FROM
 LEFT JOIN
     contentListJunction clj ON cl._id = clj.list_id
 LEFT JOIN
-    movie m ON clj.movie_id = m.id
+    movie m ON clj.movie_id = m.id AND movie_id != -1
 LEFT JOIN
-    show s ON clj.show_id = s.id;
+    show s ON clj.show_id = s.id AND show_id != -1;
 
 contentlist:
 SELECT * FROM contentListView
