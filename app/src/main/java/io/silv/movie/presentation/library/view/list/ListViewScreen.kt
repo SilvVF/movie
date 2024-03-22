@@ -223,6 +223,9 @@ private fun SuccessScreenContent(
         topBar = {
             ListViewTopBar(
                 state  = topBarState,
+                username = state.user?.username.orEmpty(),
+                description = "a list description",
+                userId = state.list.createdBy,
                 query = { query },
                 changeQuery = updateQuery,
                 onSearch = updateQuery,
@@ -260,7 +263,6 @@ private fun SuccessScreenContent(
                             style = HazeDefaults.style(MaterialTheme.colorScheme.background),
                         )
                         .padding(top = 12.dp),
-
                 )
             }
             PosterDisplayMode.List -> {

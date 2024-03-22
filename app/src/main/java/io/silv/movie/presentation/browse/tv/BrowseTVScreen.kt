@@ -1,10 +1,14 @@
 package io.silv.movie.presentation.browse.tv
 
+import android.content.Intent
+import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExploreOff
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -22,7 +26,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
@@ -34,6 +40,8 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.Action
+import io.silv.core_ui.components.EmptyScreen
 import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -45,6 +53,7 @@ import io.silv.movie.presentation.browse.movie.BrowseMovieScreen
 import io.silv.movie.presentation.browse.movie.components.ContentBrowseTopBar
 import io.silv.movie.presentation.browse.tv.components.TVSourcePagingContent
 import io.silv.movie.presentation.view.tv.TVViewScreen
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.core.parameter.parametersOf
 
@@ -59,7 +68,7 @@ data class BrowseTVScreen(
         val screenModel = getScreenModel<TVScreenModel> { parametersOf(contentPagedType) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
-
+        val online by screenModel.online.collectAsStateWithLifecycle()
         // needed for movie action to be stable
         val stableChangeDialogRefrence = remember {
             { dialog: TVScreenModel.Dialog.RemoveShow ->
@@ -97,6 +106,7 @@ data class BrowseTVScreen(
                 setDisplayMode = screenModel::changeDisplayMode,
                 changeGridCellCount = screenModel::changeGridCells
             ),
+            online = online,
             changeResourceType = {
                 navigator.replace(
                     BrowseMovieScreen(state.listing)
@@ -159,6 +169,7 @@ private fun TVStandardScreenSizeContent(
     pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<TVShowPoster>>>,
     gridCellsCount: () -> Int,
     changeResourceType: () -> Unit,
+    online: Boolean,
     changeDialog: (TVScreenModel.Dialog?) -> Unit,
     actions: TVActions
 ) {
@@ -214,20 +225,44 @@ private fun TVStandardScreenSizeContent(
                 .fillMaxSize()
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
         ) { paddingValues ->
-            TVSourcePagingContent(
-                paddingValues = paddingValues,
-                pagingFlowFlow = pagingFlowFlow,
-                snackbarHostState = snackBarHostState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .haze(
-                        state = hazeState,
-                        style = HazeDefaults.style(MaterialTheme.colorScheme.background),
-                    ),
-                actions = actions,
-                displayMode = displayMode,
-                gridCellsCount = gridCellsCount
-            )
+            if (online) {
+                TVSourcePagingContent(
+                    paddingValues = paddingValues,
+                    pagingFlowFlow = pagingFlowFlow,
+                    snackbarHostState = snackBarHostState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .haze(
+                            state = hazeState,
+                            style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                        ),
+                    actions = actions,
+                    displayMode = displayMode,
+                    gridCellsCount = gridCellsCount
+                )
+            } else {
+                val context = LocalContext.current
+                EmptyScreen(
+                    icon = Icons.Filled.ExploreOff,
+                    iconSize = 182.dp,
+                    contentPadding = paddingValues,
+                    message = stringResource(id = R.string.no_internet_error),
+                    actions = persistentListOf(
+                        Action(
+                            R.string.take_to_settings,
+                            onClick = {
+                                try {
+                                    val settingsIntent: Intent =
+                                        Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                    context.startActivity(settingsIntent)
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, R.string.error, Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        )
+                    )
+                )
+            }
         }
     }
 }

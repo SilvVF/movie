@@ -1,10 +1,13 @@
 package io.silv.movie.presentation.profile
 
+import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExploreOff
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarDuration
@@ -21,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -31,12 +35,16 @@ import cafe.adriel.voyager.transitions.FadeTransition
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
+import io.silv.core_ui.components.Action
+import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+
 
 object ProfileTab: Tab {
     override val options: TabOptions
@@ -220,6 +228,28 @@ object ProfileScreen: Screen {
                             )
                         }
                     }
+                }
+                ProfileState.Offline -> {
+                    val context = LocalContext.current
+                   EmptyScreen(
+                       icon = Icons.Filled.ExploreOff,
+                       iconSize = 182.dp,
+                       message = stringResource(id = R.string.no_internet_error),
+                       actions = persistentListOf(
+                           Action(
+                               R.string.take_to_settings,
+                               onClick = {
+                                   try {
+                                       val settingsIntent: Intent =
+                                           Intent(Settings.ACTION_WIRELESS_SETTINGS)
+                                       context.startActivity(settingsIntent)
+                                   } catch (e: Exception) {
+                                       Toast.makeText(context, R.string.error, Toast.LENGTH_SHORT).show()
+                                   }
+                               }
+                           )
+                       )
+                   )
                 }
             }
         }

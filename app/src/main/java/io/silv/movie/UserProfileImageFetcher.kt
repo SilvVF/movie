@@ -71,7 +71,9 @@ class BucketItemFetcher(
         get() = profileImageCacheLazy.value
 
     override val keyer: Keyer<BucketFetchItem> =
-        Keyer { data, options -> "${data.bucket};${data.path}" }
+        Keyer { data, options ->
+            "${data.bucket};${data.path}"
+        }
 
     override val diskStore: FetcherDiskStore<BucketFetchItem>
         get() = FetcherDiskStoreImageFile { data, options ->
@@ -81,6 +83,24 @@ class BucketItemFetcher(
                 null
             }
         }
+
+    override suspend fun overrideFetch(options: Options, data: BucketFetchItem): FetchResult? {
+        if (data.bucket == "profile_pictures") {
+            val cover =   profileImageCache.getCoverFile(data.path)
+                .takeIf { it?.exists() == true }
+            return SourceResult(
+                source = ImageSource(
+                    file = cover?.toOkioPath() ?: return null,
+                    diskCacheKey = keyer.key(data, options).takeIf {
+                        !(options.parameters.value(UserProfileImageFetcher.DISABLE_KEYS) ?: false)
+                    }
+                ),
+                mimeType = "image/*",
+                dataSource = DataSource.DISK,
+            )
+        }
+        return null
+    }
 
     override suspend fun fetch(options: Options, data: BucketFetchItem): ByteArray {
         val bucket = storage[data.bucket]

@@ -51,11 +51,14 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
 
             if (options.memoryCachePolicy.readEnabled) {
                 memCache[memCacheKey]?.let { cachedValue ->
-                    return@Fetcher DrawableResult(
-                        drawable = cachedValue.bitmap.toDrawable(context.resources),
-                        isSampled = options.size.isOriginal,
-                        dataSource = DataSource.MEMORY_CACHE
-                    )
+                    try {
+                        val res = DrawableResult(
+                            drawable = cachedValue.bitmap.toDrawable(context.resources),
+                            isSampled = options.size.isOriginal,
+                            dataSource = DataSource.MEMORY_CACHE
+                        )
+                        return@Fetcher res
+                    } catch (ignored: Exception) { }
                 }
             }
 

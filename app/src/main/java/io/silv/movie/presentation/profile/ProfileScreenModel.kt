@@ -9,13 +9,17 @@ import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.UserProfileImageData
+import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,23 +29,36 @@ import kotlinx.datetime.Clock
 class ProfileScreenModel(
     private val userRepository: UserRepository,
     private val auth: Auth,
+    private val networkMonitor: NetworkMonitor,
 ):
     StateScreenModel<ProfileState>(ProfileState.Loading),
     EventProducer<ProfileEvent> by EventProducer.default() {
 
+    private val isOnline = networkMonitor.isOnline
+        .stateIn(screenModelScope, SharingStarted.Lazily, true)
+
     init {
         auth.sessionStatus
-            .onEach { status ->
+            .combine(isOnline) { a, b ->  a to b}
+            .onEach { (status, online) ->
+
+                if (!online) {
+                    mutableState.value = ProfileState.Offline
+                    return@onEach
+                }
+
                 mutableState.value = when(status) {
                     SessionStatus.LoadingFromStorage -> ProfileState.Loading
-                    SessionStatus.NetworkError -> ProfileState.LoggedOut(
-                        "Network Error"
-                    )
+                    SessionStatus.NetworkError ->
+                        ProfileState.LoggedOut("Network Error")
                     is SessionStatus.Authenticated -> {
                         val info =  status.session.user ?: return@onEach
                         ProfileState.LoggedIn(
                             info = info,
-                            user = userRepository.getUser(info.id) ?: return@onEach,
+                            user = userRepository.getUser(info.id) ?: run {
+                                auth.clearSession()
+                                return@onEach
+                            },
                             profileImageData = UserProfileImageData(info.id)
                         )
                     }
@@ -200,6 +217,9 @@ sealed interface ProfileState {
 
     @Immutable
     data object Loading: ProfileState
+
+    @Immutable
+    data object Offline: ProfileState
 
     @Immutable
     data class LoggedIn(

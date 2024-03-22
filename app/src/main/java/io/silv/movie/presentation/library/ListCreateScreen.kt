@@ -26,13 +26,17 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.gotrue.SessionStatus
 import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
 import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
 import kotlinx.parcelize.Parcelize
+import org.koin.compose.koinInject
 
 class ListCreateScreen(
     private val listCount: Long?
@@ -40,7 +44,8 @@ class ListCreateScreen(
 
     @Parcelize
     data class ListCreateResult(
-        val name: String
+        val name: String,
+        val online: Boolean = false,
     ): ScreenResult
 
     @Composable
@@ -54,6 +59,11 @@ class ListCreateScreen(
         var name by rememberSaveable {
             mutableStateOf("My list ${if (listCount != null) "#${listCount + 1}" else ""}")
         }
+
+        val auth = koinInject<Auth>()
+
+        val sessionStatus by auth.sessionStatus.collectAsStateWithLifecycle()
+
 
         Box(
             modifier = Modifier
@@ -101,6 +111,21 @@ class ListCreateScreen(
                         }
                     ) {
                         Text(text = stringResource(id = R.string.create))
+                    }
+                    when (sessionStatus) {
+                        is SessionStatus.Authenticated -> {
+                            Button(
+                                onClick = {
+                                    setScreenResult(
+                                        ListCreateResult(name, online = true)
+                                    )
+                                    navigator.pop()
+                                }
+                            ) {
+                                Text(text = stringResource(id = R.string.create_as_user))
+                            }
+                        }
+                        else -> Unit
                     }
                 }
             }

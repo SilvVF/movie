@@ -5,6 +5,7 @@ import io.silv.movie.database.DatabaseHandler
 import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
 import io.silv.movie.presentation.library.view.list.ListSortMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
 
 interface ContentListRepository {
     fun observeLibraryItems(query: String): Flow<List<ContentListItem>>
@@ -15,7 +16,7 @@ interface ContentListRepository {
     suspend fun deleteList(contentList: ContentList)
     suspend fun getList(id: Long): ContentList
     suspend fun getListItems(id: Long): List<ContentItem>
-    suspend fun createList(name: String): Long
+    suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, ): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
     suspend fun removeMovieFromList(movieId: Long, contentList: ContentList)
@@ -28,9 +29,14 @@ class ContentListRepositoryImpl(
     private val listCoverCache: ListCoverCache,
 ): ContentListRepository {
 
-    override suspend fun createList(name: String): Long {
+    override suspend fun createList(
+        name: String,
+        supabaseId: String?,
+        userId: String?,
+        createdAt: Long?,
+    ): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
-            contentListQueries.insert(name)
+            contentListQueries.insert(name, createdAt ?: Clock.System.now().toEpochMilliseconds(), supabaseId, userId)
             contentListQueries.lastInsertRowId()
         }
     }

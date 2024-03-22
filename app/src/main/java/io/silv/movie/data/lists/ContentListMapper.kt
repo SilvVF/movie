@@ -3,17 +3,27 @@ package io.silv.movie.data.lists
 object ContentListMapper {
 
     val mapList = {
-        _id: Long,
-        supabase_id: String?,
-        created_by: String?,
-        name: String,
-        last_modified_at: Long,
-        poster_last_updated: Long? ->
+            _id: Long,
+            supabase_id: String?,
+            created_by: String?,
+            username: String,
+            description: String,
+            synced_at: Long?,
+            public: Boolean,
+            name: String,
+            last_modified_at: Long,
+            poster_last_updated: Long?,
+            created_at: Long, ->
         ContentList(
             _id,
+            supabase_id,
+            created_by,
+            synced_at,
+            public,
             name,
             last_modified_at,
-            poster_last_updated ?: -1L
+            poster_last_updated ?: -1L,
+            created_at
         )
     }
 
@@ -120,18 +130,21 @@ object ContentListMapper {
                ),
                list = ContentList(
                    list_id,
+                   null, null, null, false,
                    list_name,
                    lastModified,
-                   listPosterLastUpdated ?: -1L
+                   listPosterLastUpdated ?: -1L,
+                   0L
                )
             )
         } else {
             ContentListItem.PlaceHolder(
                 ContentList(
                     list_id,
+                    null, null, null, false,
                     list_name,
                     lastModified,
-                    listPosterLastUpdated ?: -1L)
+                    listPosterLastUpdated ?: -1L, 0L)
             )
         }
     }

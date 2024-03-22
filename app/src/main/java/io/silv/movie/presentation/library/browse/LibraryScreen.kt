@@ -62,7 +62,7 @@ class LibraryScreen: Screen {
         val screenResultLauncher = rememberScreenWithResultLauncher(
             screen = listCreateScreen
         ) { result ->
-            screenModel.createList(result.name)
+            screenModel.createList(result.name, result.online)
         }
 
         CollectEventsWithLifecycle(screenModel) {

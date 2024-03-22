@@ -34,6 +34,7 @@ import io.silv.movie.data.tv.repository.ShowRepository
 import io.silv.movie.data.tv.repository.ShowRepositoryImpl
 import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.data.tv.repository.SourceTVRepositoryImpl
+import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.data.user.UserRepositoryImpl
 import io.silv.movie.network.networkModule
@@ -89,6 +90,8 @@ val dataModule =
         singleOf(::ShowRepositoryImpl) { bind<ShowRepository>() }
 
         singleOf(::UserRepositoryImpl) { bind<UserRepository>() }
+
+        singleOf(::ListRepository)
 
         singleOf(::TMDBPreferences)
 

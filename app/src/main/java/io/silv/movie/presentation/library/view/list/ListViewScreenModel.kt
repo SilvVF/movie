@@ -7,6 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.postgrest.Postgrest
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
@@ -20,6 +22,9 @@ import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.toShowUpdate
+import io.silv.movie.data.user.ListRepository
+import io.silv.movie.data.user.User
+import io.silv.movie.data.user.toUserListUpdate
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -35,6 +40,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
@@ -43,6 +49,9 @@ class ListViewScreenModel(
     private val updateMovie: UpdateMovie,
     private val getMovie: GetMovie,
     private val getShow: GetShow,
+    private val listRepository: ListRepository,
+    private val auth: Auth,
+    private val postgrest: Postgrest,
     libraryPreferences: LibraryPreferences,
     private val listId: Long
 ): StateScreenModel<ListViewState>(ListViewState.Loading),
@@ -103,6 +112,21 @@ class ListViewScreenModel(
             }
             .launchIn(screenModelScope)
 
+        state.map { it.success?.list?.createdBy }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .onEach {
+
+                val user = postgrest["users"]
+                    .select { filter { eq("user_id", it) } }
+                    .decodeSingleOrNull<User>()
+
+                mutableState.updateSuccess { state ->
+                    state.copy(user = user)
+                }
+            }
+            .launchIn(screenModelScope)
+
         listSortMode.changes()
             .onEach { mode ->
                 mutableState.updateSuccess {state -> state.copy(sortMode = mode) }
@@ -159,9 +183,18 @@ class ListViewScreenModel(
 
     fun editList(prev: ContentList, name: String) {
         screenModelScope.launch {
-            contentListRepository.updateList(
-                prev.copy(name = name).toUpdate()
-            )
+            val new = prev.copy(name = name)
+
+            Timber.d(new.toString())
+
+            if (new.supabaseId != null) {
+               val result = listRepository.updateList(new.toUserListUpdate())
+               if (!result)
+                   return@launch
+            }
+            Timber.d(new.toString())
+
+            contentListRepository.updateList(new.toUpdate())
         }
     }
 
@@ -192,7 +225,17 @@ class ListViewScreenModel(
     fun deleteList() {
         screenModelScope.launch {
             val list = state.value.success?.list ?: return@launch
-            runCatching { contentListRepository.deleteList(list) }
+            runCatching {
+
+                if (list.supabaseId != null) {
+                    val result = listRepository.deleteList(list.supabaseId)
+
+                    if (!result)
+                        return@launch
+                }
+
+                contentListRepository.deleteList(list)
+            }
                 .onSuccess {
                     emitEvent(ListViewEvent.ListDeleted)
                 }
@@ -203,12 +246,27 @@ class ListViewScreenModel(
         screenModelScope.launch {
             val list = state.value.success?.list ?: return@launch
 
+            if (list.supabaseId != null) {
+                val user = auth.currentUserOrNull() ?: return@launch
+
+                if (user.id != list.createdBy)
+                    return@launch
+
+                val result = if (contentItem.isMovie) {
+                    listRepository.addMovieToList(contentItem.contentId, list)
+                } else {
+                    listRepository.addShowToList(contentItem.contentId, list)
+                }
+
+                if (!result)
+                    return@launch
+            }
+
             if (contentItem.isMovie) {
                 contentListRepository.addMovieToList(contentItem.contentId, list)
             } else {
                 contentListRepository.addShowToList(contentItem.contentId, list)
             }
-
             recommendationManager.removeRecommendation(contentItem, listId)
         }
     }
@@ -260,6 +318,7 @@ sealed interface ListViewState {
         val list: ContentList,
         val allItems: ImmutableList<ContentItem>,
         val sortMode: ListSortMode,
+        val user: User? = null,
         val dialog: ListViewScreenModel.Dialog? = null,
         val items: ImmutableList<ContentItem> = persistentListOf(),
         val recommendations: ImmutableList<ContentItem> = persistentListOf(),

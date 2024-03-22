@@ -7,12 +7,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
+import io.silv.movie.data.user.ListRepository
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -31,7 +33,9 @@ import kotlinx.coroutines.launch
 class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
     preferences: LibraryPreferences,
-    getFavoritesList: GetFavoritesList
+    getFavoritesList: GetFavoritesList,
+    private val listRepository: ListRepository,
+    private val auth: Auth,
 ):  StateScreenModel<LibraryState>(LibraryState()),
     EventProducer<LibraryEvent> by EventProducer.default() {
 
@@ -99,10 +103,23 @@ class LibraryScreenModel(
         this.query = query
     }
 
-    fun createList(name: String) {
+    fun createList(name: String, isOnline: Boolean) {
         screenModelScope.launch {
-            val id = contentListRepository.createList(name)
-            emitEvent(LibraryEvent.ListCreated(id))
+
+            if (isOnline) {
+                val network = listRepository.insertList(name) ?: return@launch
+
+                val id = contentListRepository.createList(
+                    name = network.name,
+                    supabaseId = network.listId,
+                    userId = network.userId,
+                    createdAt = network.createdAt.toEpochMilliseconds(),
+                )
+                emitEvent(LibraryEvent.ListCreated(id))
+            } else {
+                val id = contentListRepository.createList(name)
+                emitEvent(LibraryEvent.ListCreated(id))
+            }
         }
     }
 

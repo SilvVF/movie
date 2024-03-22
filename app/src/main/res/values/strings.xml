@@ -90,4 +90,7 @@
     <string name="sign_in_success">Signed in successfully</string>
     <string name="reset_password_title">Enter the email associated with the account to reset</string>
     <string name="edit_username_title">Change your username</string>
+    <string name="no_internet_error">This features requires an internet connection</string>
+    <string name="take_to_settings">connect to network</string>
+    <string name="create_as_user">Create as current user</string>
 </resources>

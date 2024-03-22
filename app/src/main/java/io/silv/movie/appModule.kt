@@ -1,6 +1,7 @@
 package io.silv.movie
 
 import io.silv.core_ui.voyager.ScreenResultsViewModel
+import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.ProfileImageCache
@@ -71,6 +72,8 @@ val appModule =
         singleOf(::ImageSaver)
 
         singleOf(::RecommendationManager)
+
+        singleOf(::NetworkMonitor)
 
         viewModelOf(::ScreenResultsViewModel)
 

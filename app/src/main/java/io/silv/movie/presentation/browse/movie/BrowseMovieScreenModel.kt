@@ -17,6 +17,7 @@ import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
@@ -57,6 +58,7 @@ class MovieScreenModel(
     private val updateMovie: UpdateMovie,
     private val sourceRepository: SourceMovieRepository,
     private val coverCache: MovieCoverCache,
+    private val networkMonitor: NetworkMonitor,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<MovieState>(
@@ -72,6 +74,13 @@ class MovieScreenModel(
 
     var query by mutableStateOf("")
         private set
+
+    val online = networkMonitor.isOnline
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000L),
+            true
+        )
 
 
     init {

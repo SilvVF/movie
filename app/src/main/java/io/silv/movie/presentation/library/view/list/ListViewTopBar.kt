@@ -5,11 +5,18 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.NewReleases
@@ -26,21 +33,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
+import coil.compose.AsyncImage
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.R
+import io.silv.movie.UserProfileImageData
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
@@ -54,6 +69,9 @@ import org.koin.compose.koinInject
 @Composable
 fun ListViewTopBar(
     state: PosterTopBarState,
+    userId: String? = null,
+    username: String? = null,
+    description: String,
     query: () -> String,
     changeQuery: (String) -> Unit,
     onSearch: (String) -> Unit,
@@ -112,11 +130,47 @@ fun ListViewTopBar(
     ) {
         PosterLargeTopBar(
             state = state,
-            title = { Text(text = list.name) },
+            title = {
+                if (userId != null) {
+                    TitleWithProfilePicture(
+                        name = list.name,
+                        userId = userId,
+                        username = username.orEmpty(),
+                        description = description
+                    )
+                } else {
+                    Text(list.name)
+                }
+            },
             colors = TopAppBarDefaults.colors2(
                 containerColor = Color.Transparent,
                 scrolledContainerColor = primary.copy(alpha = 0.2f)
             ),
+            smallTitle = {
+                if (userId != null) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = UserProfileImageData(userId.orEmpty()),
+                            error = painterResource(id = R.drawable.user_default_proflie_icon),
+                            modifier = Modifier
+                                .size(22.dp)
+                                .clip(CircleShape)
+                                .aspectRatio(1f),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            username.orEmpty(),
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                } else {
+                    Text(list.name)
+                }
+            },
             navigationIcon = {
                 PosterLargeTopBarDefaults.BackArrowIcon(
                     isKeyboardOpen = state.isKeyboardOpen
@@ -182,7 +236,53 @@ fun ListViewTopBar(
     }
 }
 
-
+@Composable
+fun TitleWithProfilePicture(
+    name: String,
+    userId: String,
+    username: String,
+    description: String
+) {
+    Column(
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Bottom
+    ) {
+        Text(
+            text = name,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = UserProfileImageData(userId),
+                error = painterResource(id = R.drawable.user_default_proflie_icon),
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .aspectRatio(1f),
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text = username,
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.graphicsLayer {
+                        alpha = 0.78f
+                    }
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun ListFilterChips(

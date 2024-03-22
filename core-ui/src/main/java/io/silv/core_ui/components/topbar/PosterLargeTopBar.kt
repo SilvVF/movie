@@ -50,9 +50,9 @@ private val PosterBarPinnedHeight = 64.0.dp
 // Clipped
 // private val PosterBarMaxHeight = 312.0.dp
 // Not Clipped
-private val PosterBarMaxHeight = 354.0.dp
+private val PosterBarMaxHeight = 384.0.dp
 
-private val PosterBarSearchingHeight = 144.dp
+private val PosterBarSearchingHeight = 134.dp
 private val PosterMinHeight = PosterBarMaxHeight / 3
 private val PosterBottomPadding = 4.dp
 
@@ -89,6 +89,7 @@ class PosterTopBarState(
 fun PosterLargeTopBar(
     state: PosterTopBarState,
     title: @Composable () -> Unit,
+    smallTitle: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
@@ -100,7 +101,7 @@ fun PosterLargeTopBar(
 ) {
     TwoRowsTopAppBarPoster(
         smallTitleTextStyle = MaterialTheme.typography.titleSmall,
-        smallTitle = title,
+        smallTitle = smallTitle ?: title,
         modifier = modifier,
         navigationIcon = navigationIcon,
         actions = actions,
@@ -510,7 +511,9 @@ internal fun TopAppBarLayoutNoTitlePosterNotClipped(
         }
         val titlePlaceable =
             measurables.first { it.layoutId == "title" }
-                .measure(constraints.copy(minWidth = 0, maxWidth = maxTitleWidth))
+                .measure(
+                    constraints.copy(minWidth = 0, maxWidth = maxTitleWidth)
+                )
 
 
         val posterContentPlaceable =

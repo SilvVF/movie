@@ -8,9 +8,14 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class ContentList(
     val id: Long,
+    val supabaseId: String? = null,
+    val createdBy: String? = null,
+    val lastSynced: Long? = null,
+    val public: Boolean = false,
     val name: String,
     val lastModified: Long,
-    val posterLastModified: Long
+    val posterLastModified: Long,
+    val createdAt: Long
 ): Parcelable
 
 fun ContentList.toUpdate(): ContentListUpdate {
