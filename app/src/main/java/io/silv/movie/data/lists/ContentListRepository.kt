@@ -14,7 +14,8 @@ interface ContentListRepository {
     fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>>
     fun observeFavorites(query: String, sortMode: FavoritesSortMode): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
-    suspend fun getList(id: Long): ContentList
+    suspend fun getList(id: Long): ContentList?
+    suspend fun getListForSupabaseId(supabaseId: String): ContentList?
     suspend fun getListItems(id: Long): List<ContentItem>
     suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, ): Long
     suspend fun updateList(update: ContentListUpdate)
@@ -109,11 +110,15 @@ class ContentListRepositoryImpl(
 
     override suspend fun deleteList(contentList: ContentList) {
         listCoverCache.deleteCustomCover(contentList.id)
-        return handler.await { contentListQueries.delete(contentList.id) }
+        return handler.await { contentListQueries.deleteById(contentList.id) }
     }
 
-    override suspend fun getList(id: Long): ContentList {
-        return handler.awaitOne { contentListQueries.selectById(id, ContentListMapper.mapList) }
+    override suspend fun getList(id: Long): ContentList? {
+        return handler.awaitOneOrNull { contentListQueries.selectById(id, ContentListMapper.mapList) }
+    }
+
+    override suspend fun getListForSupabaseId(supabaseId: String): ContentList? {
+        return handler.awaitOneOrNull { contentListQueries.selectBySupabaseId(supabaseId, ContentListMapper.mapList) }
     }
 }
 

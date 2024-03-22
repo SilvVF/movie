@@ -34,7 +34,11 @@ import io.silv.movie.data.tv.repository.ShowRepository
 import io.silv.movie.data.tv.repository.ShowRepositoryImpl
 import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.data.tv.repository.SourceTVRepositoryImpl
+import io.silv.movie.data.user.FavoritesUpdateManager
+import io.silv.movie.data.user.FavoritesUpdateWorker
 import io.silv.movie.data.user.ListRepository
+import io.silv.movie.data.user.UserListUpdateManager
+import io.silv.movie.data.user.UserListUpdateWorker
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.data.user.UserRepositoryImpl
 import io.silv.movie.network.networkModule
@@ -102,6 +106,25 @@ val dataModule =
         }
 
         worker { RecommendationWorker(get(), get(), get(), get(), androidContext(), get()) }
+
+        worker {
+            FavoritesUpdateWorker(
+                get(), get(), get(), get(), get(),get(), get(), get(), get(), get(), get(),
+                androidContext(), get()
+            )
+        }
+
+        worker {
+            UserListUpdateWorker(
+                get(), get(), get(), get(), get(),get(), get(), get(), get(),
+                androidContext(), get()
+            )
+        }
+
+
+        singleOf(::FavoritesUpdateManager)
+
+        singleOf(::UserListUpdateManager)
 }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

@@ -12,5 +12,7 @@ data class User(
     @SerialName("genre_ratings")
     val genreRatings: String? = null,
     @SerialName("profile_image")
-    val profileImage: String? = null
+    val profileImage: String? = null,
+    @SerialName("favorites_public")
+    val favoritesPublic: Boolean
 )

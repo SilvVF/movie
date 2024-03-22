@@ -28,6 +28,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
@@ -87,6 +88,7 @@ class LibraryScreen: Screen {
             onPosterClick = {
                 changeDialog(LibraryScreenModel.Dialog.FullCover(it))
             },
+            refreshLists = screenModel::refreshUserLists,
             state = state
         )
         val onDismissRequest =  { changeDialog(null) }
@@ -144,6 +146,7 @@ private fun LibraryStandardScreenContent(
     onListLongClick: (contentList: ContentList) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
+    refreshLists: () -> Unit,
     state: LibraryState
 ) {
 
@@ -175,6 +178,12 @@ private fun LibraryStandardScreenContent(
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
+        PullRefresh(
+            refreshing = state.refreshingLists,
+            enabled = { !state.refreshingLists },
+            onRefresh = { refreshLists() },
+            indicatorPadding = paddingValues
+        ) {
         Crossfade(
             targetState = listModeProvider(),
             label = "display-mode-crossfade"
@@ -206,6 +215,7 @@ private fun LibraryStandardScreenContent(
                     )
                 )
             }
+        }
         }
     }
 }

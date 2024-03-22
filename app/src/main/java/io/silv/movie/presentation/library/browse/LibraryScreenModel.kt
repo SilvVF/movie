@@ -7,7 +7,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
@@ -15,6 +14,7 @@ import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.user.ListRepository
+import io.silv.movie.data.user.UserListUpdateManager
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -35,7 +35,7 @@ class LibraryScreenModel(
     preferences: LibraryPreferences,
     getFavoritesList: GetFavoritesList,
     private val listRepository: ListRepository,
-    private val auth: Auth,
+    private val userListUpdateManager: UserListUpdateManager,
 ):  StateScreenModel<LibraryState>(LibraryState()),
     EventProducer<LibraryEvent> by EventProducer.default() {
 
@@ -89,6 +89,20 @@ class LibraryScreenModel(
                 }
             }
             .launchIn(screenModelScope)
+
+        userListUpdateManager.isRunning()
+            .onEach { refreshing ->
+                mutableState.update {state ->
+                    state.copy(refreshingLists = refreshing)
+                }
+            }
+            .launchIn(screenModelScope)
+    }
+
+    fun refreshUserLists() {
+        screenModelScope.launch {
+            userListUpdateManager.refreshUserLists()
+        }
     }
 
     fun updateSortMode(mode: LibrarySortMode) {
@@ -175,5 +189,6 @@ sealed interface LibrarySortMode {
 data class LibraryState(
     val dialog: LibraryScreenModel.Dialog? = null,
     val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentListItem>>> = persistentListOf(),
-    val favorites: ImmutableList<ContentItem> = persistentListOf()
+    val favorites: ImmutableList<ContentItem> = persistentListOf(),
+    val refreshingLists: Boolean = false
 )

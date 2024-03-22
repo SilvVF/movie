@@ -19,6 +19,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -72,6 +73,7 @@ object FavoritesViewScreen : Screen {
             },
             onAddRecommendation = screenModel::addRecommendationToList,
             onRecommendationLongClick = screenModel::addRecommendationToList,
+            refreshFavorites = screenModel::refreshFavoritesFromNetwork,
             state = state
         )
         val onDismissRequest = remember { { screenModel.changeDialog(null) } }
@@ -113,6 +115,7 @@ private fun FavoritesScreenContent(
     onRecommendationLongClick: (item: ContentItem) -> Unit,
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
+    refreshFavorites: () -> Unit,
     state: FavoritesListState
 ) {
     val hazeState = remember { HazeState() }
@@ -137,6 +140,12 @@ private fun FavoritesScreenContent(
             .imePadding()
             .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
+        PullRefresh(
+            refreshing = state.refreshingFavorites,
+            enabled = { !state.refreshingFavorites },
+            indicatorPadding = paddingValues,
+            onRefresh = { refreshFavorites() }
+        ) {
         when (val mode = listViewDisplayMode()) {
             is PosterDisplayMode.Grid -> {
                 ContentListPosterGrid(
@@ -159,7 +168,7 @@ private fun FavoritesScreenContent(
                             style = HazeDefaults.style(MaterialTheme.colorScheme.background),
                         )
                         .padding(top = 12.dp),
-                    )
+                )
             }
             PosterDisplayMode.List -> {
                 ContentListPosterList(
@@ -183,6 +192,7 @@ private fun FavoritesScreenContent(
                         .padding(top = 12.dp),
                 )
             }
+        }
         }
     }
 }
