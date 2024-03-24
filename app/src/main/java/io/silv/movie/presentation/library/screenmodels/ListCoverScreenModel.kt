@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.screenmodels
 
 import android.content.Context
 import android.net.Uri
@@ -20,6 +20,7 @@ import io.silv.movie.presentation.view.Image
 import io.silv.movie.presentation.view.ImageSaver
 import io.silv.movie.presentation.view.Location
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,14 +37,25 @@ class ListCoverScreenModel(
 
     val snackbarHostState: SnackbarHostState = SnackbarHostState()
 
+    var job: Job? = null
+
     init {
-        ioCoroutineScope.launch {
+        job = ioCoroutineScope.launch {
             contentListRepository.observeListById(listId)
                 .collect { newManga ->
-                    Timber.d(newManga.toString())
                     mutableState.update { newManga } }
         }
     }
+
+    fun refresh(id: Long) {
+        job?.cancel()
+        job = ioCoroutineScope.launch {
+            contentListRepository.observeListById(id)
+                .collect { newManga ->
+                    mutableState.update { newManga } }
+        }
+    }
+
 
     fun saveCover(context: Context) {
         screenModelScope.launch {
@@ -176,5 +188,10 @@ class ListCoverScreenModel(
         contentListRepository.updateList(
             copy(posterLastModified = Clock.System.now().toEpochMilliseconds()).toUpdate()
         )
+    }
+
+    override fun onDispose() {
+        job?.cancel()
+        job = null
     }
 }

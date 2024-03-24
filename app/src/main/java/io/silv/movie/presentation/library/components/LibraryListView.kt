@@ -18,7 +18,7 @@ import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
-import io.silv.movie.presentation.library.browse.LibraryState
+import io.silv.movie.presentation.library.screenmodels.LibraryState
 
 @Composable
 fun LibraryListView(

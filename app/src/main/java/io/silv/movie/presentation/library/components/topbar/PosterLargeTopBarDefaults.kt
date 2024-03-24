@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.components
+package io.silv.movie.presentation.library.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement

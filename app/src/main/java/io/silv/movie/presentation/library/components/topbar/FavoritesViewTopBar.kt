@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.favorite
+package io.silv.movie.presentation.library.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +35,7 @@ import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.library.components.ContentPreviewDefaults
-import io.silv.movie.presentation.library.components.PosterLargeTopBarDefaults
+import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 
 @Composable
 fun FavoritesViewTopBar(

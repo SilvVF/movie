@@ -71,7 +71,7 @@ enum class CollapsableVideoAnchors {
     Dismiss
 }
 
-private val LayoutMinHeight = 72.dp
+val CollapsablePlayerMinHeight = 72.dp
 
 @Composable
 fun rememberCollapsableVideoState(): CollapsableVideoState {
@@ -96,7 +96,7 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
                     CollapsableVideoAnchors.End at
                             with(density) { configuration.screenHeightDp.dp.toPx() }
                     CollapsableVideoAnchors.Dismiss at
-                            with(density) { configuration.screenHeightDp.dp.toPx() + LayoutMinHeight.toPx() }
+                            with(density) { configuration.screenHeightDp.dp.toPx() + CollapsablePlayerMinHeight.toPx() }
                 }
             )
         }
@@ -411,7 +411,7 @@ fun DefaultSizeCollapsableVideoLayout(
             }
     ) { measurables, constraints ->
 
-        val height = lerp(LayoutMinHeight.roundToPx(), constraints.maxHeight, progress)
+        val height = lerp(CollapsablePlayerMinHeight.roundToPx(), constraints.maxHeight, progress)
         val paddingTop = (topPadding * progress).roundToInt()
 
         val isTablet = constraints.maxWidth > constraints.maxHeight

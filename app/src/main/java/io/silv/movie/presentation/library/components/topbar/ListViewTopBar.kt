@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.list
+package io.silv.movie.presentation.library.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -61,7 +61,7 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.library.components.ContentPreviewDefaults
-import io.silv.movie.presentation.library.components.PosterLargeTopBarDefaults
+import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
 import org.koin.compose.koinInject

@@ -1,7 +1,6 @@
 package io.silv.movie.presentation.profile
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.exclude
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -172,60 +172,61 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
         val scope = rememberCoroutineScope()
         val categoryToIdx = remember { mutableStateMapOf<String, Int>() }
 
-        Scaffold(
-            topBar = {
-                TopAppBarWithBottomContent(
-                    title = {
-                        Text("Profile Pictures")
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { navigator.pop() }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(id = R.string.cancel)
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    ),
-                    bottomContent = {
-                        val categoryList by remember {
-                            derivedStateOf { state.orEmpty().map { it.first } }
-                        }
-
-                        FlowRow {
-                            categoryList.fastForEach { category ->
-                                ElevatedAssistChip(
-                                    onClick = {
-                                        scope.launch {
-                                            gridState.animateScrollToItem(
-                                                categoryToIdx[category]
-                                                    ?: return@launch
-                                            )
-                                        }
-                                    },
-                                    modifier = Modifier.padding(4.dp),
-                                    label = { Text(category) }
+        PullRefresh(
+            refreshing = screenModel.refreshing,
+            enabled = { !screenModel.refreshing },
+            onRefresh = screenModel::refreshImages,
+        ) {
+            Scaffold(
+                topBar = {
+                    TopAppBarWithBottomContent(
+                        title = {
+                            Text("Profile Pictures")
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { navigator.pop() }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(id = R.string.cancel)
                                 )
                             }
-                        }
-                    },
-                    modifier = Modifier
-                        .hazeChild(hazeState),
-                )
-            },
-            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-                .exclude(WindowInsets.systemBars),
-        ) { paddingValues ->
-            if (state != null) {
-                PullRefresh(
-                    refreshing = screenModel.refreshing,
-                    enabled = { true },
-                    indicatorPadding = paddingValues,
-                    onRefresh = screenModel::refreshImages,
-                ) {
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent,
+                            scrolledContainerColor = Color.Transparent
+                        ),
+                        bottomContent = {
+                            val categoryList by remember {
+                                derivedStateOf { state.orEmpty().map { it.first } }
+                            }
+
+                            LazyRow {
+                                categoryList.fastForEach { category ->
+                                   item(category) {
+                                       ElevatedAssistChip(
+                                           onClick = {
+                                               scope.launch {
+                                                   gridState.animateScrollToItem(
+                                                       categoryToIdx[category]
+                                                           ?: return@launch
+                                                   )
+                                               }
+                                           },
+                                           modifier = Modifier.padding(4.dp),
+                                           label = { Text(category) }
+                                       )
+                                   }
+                                }
+                            }
+                        },
+                        modifier = Modifier
+                            .hazeChild(hazeState),
+                    )
+                },
+                contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+                    .exclude(WindowInsets.systemBars),
+            ) { paddingValues ->
+                if (state != null) {
                     LaunchedEffect(gridItemSpan, state) {
                         var idx = 0
                         for ((name, items) in state.orEmpty()) {
@@ -246,7 +247,7 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
                             ),
                         contentPadding = paddingValues
                     ) {
-                        state.orEmpty().fastForEach {  (name, images) ->
+                        state.orEmpty().fastForEach { (name, images) ->
                             item(
                                 key = name,
                                 span = {
@@ -264,7 +265,8 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
                                 images,
                                 { it.bucket + it.path }
                             ) {
-                                val placeHolderColor = PlaceHolderColors.rememberColorRandom(key = it.path)
+                                val placeHolderColor =
+                                    PlaceHolderColors.rememberColorRandom(key = it.path)
                                 AsyncImage(
                                     model = it,
                                     placeholder = remember { ColorPainter(placeHolderColor) },
@@ -285,10 +287,10 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
                             }
                         }
                     }
-                }
-            } else {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }

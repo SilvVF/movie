@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -43,6 +44,7 @@ import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.presentation.home.BrowseTab
 import io.silv.movie.presentation.library.LibraryTab
+import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import io.silv.movie.presentation.profile.ProfileTab
@@ -122,15 +124,31 @@ class MainActivity : ComponentActivity() {
                                     )
                                 },
                             ) { paddingValues ->
+                                val playerVisible by remember {
+                                    derivedStateOf { mainScreenModel.trailerQueue.isNotEmpty() }
+                                }
                                 Box(
                                     Modifier
                                         .padding(paddingValues)
                                         .consumeWindowInsets(paddingValues)
                                 ) {
-                                    CurrentTab()
-
+                                    Box(
+                                        Modifier
+                                            .padding(
+                                                bottom = animateDpAsState(
+                                                    targetValue = if (playerVisible)
+                                                        CollapsablePlayerMinHeight
+                                                    else
+                                                        0.dp,
+                                                    label = "player-aware-padding-animated"
+                                                )
+                                                    .value
+                                            )
+                                    ) {
+                                        CurrentTab()
+                                    }
                                     AnimatedVisibility(
-                                        visible = mainScreenModel.trailerQueue.isNotEmpty(),
+                                        visible = playerVisible,
                                         modifier = Modifier
                                             .wrapContentSize()
                                             .align(Alignment.BottomCenter),

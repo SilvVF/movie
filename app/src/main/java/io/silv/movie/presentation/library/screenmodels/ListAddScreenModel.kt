@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.screenmodels
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
@@ -38,8 +38,6 @@ import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.toDomain
 import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.presentation.EventProducer
-import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
-import io.silv.movie.presentation.library.view.list.ListSortMode
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList

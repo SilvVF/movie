@@ -51,7 +51,7 @@
     <string name="edit_list_title">Change the name of your list</string>
     <string name="search_browse_top_bar_hint">Search for %1s…</string>
     <string name="options_add_to_list">Add to this list</string>
-    <string name="options_edit_list">Edit list</string>
+    <string name="options_edit_list">Edit list name</string>
     <string name="options_delete_list">Delete list</string>
     <string name="share">Share</string>
     <string name="search_placeholder">Search %1s…</string>
@@ -93,4 +93,6 @@
     <string name="no_internet_error">This features requires an internet connection</string>
     <string name="take_to_settings">connect to network</string>
     <string name="create_as_user">Create as current user</string>
+    <string name="add_description_title">Add a description to your list</string>
+    <string name="options_edit_description">Edit list description</string>
 </resources>

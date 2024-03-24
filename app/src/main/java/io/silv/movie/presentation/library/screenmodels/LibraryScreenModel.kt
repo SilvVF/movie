@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.browse
+package io.silv.movie.presentation.library.screenmodels
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -13,6 +13,7 @@ import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
+import io.silv.movie.data.user.FavoritesUpdateManager
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.UserListUpdateManager
 import io.silv.movie.presentation.EventProducer
@@ -36,6 +37,7 @@ class LibraryScreenModel(
     getFavoritesList: GetFavoritesList,
     private val listRepository: ListRepository,
     private val userListUpdateManager: UserListUpdateManager,
+    private val favoritesUpdateManager: FavoritesUpdateManager,
 ):  StateScreenModel<LibraryState>(LibraryState()),
     EventProducer<LibraryEvent> by EventProducer.default() {
 
@@ -97,6 +99,20 @@ class LibraryScreenModel(
                 }
             }
             .launchIn(screenModelScope)
+
+        favoritesUpdateManager.isRunning()
+            .onEach { refreshing ->
+                mutableState.update {state ->
+                    state.copy(refreshingFavorites = refreshing)
+                }
+            }
+            .launchIn(screenModelScope)
+    }
+
+    fun refreshFavoritesList() {
+        screenModelScope.launch {
+            favoritesUpdateManager.refreshFavorites()
+        }
     }
 
     fun refreshUserLists() {
@@ -128,10 +144,14 @@ class LibraryScreenModel(
                     supabaseId = network.listId,
                     userId = network.userId,
                     createdAt = network.createdAt.toEpochMilliseconds(),
+                    inLibrary = true
                 )
                 emitEvent(LibraryEvent.ListCreated(id))
             } else {
-                val id = contentListRepository.createList(name)
+                val id = contentListRepository.createList(
+                    name = name,
+                    inLibrary = true
+                )
                 emitEvent(LibraryEvent.ListCreated(id))
             }
         }
@@ -190,5 +210,6 @@ data class LibraryState(
     val dialog: LibraryScreenModel.Dialog? = null,
     val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentListItem>>> = persistentListOf(),
     val favorites: ImmutableList<ContentItem> = persistentListOf(),
-    val refreshingLists: Boolean = false
+    val refreshingLists: Boolean = false,
+    val refreshingFavorites: Boolean = false
 )

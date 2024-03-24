@@ -2,8 +2,8 @@ package io.silv.movie.data.lists
 
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.database.DatabaseHandler
-import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
-import io.silv.movie.presentation.library.view.list.ListSortMode
+import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
+import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 
@@ -17,7 +17,7 @@ interface ContentListRepository {
     suspend fun getList(id: Long): ContentList?
     suspend fun getListForSupabaseId(supabaseId: String): ContentList?
     suspend fun getListItems(id: Long): List<ContentItem>
-    suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, ): Long
+    suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, inLibrary: Boolean = false): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
     suspend fun removeMovieFromList(movieId: Long, contentList: ContentList)
@@ -35,15 +35,25 @@ class ContentListRepositoryImpl(
         supabaseId: String?,
         userId: String?,
         createdAt: Long?,
+        inLibrary: Boolean
     ): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
-            contentListQueries.insert(name, createdAt ?: Clock.System.now().toEpochMilliseconds(), supabaseId, userId)
+            contentListQueries.insert(name, createdAt ?: Clock.System.now().toEpochMilliseconds(), supabaseId, userId, inLibrary)
             contentListQueries.lastInsertRowId()
         }
     }
 
     override suspend fun updateList(update: ContentListUpdate) {
-        handler.await { contentListQueries.update(update.name, update.posterLastUpdated,  update.id) }
+        handler.await {
+            contentListQueries.update(
+                update.name,
+                update.posterLastUpdated,
+                update.description,
+                update.username,
+                update.inLibrary,
+                update.id,
+            )
+        }
     }
 
     override suspend fun addMovieToList(movieId: Long, contentList: ContentList) {
@@ -64,7 +74,7 @@ class ContentListRepositoryImpl(
 
     override fun observeLibraryItems(query: String): Flow<List<ContentListItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
-        return handler.subscribeToList { contentListViewQueries.contentlist(q, ContentListMapper.mapListItem) }
+        return handler.subscribeToList { contentListViewQueries.libraryContentList(q, ContentListMapper.mapListItem) }
     }
 
     override fun observeListCount(): Flow<Long> {

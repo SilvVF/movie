@@ -1,9 +1,17 @@
 CREATE VIEW contentListView AS
 SELECT
-    cl._id AS list_id,
-    cl.name AS list_name,
-    cl.last_modified_at AS lastModified,
-    cl.poster_last_updated AS listPosterLastUpdated,
+        cl._id AS list_id,
+        cl.supabase_id AS supabase_id,
+        cl.created_by  AS created_by,
+        cl.username AS username,
+        cl.description AS list_description,
+        cl.synced_at AS synced_at,
+        cl.public AS list_public,
+        cl.name AS list_name,
+        cl.last_modified_at AS list_modified_at,
+        cl.poster_last_updated AS list_poster_last_updated,
+        cl.created_at AS list_created_at,
+        cl.in_library AS inLibrary,
     clj.movie_id AS movieId,
     clj.show_id AS showId,
     clj.created_at AS addedToListAt,
@@ -13,7 +21,7 @@ SELECT
     COALESCE(m.favorite, s.favorite) AS favorite,
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
-    COALESCE(m.inList, s.inList) AS inList
+    COALESCE(m.in_library_list, s.in_library_list) AS inList
 FROM
     contentList cl
 LEFT JOIN
@@ -23,12 +31,11 @@ LEFT JOIN
 LEFT JOIN
     show s ON clj.show_id = s.id AND show_id != -1;
 
-contentlist:
+libraryContentList:
 SELECT * FROM contentListView
 WHERE
-    contentListView.list_id IN (
-        SELECT
-            list_id
+    inLibrary AND list_id IN (
+        SELECT list_id
         FROM
             contentListJunction sub_clj
         LEFT JOIN
@@ -36,17 +43,18 @@ WHERE
         LEFT JOIN
             show sub_s ON sub_clj.show_id = sub_s.id
         WHERE
-            sub_clj.list_id = contentListView.list_id
+            sub_clj.list_id = list_id
             AND (
                 sub_m.title LIKE :query
                 OR sub_s.title LIKE :query
                 OR list_name LIKE :query
+                OR list_description LIKE :query
                 OR :query = ''
             )
     )
     OR :query = ''  -- Include this condition to return all lists if the search query is empty
 ORDER BY
-    contentListView.list_id;
+    list_id;
 
 
 

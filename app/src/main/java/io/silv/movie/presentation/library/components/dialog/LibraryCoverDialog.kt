@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.components
+package io.silv.movie.presentation.library.components.dialog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -24,8 +24,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -48,6 +50,8 @@ import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
+import io.silv.movie.presentation.library.components.ContentPreviewDefaults
+import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.components.EditCoverAction
 import kotlinx.collections.immutable.ImmutableList
 import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
@@ -152,22 +156,23 @@ fun LibraryCoverDialog(
                         .clickableNoIndication(onClick = onDismissRequest),
                 ) {
                     val cache = koinInject<ListCoverCache>()
-                    val file by remember("${list.id};${list.posterLastModified}") {
-                        derivedStateOf {
-                            cache.getCustomCoverFile(list.id)
-                        }
-                    }
-                    val fileExists by remember("${list.id};${list.posterLastModified}") {
+                    var semaphor by remember { mutableIntStateOf(0) }
+                    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+
+                    val fileExists by remember(semaphor) {
                         derivedStateOf { file.exists() }
                     }
+
+                    LaunchedEffect(list.posterLastModified, list.id) {
+                        semaphor++
+                    }
+
 
                     if (fileExists) {
                         ZoomableAsyncImage(
                             imageLoader = LocalContext.current.imageLoader,
                             model = ImageRequest.Builder(context)
                                 .data(file.toUri())
-                                .diskCacheKey("${list.id};${list.posterLastModified}")
-                                .memoryCacheKey("${list.id};${list.posterLastModified}")
                                 .crossfade(1_000)
                                 .build(),
                             contentDescription = null,
@@ -179,16 +184,34 @@ fun LibraryCoverDialog(
                                 ),
                         )
                     } else {
-                        if (items.size < 4) {
-                            ContentPreviewDefaults.SingleItemPoster(
-                                modifier = Modifier.fillMaxSize(),
-                                item = items.first()
-                            )
-                        } else {
-                            ContentPreviewDefaults.MultiItemPosterContentLIst(
-                                modifier = Modifier.fillMaxSize(),
-                                content = items
-                            )
+                        when {
+                            items.isEmpty() || items.firstOrNull() is ContentListItem.PlaceHolder -> {
+                                ContentPreviewDefaults.PlaceholderPoster(
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                            items.size < 4 && items.first() is ContentListItem.Item -> {
+                                ZoomableAsyncImage(
+                                    imageLoader = LocalContext.current.imageLoader,
+                                    model = ImageRequest.Builder(context)
+                                        .data((items.first() as ContentListItem.Item).contentItem.toPoster())
+                                        .crossfade(1_000)
+                                        .build(),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(
+                                            top = contentPadding.calculateTopPadding(),
+                                            bottom = contentPadding.calculateBottomPadding()
+                                        ),
+                                )
+                            }
+                            else -> {
+                                ContentPreviewDefaults.MultiItemPosterContentLIst(
+                                    modifier = Modifier.fillMaxSize(),
+                                    content = items
+                                )
+                            }
                         }
                     }
                 }
@@ -291,45 +314,58 @@ fun ListViewCoverDialog(
                 },
             ) { contentPadding ->
                 val context = LocalContext.current
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickableNoIndication(onClick = onDismissRequest),
-                ) {
-                    val cache = koinInject<ListCoverCache>()
-                    val file by remember("${list.id};${list.posterLastModified}") {
-                        derivedStateOf {
-                            cache.getCustomCoverFile(list.id)
-                        }
-                    }
-                    val fileExists by remember("${list.id};${list.posterLastModified}") {
-                        derivedStateOf { file.exists() }
-                    }
+                val cache = koinInject<ListCoverCache>()
+                var semaphor by remember { mutableIntStateOf(0) }
+                val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
 
-                    if (fileExists) {
-                        ZoomableAsyncImage(
-                            imageLoader = LocalContext.current.imageLoader,
-                            model = ImageRequest.Builder(context)
-                                .data(file.toUri())
-                                .diskCacheKey("${list.id};${list.posterLastModified}")
-                                .memoryCacheKey("${list.id};${list.posterLastModified}")
-                                .crossfade(1_000)
-                                .build(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(
-                                    top = contentPadding.calculateTopPadding(),
-                                    bottom = contentPadding.calculateBottomPadding()
-                                ),
-                        )
-                    } else {
-                        if (items.size < 4) {
-                            ContentPreviewDefaults.SingleItemPoster(
-                                modifier = Modifier.fillMaxSize(),
-                                item = items.first()
+                val fileExists by remember(semaphor) {
+                    derivedStateOf { file.exists() }
+                }
+
+                LaunchedEffect(list.posterLastModified, list.id) {
+                    semaphor++
+                }
+
+
+                if (fileExists) {
+                    ZoomableAsyncImage(
+                        imageLoader = LocalContext.current.imageLoader,
+                        model = ImageRequest.Builder(context)
+                            .data(file.toUri())
+                            .crossfade(1_000)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = contentPadding.calculateTopPadding(),
+                                bottom = contentPadding.calculateBottomPadding()
+                            ),
+                    )
+                } else {
+                    when {
+                        items.isEmpty() -> {
+                            ContentPreviewDefaults.PlaceholderPoster(
+                                modifier = Modifier.fillMaxSize()
                             )
-                        } else {
+                        }
+                        items.size < 4 -> {
+                            ZoomableAsyncImage(
+                                imageLoader = LocalContext.current.imageLoader,
+                                model = ImageRequest.Builder(context)
+                                    .data(items.first().toPoster())
+                                    .crossfade(1_000)
+                                    .build(),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(
+                                        top = contentPadding.calculateTopPadding(),
+                                        bottom = contentPadding.calculateBottomPadding()
+                                    ),
+                            )
+                        }
+                        else -> {
                             ContentPreviewDefaults.MultiItemPoster(
                                 modifier = Modifier.fillMaxSize(),
                                 items = items

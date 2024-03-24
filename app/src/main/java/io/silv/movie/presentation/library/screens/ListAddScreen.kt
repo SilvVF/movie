@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -70,6 +70,9 @@ import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.library.screenmodels.ListAddEvent
+import io.silv.movie.presentation.library.screenmodels.ListAddScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListAddState
 import io.silv.movie.presentation.library.components.ContentListItem
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.movie.MovieViewScreen

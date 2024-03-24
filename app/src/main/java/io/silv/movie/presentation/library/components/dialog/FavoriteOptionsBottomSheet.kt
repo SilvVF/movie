@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.favorite
+package io.silv.movie.presentation.library.components.dialog
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets

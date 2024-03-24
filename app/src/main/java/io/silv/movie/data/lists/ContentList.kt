@@ -13,19 +13,25 @@ data class ContentList(
     val lastSynced: Long? = null,
     val public: Boolean = false,
     val name: String,
+    val username: String,
+    val description: String,
     val lastModified: Long,
     val posterLastModified: Long,
-    val createdAt: Long
+    val createdAt: Long,
+    val inLibrary: Boolean
 ): Parcelable
 
 fun ContentList.toUpdate(): ContentListUpdate {
-    return ContentListUpdate(id, name, posterLastModified)
+    return ContentListUpdate(id, name, username, description, posterLastModified)
 }
 
 data class ContentListUpdate(
     val id: Long,
     val name: String? = null,
-    val posterLastUpdated: Long? = null
+    val username: String? = null,
+    val description: String? = null,
+    val posterLastUpdated: Long? = null,
+    val inLibrary: Boolean? = null,
 )
 
 fun MoviePoster.toContentItem(): ContentItem {
@@ -40,7 +46,7 @@ fun MoviePoster.toContentItem(): ContentItem {
         lastModified = -1L,
         description = "",
         popularity = 0.0,
-        inList = inList
+        inLibraryList = inLibraryList
     )
 }
 
@@ -56,7 +62,7 @@ fun TVShowPoster.toContentItem(): ContentItem {
         lastModified = -1L,
         description = "",
         popularity = 0.0,
-        inList = inList
+        inLibraryList = inLibraryList
     )
 }
 
@@ -67,7 +73,7 @@ data class ContentItem(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
-    val inList: Boolean,
+    val inLibraryList: Boolean,
     val lastModified: Long,
     val description: String,
     val popularity: Double,

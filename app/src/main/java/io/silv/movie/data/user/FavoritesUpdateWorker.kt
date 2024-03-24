@@ -26,7 +26,7 @@ import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.toDomain
 import io.silv.movie.data.tv.model.toShowUpdate
-import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
+import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 import kotlinx.coroutines.flow.firstOrNull
 
 /**

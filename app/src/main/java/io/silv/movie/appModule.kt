@@ -10,11 +10,11 @@ import io.silv.movie.data.dataModule
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
-import io.silv.movie.presentation.library.ListAddScreenModel
-import io.silv.movie.presentation.library.ListCoverScreenModel
-import io.silv.movie.presentation.library.browse.LibraryScreenModel
-import io.silv.movie.presentation.library.view.favorite.FavoritesScreenModel
-import io.silv.movie.presentation.library.view.list.ListViewScreenModel
+import io.silv.movie.presentation.library.screenmodels.FavoritesScreenModel
+import io.silv.movie.presentation.library.screenmodels.LibraryScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListAddScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.profile.ProfileScreenModel
 import io.silv.movie.presentation.profile.SelectProfileImageScreenModel
 import io.silv.movie.presentation.view.ImageSaver

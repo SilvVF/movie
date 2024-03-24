@@ -63,7 +63,7 @@ object MovieMapper {
                 posterUrl  = poster_url,
                 favorite = favorite,
                 posterLastUpdated = poster_last_updated,
-                inList = inList
+                inLibraryList = inList
             )
         }
 }

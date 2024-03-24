@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.browse
+package io.silv.movie.presentation.library.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,6 +14,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -33,13 +34,15 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.CollectEventsWithLifecycle
-import io.silv.movie.presentation.library.ListCoverScreenModel
-import io.silv.movie.presentation.library.ListCreateScreen
-import io.silv.movie.presentation.library.components.LibraryCoverDialog
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
-import io.silv.movie.presentation.library.view.favorite.FavoritesViewScreen
-import io.silv.movie.presentation.library.view.list.ListViewScreen
+import io.silv.movie.presentation.library.components.dialog.LibraryCoverDialog
+import io.silv.movie.presentation.library.components.topbar.LibraryBrowseTopBar
+import io.silv.movie.presentation.library.screenmodels.LibraryEvent
+import io.silv.movie.presentation.library.screenmodels.LibraryScreenModel
+import io.silv.movie.presentation.library.screenmodels.LibrarySortMode
+import io.silv.movie.presentation.library.screenmodels.LibraryState
+import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
 import io.silv.movie.presentation.view.components.EditCoverAction
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -89,6 +92,7 @@ class LibraryScreen: Screen {
                 changeDialog(LibraryScreenModel.Dialog.FullCover(it))
             },
             refreshLists = screenModel::refreshUserLists,
+            refreshFavorites = screenModel::refreshFavoritesList,
             state = state
         )
         val onDismissRequest =  { changeDialog(null) }
@@ -96,6 +100,11 @@ class LibraryScreen: Screen {
             null -> Unit
             is LibraryScreenModel.Dialog.FullCover -> {
                 val sm = getScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
+
+                LaunchedEffect(dialog.contentList.id) {
+                    sm.refresh(dialog.contentList.id)
+                }
+
                 val list by sm.state.collectAsStateWithLifecycle()
                 val context = LocalContext.current
 
@@ -106,7 +115,7 @@ class LibraryScreen: Screen {
                         if (it == null) return@rememberLauncherForActivityResult
                         sm.editCover(context, it)
                     }
-                    val items: ImmutableList<ContentListItem> = remember(list!!.posterLastModified) {
+                    val items: ImmutableList<ContentListItem> = remember(list) {
                          state.contentLists
                             .firstOrNull { it.first.id == list!!.id }
                             ?.second
@@ -147,6 +156,7 @@ private fun LibraryStandardScreenContent(
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
     refreshLists: () -> Unit,
+    refreshFavorites: () -> Unit,
     state: LibraryState
 ) {
 
@@ -154,68 +164,70 @@ private fun LibraryStandardScreenContent(
     val hazeState = remember { HazeState() }
     val snackBarHostState = remember { SnackbarHostState() }
 
-    Scaffold(
-        topBar = {
-            LibraryBrowseTopBar(
-                modifier = Modifier.hazeChild(hazeState),
-                isListMode = listModeProvider,
-                changeQuery = changeQuery,
-                onSearch = changeQuery,
-                query = query,
-                setListMode = setListMode,
-                changeSortMode = changeSortMode,
-                sortModeProvider =  sortModeProvider,
-                scrollBehavior = scrollBehavior,
-                createListClicked = createListClicked,
-            )
-        },
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-            .exclude(WindowInsets.systemBars),
-        snackbarHost = {
-            SnackbarHost(snackBarHostState)
-        },
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
-    ) { paddingValues ->
-        PullRefresh(
-            refreshing = state.refreshingLists,
-            enabled = { !state.refreshingLists },
-            onRefresh = { refreshLists() },
-            indicatorPadding = paddingValues
-        ) {
-        Crossfade(
-            targetState = listModeProvider(),
-            label = "display-mode-crossfade"
-        ) { isList ->
-            if (isList) {
-                LibraryListView(
-                    paddingValues = paddingValues,
-                    state = state,
-                    onListLongClick = onListLongClick,
-                    onListClick = onListClick,
-                    onFavoritesClicked = onFavoritesClicked,
-                    onPosterClick = onPosterClick,
-                    modifier = Modifier.haze(
-                        hazeState,
-                        HazeDefaults.style(MaterialTheme.colorScheme.background)
-                    )
-                )
-            } else {
-                LibraryGridView(
-                    paddingValues = paddingValues,
-                    state = state,
-                    onListLongClick = onListLongClick,
-                    onListClick = onListClick,
-                    onFavoritesClicked = onFavoritesClicked,
-                    onPosterClick = onPosterClick,
-                    modifier = Modifier.haze(
-                        hazeState,
-                        HazeDefaults.style(MaterialTheme.colorScheme.background)
-                    )
-                )
-            }
+    PullRefresh(
+        refreshing = state.refreshingLists || state.refreshingFavorites,
+        enabled = { !state.refreshingLists && !state.refreshingFavorites},
+        onRefresh = {
+            refreshLists()
+            refreshFavorites()
         }
+    ) {
+        Scaffold(
+            topBar = {
+                LibraryBrowseTopBar(
+                    modifier = Modifier.hazeChild(hazeState),
+                    isListMode = listModeProvider,
+                    changeQuery = changeQuery,
+                    onSearch = changeQuery,
+                    query = query,
+                    setListMode = setListMode,
+                    changeSortMode = changeSortMode,
+                    sortModeProvider =  sortModeProvider,
+                    scrollBehavior = scrollBehavior,
+                    createListClicked = createListClicked,
+                )
+            },
+            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+                .exclude(WindowInsets.systemBars),
+            snackbarHost = {
+                SnackbarHost(snackBarHostState)
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+        ) { paddingValues ->
+            Crossfade(
+                targetState = listModeProvider(),
+                label = "display-mode-crossfade"
+            ) { isList ->
+                if (isList) {
+                    LibraryListView(
+                        paddingValues = paddingValues,
+                        state = state,
+                        onListLongClick = onListLongClick,
+                        onListClick = onListClick,
+                        onFavoritesClicked = onFavoritesClicked,
+                        onPosterClick = onPosterClick,
+                        modifier = Modifier.haze(
+                            hazeState,
+                            HazeDefaults.style(MaterialTheme.colorScheme.background)
+                        )
+                    )
+                } else {
+                    LibraryGridView(
+                        paddingValues = paddingValues,
+                        state = state,
+                        onListLongClick = onListLongClick,
+                        onListClick = onListClick,
+                        onFavoritesClicked = onFavoritesClicked,
+                        onPosterClick = onPosterClick,
+                        modifier = Modifier.haze(
+                            hazeState,
+                            HazeDefaults.style(MaterialTheme.colorScheme.background)
+                        )
+                    )
+                }
+            }
         }
     }
 }

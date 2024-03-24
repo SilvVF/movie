@@ -14,6 +14,7 @@ import androidx.work.WorkerParameters
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentListRepository
+import io.silv.movie.data.lists.toUpdate
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -22,6 +23,8 @@ import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.model.toDomain
+import kotlinx.datetime.Clock
+import timber.log.Timber
 
 /**
  * Toggles favorite for movies and shows from the list in supabase.
@@ -46,7 +49,6 @@ class UserListUpdateWorker (
     override suspend fun doWork(): Result {
 
         val user = auth.currentUserOrNull()!!
-
         val network = listRepository.selectAllLists(user.id)!!
 
         for (list in network) {
@@ -54,10 +56,24 @@ class UserListUpdateWorker (
                 var local = contentListRepository.getListForSupabaseId(list.listId)
 
                 if (local == null) {
-                    val id = contentListRepository.createList(list.name, list.listId, list.userId, list.createdAt.toEpochMilliseconds())
+                    val id = contentListRepository.createList(
+                        name = list.name,
+                        supabaseId = list.listId,
+                        userId = list.userId,
+                        createdAt = list.createdAt.toEpochMilliseconds()
+                    )
                     local = contentListRepository.getList(id)!!
                 }
 
+                contentListRepository.updateList(
+                    local.copy(
+                        description = list.description,
+                        lastModified = list.updatedAt.toEpochMilliseconds(),
+                        name = list.name,
+                        lastSynced = Clock.System.now().toEpochMilliseconds()
+                    )
+                        .toUpdate()
+                )
                 val items = listRepository.selectAllItemsForList(list.listId)!!
 
                 for (item in items) {
@@ -79,7 +95,7 @@ class UserListUpdateWorker (
                         contentListRepository.addShowToList(show.id, local)
                     }
                 }
-            } catch (ignored: Exception){}
+            } catch (ignored: Exception){ Timber.e(ignored) }
         }
         return Result.success()
     }
@@ -89,8 +105,8 @@ class UserListUpdateWorker (
     }
 
     private fun createForegroundInfo(): ForegroundInfo {
-        val id = "io.silv.FavoritesWorker"
-        val title = "Refreshing favorites"
+        val id = TAG
+        val title = "Refreshing user lists"
         val cancel = "cancel"
         // This PendingIntent can be used to cancel the worker
         val intent = WorkManager.getInstance(applicationContext)

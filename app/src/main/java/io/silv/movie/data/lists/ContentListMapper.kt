@@ -13,17 +13,21 @@ object ContentListMapper {
             name: String,
             last_modified_at: Long,
             poster_last_updated: Long?,
-            created_at: Long, ->
+            created_at: Long,
+            in_library: Boolean ->
         ContentList(
-            _id,
-            supabase_id,
-            created_by,
-            synced_at,
-            public,
-            name,
-            last_modified_at,
-            poster_last_updated ?: -1L,
-            created_at
+            id = _id,
+            supabaseId = supabase_id,
+            createdBy = created_by,
+            lastSynced = synced_at,
+            public = public,
+            name = name,
+            description = description,
+            lastModified = last_modified_at,
+            posterLastModified = poster_last_updated ?: -1L,
+            createdAt = created_at,
+            username = username,
+            inLibrary = in_library
         )
     }
 
@@ -49,7 +53,7 @@ object ContentListMapper {
             lastModified = last_modified_at ?: -1L,
             popularity = popularity ?: 0.0,
             description = overview ?: "",
-            inList = inList ?: false
+            inLibraryList = inList ?: false
         )
     }
 
@@ -68,7 +72,7 @@ object ContentListMapper {
             lastModified = last_modified_at,
             popularity = popularity,
             description = overview,
-            inList = true
+            inLibraryList = true
         )
     }
 
@@ -95,15 +99,23 @@ object ContentListMapper {
                 lastModified = created_at,
                 popularity = popularity ?: 0.0,
                 description = overview ?: "",
-                inList = inList ?: false
+                inLibraryList = inList ?: false
             )
     }
 
     val mapListItem = {
             list_id: Long,
-            list_name: String,
-            lastModified: Long,
-            listPosterLastUpdated: Long?,
+            supabase_id: String?,
+            created_by: String?,
+            username: String,
+            description: String,
+            synced_at: Long?,
+            public_: Boolean,
+            name: String,
+            last_modified_at: Long,
+            poster_last_updated: Long?,
+            created_at: Long,
+            inLibrary: Boolean,
             movieId: Long?,
             showId: Long?,
             addedToListAt: Long?,
@@ -113,7 +125,7 @@ object ContentListMapper {
             favorite: Boolean?,
             overview: String?,
             popularity: Double?,
-            inList: Boolean?    ->
+            inList: Boolean?   ->
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
@@ -126,25 +138,39 @@ object ContentListMapper {
                    lastModified =  addedToListAt ?: 0L,
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
-                   inList = inList ?: false
+                   inLibraryList = inList ?: false
                ),
-               list = ContentList(
-                   list_id,
-                   null, null, null, false,
-                   list_name,
-                   lastModified,
-                   listPosterLastUpdated ?: -1L,
-                   0L
+               list =  ContentList(
+                   id = list_id,
+                   supabaseId = supabase_id,
+                   createdBy = created_by,
+                   lastSynced = synced_at,
+                   public = public_,
+                   name = name,
+                   description = description,
+                   lastModified = last_modified_at,
+                   posterLastModified = poster_last_updated ?: -1L,
+                   username = username,
+                   createdAt = created_at,
+                   inLibrary = inList ?: false
                )
             )
         } else {
             ContentListItem.PlaceHolder(
                 ContentList(
-                    list_id,
-                    null, null, null, false,
-                    list_name,
-                    lastModified,
-                    listPosterLastUpdated ?: -1L, 0L)
+                    id = list_id,
+                    supabaseId = supabase_id,
+                    createdBy = created_by,
+                    lastSynced = synced_at,
+                    public = public_,
+                    name = name,
+                    description = description,
+                    lastModified = last_modified_at,
+                    posterLastModified = poster_last_updated ?: -1L,
+                    username = username,
+                    inLibrary = inLibrary,
+                    createdAt = created_at
+                )
             )
         }
     }

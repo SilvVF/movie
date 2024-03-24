@@ -1,6 +1,6 @@
 package io.silv.movie.data.lists
 
-import io.silv.movie.presentation.library.view.favorite.FavoritesSortMode
+import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 import kotlinx.coroutines.flow.Flow
 
 class GetFavoritesList(

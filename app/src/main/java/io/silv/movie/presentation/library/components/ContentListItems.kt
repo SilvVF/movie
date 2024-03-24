@@ -50,12 +50,13 @@ fun ContentListPosterList(
     onRefreshClick: () -> Unit = {},
     startAddingClick: () -> Unit = {},
     showFavorite: Boolean = true,
+    isOwnerMe: Boolean,
 ) {
     FastScrollLazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = paddingValues
     ) {
-        if (items.isEmpty()) {
+        if (items.isEmpty() && isOwnerMe) {
             item(key = "Empty-hint") {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -102,62 +103,64 @@ fun ContentListPosterList(
                 }
             }
         }
-        item {
-            Column(
-                modifier = Modifier.padding(22.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.recommended_content_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = if(items.isEmpty())
-                        stringResource(id = R.string.recommended_content_description_favorites)
-                    else
-                        stringResource(id = R.string.recommended_content_description),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.onBackground.copy(
-                            alpha = 0.78f
-                        )
-                    ),
-                )
-
-            }
-        }
-        items(recommendations, { "recommendation" + it.itemKey }) {
-            Box(Modifier.animateItemPlacement()) {
-                ContentListItem(
-                    title = it.title,
-                    favorite = showFavorite && it.favorite,
-                    poster = remember(it) { it.toPoster() },
-                    onClick = { onRecommendationClick(it) },
-                    onLongClick = { onRecommendationLongClick(it) },
+        if (isOwnerMe) {
+            item {
+                Column(
+                    modifier = Modifier.padding(22.dp)
                 ) {
-                    IconButton(
-                        onClick = { onAddRecommendation(it) },
-                        modifier = Modifier.size(28.dp),
+                    Text(
+                        text = stringResource(id = R.string.recommended_content_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = if(items.isEmpty())
+                            stringResource(id = R.string.recommended_content_description_favorites)
+                        else
+                            stringResource(id = R.string.recommended_content_description),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = MaterialTheme.colorScheme.onBackground.copy(
+                                alpha = 0.78f
+                            )
+                        ),
+                    )
+
+                }
+            }
+            items(recommendations, { "recommendation" + it.itemKey }) {
+                Box(Modifier.animateItemPlacement()) {
+                    ContentListItem(
+                        title = it.title,
+                        favorite = showFavorite && it.favorite,
+                        poster = remember(it) { it.toPoster() },
+                        onClick = { onRecommendationClick(it) },
+                        onLongClick = { onRecommendationLongClick(it) },
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.AddCircleOutline,
-                            contentDescription = stringResource(id = R.string.add),
-                            modifier = Modifier.size(16.dp),
-                        )
+                        IconButton(
+                            onClick = { onAddRecommendation(it) },
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AddCircleOutline,
+                                contentDescription = stringResource(id = R.string.add),
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
                     }
                 }
             }
-        }
-        item(key = "recommendation-refresh") {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-            ) {
-                Button(
-                    onClick = onRefreshClick,
-                    enabled = !refreshingRecommendations,
-                    modifier = Modifier.align(Alignment.Center),
+            item(key = "recommendation-refresh") {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
                 ) {
-                    Text(stringResource(id = R.string.refresh))
+                    Button(
+                        onClick = onRefreshClick,
+                        enabled = !refreshingRecommendations,
+                        modifier = Modifier.align(Alignment.Center),
+                    ) {
+                        Text(stringResource(id = R.string.refresh))
+                    }
                 }
             }
         }

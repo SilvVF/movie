@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library
+package io.silv.movie.presentation.library.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,26 +26,21 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.SessionStatus
 import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
 import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
 import kotlinx.parcelize.Parcelize
-import org.koin.compose.koinInject
 
-class ListCreateScreen(
-    private val listCount: Long?
-): ScreenWithResult<ListCreateScreen.ListCreateResult> {
+class ListEditDescriptionScreen(
+    private val current: String,
+): ScreenWithResult<ListEditDescriptionScreen.DescriptionResult> {
 
     @Parcelize
-    data class ListCreateResult(
-        val name: String,
-        val online: Boolean = false,
+    data class DescriptionResult(
+        val description: String
     ): ScreenResult
 
     @Composable
@@ -56,14 +51,7 @@ class ListCreateScreen(
         val surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
         val background = MaterialTheme.colorScheme.background
 
-        var name by rememberSaveable {
-            mutableStateOf("My list ${if (listCount != null) "#${listCount + 1}" else ""}")
-        }
-
-        val auth = koinInject<Auth>()
-
-        val sessionStatus by auth.sessionStatus.collectAsStateWithLifecycle()
-
+        var description by rememberSaveable { mutableStateOf(current) }
 
         Box(
             modifier = Modifier
@@ -85,14 +73,14 @@ class ListCreateScreen(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = stringResource(id = R.string.create_list_title),
+                    text = stringResource(id = R.string.add_description_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold
                 )
                 Spacer(modifier = Modifier.height(22.dp))
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it }
+                    value = description,
+                    onValueChange = { description = it }
                 )
                 Spacer(modifier = Modifier.height(22.dp))
                 Row {
@@ -105,27 +93,12 @@ class ListCreateScreen(
                     Button(
                         onClick = {
                             setScreenResult(
-                                ListCreateResult(name)
+                                DescriptionResult(description)
                             )
                             navigator.pop()
                         }
                     ) {
-                        Text(text = stringResource(id = R.string.create))
-                    }
-                    when (sessionStatus) {
-                        is SessionStatus.Authenticated -> {
-                            Button(
-                                onClick = {
-                                    setScreenResult(
-                                        ListCreateResult(name, online = true)
-                                    )
-                                    navigator.pop()
-                                }
-                            ) {
-                                Text(text = stringResource(id = R.string.create_as_user))
-                            }
-                        }
-                        else -> Unit
+                        Text(text = stringResource(id = R.string.save))
                     }
                 }
             }

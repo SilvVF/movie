@@ -13,7 +13,7 @@ data class MoviePoster(
     val posterLastUpdated: Long,
     val posterUrl: String?,
     val favorite: Boolean,
-    val inList: Boolean = false
+    val inLibraryList: Boolean = false
 ): Parcelable
 
 @Stable

@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.favorite
+package io.silv.movie.presentation.library.screenmodels
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -33,8 +33,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 class FavoritesScreenModel(
     getFavoritesList: GetFavoritesList,
@@ -61,9 +59,6 @@ class FavoritesScreenModel(
     var query by mutableStateOf("")
         private set
 
-    private val mutex = Mutex()
-    private var refreshed = false
-
     val state = combine(
             snapshotFlow { query },
             sortModeFavorites.stateIn(screenModelScope),
@@ -72,20 +67,6 @@ class FavoritesScreenModel(
             favoritesUpdateManager.isRunning(),
         ) { a, b, c, d, e -> Penta(a, b, c, d, e) }
         .flatMapLatest { (query, sortMode, recommendations, refRecs, refFavs) ->
-
-            screenModelScope.launch {
-                if (recommendations.isEmpty() && !refreshed) {
-                    mutex.withLock {
-                        refreshed = true
-                        refreshRecommendations()
-                    }
-                } else if (recommendations.isNotEmpty()) {
-                    mutex.withLock {
-                        refreshed = false
-                    }
-                }
-            }
-
             getFavoritesList.subscribe(query, sortMode)
                 .map { content ->
                     FavoritesListState(

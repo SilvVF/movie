@@ -15,7 +15,7 @@ fun MoviePoster.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = true,
-        inList = inList,
+        inList = inLibraryList,
         lastModified = posterLastUpdated
     )
 }
@@ -40,7 +40,7 @@ fun TVShowPoster.toPoster(): PosterData {
         title = title,
         favorite = favorite,
         isMovie = false,
-        inList = inList,
+        inList = inLibraryList,
         lastModified = posterLastUpdated
     )
 }

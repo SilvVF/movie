@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.browse
+package io.silv.movie.presentation.library.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +48,7 @@ import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
+import io.silv.movie.presentation.library.screenmodels.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(

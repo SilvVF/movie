@@ -37,6 +37,9 @@ import io.silv.movie.data.tv.repository.SourceTVRepositoryImpl
 import io.silv.movie.data.user.FavoritesUpdateManager
 import io.silv.movie.data.user.FavoritesUpdateWorker
 import io.silv.movie.data.user.ListRepository
+import io.silv.movie.data.user.ListUpdateManager
+import io.silv.movie.data.user.ListUpdateWorker
+import io.silv.movie.data.user.ListUpdater
 import io.silv.movie.data.user.UserListUpdateManager
 import io.silv.movie.data.user.UserListUpdateWorker
 import io.silv.movie.data.user.UserRepository
@@ -121,6 +124,17 @@ val dataModule =
             )
         }
 
+
+        worker {
+            ListUpdateWorker(
+                get(),
+                androidContext(), get()
+            )
+        }
+
+        factoryOf(::ListUpdater)
+
+        singleOf(::ListUpdateManager)
 
         singleOf(::FavoritesUpdateManager)
 

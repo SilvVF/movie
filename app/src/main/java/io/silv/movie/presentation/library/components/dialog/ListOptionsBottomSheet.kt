@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.list
+package io.silv.movie.presentation.library.components.dialog
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -39,6 +40,7 @@ fun ListOptionsBottomSheet(
     onDismissRequest: () ->  Unit,
     onAddClick: () -> Unit,
     onEditClick: () -> Unit,
+    onChangeDescription: () -> Unit,
     onDeleteClick: () -> Unit,
     onShareClick: () -> Unit,
     list: ContentList,
@@ -107,6 +109,11 @@ fun ListOptionsBottomSheet(
             title = { Text(stringResource(id = R.string.options_edit_list)) },
             icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = null) },
             onClick = onEditClick
+        )
+        BottomSheetItem(
+            title = { Text(stringResource(id = R.string.options_edit_description)) },
+            icon = { Icon(imageVector = Icons.Filled.EditNote, contentDescription = null) },
+            onClick = onChangeDescription
         )
         BottomSheetItem(
             title = { Text(stringResource(id = R.string.options_delete_list)) },

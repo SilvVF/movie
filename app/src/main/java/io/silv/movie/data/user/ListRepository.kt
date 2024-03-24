@@ -19,6 +19,7 @@ data class UserList(
     @SerialName("user_id")
     val userId: String,
     val name: String,
+    val description: String,
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("updated_at")
@@ -77,6 +78,7 @@ fun ContentList.toUserListUpdate(): UserListUpdate {
         listId = supabaseId!!,
         createdAt = null,
         updatedAt = null,
+        description = description,
         name = name,
         public = public
     )
@@ -85,6 +87,7 @@ fun ContentList.toUserListUpdate(): UserListUpdate {
 data class UserListUpdate(
     val listId: String,
     val name: String? = null,
+    val description: String? = null,
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val public: Boolean? = null,
@@ -165,6 +168,17 @@ class ListRepository(
             .getOrNull()
     }
 
+    suspend fun selectListById(listId: String): UserList? {
+        return runCatching {
+            postgrest[USER_LIST]
+                .select {
+                    filter { eq("list_id", listId) }
+                }
+                .decodeSingle<UserList>()
+        }
+            .getOrNull()
+    }
+
     suspend fun selectAllLists(userId: String): List<UserList>? {
         return runCatching {
             postgrest[USER_LIST]
@@ -197,6 +211,7 @@ class ListRepository(
                     {
                         if (update.name != null) { set("name", update.name) }
                         if (update.public != null) { set("public", update.public) }
+                        if (update.description != null) { set("description", update.description) }
                     }
                 ) {
                     filter {
@@ -229,7 +244,8 @@ class ListRepository(
                     name = name,
                     createdAt = now,
                     updatedAt = now,
-                    public = false
+                    public = false,
+                    description = ""
                 )
             ) {
                 select()

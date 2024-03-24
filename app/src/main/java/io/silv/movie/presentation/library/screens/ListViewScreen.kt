@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.list
+package io.silv.movie.presentation.library.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -7,11 +7,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExploreOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -27,42 +30,64 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.Action
+import io.silv.core_ui.components.EmptyScreen
+import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
-import io.silv.movie.presentation.library.ListAddScreen
-import io.silv.movie.presentation.library.ListCoverScreenModel
-import io.silv.movie.presentation.library.ListEditScreen
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
-import io.silv.movie.presentation.library.components.ListViewCoverDialog
+import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
+import io.silv.movie.presentation.library.components.dialog.ListViewCoverDialog
+import io.silv.movie.presentation.library.components.topbar.ListViewTopBar
+import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListSortMode
+import io.silv.movie.presentation.library.screenmodels.ListViewEvent
+import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
+import io.silv.movie.presentation.library.screenmodels.ListViewState
 import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
+import kotlinx.collections.immutable.persistentListOf
 import org.koin.core.parameter.parametersOf
 
 data class ListViewScreen(
-    private val listId: Long,
+    private val listId: Long = -1L,
+    private val supabaseId: String = ""
 ): Screen {
 
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<ListViewScreenModel> { parametersOf(listId) }
+        val screenModel = getScreenModel<ListViewScreenModel> { parametersOf(listId, supabaseId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
+        val refreshingList by screenModel.refreshingList.collectAsStateWithLifecycle()
 
         CollectEventsWithLifecycle(screenModel) { event ->
-            when(event) {
+            when (event) {
                 ListViewEvent.ListDeleted -> navigator.pop()
             }
         }
 
         when (val s = state) {
-            is ListViewState.Error -> Unit
+            is ListViewState.Error -> {
+                EmptyScreen(
+                    icon = Icons.Filled.ExploreOff,
+                    iconSize = 182.dp,
+                    actions = persistentListOf(
+                        Action(
+                            R.string.retry,
+                            onClick = screenModel::initializeList
+                        )
+                    )
+                )
+            }
             ListViewState.Loading -> Unit
             is ListViewState.Success -> {
 
@@ -74,6 +99,15 @@ data class ListViewScreen(
                     screenModel.editList(s.list, result.name)
                 }
 
+                val descriptionEditScreen =
+                    remember(s.list.description) { ListEditDescriptionScreen(s.list.description) }
+
+                val descriptionResultLauncher = rememberScreenWithResultLauncher(
+                    screen = descriptionEditScreen
+                ) { result ->
+                    screenModel.editDescription(result.description)
+                }
+
                 val changeDialog = remember {
                     { sheet: ListViewScreenModel.Dialog? -> screenModel.changeDialog(sheet) }
                 }
@@ -83,6 +117,8 @@ data class ListViewScreen(
 
                 SuccessScreenContent(
                     query = screenModel.query,
+                    refreshingList = refreshingList,
+                    refreshList = screenModel::refreshList,
                     updateQuery = screenModel::updateQuery,
                     onListOptionClick = { changeDialog(ListViewScreenModel.Dialog.ListOptions) },
                     updateListViewDisplayMode = screenModel::updateListViewDisplayMode,
@@ -118,7 +154,11 @@ data class ListViewScreen(
                         else
                             navigator.push(TVViewScreen(item.contentId))
                     },
-                    startAddingClick = { navigator.push(ListAddScreen(listId)) },
+                    startAddingClick = {
+                        navigator.push(
+                            ListAddScreen(s.list.id)
+                        )
+                    },
                     onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                     state = s
                 )
@@ -137,7 +177,8 @@ data class ListViewScreen(
                             Box(
                                 Modifier
                                     .fillMaxHeight(0.5f)
-                                    .fillMaxWidth()) {
+                                    .fillMaxWidth()
+                            ) {
                                 Text("Content Options")
                             }
                         }
@@ -145,11 +186,12 @@ data class ListViewScreen(
                     ListViewScreenModel.Dialog.ListOptions -> {
                         ListOptionsBottomSheet(
                             onDismissRequest = onDismissRequest,
-                            onAddClick = { navigator.push(ListAddScreen(listId)) },
+                            onAddClick = { navigator.push(ListAddScreen(s.list.id)) },
                             onEditClick = { screenResultLauncher.launch() },
                             onDeleteClick = { changeDialog(ListViewScreenModel.Dialog.DeleteList) },
                             onShareClick = {},
                             list = s.list,
+                            onChangeDescription = { descriptionResultLauncher.launch() },
                             content = s.allItems
                         )
                     }
@@ -164,6 +206,10 @@ data class ListViewScreen(
                         val sm = getScreenModel<ListCoverScreenModel> { parametersOf(s.list.id) }
                         val list by sm.state.collectAsStateWithLifecycle()
                         val context = LocalContext.current
+
+                        LaunchedEffect(s.list.id) {
+                            sm.refresh(s.list.id)
+                        }
 
                         if (list != null) {
                             val getContent = rememberLauncherForActivityResult(
@@ -196,6 +242,7 @@ data class ListViewScreen(
     }
 }
 
+
 @Composable
 private fun SuccessScreenContent(
     updateQuery: (String) -> Unit,
@@ -208,23 +255,30 @@ private fun SuccessScreenContent(
     onOptionsClick: (item: ContentItem) -> Unit,
     changeSortMode: (ListSortMode) -> Unit,
     updateDialog: (ListViewScreenModel.Dialog?) -> Unit,
-    onRecommendationClick: (item: ContentItem) -> Unit ,
+    onRecommendationClick: (item: ContentItem) -> Unit,
     onRecommendationLongClick: (item: ContentItem) -> Unit,
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
     startAddingClick: () -> Unit,
     onPosterClick: () -> Unit,
+    refreshList: () -> Unit,
+    refreshingList: Boolean,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
     val hazeState = remember { HazeState() }
 
+    PullRefresh(
+        refreshing = refreshingList,
+        enabled = { !refreshingList && state.list.supabaseId != null },
+        onRefresh = refreshList
+    ) {
     Scaffold(
         topBar = {
             ListViewTopBar(
                 state  = topBarState,
                 username = state.user?.username.orEmpty(),
-                description = "a list description",
+                description = state.list.description,
                 userId = state.list.createdBy,
                 query = { query },
                 changeQuery = updateQuery,
@@ -257,6 +311,7 @@ private fun SuccessScreenContent(
                     onRefreshClick = refreshRecommendations,
                     refreshingRecommendations = state.refreshingRecommendations,
                     startAddingClick = startAddingClick,
+                    isOwnerMe = state.isOwnerMe,
                     modifier = Modifier
                         .haze(
                             state = hazeState,
@@ -265,6 +320,7 @@ private fun SuccessScreenContent(
                         .padding(top = 12.dp),
                 )
             }
+
             PosterDisplayMode.List -> {
                 ContentListPosterList(
                     items = state.items,
@@ -279,6 +335,7 @@ private fun SuccessScreenContent(
                     onRecommendationClick = onRecommendationClick,
                     onRecommendationLongClick = onRecommendationLongClick,
                     startAddingClick = startAddingClick,
+                    isOwnerMe = state.isOwnerMe,
                     modifier = Modifier
                         .haze(
                             state = hazeState,
@@ -289,6 +346,5 @@ private fun SuccessScreenContent(
             }
         }
     }
+    }
 }
-
-

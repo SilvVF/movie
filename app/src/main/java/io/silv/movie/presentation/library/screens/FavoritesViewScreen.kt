@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.library.view.favorite
+package io.silv.movie.presentation.library.screens
 
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -26,9 +26,13 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import io.silv.movie.presentation.library.components.dialog.FavoriteOptionsBottomSheet
+import io.silv.movie.presentation.library.components.topbar.FavoritesViewTopBar
+import io.silv.movie.presentation.library.screenmodels.FavoritesListState
+import io.silv.movie.presentation.library.screenmodels.FavoritesScreenModel
+import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
-
 
 object FavoritesViewScreen : Screen {
 
@@ -38,7 +42,8 @@ object FavoritesViewScreen : Screen {
         val screenModel = getScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
-        val changeDialog = remember { { dialog: FavoritesScreenModel.Dialog? -> screenModel.changeDialog(dialog) } }
+        val changeDialog =
+            remember { { dialog: FavoritesScreenModel.Dialog? -> screenModel.changeDialog(dialog) } }
         val toggleItemFavorite = remember {
             { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
         }
@@ -111,7 +116,7 @@ private fun FavoritesScreenContent(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     changeSortMode: (FavoritesSortMode) -> Unit,
-    onRecommendationClick: (item: ContentItem) -> Unit ,
+    onRecommendationClick: (item: ContentItem) -> Unit,
     onRecommendationLongClick: (item: ContentItem) -> Unit,
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
@@ -121,78 +126,80 @@ private fun FavoritesScreenContent(
     val hazeState = remember { HazeState() }
     val topBarState = rememberPosterTopBarState()
 
-    Scaffold(
-        topBar = {
-            FavoritesViewTopBar(
-                state = topBarState,
-                query = { query },
-                changeQuery = updateQuery,
-                onSearch = updateQuery,
-                displayMode = listViewDisplayMode,
-                setDisplayMode = updateListViewDisplayMode,
-                onListOptionClicked = onListOptionClick,
-                sortModeProvider = { state.sortMode },
-                changeSortMode = changeSortMode,
-                modifier = Modifier.hazeChild(hazeState)
-            )
-        },
-        modifier = Modifier
-            .imePadding()
-            .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
-    ) { paddingValues ->
-        PullRefresh(
-            refreshing = state.refreshingFavorites,
-            enabled = { !state.refreshingFavorites },
-            indicatorPadding = paddingValues,
-            onRefresh = { refreshFavorites() }
-        ) {
-        when (val mode = listViewDisplayMode()) {
-            is PosterDisplayMode.Grid -> {
-                ContentListPosterGrid(
-                    mode = mode,
-                    items = state.items,
-                    onOptionsClick = onOptionsClick,
-                    onLongClick = onLongClick,
-                    onClick = onClick,
-                    showFavorite = false,
-                    paddingValues = paddingValues,
-                    recommendations = state.recommendations,
-                    onRecommendationLongClick = onRecommendationLongClick,
-                    onRecommendationClick = onRecommendationClick,
-                    onAddRecommendation = onAddRecommendation,
-                    refreshingRecommendations = state.refreshingRecommendations,
-                    onRefreshClick = refreshRecommendations,
-                    modifier = Modifier
-                        .haze(
-                            state = hazeState,
-                            style = HazeDefaults.style(MaterialTheme.colorScheme.background),
-                        )
-                        .padding(top = 12.dp),
+    PullRefresh(
+        refreshing = state.refreshingFavorites,
+        enabled = { !state.refreshingFavorites },
+        onRefresh = { refreshFavorites() }
+    ) {
+        Scaffold(
+            topBar = {
+                FavoritesViewTopBar(
+                    state = topBarState,
+                    query = { query },
+                    changeQuery = updateQuery,
+                    onSearch = updateQuery,
+                    displayMode = listViewDisplayMode,
+                    setDisplayMode = updateListViewDisplayMode,
+                    onListOptionClicked = onListOptionClick,
+                    sortModeProvider = { state.sortMode },
+                    changeSortMode = changeSortMode,
+                    modifier = Modifier.hazeChild(hazeState)
                 )
+            },
+            modifier = Modifier
+                .imePadding()
+                .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
+        ) { paddingValues ->
+            when (val mode = listViewDisplayMode()) {
+                is PosterDisplayMode.Grid -> {
+                    ContentListPosterGrid(
+                        mode = mode,
+                        items = state.items,
+                        onOptionsClick = onOptionsClick,
+                        onLongClick = onLongClick,
+                        onClick = onClick,
+                        showFavorite = false,
+                        paddingValues = paddingValues,
+                        recommendations = state.recommendations,
+                        onRecommendationLongClick = onRecommendationLongClick,
+                        onRecommendationClick = onRecommendationClick,
+                        onAddRecommendation = onAddRecommendation,
+                        refreshingRecommendations = state.refreshingRecommendations,
+                        onRefreshClick = refreshRecommendations,
+                        isOwnerMe = true,
+                        modifier = Modifier
+                            .haze(
+                                state = hazeState,
+                                style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                            )
+                            .padding(top = 12.dp),
+                    )
+                }
+
+                PosterDisplayMode.List -> {
+                    ContentListPosterList(
+                        items = state.items,
+                        onOptionsClick = onOptionsClick,
+                        onLongClick = onLongClick,
+                        onClick = onClick,
+                        showFavorite = false,
+                        paddingValues = paddingValues,
+                        recommendations = state.recommendations,
+                        onRecommendationLongClick = onRecommendationLongClick,
+                        onRecommendationClick = onRecommendationClick,
+                        onAddRecommendation = onAddRecommendation,
+                        refreshingRecommendations = state.refreshingRecommendations,
+                        onRefreshClick = refreshRecommendations,
+                        isOwnerMe = true,
+                        modifier = Modifier
+                            .haze(
+                                state = hazeState,
+                                style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                            )
+                            .padding(top = 12.dp),
+                    )
+                }
             }
-            PosterDisplayMode.List -> {
-                ContentListPosterList(
-                    items = state.items,
-                    onOptionsClick = onOptionsClick,
-                    onLongClick = onLongClick,
-                    onClick = onClick,
-                    showFavorite = false,
-                    paddingValues = paddingValues,
-                    recommendations = state.recommendations,
-                    onRecommendationLongClick = onRecommendationLongClick,
-                    onRecommendationClick = onRecommendationClick,
-                    onAddRecommendation = onAddRecommendation,
-                    refreshingRecommendations = state.refreshingRecommendations,
-                    onRefreshClick = refreshRecommendations,
-                    modifier = Modifier
-                        .haze(
-                            state = hazeState,
-                            style = HazeDefaults.style(MaterialTheme.colorScheme.background),
-                        )
-                        .padding(top = 12.dp),
-                )
-            }
-        }
         }
     }
 }

@@ -140,7 +140,8 @@ fun ContentListPosterGrid(
     recommendations: ImmutableList<ContentItem> = persistentListOf(),
     refreshingRecommendations: Boolean = false,
     startAddingClick: () -> Unit = {},
-    onRefreshClick: () -> Unit = {}
+    onRefreshClick: () -> Unit = {},
+    isOwnerMe: Boolean,
 ) {
     val gridState = rememberLazyGridState()
     val cols = GridCells.Fixed(2)
@@ -157,7 +158,7 @@ fun ContentListPosterGrid(
             contentPadding = paddingValues,
             modifier = modifier,
         ) {
-            if (items.isEmpty()) {
+            if (items.isEmpty() && isOwnerMe) {
                 item(key = "Empty-hint", span = { GridItemSpan(maxLineSpan) }) {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -229,85 +230,89 @@ fun ContentListPosterGrid(
                     }
                 }
             }
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Column(
-                    modifier = Modifier.padding(22.dp)
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.recommended_content_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = if(items.isEmpty())
-                            stringResource(id = R.string.recommended_content_description_favorites)
-                        else
-                            stringResource(id = R.string.recommended_content_description),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground.copy(
-                                alpha = 0.78f
-                            )
-                        ),
-                    )
+            if (isOwnerMe) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Column(
+                        modifier = Modifier.padding(22.dp)
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.recommended_content_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = if(items.isEmpty())
+                                stringResource(id = R.string.recommended_content_description_favorites)
+                            else
+                                stringResource(id = R.string.recommended_content_description),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground.copy(
+                                    alpha = 0.78f
+                                )
+                            ),
+                        )
 
-                }
-            }
-            items(recommendations, { r -> "recommendation" + r.itemKey }) {
-                val poster = remember(it) { it.toPoster() }
-                val favorite = showFavorite && it.favorite
-                when (mode) {
-                    PosterDisplayMode.Grid.ComfortableGrid -> {
-                        ContentItemComfortableGridItem(
-                            title = it.title,
-                            favorite = favorite,
-                            poster = poster,
-                            onClick = { onRecommendationClick(it) },
-                            onLongClick = { onRecommendationLongClick(it) },
-                        ) {
-                            EntryGridItemIconButton(
-                                onClick = { onAddRecommendation(it)},
-                                contentDescription = stringResource(id = R.string.add),
-                                icon = Icons.Default.AddCircleOutline
-                            )
-                        }
-                    }
-                    PosterDisplayMode.Grid.CompactGrid -> {
-                        ContentItemCompactGridItem(
-                            title = it.title,
-                            favorite = favorite,
-                            poster = poster,
-                            onClick = { onRecommendationClick(it) },
-                            onLongClick = { onRecommendationLongClick(it) },
-                        ) {
-                            EntryGridItemIconButton(
-                                onClick = { onAddRecommendation(it)},
-                                contentDescription = stringResource(id = R.string.add),
-                                icon = Icons.Default.AddCircleOutline
-                            )
-                        }
-                    }
-                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
-                        ContentItemSourceCoverOnlyGridItem(
-                            favorite = favorite,
-                            poster = poster,
-                            onClick = { onRecommendationClick(it) },
-                            onLongClick = { onRecommendationLongClick(it) },
-                        ) {
-                            EntryGridItemIconButton(
-                                onClick = { onAddRecommendation(it)},
-                                contentDescription = stringResource(id = R.string.add),
-                                icon = Icons.Default.AddCircleOutline
-                            )
-                        }
                     }
                 }
-            }
-            item(key = "recommendation-refresh", span = { GridItemSpan(maxLineSpan) }) {
-                Button(
-                    onClick = onRefreshClick,
-                    enabled = !refreshingRecommendations
-                ) {
-                    Text(stringResource(id = R.string.refresh))
+                items(recommendations, { r -> "recommendation" + r.itemKey }) {
+                    val poster = remember(it) { it.toPoster() }
+                    val favorite = showFavorite && it.favorite
+                    when (mode) {
+                        PosterDisplayMode.Grid.ComfortableGrid -> {
+                            ContentItemComfortableGridItem(
+                                title = it.title,
+                                favorite = favorite,
+                                poster = poster,
+                                onClick = { onRecommendationClick(it) },
+                                onLongClick = { onRecommendationLongClick(it) },
+                            ) {
+                                EntryGridItemIconButton(
+                                    onClick = { onAddRecommendation(it) },
+                                    contentDescription = stringResource(id = R.string.add),
+                                    icon = Icons.Default.AddCircleOutline
+                                )
+                            }
+                        }
+
+                        PosterDisplayMode.Grid.CompactGrid -> {
+                            ContentItemCompactGridItem(
+                                title = it.title,
+                                favorite = favorite,
+                                poster = poster,
+                                onClick = { onRecommendationClick(it) },
+                                onLongClick = { onRecommendationLongClick(it) },
+                            ) {
+                                EntryGridItemIconButton(
+                                    onClick = { onAddRecommendation(it) },
+                                    contentDescription = stringResource(id = R.string.add),
+                                    icon = Icons.Default.AddCircleOutline
+                                )
+                            }
+                        }
+
+                        PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                            ContentItemSourceCoverOnlyGridItem(
+                                favorite = favorite,
+                                poster = poster,
+                                onClick = { onRecommendationClick(it) },
+                                onLongClick = { onRecommendationLongClick(it) },
+                            ) {
+                                EntryGridItemIconButton(
+                                    onClick = { onAddRecommendation(it) },
+                                    contentDescription = stringResource(id = R.string.add),
+                                    icon = Icons.Default.AddCircleOutline
+                                )
+                            }
+                        }
+                    }
+                }
+                item(key = "recommendation-refresh", span = { GridItemSpan(maxLineSpan) }) {
+                    Button(
+                        onClick = onRefreshClick,
+                        enabled = !refreshingRecommendations
+                    ) {
+                        Text(stringResource(id = R.string.refresh))
+                    }
                 }
             }
         }

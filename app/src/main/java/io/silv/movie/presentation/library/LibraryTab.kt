@@ -10,7 +10,7 @@ import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.movie.R
-import io.silv.movie.presentation.library.browse.LibraryScreen
+import io.silv.movie.presentation.library.screens.LibraryScreen
 
 
 object LibraryTab: Tab {
