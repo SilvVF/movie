@@ -256,6 +256,36 @@ class ListRepository(
             .getOrNull()
     }
 
+    suspend fun deleteMovieFromList(movieId: Long , contentList: ContentList): Boolean {
+        return runCatching {
+            postgrest[LIST_ITEM]
+                .delete {
+                    filter {
+                        eq("movie_id", movieId)
+                        eq("list_id", contentList.id)
+                        eq("user_id", auth.currentUserOrNull()?.id!!)
+                    }
+                }
+        }
+            .onFailure { Timber.e(it) }
+            .isSuccess
+    }
+
+    suspend fun deleteShowFromList(showId: Long, contentList: ContentList): Boolean {
+        return runCatching {
+            postgrest[LIST_ITEM]
+                .delete {
+                    filter {
+                        eq("show_id", showId)
+                        eq("list_id", contentList.id)
+                        eq("user_id", auth.currentUserOrNull()?.id!!)
+                    }
+                }
+        }
+            .onFailure { Timber.e(it) }
+            .isSuccess
+    }
+
     suspend fun addMovieToList(movieId: Long , contentList: ContentList): Boolean {
         return runCatching {
             postgrest[LIST_ITEM]

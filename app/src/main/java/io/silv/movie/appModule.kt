@@ -16,7 +16,7 @@ import io.silv.movie.presentation.library.screenmodels.ListAddScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.profile.ProfileScreenModel
-import io.silv.movie.presentation.profile.SelectProfileImageScreenModel
+import io.silv.movie.presentation.profile.screen.SelectProfileImageScreenModel
 import io.silv.movie.presentation.view.ImageSaver
 import io.silv.movie.presentation.view.MovieCoverScreenModel
 import io.silv.movie.presentation.view.TVCoverScreenModel

@@ -42,7 +42,7 @@ import io.silv.core_ui.theme.MovieTheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
-import io.silv.movie.presentation.home.BrowseTab
+import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen

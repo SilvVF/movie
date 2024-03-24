@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.profile
+package io.silv.movie.presentation.profile.screen
 
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +45,7 @@ import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.R
+import io.silv.movie.presentation.profile.ProfileState
 
 @Composable
 fun SignedInScreen(

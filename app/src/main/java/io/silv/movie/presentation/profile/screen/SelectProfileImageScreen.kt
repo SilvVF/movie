@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.profile
+package io.silv.movie.presentation.profile.screen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets

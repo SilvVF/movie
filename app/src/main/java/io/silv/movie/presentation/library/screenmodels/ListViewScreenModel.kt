@@ -10,6 +10,8 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
@@ -61,6 +63,8 @@ class ListViewScreenModel(
     private val listRepository: ListRepository,
     private val userRepository: UserRepository,
     private val listUpdateManager: ListUpdateManager,
+    private val movieCoverCache: MovieCoverCache,
+    private val showCoverCache: TVShowCoverCache,
     private val auth: Auth,
     libraryPreferences: LibraryPreferences,
 
@@ -143,10 +147,19 @@ class ListViewScreenModel(
             mutableState.value = if (list == null) {
                 ListViewState.Error("No list found")
             } else {
+                val items = contentListRepository.getListItems(list.id)
+                if (
+                    items.isEmpty() &&
+                    list.supabaseId != null &&
+                    list.createdBy != auth.currentUserOrNull()?.id) {
+                    /*** No need to fetch the items again this will be observed in [observeList] */
+                    listUpdateManager.refreshList(list.supabaseId.orEmpty())
+                }
+
                 ListViewState.Success(
                     list = list,
                     isOwnerMe = list.createdBy == auth.currentUserOrNull()?.id,
-                    allItems = contentListRepository.getListItems(list.id).toImmutableList(),
+                    allItems = items.toImmutableList(),
                     sortMode = listSortMode.get()
                 )
             }
@@ -223,14 +236,14 @@ class ListViewScreenModel(
             if (list == null) {
                 mutableState.value = ListViewState.Error("No list found")
                 return@combine
+            } else {
+                mutableState.updateSuccess {state ->
+                    state.copy(
+                        list = list,
+                        allItems = items.toImmutableList()
+                    )
+                }
             }
-
-           mutableState.updateSuccess {state ->
-               state.copy(
-                   list = list,
-                   allItems = items.toImmutableList()
-               )
-           }
         }
             .launchIn(screenModelScope)
     }
@@ -300,10 +313,18 @@ class ListViewScreenModel(
         screenModelScope.launch {
             if (contentItem.isMovie) {
                 val movie = getMovie.await(contentItem.contentId) ?: return@launch
-                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
+                val new = movie.copy(favorite = !movie.favorite)
+                if(!new.favorite) {
+                    movieCoverCache.deleteFromCache(movie)
+                }
+                updateMovie.await(new.toMovieUpdate())
             } else {
                 val show = getShow.await(contentItem.contentId) ?: return@launch
-                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
+                val new = show.copy(favorite = !show.favorite)
+                if(!new.favorite) {
+                    showCoverCache.deleteFromCache(show)
+                }
+                updateShow.await(new.toShowUpdate())
             }
         }
     }
@@ -327,6 +348,30 @@ class ListViewScreenModel(
                 }
         }
     }
+
+    fun removeFromList(contentItem: ContentItem)  {
+        screenModelScope.launch {
+            val list = state.value.success?.list ?: return@launch
+
+            if (list.supabaseId != null) {
+                val result = if (contentItem.isMovie) {
+                    listRepository.deleteMovieFromList(contentItem.contentId, list)
+                } else {
+                    listRepository.deleteShowFromList(contentItem.contentId, list)
+                }
+
+                if (!result)
+                    return@launch
+            }
+
+            if (contentItem.isMovie) {
+                contentListRepository.removeMovieFromList(contentItem.contentId, list)
+            } else {
+                contentListRepository.removeShowFromList(contentItem.contentId, list)
+            }
+        }
+    }
+
 
     fun addToList(contentItem: ContentItem) {
         screenModelScope.launch {

@@ -41,6 +41,11 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.profile.screen.AuthScreenContent
+import io.silv.movie.presentation.profile.screen.ResetPasswordScreen
+import io.silv.movie.presentation.profile.screen.SelectProfileImageScreen
+import io.silv.movie.presentation.profile.screen.SignedInScreen
+import io.silv.movie.presentation.profile.screen.UsernameEditScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
