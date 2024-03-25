@@ -183,7 +183,7 @@ class MovieScreenModel(
 
             val new = update.copy(favorite = !movie.favorite)
 
-            if(!new.favorite) {
+            if(!new.favorite && !new.inList) {
                 coverCache.deleteFromCache(update)
             }
 

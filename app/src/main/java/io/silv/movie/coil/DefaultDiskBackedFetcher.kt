@@ -17,7 +17,6 @@ import coil.key.Keyer
 import coil.memory.MemoryCache
 import coil.request.Options
 import coil.size.isOriginal
-import io.silv.movie.ContentPosterFetcher
 import io.silv.movie.coil.CoilDiskUtils.toImageSource
 import okio.Path.Companion.toOkioPath
 import okio.buffer
@@ -29,15 +28,15 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
     open val keyer: Keyer<T>,
     open val diskStore: FetcherDiskStore<T>,
     open val context: Context,
-    open val memoryCacheInit: () -> MemoryCache,
-    open val diskCacheInit: () -> DiskCache,
+    open val memoryCacheInit:  Lazy<MemoryCache>,
+    open val diskCacheInit: Lazy<DiskCache>,
     open val overrideCall: suspend (options: Options, data: T) -> FetchResult?
 ): Fetcher.Factory<T> {
     internal val memCache
-        get() = memoryCacheInit()
+        get() = memoryCacheInit.value
 
     internal val diskCache
-        get() = diskCacheInit()
+        get() = diskCacheInit.value
 
     override fun create(data: T, options: Options, imageLoader: ImageLoader): Fetcher? {
         return Fetcher {
@@ -52,13 +51,13 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
             if (options.memoryCachePolicy.readEnabled) {
                 memCache[memCacheKey]?.let { cachedValue ->
                     try {
-                        val res = DrawableResult(
+                        return@Fetcher DrawableResult(
                             drawable = cachedValue.bitmap.toDrawable(context.resources),
                             isSampled = options.size.isOriginal,
                             dataSource = DataSource.MEMORY_CACHE
                         )
-                        return@Fetcher res
-                    } catch (ignored: Exception) { }
+                    } catch (ignored: Exception) {
+                    }
                 }
             }
 
@@ -100,11 +99,15 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                         imageCacheFile,
                         options,
                         memCacheKey
-                    )
+                    ).also {
+                        snapshot.close()
+                    }
                 }
             } catch (e: Exception) {
                 snapshot?.close()
             }
+
+            snapshot?.close()
 
             fetch(data, options, memCacheKey, diskCacheKey, imageCacheFile)
         }
@@ -142,9 +145,7 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
         return SourceResult(
             source = ImageSource(
                 file = file.toOkioPath(),
-                diskCacheKey = diskCacheKey.takeIf {
-                    !(options.parameters.value(ContentPosterFetcher.DISABLE_KEYS) ?: false)
-                }
+                diskCacheKey = diskCacheKey
             ),
             mimeType = "image/*",
             dataSource = DataSource.DISK,

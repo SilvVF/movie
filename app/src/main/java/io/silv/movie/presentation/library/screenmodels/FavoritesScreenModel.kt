@@ -23,6 +23,7 @@ import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.data.user.FavoritesUpdateManager
+import io.silv.movie.data.user.ListRepository
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -45,6 +46,7 @@ class FavoritesScreenModel(
     private val movieCoverCache: MovieCoverCache,
     private val libraryPreferences: LibraryPreferences,
     private val favoritesUpdateManager: FavoritesUpdateManager,
+    private val listRepository: ListRepository,
 ): ScreenModel {
 
     var listViewDisplayMode by libraryPreferences.listViewDisplayMode()
@@ -123,7 +125,7 @@ class FavoritesScreenModel(
 
                 val new = movie.copy(favorite = !movie.favorite)
 
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     movieCoverCache.deleteFromCache(movie)
                 }
                 updateMovie .await(new.toMovieUpdate())
@@ -132,7 +134,7 @@ class FavoritesScreenModel(
 
                 val new = show.copy(favorite = !show.favorite)
 
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     tvCoverCache.deleteFromCache(show)
                 }
                 updateShow.await(new.toShowUpdate())

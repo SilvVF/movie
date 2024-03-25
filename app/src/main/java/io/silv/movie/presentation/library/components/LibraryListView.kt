@@ -55,7 +55,7 @@ fun LibraryListView(
                         ContentPreviewDefaults.LibraryContentPoster(Modifier.fillMaxSize())
                     },
                     name = stringResource(id = R.string.library_content_name),
-                    count = state.favorites.size
+                    description = stringResource(R.string.content_preview_items , state.favorites.size)
                 )
             }
             state.contentLists.fastForEach { (list, items) ->
@@ -74,15 +74,18 @@ fun LibraryListView(
                             ContentListPoster(
                                 list = list,
                                 items = items,
-                                modifier =  Modifier
+                                modifier = Modifier
                                     .fillMaxSize()
                                     .clickable { onPosterClick(list) }
                             )
                         },
                         name = list.name,
-                        count = when (items.first()) {
-                            is ContentListItem.PlaceHolder -> 0
-                            is ContentListItem.Item -> items.size
+                        description = list.description.ifEmpty {
+                            when {
+                                items.first() is ContentListItem.PlaceHolder ->
+                                    stringResource(id = R.string.content_preview_no_items)
+                                else -> stringResource(R.string.content_preview_items, items.size)
+                            }
                         }
                     )
                 }

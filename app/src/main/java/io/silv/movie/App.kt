@@ -47,12 +47,12 @@ class App: Application(), ImageLoaderFactory {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
 
-        val diskCacheInit = { CoilDiskCache.get(this) }
-        val memCacheInit = { CoilMemoryCache.get(this) }
+        val diskCacheInit = lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this) }
+        val memCacheInit= lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilMemoryCache.get(this) }
 
         return ImageLoader.Builder(this)
-            .diskCache(diskCacheInit)
-            .memoryCache(memCacheInit)
+            .diskCache(diskCacheInit.value)
+            .memoryCache(memCacheInit.value)
             .components {
                 addDiskFetcher(
                     diskCache = diskCacheInit,

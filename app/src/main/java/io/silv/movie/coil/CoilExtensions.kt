@@ -6,8 +6,8 @@ import coil.memory.MemoryCache
 
 inline fun <reified T: Any> ComponentRegistry.Builder.addDiskFetcher(
     fetcher: OkHttpFetcherConfig<T>,
-    noinline diskCache: () -> DiskCache,
-    noinline memoryCache: () -> MemoryCache
+    diskCache: Lazy<DiskCache>,
+    memoryCache: Lazy<MemoryCache>,
 ) {
 
     val realFetcher =  OkHttpDiskBackedFetcher(
@@ -26,8 +26,8 @@ inline fun <reified T: Any> ComponentRegistry.Builder.addDiskFetcher(
 
 inline fun <reified T: Any> ComponentRegistry.Builder.addByteArrayDiskFetcher(
     fetcher: ByteArrayFetcherConfig<T>,
-    noinline diskCache: () -> DiskCache,
-    noinline memoryCache: () -> MemoryCache
+    diskCache: Lazy<DiskCache>,
+    memoryCache: Lazy<MemoryCache>,
 ) {
 
     val realFetcher =  ByteArrayDiskBackedFetcher(

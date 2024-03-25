@@ -2,25 +2,33 @@ package io.silv.movie.presentation.library.screens
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExploreOff
+import androidx.compose.material.ripple.LocalRippleTheme
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material.ripple.RippleTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.ColorUtils
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
@@ -34,8 +42,10 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
+import io.silv.core_ui.util.rememberDominantColor
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
+import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.CollectEventsWithLifecycle
@@ -50,10 +60,12 @@ import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import io.silv.movie.presentation.library.screenmodels.ListViewEvent
 import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListViewState
+import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 import kotlinx.collections.immutable.persistentListOf
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 data class ListViewScreen(
@@ -115,6 +127,49 @@ data class ListViewScreen(
                     { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
                 }
 
+
+                val cache= koinInject<ListCoverCache>()
+                var semaphor by remember { mutableIntStateOf(0) }
+                val file = remember(semaphor) { cache.getCustomCoverFile(s.list.id) }
+
+                LaunchedEffect(s.list.posterLastModified) {
+                    semaphor++
+                }
+
+                val primary by rememberDominantColor(
+                    data = when  {
+                        file.exists() -> file.toUri()
+                        s.allItems.isEmpty() -> null
+                        else -> s.allItems.first().toPoster()
+                    }
+                )
+
+                CompositionLocalProvider(
+                    LocalContentColor provides primary,
+                    LocalRippleTheme provides object : RippleTheme{
+                        @Composable
+                        override fun defaultColor(): Color = Color(
+                            ColorUtils.blendARGB(
+                                Color.White.toArgb(),
+                                primary.toArgb(),
+                                .9f
+                            )
+                        )
+                        @Composable
+                        override fun rippleAlpha(): RippleAlpha {
+                            return RippleAlpha(
+                                draggedAlpha = 0.9f,
+                                focusedAlpha = 0.9f,
+                                hoveredAlpha = 0.9f,
+                                pressedAlpha = 0.9f,
+                            )
+                        }
+                    },
+                    LocalTextSelectionColors provides TextSelectionColors(
+                        handleColor = primary.copy(alpha = 0.6f),
+                        backgroundColor = MaterialTheme.colorScheme.background
+                    )
+                ) {
                 SuccessScreenContent(
                     query = screenModel.query,
                     refreshingList = refreshingList,
@@ -159,6 +214,7 @@ data class ListViewScreen(
                             ListAddScreen(s.list.id)
                         )
                     },
+                    primary = { primary },
                     onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                     state = s
                 )
@@ -173,15 +229,18 @@ data class ListViewScreen(
                         )
                     }
                     is ListViewScreenModel.Dialog.ContentOptions -> {
-                        ModalBottomSheet(onDismissRequest = onDismissRequest) {
-                            Box(
-                                Modifier
-                                    .fillMaxHeight(0.5f)
-                                    .fillMaxWidth()
-                            ) {
-                                Text("Content Options")
-                            }
-                        }
+                        ListOptionsBottomSheet(
+                            onDismissRequest = onDismissRequest,
+                            onAddToAnotherListClick = {},
+                            onToggleFavoriteClicked = {
+                                screenModel.toggleItemFavorite(dialog.item)
+                            },
+                            onRemoveFromListClicked = {
+                                screenModel.removeFromList(dialog.item)
+                            },
+                            isOwnerMe = s.isOwnerMe,
+                            item = dialog.item
+                        )
                     }
                     ListViewScreenModel.Dialog.ListOptions -> {
                         ListOptionsBottomSheet(
@@ -263,88 +322,90 @@ private fun SuccessScreenContent(
     onPosterClick: () -> Unit,
     refreshList: () -> Unit,
     refreshingList: Boolean,
+    primary: () -> Color,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
     val hazeState = remember { HazeState() }
-
-    PullRefresh(
-        refreshing = refreshingList,
-        enabled = { !refreshingList && state.list.supabaseId != null },
-        onRefresh = refreshList
-    ) {
-    Scaffold(
-        topBar = {
-            ListViewTopBar(
-                state  = topBarState,
-                username = state.user?.username.orEmpty(),
-                description = state.list.description,
-                userId = state.list.createdBy,
-                query = { query },
-                changeQuery = updateQuery,
-                onSearch = updateQuery,
-                items = { state.allItems },
-                contentListProvider = { state.list },
-                displayMode = listViewDisplayMode,
-                setDisplayMode = updateListViewDisplayMode,
-                onListOptionClicked = onListOptionClick,
-                sortModeProvider = { state.sortMode },
-                changeSortMode = changeSortMode,
-                onPosterClick = onPosterClick,
-                modifier = Modifier.hazeChild(hazeState)
-            )
-        },
-        modifier = Modifier
-            .imePadding()
-            .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
-    ) { paddingValues ->
-        when (val mode = listViewDisplayMode()) {
-            is PosterDisplayMode.Grid -> {
-                ContentListPosterGrid(
-                    mode = mode,
-                    items = state.items,
-                    recommendations = state.recommendations,
-                    onOptionsClick = onOptionsClick,
-                    onLongClick = onLongClick,
-                    onClick = onClick,
-                    paddingValues = paddingValues,
-                    onRefreshClick = refreshRecommendations,
-                    refreshingRecommendations = state.refreshingRecommendations,
-                    startAddingClick = startAddingClick,
-                    isOwnerMe = state.isOwnerMe,
-                    modifier = Modifier
-                        .haze(
-                            state = hazeState,
-                            style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+        PullRefresh(
+            refreshing = refreshingList,
+            enabled = { !refreshingList && state.list.supabaseId != null },
+            onRefresh = refreshList
+        ) {
+            Scaffold(
+                topBar = {
+                    ListViewTopBar(
+                        state  = topBarState,
+                        username = state.user?.username.orEmpty(),
+                        description = state.list.description,
+                        userId = state.list.createdBy,
+                        query = { query },
+                        changeQuery = updateQuery,
+                        onSearch = updateQuery,
+                        items = { state.allItems },
+                        contentListProvider = { state.list },
+                        displayMode = listViewDisplayMode,
+                        setDisplayMode = updateListViewDisplayMode,
+                        onListOptionClicked = onListOptionClick,
+                        sortModeProvider = { state.sortMode },
+                        changeSortMode = changeSortMode,
+                        onPosterClick = onPosterClick,
+                        primary = primary(),
+                        modifier = Modifier.hazeChild(hazeState)
+                    )
+                },
+                modifier = Modifier
+                    .imePadding()
+                    .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
+            ) { paddingValues ->
+                when (val mode = listViewDisplayMode()) {
+                    is PosterDisplayMode.Grid -> {
+                        ContentListPosterGrid(
+                            mode = mode,
+                            items = state.items,
+                            recommendations = state.recommendations,
+                            onOptionsClick = onOptionsClick,
+                            onLongClick = onLongClick,
+                            onClick = onClick,
+                            paddingValues = paddingValues,
+                            onRefreshClick = refreshRecommendations,
+                            refreshingRecommendations = state.refreshingRecommendations,
+                            startAddingClick = startAddingClick,
+                            isOwnerMe = state.isOwnerMe,
+                            modifier = Modifier
+                                .haze(
+                                    state = hazeState,
+                                    style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                                )
+                                .padding(top = 12.dp),
                         )
-                        .padding(top = 12.dp),
-                )
-            }
+                    }
 
-            PosterDisplayMode.List -> {
-                ContentListPosterList(
-                    items = state.items,
-                    onOptionsClick = onOptionsClick,
-                    onLongClick = onLongClick,
-                    onClick = onClick,
-                    paddingValues = paddingValues,
-                    onRefreshClick = refreshRecommendations,
-                    recommendations = state.recommendations,
-                    refreshingRecommendations = state.refreshingRecommendations,
-                    onAddRecommendation = onAddRecommendation,
-                    onRecommendationClick = onRecommendationClick,
-                    onRecommendationLongClick = onRecommendationLongClick,
-                    startAddingClick = startAddingClick,
-                    isOwnerMe = state.isOwnerMe,
-                    modifier = Modifier
-                        .haze(
-                            state = hazeState,
-                            style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                    PosterDisplayMode.List -> {
+                        ContentListPosterList(
+                            items = state.items,
+                            onOptionsClick = onOptionsClick,
+                            onLongClick = onLongClick,
+                            onClick = onClick,
+                            paddingValues = paddingValues,
+                            onRefreshClick = refreshRecommendations,
+                            recommendations = state.recommendations,
+                            refreshingRecommendations = state.refreshingRecommendations,
+                            onAddRecommendation = onAddRecommendation,
+                            onRecommendationClick = onRecommendationClick,
+                            onRecommendationLongClick = onRecommendationLongClick,
+                            startAddingClick = startAddingClick,
+                            isOwnerMe = state.isOwnerMe,
+                            modifier = Modifier
+                                .haze(
+                                    state = hazeState,
+                                    style = HazeDefaults.style(MaterialTheme.colorScheme.background),
+                                )
+                                .padding(top = 12.dp),
                         )
-                        .padding(top = 12.dp),
-                )
+                    }
+                }
             }
         }
-    }
     }
 }

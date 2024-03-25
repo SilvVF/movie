@@ -23,8 +23,8 @@ class OkHttpDiskBackedFetcher<T: Any>(
     override val keyer: Keyer<T>,
     override val diskStore: FetcherDiskStore<T>,
     override val context: Context,
-    override val memoryCacheInit: () -> MemoryCache,
-    override val diskCacheInit: () -> DiskCache
+    override val memoryCacheInit: Lazy<MemoryCache>,
+    override val diskCacheInit: Lazy<DiskCache>
 ): DefaultDiskBackedFetcher<T>(keyer, diskStore, context, memoryCacheInit, diskCacheInit, overrideCall) {
 
     @OptIn(ExperimentalCoilApi::class)
@@ -74,6 +74,9 @@ class OkHttpDiskBackedFetcher<T: Any>(
                         mimeType = "image/*",
                         dataSource = DataSource.NETWORK
                     )
+                        .also {
+                            snapshot.close()
+                        }
                 }
                 CoilDiskUtils.writeToMemCache(
                     options,

@@ -118,7 +118,7 @@ fun ContentListPosterItems(
         if (items.size < 4) {
             ContentPreviewDefaults.SingleItemPoster(
                 modifier = modifier,
-                item = items.first()
+                item = items.firstOrNull()
             )
         } else {
             ContentPreviewDefaults.MultiItemPoster(
@@ -245,13 +245,17 @@ object ContentPreviewDefaults {
     @Composable
     fun SingleItemPoster(
         modifier: Modifier,
-        item: ContentItem
+        item: ContentItem?
     ) {
-        ItemCover.Square(
-            modifier = modifier,
-            shape = RectangleShape,
-            data = remember(item) { item.toPoster() }
-        )
+        if (item == null) {
+            PlaceholderPoster(modifier = modifier)
+        } else {
+            ItemCover.Square(
+                modifier = modifier,
+                shape = RectangleShape,
+                data = remember(item) { item.toPoster() }
+            )
+        }
     }
 
     @Composable
@@ -320,7 +324,7 @@ fun LazyGridItemScope.ContentGridPreviewItem(
 fun LazyItemScope.ContentListPreview(
     cover: @Composable () -> Unit,
     name: String,
-    count: Int,
+    description: String,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -348,11 +352,9 @@ fun LazyItemScope.ContentListPreview(
                 maxLines = 2,
                 style = MaterialTheme.typography.titleMedium
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = if (count == 0)
-                    stringResource(id = R.string.content_preview_no_items)
-                else
-                    stringResource(id = R.string.content_preview_items, count),
+                text = description,
                 style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 modifier = Modifier.graphicsLayer { alpha = 0.78f }

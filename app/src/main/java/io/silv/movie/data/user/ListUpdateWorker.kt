@@ -118,7 +118,7 @@ class ListUpdater(
 
     suspend fun await(listId: String) {
 
-        val list = listRepository.selectListById(listId)!!
+        val list = listRepository.selectListWithItemsById(listId)!!
         val username = userRepository.getUser(list.userId)?.username.orEmpty()
         val isOwnerMe = list.userId == auth.currentUserOrNull()?.id
 
@@ -139,7 +139,7 @@ class ListUpdater(
             contentListRepository.updateList(
                 local.copy(
                     description = list.description,
-                    lastModified = list.updatedAt.toEpochMilliseconds(),
+                    lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
                     name = list.name,
                     lastSynced = Clock.System.now().toEpochMilliseconds(),
                     username = username,
@@ -147,7 +147,8 @@ class ListUpdater(
                 )
                     .toUpdate()
             )
-            val items = listRepository.selectAllItemsForList(list.listId)!!
+
+            val items = list.items.orEmpty()
 
             for (item in items) {
                 if (item.movieId != -1L) {

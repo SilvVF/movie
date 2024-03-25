@@ -2,6 +2,8 @@ package io.silv.movie.data.user
 
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.rpc
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.tv.model.TVShow
@@ -23,7 +25,7 @@ data class UserList(
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("updated_at")
-    val updatedAt: Instant,
+    val updatedAt: Instant?,
     val public: Boolean,
 )
 
@@ -43,6 +45,44 @@ data class FavoriteMovie(
     val showId: Long,
     @SerialName("_id")
     val id: Long,
+)
+
+
+@Serializable
+data class ListWithItems(
+    @SerialName("list_id")
+    val listId: String,
+    @SerialName("user_id")
+    val userId: String,
+    val name: String,
+    val description: String,
+    @SerialName("created_at")
+    val createdAt: Instant,
+    @SerialName("updated_at")
+    val updatedAt: Instant?,
+    val public: Boolean,
+
+    @SerialName("listitem")
+    val items: List<ListItem>?,
+)
+
+@Serializable
+data class SubscriptionWithItem(
+    @SerialName("list_id")
+    val listId: String,
+    @SerialName("user_id")
+    val userId: String,
+    val name: String,
+    val description: String,
+    @SerialName("created_at")
+    val createdAt: Instant,
+    @SerialName("updated_at")
+    val updatedAt: Instant?,
+    val public: Boolean,
+    @SerialName("movie_id")
+    val movieId: Long?,
+    @SerialName("show_id")
+    val showId: Long?
 )
 
 @Serializable
@@ -91,6 +131,11 @@ data class UserListUpdate(
     val createdAt: Instant? = null,
     val updatedAt: Instant? = null,
     val public: Boolean? = null,
+)
+
+@Serializable
+private data class SubscriptionRpcParams(
+    val uid: String
 )
 
 class ListRepository(
@@ -168,6 +213,21 @@ class ListRepository(
             .getOrNull()
     }
 
+    suspend fun selectListWithItemsById(listId: String): ListWithItems? {
+        return runCatching {
+            postgrest[USER_LIST]
+                .select(
+                    columns = Columns.raw("*, listitem(*)")
+                ) {
+                    limit(1)
+                    filter { eq("list_id", listId) }
+                }
+                .decodeSingle<ListWithItems>()
+        }
+            .onFailure { Timber.e(it) }
+            .getOrNull()
+    }
+
     suspend fun selectListById(listId: String): UserList? {
         return runCatching {
             postgrest[USER_LIST]
@@ -179,13 +239,49 @@ class ListRepository(
             .getOrNull()
     }
 
-    suspend fun selectAllLists(userId: String): List<UserList>? {
+    suspend fun selectSubscriptions(userId: String): List<ListWithItems>? {
+        return runCatching {
+            postgrest.rpc(
+                "select_subscribed_lists_with_items",
+                parameters = SubscriptionRpcParams(userId)
+            )
+                .decodeList<SubscriptionWithItem>()
+                .groupBy { it.listId }
+                .map {(listId, items) ->
+                    val first = items.first()
+                    ListWithItems(
+                        listId = listId,
+                        userId = first.userId,
+                        description = first.description,
+                        public = first.public,
+                        name = first.name,
+                        createdAt = first.createdAt,
+                        updatedAt = first.updatedAt,
+                        items = items.mapNotNull {
+                            if (it.movieId == null || it.showId == null) null
+                            else ListItem(
+                                listId,
+                                it.userId,
+                                it.movieId,
+                                it.showId
+                            )
+                        }
+                    )
+                }
+        }
+            .onFailure { Timber.e(it) }
+            .getOrNull()
+    }
+
+    suspend fun selectListsByUserId(userId: String): List<ListWithItems>? {
         return runCatching {
             postgrest[USER_LIST]
-                .select {
+                .select(
+                    Columns.raw("*, listitem(*)")
+                ) {
                     filter { eq("user_id", userId) }
                 }
-                .decodeList<UserList>()
+                .decodeList<ListWithItems>()
         }
             .getOrNull()
     }
@@ -262,7 +358,7 @@ class ListRepository(
                 .delete {
                     filter {
                         eq("movie_id", movieId)
-                        eq("list_id", contentList.id)
+                        eq("list_id", contentList.supabaseId!!)
                         eq("user_id", auth.currentUserOrNull()?.id!!)
                     }
                 }
@@ -277,7 +373,7 @@ class ListRepository(
                 .delete {
                     filter {
                         eq("show_id", showId)
-                        eq("list_id", contentList.id)
+                        eq("list_id", contentList.supabaseId!!)
                         eq("user_id", auth.currentUserOrNull()?.id!!)
                     }
                 }

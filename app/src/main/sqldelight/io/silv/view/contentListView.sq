@@ -21,7 +21,7 @@ SELECT
     COALESCE(m.favorite, s.favorite) AS favorite,
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
-    COALESCE(m.in_library_list, s.in_library_list) AS inList
+    COALESCE(m.in_library_lists, s.in_library_lists) AS inLists
 FROM
     contentList cl
 LEFT JOIN

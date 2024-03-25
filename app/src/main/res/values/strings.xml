@@ -95,4 +95,8 @@
     <string name="create_as_user">Create as current user</string>
     <string name="add_description_title">Add a description to your list</string>
     <string name="options_edit_description">Edit list description</string>
+    <string name="option_add_to_another_list">Add to a list</string>
+    <string name="add_to_favorites">Add to favorites list</string>
+    <string name="remove_from_favorite">Remove from favorites list</string>
+    <string name="option_remove_from_list">Remove from this list</string>
 </resources>

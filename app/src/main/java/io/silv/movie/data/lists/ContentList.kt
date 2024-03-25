@@ -46,7 +46,7 @@ fun MoviePoster.toContentItem(): ContentItem {
         lastModified = -1L,
         description = "",
         popularity = 0.0,
-        inLibraryList = inLibraryList
+        inLibraryLists = it.inLibraryLists
     )
 }
 
@@ -62,7 +62,7 @@ fun TVShowPoster.toContentItem(): ContentItem {
         lastModified = -1L,
         description = "",
         popularity = 0.0,
-        inLibraryList = inLibraryList
+        inLibraryLists = it.inLibraryLists
     )
 }
 
@@ -73,11 +73,13 @@ data class ContentItem(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
-    val inLibraryList: Boolean,
+    val inLibraryLists: Long,
     val lastModified: Long,
     val description: String,
     val popularity: Double,
 ) {
+    val inLibraryList
+        get() = inLibraryLists >= 1L
 
     val itemKey by lazy { "$isMovie$contentId" }
 }

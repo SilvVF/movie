@@ -13,7 +13,7 @@ data class MoviePoster(
     val posterLastUpdated: Long,
     val posterUrl: String?,
     val favorite: Boolean,
-    val inLibraryList: Boolean = false
+    val inLibraryLists: Long
 ): Parcelable
 
 @Stable
@@ -32,7 +32,7 @@ data class Movie(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
-    val inList: Boolean,
+    val inLists: Int,
     val status: io.silv.movie.core.Status?,
     val productionCompanies: List<String>?,
     val lastModifiedAt: Long,
@@ -41,6 +41,9 @@ data class Movie(
 
     @IgnoredOnParcel
     val needsInit by lazy { status == null || productionCompanies == null }
+
+    val inList: Boolean
+        get() = inLists >= 1
 
     companion object {
         fun create() = Movie(
@@ -61,7 +64,7 @@ data class Movie(
             productionCompanies = null,
             favoriteModifiedAt = -1L,
             lastModifiedAt = -1L,
-            inList = false
+            inLists = 0
        )
     }
 }

@@ -244,7 +244,7 @@ class ListAddScreenModel(
 
                 val new = movie.copy(favorite = !movie.favorite)
 
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     movieCoverCache.deleteFromCache(movie)
                 }
                 updateMovie .await(new.toMovieUpdate())
@@ -253,7 +253,7 @@ class ListAddScreenModel(
 
                 val new = show.copy(favorite = !show.favorite)
 
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     tvCoverCache.deleteFromCache(show)
                 }
                 updateShow.await(new.toShowUpdate())

@@ -49,6 +49,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import timber.log.Timber
@@ -314,14 +315,14 @@ class ListViewScreenModel(
             if (contentItem.isMovie) {
                 val movie = getMovie.await(contentItem.contentId) ?: return@launch
                 val new = movie.copy(favorite = !movie.favorite)
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     movieCoverCache.deleteFromCache(movie)
                 }
                 updateMovie.await(new.toMovieUpdate())
             } else {
                 val show = getShow.await(contentItem.contentId) ?: return@launch
                 val new = show.copy(favorite = !show.favorite)
-                if(!new.favorite) {
+                if(!new.favorite && !new.inList) {
                     showCoverCache.deleteFromCache(show)
                 }
                 updateShow.await(new.toShowUpdate())
@@ -331,23 +332,42 @@ class ListViewScreenModel(
 
     fun deleteList() {
         screenModelScope.launch {
-            val list = state.value.success?.list ?: return@launch
+            val state = state.value.success ?: return@launch
             runCatching {
 
-                if (list.supabaseId != null) {
-                    val result = listRepository.deleteList(list.supabaseId)
+                if (state.list.supabaseId != null) {
+                    val result = listRepository.deleteList(state.list.supabaseId)
 
                     if (!result)
                         return@launch
                 }
-
-                contentListRepository.deleteList(list)
+                supervisorScope {
+                    if (state.list.inLibrary) {
+                        for (item in state.items) {
+                            deleteContentItemFromCache(item)
+                        }
+                    }
+                }
+                contentListRepository.deleteList(state.list)
             }
                 .onSuccess {
                     emitEvent(ListViewEvent.ListDeleted)
                 }
         }
     }
+
+    private suspend fun deleteContentItemFromCache(item: ContentItem) {
+        if (item.inLibraryLists == 1L && !item.favorite) {
+            if (item.isMovie) {
+                val movie = getMovie.await(item.contentId) ?: return
+                movieCoverCache.deleteFromCache(movie)
+            } else {
+                val show = getShow.await(item.contentId) ?: return
+                showCoverCache.deleteFromCache(show)
+            }
+        }
+    }
+
 
     fun removeFromList(contentItem: ContentItem)  {
         screenModelScope.launch {
@@ -363,7 +383,7 @@ class ListViewScreenModel(
                 if (!result)
                     return@launch
             }
-
+            deleteContentItemFromCache(contentItem)
             if (contentItem.isMovie) {
                 contentListRepository.removeMovieFromList(contentItem.contentId, list)
             } else {

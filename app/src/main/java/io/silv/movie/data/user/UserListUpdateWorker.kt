@@ -49,7 +49,11 @@ class UserListUpdateWorker (
     override suspend fun doWork(): Result {
 
         val user = auth.currentUserOrNull()!!
-        val network = listRepository.selectAllLists(user.id)!!
+        val userCreated = listRepository.selectListsByUserId(user.id)!!
+        val subscriptions = listRepository.selectSubscriptions(user.id)!!
+
+
+        val network = userCreated + subscriptions
 
         for (list in network) {
             try {
@@ -68,13 +72,13 @@ class UserListUpdateWorker (
                 contentListRepository.updateList(
                     local.copy(
                         description = list.description,
-                        lastModified = list.updatedAt.toEpochMilliseconds(),
+                        lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
                         name = list.name,
                         lastSynced = Clock.System.now().toEpochMilliseconds()
                     )
                         .toUpdate()
                 )
-                val items = listRepository.selectAllItemsForList(list.listId)!!
+                val items = list.items.orEmpty()
 
                 for (item in items) {
                     if (item.movieId != -1L) {

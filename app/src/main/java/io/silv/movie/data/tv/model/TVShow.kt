@@ -14,7 +14,7 @@ data class TVShowPoster(
     val posterLastUpdated: Long,
     val posterUrl: String?,
     val favorite: Boolean,
-    val inLibraryList: Boolean = false
+    val inLibraryLists: Long
 ): Parcelable
 
 @Stable
@@ -33,7 +33,7 @@ data class TVShow(
     val posterUrl: String?,
     val posterLastUpdated: Long,
     val favorite: Boolean,
-    val inList: Boolean,
+    val inLists: Int,
     val status: io.silv.movie.core.Status?,
     val productionCompanies: List<String>?,
     val lastModifiedAt: Long,
@@ -41,6 +41,9 @@ data class TVShow(
 ): Parcelable {
     @IgnoredOnParcel
     val needsInit by lazy { status == null || productionCompanies == null }
+
+    val inList: Boolean
+        get() = inLists >= 1
 
     companion object {
         fun create() = TVShow(
@@ -60,7 +63,7 @@ data class TVShow(
             status = null,
             productionCompanies = emptyList(),
             lastModifiedAt = -1L,
-            inList = false,
+            inLists = 0,
             favoriteLastModified = -1L
         )
     }

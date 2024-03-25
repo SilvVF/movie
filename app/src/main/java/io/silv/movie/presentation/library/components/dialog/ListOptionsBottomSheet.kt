@@ -16,24 +16,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import io.silv.movie.R
-import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.library.components.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.library.components.BottomSheetHeader
 import io.silv.movie.presentation.library.components.BottomSheetItem
-import io.silv.movie.presentation.library.components.ContentPreviewDefaults
+import io.silv.movie.presentation.library.components.ContentListPosterItems
 import kotlinx.collections.immutable.ImmutableList
-import org.koin.compose.koinInject
 
 @Composable
 fun ListOptionsBottomSheet(
@@ -46,7 +41,6 @@ fun ListOptionsBottomSheet(
     list: ContentList,
     content: ImmutableList<ContentItem>
 ) {
-    val cache = koinInject<ListCoverCache>()
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         windowInsets = WindowInsets(0, 0, 0, 0),
@@ -56,48 +50,15 @@ fun ListOptionsBottomSheet(
     ) {
         BottomSheetHeader(
             poster = {
-                val posterModifier = Modifier
-                    .padding(vertical = 12.dp)
-
-                val file by remember("${list.id};${list.posterLastModified}") {
-                    derivedStateOf {
-                        cache.getCustomCoverFile(list.id)
-                    }
-                }
-                val fileExists by remember("${list.id};${list.posterLastModified}") {
-                    derivedStateOf { file.exists() }
-                }
-
-
-                when {
-                    fileExists -> {
-                        ContentPreviewDefaults.CustomListPoster(
-                            modifier = posterModifier,
-                            uri = file.toUri()
-                        )
-                    }
-                    content.isEmpty() -> {
-                        ContentPreviewDefaults.PlaceholderPoster(
-                            modifier = posterModifier
-                        )
-                    }
-                    content.size < 4 -> {
-                        ContentPreviewDefaults.SingleItemPoster(
-                            item = content.first(),
-                            modifier = posterModifier
-                        )
-                    }
-
-                    else -> {
-                        ContentPreviewDefaults.MultiItemPoster(
-                            modifier = posterModifier,
-                            items = content
-                        )
-                    }
-                }
+                ContentListPosterItems(
+                    list = list,
+                    items = content,
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                )
             },
             title = { Text(list.name) },
-            description = { Text(list.lastModified.toString()) }
+            description = { Text(list.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
         )
         HorizontalDivider()
         BottomSheetItem(

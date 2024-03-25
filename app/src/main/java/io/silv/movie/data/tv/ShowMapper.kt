@@ -19,7 +19,7 @@ object ShowMapper {
           posterUrl: String?,
           posterLastUpdated: Long,
           favorite: Boolean,
-          inList: Boolean,
+          inLists: Long,
           externalUrl: String,
           popularity: Double,
           status: Long?,
@@ -44,7 +44,7 @@ object ShowMapper {
                 productionCompanies = production_companies,
                 favoriteLastModified = favorite_modified_at ?: -1L,
                 lastModifiedAt = last_modified_at,
-                inList = inList
+                inLists = inLists.toInt()
             )
         }
 
@@ -56,7 +56,7 @@ object ShowMapper {
           favorite: Boolean,
           last_modified_at: Long,
           popularity: Double,
-          inList: Boolean,
+          inLists: Long,
             ->
             TVShowPoster(
                 id = id,
@@ -64,7 +64,7 @@ object ShowMapper {
                 posterUrl  = poster_url,
                 favorite = favorite,
                 posterLastUpdated = poster_last_updated,
-                inLibraryList = inList
+                inLibraryLists = inLists
             )
         }
 }

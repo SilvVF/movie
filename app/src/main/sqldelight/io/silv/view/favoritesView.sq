@@ -9,7 +9,8 @@ favoritesMostRecent:
         last_modified_at,
         favorite,
         1 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+        in_library_lists
     FROM movie WHERE favorite
 
     UNION
@@ -24,7 +25,8 @@ favoritesMostRecent:
         last_modified_at,
         favorite,
         0 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+        in_library_lists
     FROM show WHERE favorite
 ORDER BY favorite_modified_at DESC LIMIT :limit;
 
@@ -39,7 +41,8 @@ favoritesOrderByRecent:
         last_modified_at,
         favorite,
         1 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
 
     UNION
@@ -54,7 +57,8 @@ favoritesOrderByRecent:
         last_modified_at,
         favorite,
         0 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM show WHERE favorite AND (title LIKE :query OR :query = '')
 ORDER BY favorite_modified_at DESC;
 
@@ -69,7 +73,8 @@ favoritesOrderByTitle:
         last_modified_at,
         favorite,
         1 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
 
     UNION
@@ -84,7 +89,8 @@ favoritesOrderByTitle:
         last_modified_at,
         favorite,
         0 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM show WHERE favorite AND (title LIKE :query OR :query = '')
 ORDER BY title DESC;
 
@@ -99,7 +105,8 @@ favoritesOrderByMovieOrShow:
         last_modified_at,
         favorite,
         1 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM movie WHERE :showsOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
 
     UNION
@@ -114,7 +121,8 @@ favoritesOrderByMovieOrShow:
         last_modified_at,
         favorite,
         0 AS isMovie,
-        favorite_modified_at
+        favorite_modified_at,
+         in_library_lists
     FROM show WHERE :moviesOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
 ORDER BY title DESC;
 

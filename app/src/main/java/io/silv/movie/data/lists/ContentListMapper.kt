@@ -41,7 +41,7 @@ object ContentListMapper {
         overview: String?,
         popularity: Double?,
         last_modified_at: Long?,
-        inList: Boolean?
+        inLists: Long?
         ->
         ContentItem(
             contentId = movieId.takeIf { it != -1L } ?: showId!!,
@@ -53,7 +53,7 @@ object ContentListMapper {
             lastModified = last_modified_at ?: -1L,
             popularity = popularity ?: 0.0,
             description = overview ?: "",
-            inLibraryList = inList ?: false
+            inLibraryLists = inLists ?: 0L
         )
     }
 
@@ -61,7 +61,8 @@ object ContentListMapper {
             id: Long, title: String, poster_url: String?,
             poster_last_updated: Long, overview: String, popularity: Double,
             last_modified_at: Long,favorite: Boolean,  isMovie: Long,
-            favorite_last_modified: Long? ->
+            favorite_last_modified: Long?,
+        inLibraryLists: Long ->
         ContentItem(
             contentId = id,
             isMovie = isMovie == 1L,
@@ -72,7 +73,7 @@ object ContentListMapper {
             lastModified = last_modified_at,
             popularity = popularity,
             description = overview,
-            inLibraryList = true
+            inLibraryLists = inLibraryLists
         )
     }
 
@@ -89,7 +90,7 @@ object ContentListMapper {
             favorite: Boolean?,
             overview: String?,
             popularity: Double?,
-            inList: Boolean? -> ContentItem(
+            inLists: Long? -> ContentItem(
                 contentId = showId.takeIf { it != -1L } ?: movieId!!,
                 isMovie = movieId.takeIf { it != -1L } != null,
                 title = title ?: "",
@@ -99,7 +100,7 @@ object ContentListMapper {
                 lastModified = created_at,
                 popularity = popularity ?: 0.0,
                 description = overview ?: "",
-                inLibraryList = inList ?: false
+                inLibraryLists = inLists ?: 0L
             )
     }
 
@@ -125,7 +126,7 @@ object ContentListMapper {
             favorite: Boolean?,
             overview: String?,
             popularity: Double?,
-            inList: Boolean?   ->
+            inLists: Long?  ->
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
@@ -138,7 +139,7 @@ object ContentListMapper {
                    lastModified =  addedToListAt ?: 0L,
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
-                   inLibraryList = inList ?: false
+                   inLibraryLists = inLists ?: 0L
                ),
                list =  ContentList(
                    id = list_id,
@@ -152,7 +153,7 @@ object ContentListMapper {
                    posterLastModified = poster_last_updated ?: -1L,
                    username = username,
                    createdAt = created_at,
-                   inLibrary = inList ?: false
+                   inLibrary = inLibrary
                )
             )
         } else {

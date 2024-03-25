@@ -149,7 +149,7 @@ class TVViewScreenModel(
 
             val new = show.copy(favorite = !show.favorite)
 
-            if(!new.favorite) {
+            if(!new.favorite && !new.inList) {
                 showCoverCache.deleteFromCache(show)
             }
             updateShow.await(new.toShowUpdate())

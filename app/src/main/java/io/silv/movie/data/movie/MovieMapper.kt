@@ -18,7 +18,7 @@ object MovieMapper {
           posterUrl: String?,
           posterLastUpdated: Long,
           favorite: Boolean,
-          inList: Boolean,
+          inLists: Long,
           externalUrl: String,
           popularity: Double,
           status: Long?,
@@ -43,7 +43,7 @@ object MovieMapper {
                 productionCompanies = productionCompanies,
                 lastModifiedAt = last_modified_at,
                 favoriteModifiedAt = favorite_modified_at ?: -1L,
-                inList = inList
+                inLists = inLists.toInt()
             )
         }
 
@@ -55,7 +55,7 @@ object MovieMapper {
           favorite: Boolean,
           last_modified_at: Long,
           popularity: Double,
-          inList: Boolean,
+          inLists: Long,
          ->
             MoviePoster(
                 id = id,
@@ -63,7 +63,7 @@ object MovieMapper {
                 posterUrl  = poster_url,
                 favorite = favorite,
                 posterLastUpdated = poster_last_updated,
-                inLibraryList = inList
+                inLibraryLists = inLists
             )
         }
 }

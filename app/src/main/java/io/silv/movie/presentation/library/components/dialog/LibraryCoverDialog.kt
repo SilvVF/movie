@@ -41,7 +41,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
+import coil.compose.AsyncImage
 import coil.imageLoader
+import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
@@ -54,7 +56,8 @@ import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.components.EditCoverAction
 import kotlinx.collections.immutable.ImmutableList
-import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.zoomable
 import org.koin.compose.koinInject
 
 @Composable
@@ -169,15 +172,17 @@ fun LibraryCoverDialog(
 
 
                     if (fileExists) {
-                        ZoomableAsyncImage(
+                        val state = rememberZoomableState()
+                        AsyncImage(
                             imageLoader = LocalContext.current.imageLoader,
                             model = ImageRequest.Builder(context)
                                 .data(file.toUri())
-                                .crossfade(1_000)
+                                .memoryCachePolicy(CachePolicy.DISABLED)
                                 .build(),
                             contentDescription = null,
                             modifier = Modifier
                                 .fillMaxSize()
+                                .zoomable(state)
                                 .padding(
                                     top = contentPadding.calculateTopPadding(),
                                     bottom = contentPadding.calculateBottomPadding()
@@ -191,15 +196,21 @@ fun LibraryCoverDialog(
                                 )
                             }
                             items.size < 4 && items.first() is ContentListItem.Item -> {
-                                ZoomableAsyncImage(
+                                val state = rememberZoomableState()
+                                AsyncImage(
                                     imageLoader = LocalContext.current.imageLoader,
                                     model = ImageRequest.Builder(context)
-                                        .data((items.first() as ContentListItem.Item).contentItem.toPoster())
-                                        .crossfade(1_000)
+                                        .data(
+                                            remember(items) {
+                                                (items.first() as ContentListItem.Item).contentItem.toPoster()
+                                            }
+                                        )
+                                        .memoryCachePolicy(CachePolicy.DISABLED)
                                         .build(),
                                     contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxSize()
+                                        .zoomable(state)
                                         .padding(
                                             top = contentPadding.calculateTopPadding(),
                                             bottom = contentPadding.calculateBottomPadding()
@@ -328,15 +339,18 @@ fun ListViewCoverDialog(
 
 
                 if (fileExists) {
-                    ZoomableAsyncImage(
+                    val state = rememberZoomableState()
+                    AsyncImage(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
                             .data(file.toUri())
+                            .memoryCachePolicy(CachePolicy.DISABLED)
                             .crossfade(1_000)
                             .build(),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
+                            .zoomable(state)
                             .padding(
                                 top = contentPadding.calculateTopPadding(),
                                 bottom = contentPadding.calculateBottomPadding()
@@ -350,15 +364,18 @@ fun ListViewCoverDialog(
                             )
                         }
                         items.size < 4 -> {
-                            ZoomableAsyncImage(
+                            val state = rememberZoomableState()
+                            AsyncImage(
                                 imageLoader = LocalContext.current.imageLoader,
                                 model = ImageRequest.Builder(context)
                                     .data(items.first().toPoster())
+                                    .memoryCachePolicy(CachePolicy.DISABLED)
                                     .crossfade(1_000)
                                     .build(),
                                 contentDescription = null,
                                 modifier = Modifier
                                     .fillMaxSize()
+                                    .zoomable(state)
                                     .padding(
                                         top = contentPadding.calculateTopPadding(),
                                         bottom = contentPadding.calculateBottomPadding()

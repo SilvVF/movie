@@ -1,7 +1,6 @@
 package io.silv.movie.presentation.library.components.topbar
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,11 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,23 +43,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
-import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.R
 import io.silv.movie.UserProfileImageData
-import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.presentation.library.components.ContentPreviewDefaults
+import io.silv.movie.presentation.library.components.ContentListPosterItems
 import io.silv.movie.presentation.library.screenmodels.ListSortMode
-import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
-import org.koin.compose.koinInject
 
 @Composable
 fun ListViewTopBar(
@@ -83,30 +73,11 @@ fun ListViewTopBar(
     sortModeProvider: () -> ListSortMode,
     changeSortMode: (ListSortMode) -> Unit,
     onPosterClick: () -> Unit,
+    primary: Color,
     modifier: Modifier = Modifier,
 ) {
-    val content= items()
-    val list = contentListProvider()
-    val cache= koinInject<ListCoverCache>()
-    var semaphor by remember { mutableIntStateOf(0) }
-    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-
-    LaunchedEffect(list.posterLastModified) {
-        semaphor++
-    }
-
-    val primary by rememberDominantColor(
-        data = when  {
-            file.exists() -> file.toUri()
-            content.isEmpty() -> null
-            else -> content.first().toPoster()
-        }
-    )
     val background = MaterialTheme.colorScheme.background
-    val primaryAnimated by animateColorAsState(
-        targetValue = primary,
-        label = ""
-    )
+    val list = contentListProvider()
 
     Column(
         modifier = modifier
@@ -117,9 +88,9 @@ fun ListViewTopBar(
                     drawRect(
                         Brush.verticalGradient(
                             colors = if (items().isEmpty()) {
-                                listOf(primaryAnimated, background)
+                                listOf(primary, background)
                             } else {
-                                listOf(primaryAnimated, background)
+                                listOf(primary, background)
                             },
                             endY = size.height * 0.8f
                         ),
@@ -152,7 +123,7 @@ fun ListViewTopBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = UserProfileImageData(userId.orEmpty()),
+                            model = UserProfileImageData(userId),
                             error = painterResource(id = R.drawable.user_default_proflie_icon),
                             modifier = Modifier
                                 .size(22.dp)
@@ -189,33 +160,11 @@ fun ListViewTopBar(
                     .fillMaxHeight()
                     .clickable { onPosterClick() }
 
-
-                when {
-                    file.exists() -> {
-                        ContentPreviewDefaults.CustomListPoster(
-                            modifier = posterModifier,
-                            uri = file.toUri()
-                        )
-                    }
-                    content.isEmpty() -> {
-                        ContentPreviewDefaults.PlaceholderPoster(
-                            modifier = posterModifier
-                        )
-                    }
-                    content.size < 4 -> {
-                        ContentPreviewDefaults.SingleItemPoster(
-                            item = content.first(),
-                            modifier = posterModifier
-                        )
-                    }
-
-                    else -> {
-                        ContentPreviewDefaults.MultiItemPoster(
-                            modifier = posterModifier,
-                            items = content
-                        )
-                    }
-                }
+                ContentListPosterItems(
+                    list = list,
+                    items = items(),
+                    posterModifier
+                )
             },
             pinnedContent = {
                 AnimatedVisibility(visible = !state.isKeyboardOpen) {

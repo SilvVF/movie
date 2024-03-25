@@ -37,15 +37,16 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
-import io.silv.movie.ContentPosterFetcher
 import io.silv.movie.R
-import me.saket.telephoto.zoomable.coil.ZoomableAsyncImage
+import me.saket.telephoto.zoomable.rememberZoomableState
+import me.saket.telephoto.zoomable.zoomable
 
 enum class EditCoverAction {
     EDIT,
@@ -149,19 +150,19 @@ fun PosterCoverDialog(
                         .fillMaxSize()
                         .clickableNoIndication(onClick = onDismissRequest),
                 ) {
-                    ZoomableAsyncImage(
+                    val state = rememberZoomableState()
+                    AsyncImage(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
                             .data(coverDataProvider())
-                            // Force coil to fetch the image not from cache.
-                            .setParameter(ContentPosterFetcher.DISABLE_KEYS, true)
-                            .diskCachePolicy(CachePolicy.DISABLED)
                             .memoryCachePolicy(CachePolicy.DISABLED)
+                            // Force coil to fetch the image not from cache.
                             .crossfade(1_000)
                             .build(),
                         contentDescription = null,
                         modifier = Modifier
                             .fillMaxSize()
+                            .zoomable(state)
                             .padding(
                                 top = contentPadding.calculateTopPadding(),
                                 bottom = contentPadding.calculateBottomPadding()

@@ -29,7 +29,7 @@ SELECT
      COALESCE(m.overview, s.overview) AS overview,
      COALESCE(m.popularity, s.popularity) AS popularity,
      COALESCE(m.last_modified_at, s.last_modified_at) AS lastModified,
-     COALESCE(m.in_library_list, s.in_library_list) AS inList
+     COALESCE(m.in_library_lists, s.in_library_lists) AS inLists
 FROM recommendation
 LEFT JOIN movie AS m ON recommendation.movie_id = m.id
 LEFT JOIN show AS s ON recommendation.show_id = s.id
