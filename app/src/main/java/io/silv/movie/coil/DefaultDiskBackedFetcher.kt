@@ -16,11 +16,12 @@ import coil.fetch.SourceResult
 import coil.key.Keyer
 import coil.memory.MemoryCache
 import coil.request.Options
-import coil.size.isOriginal
+import coil.size.pxOrElse
 import io.silv.movie.coil.CoilDiskUtils.toImageSource
 import okio.Path.Companion.toOkioPath
 import okio.buffer
 import okio.source
+import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -48,16 +49,23 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                 ?: error("null mem cache key provided"))
 
 
-            if (options.memoryCachePolicy.readEnabled) {
+            if (options.memoryCachePolicy.readEnabled && options.allowRgb565) {
                 memCache[memCacheKey]?.let { cachedValue ->
                     try {
-                        return@Fetcher DrawableResult(
-                            drawable = cachedValue.bitmap.toDrawable(context.resources),
-                            isSampled = options.size.isOriginal,
-                            dataSource = DataSource.MEMORY_CACHE
-                        )
-                    } catch (ignored: Exception) {
-                    }
+                        val drawable =
+                            cachedValue.bitmap.toDrawable(context.resources)
+
+                        if (
+                            drawable.bitmap.height == options.size.height.pxOrElse { -1 } &&
+                            drawable.bitmap.width == options.size.width.pxOrElse { -1 }
+                        ) {
+                            return@Fetcher DrawableResult(
+                                drawable = drawable,
+                                isSampled = false,
+                                dataSource = DataSource.MEMORY_CACHE
+                            )
+                        }
+                    } catch (ignored: Exception) { Timber.d(ignored) }
                 }
             }
 

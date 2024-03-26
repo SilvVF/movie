@@ -159,7 +159,7 @@ class ListViewScreenModel(
 
                 ListViewState.Success(
                     list = list,
-                    isOwnerMe = list.createdBy == auth.currentUserOrNull()?.id,
+                    isOwnerMe = auth.currentUserOrNull()?.id == null || list.createdBy == auth.currentUserOrNull()?.id,
                     allItems = items.toImmutableList(),
                     sortMode = listSortMode.get()
                 )
@@ -182,7 +182,7 @@ class ListViewScreenModel(
                 }
                 mutableState.updateSuccess { state ->
                     state.copy(
-                        isOwnerMe = id == state.list.createdBy
+                        isOwnerMe = id == state.list.createdBy || state.list.createdBy == null
                     )
                 }
             }

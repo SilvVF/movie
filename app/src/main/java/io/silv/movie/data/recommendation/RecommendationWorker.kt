@@ -45,7 +45,7 @@ class RecommendationWorker(
 
     private suspend fun mostRecentForList(id: Long) =
         handler.awaitList {
-            contentListJunctionQueries.selectByListId(id, "", "", ContentListMapper.mapItem)
+            contentItemQueries.selectByListId(id, "", "", ContentListMapper.mapItem)
         }
 
     override suspend fun doWork(): Result {

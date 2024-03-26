@@ -1,6 +1,7 @@
 package io.silv.core_ui.util
 
 import android.graphics.drawable.BitmapDrawable
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -66,6 +67,7 @@ fun rememberDominantColor(
                 color = Color(dominant)
             }
                 .onFailure {
+                    Log.e("rememberDominantColor", it.stackTraceToString())
                     color = fallback
                 }
         }

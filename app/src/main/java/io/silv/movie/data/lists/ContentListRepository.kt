@@ -64,28 +64,28 @@ class ContentListRepositoryImpl(
         handler.await(true) {
             items.forEach { (id, isMovie) ->
                 if (isMovie) {
-                    contentListJunctionQueries.insert(id, -1, contentList.id)
+                    contentItemQueries.insert(id, -1, contentList.id)
                 } else {
-                    contentListJunctionQueries.insert(-1, id, contentList.id)
+                    contentItemQueries.insert(-1, id, contentList.id)
                 }
             }
         }
     }
 
     override suspend fun addMovieToList(movieId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.insert(movieId, -1, contentList.id) }
+        handler.await { contentItemQueries.insert(movieId, -1, contentList.id) }
     }
 
     override suspend fun removeMovieFromList(movieId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.deleteMovieFromList(movieId, contentList.id) }
+        handler.await { contentItemQueries.deleteMovieFromList(movieId, contentList.id) }
     }
 
     override suspend fun addShowToList(showId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.insert(-1, showId, contentList.id) }
+        handler.await { contentItemQueries.insert(-1, showId, contentList.id) }
     }
 
     override suspend fun removeShowFromList(showId: Long, contentList: ContentList) {
-        handler.await { contentListJunctionQueries.deleteShowFromList(showId, contentList.id) }
+        handler.await { contentItemQueries.deleteShowFromList(showId, contentList.id) }
     }
 
     override fun observeLibraryItems(query: String): Flow<List<ContentListItem>> {
@@ -102,7 +102,7 @@ class ContentListRepositoryImpl(
     }
 
     override suspend fun getListItems(id: Long): List<ContentItem> {
-        return handler.awaitList { contentListJunctionQueries.selectByListId(id, "", "", ContentListMapper.mapItem) }
+        return handler.awaitList { contentItemQueries.selectByListId(id, "", "", ContentListMapper.mapItem) }
     }
 
     override fun observeListItemsByListId(
@@ -113,10 +113,10 @@ class ContentListRepositoryImpl(
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
         return handler.subscribeToList {
             when(sortMode) {
-                ListSortMode.Movie -> contentListJunctionQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
-                ListSortMode.Show -> contentListJunctionQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
-                ListSortMode.RecentlyAdded -> contentListJunctionQueries.selectByListId(id, q, "recent", ContentListMapper.mapItem)
-                ListSortMode.Title -> contentListJunctionQueries.selectByListId(id, q, "title", ContentListMapper.mapItem)
+                ListSortMode.Movie -> contentItemQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
+                ListSortMode.Show -> contentItemQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
+                ListSortMode.RecentlyAdded -> contentItemQueries.selectByListId(id, q, "recent", ContentListMapper.mapItem)
+                ListSortMode.Title -> contentItemQueries.selectByListId(id, q, "title", ContentListMapper.mapItem)
             }
         }
     }
