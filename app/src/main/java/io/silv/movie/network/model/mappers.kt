@@ -1,7 +1,9 @@
 package io.silv.movie.network.model
 
+import io.silv.movie.core.SCredit
 import io.silv.movie.core.SMovie
 import io.silv.movie.core.STVShow
+import io.silv.movie.network.model.credits.CreditsResponse
 import io.silv.movie.network.model.movie.MovieDiscoverResponse
 import io.silv.movie.network.model.movie.MovieListResponse
 import io.silv.movie.network.model.movie.MovieSearchResponse
@@ -11,6 +13,39 @@ import io.silv.movie.network.model.recommendation.TVSeriesRecommendationResponse
 import io.silv.movie.network.model.tv.TVResult
 import io.silv.movie.network.model.tv.TVVideoResponse
 import io.silv.movie.network.service.tmdb.TMDBConstants
+
+fun CreditsResponse.toSCredits(): List<SCredit>  {
+    return cast.map {
+        SCredit.create().apply {
+            this.id = it.id
+            this.adult = it.adult
+            this.gender = it.gender
+            this.knownForDepartment = it.knownForDepartment
+            this.name = it.name
+            this.originalName = it.originalName
+            this.popularity = it.popularity
+            this.profilePath = it.profilePath
+            this.character = it.character
+            this.creditId = it.creditId
+            this.order = it.order.toLong()
+            this.crew = false
+        }
+    } + crew.map {
+        SCredit.create().apply {
+            this.id = it.id
+            this.adult = it.adult
+            this.gender = it.gender
+            this.knownForDepartment = it.knownForDepartment
+            this.name = it.name
+            this.originalName = it.originalName
+            this.popularity = it.popularity
+            this.profilePath = it.profilePath
+            this.character = it.job
+            this.creditId = it.creditId
+            this.crew = true
+        }
+    }
+}
 
 fun TVResult.toSTVShow(): STVShow {
     val m = this

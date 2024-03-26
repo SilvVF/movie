@@ -122,7 +122,7 @@ fun TVDetailsContent(
     state: ShowDetailsState.Success,
     refresh: () -> Unit,
     onPosterClick: () -> Unit,
-    onVideoThumbnailClick: (showId: Long, isMovie: Boolean, trailerId: Long) -> Unit
+    onVideoThumbnailClick: (showId: Long, isMovie: Boolean, trailerId: String) -> Unit
 ) {
     Scaffold { paddingValues ->
 
@@ -189,7 +189,7 @@ fun TVDetailsContent(
                     ) {
                         VideoMediaItem(
                             onThumbnailClick = {
-                                onVideoThumbnailClick(it.contentId, false, it.id)
+                                onVideoThumbnailClick(state.show.id, false, it.id)
                             },
                             item = it,
                             thumbnailProvider = {

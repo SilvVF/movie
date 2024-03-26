@@ -1,9 +1,9 @@
 package io.silv.movie.data.trailers
 
 interface TrailerRepository {
-    suspend fun insertTrailer(trailer: Trailer): Long?
+    suspend fun insertTrailer(trailer: Trailer, contentId: Long, isMovie: Boolean)
     suspend fun updateTrailer(update: TrailerUpdate): Boolean
-    suspend fun getById(id: Long): Trailer?
+    suspend fun getById(id: String): Trailer?
     suspend fun getTrailersByMovieId(movieId: Long): List<Trailer>
     suspend fun getTrailersByShowId(showId: Long): List<Trailer>
 }
@@ -12,12 +12,10 @@ class TrailerRepositoryImpl(
     private val handler: io.silv.movie.database.DatabaseHandler
 ): TrailerRepository {
 
-    override suspend fun insertTrailer(trailer: Trailer): Long? {
-        return handler.awaitOneOrNullExecutable(inTransaction = true) {
+    override suspend fun insertTrailer(trailer: Trailer, contentId: Long, isMovie: Boolean) {
+        handler.await(inTransaction = true) {
             trailerQueries.insert(
-                trailerId = trailer.trailerId,
-                movieId = if (trailer.isMovie) trailer.contentId else null,
-                showId = if (!trailer.isMovie) trailer.contentId else null,
+                trailerId = trailer.id,
                 name = trailer.name,
                 videoKey = trailer.key,
                 site = trailer.site,
@@ -26,7 +24,11 @@ class TrailerRepositoryImpl(
                 type = trailer.type,
                 publishedAt = trailer.publishedAt
             )
-            trailerQueries.lastInsertRowId()
+            if (isMovie) {
+                trailerQueries.insertMovieTrailer(contentId, trailer.id)
+            } else {
+                trailerQueries.insertShowTrailer(contentId, trailer.id)
+            }
         }
     }
 
@@ -46,7 +48,7 @@ class TrailerRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun getById(id: Long): Trailer? {
+    override suspend fun getById(id: String): Trailer? {
         return handler.awaitOneOrNull { trailerQueries.selectById(id, TrailersMapper.mapTrailer) }
     }
 
@@ -54,10 +56,7 @@ class TrailerRepositoryImpl(
         return handler.await {
             updates.forEach { update ->
                 trailerQueries.update(
-                    id = update.id,
-                    trailerId = update.trailerId,
-                    moveId = update.movieId,
-                    showId = update.showId,
+                    id  = update.id,
                     name = update.name,
                     videoKey = update.key,
                     site = update.site,

@@ -72,9 +72,7 @@ class ByteArrayDiskBackedFetcher<T: Any>(
                     source = snapshot.toImageSource(diskCacheKey),
                     mimeType = "image/*",
                     dataSource = DataSource.NETWORK
-                ).also {
-                    snapshot.close()
-                }
+                )
             }
             CoilDiskUtils.writeToMemCache(
                 options,

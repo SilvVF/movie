@@ -50,7 +50,7 @@ class UserListUpdateWorker (
 
         val user = auth.currentUserOrNull()!!
         val userCreated = listRepository.selectListsByUserId(user.id)!!
-        val subscriptions = listRepository.selectSubscriptions(user.id)!!
+        val subscriptions = listRepository.selectSubscriptions(user.id).orEmpty()
 
 
         val network = userCreated + subscriptions
@@ -80,25 +80,30 @@ class UserListUpdateWorker (
                 )
                 val items = list.items.orEmpty()
 
+                val addToList = mutableListOf<Pair<Long, Boolean>>()
+
                 for (item in items) {
-                    if (item.movieId != -1L) {
-                        var movie = getMovie.await(item.movieId)
-                        if (movie == null) {
-                            movie = networkToLocalMovie.await(
-                                getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
-                            )
+                    try {
+                        if (item.movieId != -1L) {
+                            var movie = getMovie.await(item.movieId)
+                            if (movie == null) {
+                                movie = networkToLocalMovie.await(
+                                    getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
+                                )
+                            }
+                            addToList.add(movie.id to true)
+                        } else if (item.showId != -1L) {
+                            var show = getShow.await(item.showId)
+                            if (show == null) {
+                                show = networkToLocalTVShow.await(
+                                    getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
+                                )
+                            }
+                            addToList.add(show.id to false)
                         }
-                        contentListRepository.addMovieToList(movie.id, local)
-                    } else if (item.showId != -1L) {
-                        var show = getShow.await(item.showId)
-                        if (show == null) {
-                            show = networkToLocalTVShow.await(
-                                getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
-                            )
-                        }
-                        contentListRepository.addShowToList(show.id, local)
-                    }
+                    } catch (ignored: Exception){ Timber.e(ignored) }
                 }
+                contentListRepository.addItemsToList(addToList, local)
             } catch (ignored: Exception){ Timber.e(ignored) }
         }
         return Result.success()

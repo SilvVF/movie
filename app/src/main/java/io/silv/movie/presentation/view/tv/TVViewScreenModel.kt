@@ -54,33 +54,34 @@ class TVViewScreenModel(
     }
 
     init {
-
         screenModelScope.launch {
-            if (mutableState.value is ShowDetailsState.Success) { return@launch }
+            try {
+                val show = getShow.await(id = showId)
 
-            val show = getShow.await(id = showId)
+                when {
+                    show == null  -> {
+                        val sshow = getRemoteShow.awaitOne(showId)
 
-            when {
-                show == null  -> {
-                    val sshow = getRemoteShow.awaitOne(showId)
-
-                    mutableState.value = if (sshow != null) {
-                        ShowDetailsState.Success(
-                            show = networkToLocalShow.await(sshow.toDomain())
-                        )
-                    } else {
-                        ShowDetailsState.Error
+                        mutableState.value = if (sshow != null) {
+                            ShowDetailsState.Success(
+                                show = networkToLocalShow.await(sshow.toDomain())
+                            )
+                        } else {
+                            ShowDetailsState.Error
+                        }
+                    }
+                    show.needsInit -> {
+                        mutableState.value =
+                            ShowDetailsState.Success(show = show)
+                        refreshShowInfo()
+                    }
+                    else -> {
+                        mutableState.value =
+                            ShowDetailsState.Success(show = show)
                     }
                 }
-                show.needsInit -> {
-                    mutableState.value =
-                        ShowDetailsState.Success(show = show)
-                    refreshShowInfo()
-                }
-                else -> {
-                    mutableState.value =
-                        ShowDetailsState.Success(show = show)
-                }
+            }catch (e: Exception) {
+                mutableState.value = ShowDetailsState.Error
             }
         }
 
@@ -90,7 +91,7 @@ class TVViewScreenModel(
                 .distinctUntilChanged()
                 .collectLatest { showId ->
 
-                    val trailers = getTVShowTrailers.await(showId)
+                    val trailers = runCatching { getTVShowTrailers.await(showId) }.getOrDefault(emptyList())
 
                     if (trailers.isEmpty()) {
                         refreshShowTrailers()
@@ -115,14 +116,10 @@ class TVViewScreenModel(
 
     private suspend fun refreshShowTrailers() {
 
-        val trailers = getRemoteTrailers.awaitShow(showId)
+        val trailers = runCatching { getRemoteTrailers.awaitShow(showId) }.getOrDefault(emptyList())
             .map {
                 networkToLocalTrailer.await(
-                    it.toDomain()
-                        .copy(
-                            contentId = showId,
-                            isMovie = false
-                        )
+                    it.toDomain(), showId, false
                 )
             }
 
@@ -135,7 +132,7 @@ class TVViewScreenModel(
 
     private suspend fun refreshShowInfo() {
 
-        val sshow = getRemoteShow.awaitOne(showId)
+        val sshow = runCatching{ getRemoteShow.awaitOne(showId) }.getOrNull()
         val show = state.value.success?.show
 
         if (sshow != null && show != null) {

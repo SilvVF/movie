@@ -114,9 +114,20 @@ class PlayerViewModel(
 
 
     fun onMove(from: ItemPosition, to: ItemPosition) {
-        if (from.index - 1 >= trailerQueue.size) { return }
+        val fromIdx = from.index - 1
+        val toIdx = to.index - 1
+        if (
+            fromIdx < 0 ||
+            toIdx < 0 ||
+            fromIdx > trailerQueue.lastIndex ||
+            toIdx > trailerQueue.lastIndex
+        ) {
+           return
+        }
 
-        trailerQueue.add(to.index - 1, trailerQueue.removeAt(from.index - 1))
+        if (fromIdx >= trailerQueue.size) { return }
+
+        trailerQueue.add(toIdx, trailerQueue.removeAt(fromIdx))
     }
 
     fun sendPlayerEvent(event: PlayerEvent) {
@@ -127,7 +138,7 @@ class PlayerViewModel(
 
     fun onExoPlayerDispose(currentPosition: Long) {
         trailerToStreams?.let {
-            secondToStream[it.first.trailerId] = currentPosition
+            secondToStream[it.first.id] = currentPosition
         }
     }
 
@@ -168,7 +179,7 @@ class PlayerViewModel(
             field = value
         }
 
-    private var trailerId: Long?  = savedStateHandle["trailer"]
+    private var trailerId: String?  = savedStateHandle["trailer"]
         set(value) {
             savedStateHandle["trailer"] = value
             field = value
@@ -184,7 +195,7 @@ class PlayerViewModel(
         }
     }
 
-    fun requestMediaQueue(contentId: Long, isMovie: Boolean, tid: Long) {
+    fun requestMediaQueue(contentId: Long, isMovie: Boolean, tid: String) {
 
         this.contentId = contentId
         this.isMovie = isMovie

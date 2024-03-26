@@ -1,6 +1,6 @@
-package io.silv.movie.data.trailers
+package io.silv.movie.data.credits
 
-class NetworkToLocalTrailer(
+class NetworkToLocalCredit(
     private val trailerRepository: TrailerRepository,
 ) {
 

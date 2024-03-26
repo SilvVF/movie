@@ -1,5 +1,6 @@
 package io.silv.movie.network.service.tmdb
 
+import io.silv.movie.network.model.credits.CreditsResponse
 import io.silv.movie.network.model.tv.TVDetailsResponse
 import io.silv.movie.network.model.tv.TVDiscoverResponse
 import io.silv.movie.network.model.tv.TVListResponse
@@ -23,6 +24,12 @@ interface TMDBTVShowService {
     fun details(
         @Path("id") id: Long,
     ): Call<TVDetailsResponse>
+
+    @GET("{series_id}/credits")
+    fun credits(
+        @Path("series_id") id: Long
+    ): Call<CreditsResponse>
+
 
     @GET("tv/{type}")
     fun tvList(

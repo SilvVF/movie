@@ -38,7 +38,7 @@ CREATE TRIGGER delete_movie_from_lists
 AFTER DELETE ON movie
 FOR EACH ROW
 BEGIN
-  DELETE FROM contentListJunction
+  DELETE FROM contentItem
   WHERE movie_id = old.id;
 END;
 

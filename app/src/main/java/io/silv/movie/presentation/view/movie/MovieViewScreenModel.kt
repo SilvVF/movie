@@ -4,6 +4,8 @@ import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.credits.GetRemoteCredits
+import io.silv.movie.data.credits.NetworkToLocalCredit
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -35,6 +37,9 @@ class MovieViewScreenModel(
     private val getRemoteTrailers: GetRemoteTrailers,
     private val networkToLocalMovie: NetworkToLocalMovie,
     private val networkToLocalTrailer: NetworkToLocalTrailer,
+    private val networkToLocalCredit: NetworkToLocalCredit,
+    private val getRemoteCredits: GetRemoteCredits,
+
     private val getRemoteMovie: GetRemoteMovie,
     private val getMovie: GetMovie,
     private val updateMovie: UpdateMovie,
@@ -54,33 +59,36 @@ class MovieViewScreenModel(
     }
 
     init {
-
         screenModelScope.launch {
-            if (mutableState.value is MovieDetailsState.Success) { return@launch }
+            try {
+                val movie = getMovie.await(id = movieId)
 
-            val movie = getMovie.await(id = movieId)
+                when {
+                    movie == null -> {
+                        val smovie = getRemoteMovie.awaitOne(movieId)
 
-            when {
-                movie == null  -> {
-                    val smovie = getRemoteMovie.awaitOne(movieId)
+                        mutableState.value = if (smovie != null) {
+                            MovieDetailsState.Success(
+                                movie = networkToLocalMovie.await(smovie.toDomain())
+                            )
+                        } else {
+                            MovieDetailsState.Error
+                        }
+                    }
 
-                    mutableState.value = if (smovie != null) {
-                        MovieDetailsState.Success(
-                            movie = networkToLocalMovie.await(smovie.toDomain())
-                        )
-                    } else {
-                        MovieDetailsState.Error
+                    movie.needsInit -> {
+                        mutableState.value =
+                            MovieDetailsState.Success(movie = movie)
+                        refreshMovieInfo()
+                    }
+
+                    else -> {
+                        mutableState.value =
+                            MovieDetailsState.Success(movie = movie)
                     }
                 }
-                movie.needsInit -> {
-                    mutableState.value =
-                        MovieDetailsState.Success(movie = movie)
-                    refreshMovieInfo()
-                }
-                else -> {
-                    mutableState.value =
-                        MovieDetailsState.Success(movie = movie)
-                }
+            } catch (e: Exception) {
+                mutableState.value =  MovieDetailsState.Error
             }
         }
 
@@ -90,7 +98,7 @@ class MovieViewScreenModel(
                 .distinctUntilChanged()
                 .collectLatest { movieId ->
 
-                    val trailers = getMovieTrailers.await(movieId)
+                    val trailers = runCatching{  getMovieTrailers.await(movieId) }.getOrDefault(emptyList())
 
                     if (trailers.isEmpty()) {
                         refreshMovieTrailers()
@@ -115,10 +123,10 @@ class MovieViewScreenModel(
 
     private suspend fun refreshMovieTrailers() {
 
-        val trailers = getRemoteTrailers.awaitMovie(movieId)
+        val trailers = runCatching { getRemoteTrailers.awaitMovie(movieId) }.getOrDefault(emptyList())
             .map {
                 networkToLocalTrailer.await(
-                    it.toDomain().copy(contentId = movieId, isMovie = true)
+                    it.toDomain(), movieId, true
                 )
             }
 
@@ -131,7 +139,7 @@ class MovieViewScreenModel(
 
     private suspend fun refreshMovieInfo() {
 
-        val smovie = getRemoteMovie.awaitOne(movieId)
+        val smovie = runCatching { getRemoteMovie.awaitOne(movieId) }.getOrNull()
         val movie = state.value.success?.movie
 
         if (smovie != null && movie != null) {

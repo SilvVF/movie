@@ -125,7 +125,7 @@ fun MovieDetailsContent(
     state: MovieDetailsState.Success,
     refresh: () -> Unit,
     onPosterClick: () -> Unit,
-    onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: Long) -> Unit
+    onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: String) -> Unit
 ) {
     Scaffold { paddingValues ->
 
@@ -196,19 +196,19 @@ fun MovieDetailsContent(
                         items = state.trailers,
                         key = { it.id }
                     ) {
-                        VideoMediaItem(
-                            onThumbnailClick = {
-                                onVideoThumbnailClick(it.contentId, true, it.id)
-                            },
-                            item = it,
-                            thumbnailProvider = {
-                                if (it.site == "YouTube") {
-                                    "https://img.youtube.com/vi/${it.key}/0.jpg"
-                                } else {
-                                    ""
+                            VideoMediaItem(
+                                onThumbnailClick = {
+                                    onVideoThumbnailClick(state.movie.id, true, it.id)
+                                },
+                                item = it,
+                                thumbnailProvider = {
+                                    if (it.site == "YouTube") {
+                                        "https://img.youtube.com/vi/${it.key}/0.jpg"
+                                    } else {
+                                        ""
+                                    }
                                 }
-                            }
-                        )
+                            )
                     }
                 }
             }

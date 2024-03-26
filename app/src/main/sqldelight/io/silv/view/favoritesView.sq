@@ -1,5 +1,5 @@
-favoritesMostRecent:
-   SELECT
+CREATE VIEW favoriteItemsView AS
+SELECT
         id,
         title,
         poster_url,
@@ -11,7 +11,7 @@ favoritesMostRecent:
         1 AS isMovie,
         favorite_modified_at,
         in_library_lists
-    FROM movie WHERE favorite
+    FROM movie WHERE favorite = 1
 
     UNION
 
@@ -27,103 +27,25 @@ favoritesMostRecent:
         0 AS isMovie,
         favorite_modified_at,
         in_library_lists
-    FROM show WHERE favorite
+    FROM show WHERE favorite = 1;
+
+selectAll:
+SELECT * FROM favoriteItemsView;
+
+favoritesMostRecent:
+SELECT * FROM favoriteItemsView
 ORDER BY favorite_modified_at DESC LIMIT :limit;
 
 favoritesOrderByRecent:
-   SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        1 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
-
-    UNION
-
-    SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        0 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM show WHERE favorite AND (title LIKE :query OR :query = '')
+SELECT * FROM favoriteItemsView WHERE  (title LIKE :query OR :query = '')
 ORDER BY favorite_modified_at DESC;
 
 favoritesOrderByTitle:
-   SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        1 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM movie WHERE favorite AND (title LIKE :query OR :query = '')
-
-    UNION
-
-    SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        0 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM show WHERE favorite AND (title LIKE :query OR :query = '')
+SELECT * FROM favoriteItemsView WHERE  (title LIKE :query OR :query = '')
 ORDER BY title DESC;
 
 favoritesOrderByMovieOrShow:
-   SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        1 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM movie WHERE :showsOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
-
-    UNION
-
-    SELECT
-        id,
-        title,
-        poster_url,
-        poster_last_updated,
-        overview,
-        popularity,
-        last_modified_at,
-        favorite,
-        0 AS isMovie,
-        favorite_modified_at,
-         in_library_lists
-    FROM show WHERE :moviesOnly IS NOT 1 AND favorite AND (title LIKE :query OR :query = '')
+SELECT * FROM favoriteItemsView WHERE :showsOnly != isMovie  AND favorite AND (title LIKE :query OR :query = '')
 ORDER BY title DESC;
 
 selectFavoriteMostRecent:

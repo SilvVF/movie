@@ -39,7 +39,7 @@ CREATE TRIGGER delete_show_from_lists
 AFTER DELETE ON show
 FOR EACH ROW
 BEGIN
-  DELETE FROM contentListJunction
+  DELETE FROM contentItem
   WHERE show_id = old.id;
 END;
 

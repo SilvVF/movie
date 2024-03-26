@@ -39,7 +39,7 @@ class GetTVShowTrailers(
     private val trailerRepository: TrailerRepository
 ) {
     suspend fun await(showId: Long): List<Trailer> {
-        return trailerRepository.getTrailersByMovieId(showId)
+        return trailerRepository.getTrailersByShowId(showId)
     }
 }
 

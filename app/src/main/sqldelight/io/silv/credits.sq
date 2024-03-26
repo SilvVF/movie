@@ -1,0 +1,75 @@
+import kotlin.Boolean;
+
+CREATE TABLE credits (
+    id INTEGER NOT NULL PRIMARY KEY,
+    adult INTEGER AS Boolean NOT NULL DEFAULT  0,
+    gender INTEGER NOT NULL DEFAULT 1,
+    known_for_department TEXT NOT NULL DEFAULT "",
+    name TEXT NOT NULL DEFAULT "",
+    original_name TEXT NOT NULL DEFAULT "",
+    popularity REAL NOT NULL DEFAULT 0,
+    profile_path TEXT,
+    character TEXT NOT NULL DEFAULT "",
+    credit_id TEXT NOT NULL DEFAULT "",
+    crew INTEGER AS Boolean NOT NULL DEFAULT 0,
+    ordering INTEGER
+);
+
+CREATE TABLE showCredit(
+     show_id INTEGER NOT NULL,
+     credit_id INTEGER NOT NULL,
+     PRIMARY KEY(show_id, credit_id),
+     FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
+     FOREIGN KEY (credit_id) REFERENCES credits(id) ON DELETE CASCADE
+);
+
+CREATE TABLE movieCredit(
+     movie_id INTEGER NOT NULL,
+     credit_id INTEGER NOT NULL,
+     PRIMARY KEY(movie_id, credit_id),
+     FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE,
+     FOREIGN KEY (credit_id) REFERENCES credits(id) ON DELETE CASCADE
+);
+
+selectById:
+SELECT * FROM credits WHERE :id = id LIMIT 1;
+
+selectByMovieId:
+SELECT credits.*
+FROM movieCredit
+JOIN credits ON credits.id = movieCredit.credit_id
+WHERE movieCredit.movie_id = :movieId;
+
+selectByShowId:
+SELECT credits.*
+FROM showCredit
+JOIN credits ON credits.id = showCredit.credit_id
+WHERE showCredit.show_id = :showId;
+
+insertShowCredit:
+INSERT OR IGNORE INTO showCredit(show_id, credit_id)
+ VALUES (:showId, :creditId);
+
+insertMovieCredit:
+INSERT OR IGNORE INTO movieCredit(movie_id, credit_id)
+VALUES (:movieId, :creditId);
+
+insert:
+INSERT OR IGNORE INTO credits(id, adult, gender, known_for_department, name, original_name, popularity, profile_path, character, credit_id, crew, ordering)
+VALUES (:id, :adult, :gender, :knownForDepartment, :name, :originalName, :popularity, :profilePath, :character, :creditId, :crew, :ordering);
+
+update:
+UPDATE credits
+SET
+   adult = COALESCE(:adult, adult),
+   gender = COALESCE(:gender, gender),
+   known_for_department = COALESCE(:knownForDepartment, known_for_department),
+   name = COALESCE(:name, name),
+   original_name = COALESCE(:originalName, original_name),
+   popularity = COALESCE(:popularity, popularity),
+   profile_path = COALESCE(:profilePath, profile_path),
+   character = COALESCE(:character, character),
+   credit_id = COALESCE(:creditId, credit_id),
+   crew = COALESCE(:crew, crew),
+   ordering = COALESCE(:ordering, ordering)
+WHERE id = :id;

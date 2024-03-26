@@ -1,4 +1,4 @@
-CREATE TABLE contentListJunction(
+CREATE TABLE contentItem(
     movie_id INTEGER NOT NULL DEFAULT -1,
     show_id INTEGER NOT NULL DEFAULT -1,
     list_id INTEGER NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE contentListJunction(
 );
 
 CREATE TRIGGER update_last_modified_at_list_insert
-AFTER INSERT ON contentListJunction
+AFTER INSERT ON contentItem
 FOR EACH ROW
 BEGIN
   UPDATE contentList
@@ -18,7 +18,7 @@ END;
 
 
 CREATE TRIGGER update_last_modified_at_list_delete
-AFTER DELETE ON contentListJunction
+AFTER DELETE ON contentItem
 FOR EACH ROW
 BEGIN
   UPDATE contentList
@@ -26,54 +26,54 @@ BEGIN
   WHERE _id = old.list_id;
 END;
 
-CREATE INDEX list_id_index ON contentListJunction(list_id);
+CREATE INDEX list_id_index ON contentItem(list_id);
 
 CREATE TRIGGER update_movie_and_show_library_list_count_dec
-AFTER INSERT ON contentListJunction WHEN (
+AFTER INSERT ON contentItem WHEN (
     SELECT in_library FROM contentList WHERE _id = new.list_id
 ) = 0
 BEGIN
     UPDATE movie SET
         in_library_lists = MAX(0, movie.in_library_lists - 1)
     WHERE movie.id IN (
-        SELECT DISTINCT movie_id FROM contentListJunction WHERE list_id = new.list_id AND movie_id != -1
+        SELECT DISTINCT movie_id FROM contentItem WHERE list_id = new.list_id AND movie_id != -1
     );
     UPDATE show SET
         in_library_lists = MAX(0, show.in_library_lists - 1)
     WHERE show.id IN (
-       SELECT DISTINCT show_id FROM contentListJunction WHERE list_id = new.list_id AND show_id != -1
+       SELECT DISTINCT show_id FROM contentItem WHERE list_id = new.list_id AND show_id != -1
     );
 END;
 
 CREATE TRIGGER update_movie_and_show_library_list_count_inc
-AFTER INSERT ON contentListJunction WHEN (
+AFTER INSERT ON contentItem WHEN (
     SELECT in_library FROM contentList WHERE _id = new.list_id
 )
 BEGIN
     UPDATE movie SET
         in_library_lists = movie.in_library_lists + 1
     WHERE movie.id IN (
-        SELECT DISTINCT movie_id FROM contentListJunction WHERE list_id = new.list_id AND movie_id != -1
+        SELECT DISTINCT movie_id FROM contentItem WHERE list_id = new.list_id AND movie_id != -1
     );
     UPDATE show SET
         in_library_lists = show.in_library_lists + 1
     WHERE show.id IN (
-       SELECT DISTINCT show_id FROM contentListJunction WHERE list_id = new.list_id AND show_id != -1
+       SELECT DISTINCT show_id FROM contentItem WHERE list_id = new.list_id AND show_id != -1
     );
 END;
 
 insert:
-INSERT OR IGNORE INTO contentListJunction(movie_id, show_id, list_id, created_at)
+INSERT OR IGNORE INTO contentItem(movie_id, show_id, list_id, created_at)
 VALUES (:movieId, :showId, :listId, strftime('%s', 'now'));
 
 deleteMovieFromList:
-DELETE FROM contentListJunction WHERE movie_id = :movieId AND list_id = :listId;
+DELETE FROM contentItem WHERE movie_id = :movieId AND list_id = :listId;
 
 deleteShowFromList:
-DELETE FROM contentListJunction WHERE show_id = :showId AND list_id = :listId;
+DELETE FROM contentItem WHERE show_id = :showId AND list_id = :listId;
 
 selectAll:
-SELECT * FROM contentListJunction;
+SELECT * FROM contentItem;
 
 selectMoviesByListId:
 SELECT
@@ -87,7 +87,7 @@ SELECT
     m.overview  AS overview,
     m.popularity AS popularity,
     m.in_library_lists AS inLists
-FROM contentListJunction AS clj
+FROM contentItem AS clj
 LEFT JOIN movie AS m
 ON m.id = clj.movie_id
 WHERE list_id = :listId AND movie_id != -1
@@ -108,7 +108,7 @@ SELECT
     s.overview  AS overview,
     s.popularity AS popularity,
     s.in_library_lists AS inLists
-FROM contentListJunction AS clj
+FROM contentItem AS clj
 LEFT JOIN show AS s
 ON s.id = clj.show_id
 WHERE list_id = :listId AND show_id != -1
@@ -129,7 +129,7 @@ SELECT
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
     COALESCE(m.in_library_lists, s.in_library_lists) AS inLists
-FROM contentListJunction AS clj
+FROM contentItem AS clj
 LEFT JOIN movie AS m
 ON m.id = clj.movie_id AND movie_id != -1
 LEFT JOIN show AS s

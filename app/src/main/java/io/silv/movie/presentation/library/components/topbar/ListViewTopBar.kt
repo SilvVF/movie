@@ -155,15 +155,13 @@ fun ListViewTopBar(
                 )
             },
             posterContent = {
-                val posterModifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .fillMaxHeight()
-                    .clickable { onPosterClick() }
-
                 ContentListPosterItems(
                     list = list,
                     items = items(),
-                    posterModifier
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                        .fillMaxHeight()
+                        .clickable { onPosterClick() }
                 )
             },
             pinnedContent = {

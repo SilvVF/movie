@@ -1,5 +1,6 @@
 package io.silv.movie.network.service.tmdb
 
+import io.silv.movie.network.model.credits.CreditsResponse
 import io.silv.movie.network.model.movie.MovieDetailsResponse
 import io.silv.movie.network.model.movie.MovieDiscoverResponse
 import io.silv.movie.network.model.movie.MovieListResponse
@@ -31,6 +32,11 @@ interface TMDBMovieService {
         @Path("movie_id") id: Long,
         @Query("language") language: String = "en-US"
     ): Call<MovieVideoResponse>
+
+    @GET("{movie_id}/credits")
+    fun credits(
+        @Path("movie_id") id: Long
+    ): Call<CreditsResponse>
 
     @GET("search/movie")
     fun search(

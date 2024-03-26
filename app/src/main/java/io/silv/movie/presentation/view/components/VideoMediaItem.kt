@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,11 +48,12 @@ fun VideoMediaItem(
     thumbnailProvider: () -> String,
     colors: CardColors = CardDefaults.elevatedCardColors(),
 ) {
-    ElevatedCard(
+    Card(
         modifier = modifier
             .padding(4.dp)
             .height(120.dp)
             .fillMaxWidth(),
+        onClick = { onThumbnailClick() },
         colors = colors
     ) {
         Box(Modifier.fillMaxSize()) {

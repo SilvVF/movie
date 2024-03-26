@@ -19,6 +19,7 @@ interface ContentListRepository {
     suspend fun getListItems(id: Long): List<ContentItem>
     suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, inLibrary: Boolean = false): Long
     suspend fun updateList(update: ContentListUpdate)
+    suspend fun addItemsToList(items: List<Pair<Long, Boolean>>, contentList: ContentList)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
     suspend fun removeMovieFromList(movieId: Long, contentList: ContentList)
     suspend fun addShowToList(showId: Long, contentList: ContentList)
@@ -53,6 +54,21 @@ class ContentListRepositoryImpl(
                 update.inLibrary,
                 update.id,
             )
+        }
+    }
+
+    override suspend fun addItemsToList(
+        items: List<Pair<Long, Boolean>>,
+        contentList: ContentList
+    ) {
+        handler.await(true) {
+            items.forEach { (id, isMovie) ->
+                if (isMovie) {
+                    contentListJunctionQueries.insert(id, -1, contentList.id)
+                } else {
+                    contentListJunctionQueries.insert(-1, id, contentList.id)
+                }
+            }
         }
     }
 
@@ -109,9 +125,9 @@ class ContentListRepositoryImpl(
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
         return handler.subscribeToList {
             when (sortMode) {
-                FavoritesSortMode.Movie -> favoritesViewQueries.favoritesOrderByMovieOrShow(0L, q, 1L,  ContentListMapper.mapFavoriteItem)
+                FavoritesSortMode.Movie -> favoritesViewQueries.favoritesOrderByMovieOrShow(0L, q, ContentListMapper.mapFavoriteItem)
                 FavoritesSortMode.RecentlyAdded -> favoritesViewQueries.favoritesOrderByRecent(q, ContentListMapper.mapFavoriteItem)
-                FavoritesSortMode.Show -> favoritesViewQueries.favoritesOrderByMovieOrShow(1L, q, 0L,  ContentListMapper.mapFavoriteItem)
+                FavoritesSortMode.Show -> favoritesViewQueries.favoritesOrderByMovieOrShow(1L, q, ContentListMapper.mapFavoriteItem)
                 FavoritesSortMode.Title -> favoritesViewQueries.favoritesOrderByTitle(q,  ContentListMapper.mapFavoriteItem)
             }
         }

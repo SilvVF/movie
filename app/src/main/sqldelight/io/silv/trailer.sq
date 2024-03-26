@@ -1,44 +1,63 @@
 import kotlin.Boolean;
 
 CREATE TABLE trailer (
-    _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    trailer_id TEXT NOT NULL,
-    movie_id INTEGER,
-    show_id INTEGER,
+    trailer_id TEXT NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
     video_key TEXT NOT NULL,
     site TEXT NOT NULL,
     size INTEGER NOT NULL,
     official INTEGER AS Boolean NOT NULL,
     type TEXT NOT NULL,
-    published_at TEXT NOT NULL,
-    FOREIGN KEY(movie_id) REFERENCES movie(id) ON DELETE CASCADE,
-    FOREIGN KEY(show_id) REFERENCES show(id) ON DELETE CASCADE
+    published_at TEXT NOT NULL
 );
 
-CREATE INDEX movie_id_trailer_index ON trailer(movie_id);
-CREATE INDEX show_id_trailer_index ON trailer(show_id);
-CREATE INDEX trailer_id_trailer_index ON trailer(trailer_id);
+CREATE TABLE showTrailers(
+     show_id INTEGER NOT NULL,
+     trailer_id TEXT NOT NULL,
+     PRIMARY KEY(show_id, trailer_id),
+     FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
+     FOREIGN KEY (trailer_id) REFERENCES trailer(trailer_id) ON DELETE CASCADE
+);
+
+CREATE TABLE movieTrailers(
+     movie_id INTEGER NOT NULL,
+     trailer_id TEXT NOT NULL,
+     PRIMARY KEY(movie_id, trailer_id),
+     FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE,
+     FOREIGN KEY (trailer_id) REFERENCES trailer(trailer_id) ON DELETE CASCADE
+);
+
 
 selectById:
-SELECT * FROM trailer WHERE :id = _id LIMIT 1;
+SELECT * FROM trailer WHERE :id = trailer_id LIMIT 1;
 
 selectByMovieId:
-SELECT * FROM trailer WHERE movie_id = :movieId;
+SELECT trailer.*
+FROM movieTrailers
+JOIN trailer ON trailer.trailer_id = movieTrailers.trailer_id
+WHERE movieTrailers.movie_id = :movieId;
 
 selectByShowId:
-SELECT * FROM trailer WHERE show_id = :show_id;
+SELECT trailer.*
+FROM showTrailers
+JOIN trailer ON trailer.trailer_id = showTrailers.trailer_id
+WHERE showTrailers.show_id = :showId;
+
+insertShowTrailer:
+INSERT OR IGNORE INTO showTrailers(show_id, trailer_id)
+ VALUES (:showId, :trailerId);
+
+insertMovieTrailer:
+INSERT OR IGNORE INTO movieTrailers(movie_id, trailer_id)
+VALUES (:movieId, :trailerId);
 
 insert:
-INSERT INTO trailer(_id, trailer_id, movie_id, show_id, name, video_key, site, size, official, type, published_at)
-VALUES (NULL, :trailerId, :movieId, :showId, :name, :videoKey, :site, :size, :official, :type, :publishedAt);
+INSERT OR IGNORE INTO trailer(trailer_id, name, video_key, site, size, official, type, published_at)
+VALUES (:trailerId, :name, :videoKey, :site, :size, :official, :type, :publishedAt);
 
 update:
 UPDATE trailer
 SET
-   trailer_id = COALESCE(:trailerId, trailer_id),
-   movie_id = COALESCE(:moveId, movie_id),
-   show_id = COALESCE(:showId, show_id),
    name = COALESCE(:name, name),
    video_key = COALESCE(:videoKey, video_key),
    site = COALESCE(:site, site),
@@ -46,7 +65,7 @@ SET
    official = COALESCE(:official, official),
    type = COALESCE(:type, type),
    published_at = COALESCE(:publishedAt, published_at)
-WHERE _id = :id;
+WHERE trailer_id = :id;
 
 lastInsertRowId:
 SELECT last_insert_rowid();

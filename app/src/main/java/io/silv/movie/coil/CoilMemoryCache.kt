@@ -11,7 +11,8 @@ internal object CoilMemoryCache {
     fun get(context: Context): MemoryCache {
         return instance ?: run {
             // Create the singleton mem cache instance.
-            MemoryCache.Builder(context).build()
+            MemoryCache.Builder(context)
+                .build()
         }
     }
 }

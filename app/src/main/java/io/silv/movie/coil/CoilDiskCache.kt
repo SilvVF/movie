@@ -18,6 +18,8 @@ internal object CoilDiskCache {
                 // Create the singleton disk cache instance.
                 DiskCache.Builder()
                     .directory(safeCacheDir.resolve(FOLDER_NAME))
+                    .maxSizePercent(0.1)
+                    .maximumMaxSizeBytes(150L * 1024 * 1024)
                     .build()
                     .also { instance = it }
             }

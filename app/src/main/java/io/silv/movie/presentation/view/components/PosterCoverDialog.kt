@@ -155,7 +155,6 @@ fun PosterCoverDialog(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
                             .data(coverDataProvider())
-                            .memoryCachePolicy(CachePolicy.DISABLED)
                             // Force coil to fetch the image not from cache.
                             .crossfade(1_000)
                             .build(),

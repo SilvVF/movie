@@ -71,9 +71,6 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
-    androidResources {
-        noCompress.add("tflite")
-    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -169,12 +166,12 @@ dependencies {
     implementation(libs.sqldelight.android.driver)
     implementation(libs.sqldelight.coroutines)
     implementation(libs.sqldelight.primitive.adapters)
+    implementation(libs.sqldelight.paging)
 
     // Work Manager
     implementation(libs.androidx.work.runtime.ktx)
 
-
-    // Supbase
+    // Supabase
     implementation(platform("io.github.jan-tennert.supabase:bom:2.2.2"))
     implementation("io.github.jan-tennert.supabase:postgrest-kt")
     implementation("io.ktor:ktor-client-okhttp:2.3.8")

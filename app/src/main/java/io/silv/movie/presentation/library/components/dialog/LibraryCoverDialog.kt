@@ -43,7 +43,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import coil.imageLoader
-import coil.request.CachePolicy
 import coil.request.ImageRequest
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
@@ -177,7 +176,6 @@ fun LibraryCoverDialog(
                             imageLoader = LocalContext.current.imageLoader,
                             model = ImageRequest.Builder(context)
                                 .data(file.toUri())
-                                .memoryCachePolicy(CachePolicy.DISABLED)
                                 .build(),
                             contentDescription = null,
                             modifier = Modifier
@@ -205,7 +203,6 @@ fun LibraryCoverDialog(
                                                 (items.first() as ContentListItem.Item).contentItem.toPoster()
                                             }
                                         )
-                                        .memoryCachePolicy(CachePolicy.DISABLED)
                                         .build(),
                                     contentDescription = null,
                                     modifier = Modifier
@@ -344,7 +341,6 @@ fun ListViewCoverDialog(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
                             .data(file.toUri())
-                            .memoryCachePolicy(CachePolicy.DISABLED)
                             .crossfade(1_000)
                             .build(),
                         contentDescription = null,
@@ -369,7 +365,6 @@ fun ListViewCoverDialog(
                                 imageLoader = LocalContext.current.imageLoader,
                                 model = ImageRequest.Builder(context)
                                     .data(items.first().toPoster())
-                                    .memoryCachePolicy(CachePolicy.DISABLED)
                                     .crossfade(1_000)
                                     .build(),
                                 contentDescription = null,

@@ -46,7 +46,6 @@ import coil.request.ImageRequest
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
 import io.silv.movie.data.cache.ListCoverCache
-import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
@@ -101,17 +100,21 @@ fun ContentListPosterItems(
     items: ImmutableList<ContentItem>,
     modifier: Modifier = Modifier
 ) {
-    val cache = koinInject<MovieCoverCache>()
+    val cache = koinInject<ListCoverCache>()
     var semaphor by remember { mutableIntStateOf(0) }
     val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+
+    val fileExists by remember(semaphor) {
+        derivedStateOf { file.exists() }
+    }
 
     LaunchedEffect(list.posterLastModified) {
         semaphor++
     }
 
-    if (file.exists()) {
+    if (fileExists) {
         ContentPreviewDefaults.CustomListPoster(
-            modifier = Modifier,
+            modifier = modifier,
             uri = file.toUri()
         )
     } else {

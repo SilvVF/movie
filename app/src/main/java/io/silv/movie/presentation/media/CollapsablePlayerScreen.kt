@@ -21,11 +21,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import io.silv.core_ui.components.lazy.Scroller
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
 import org.burnoutcrew.reorderable.ItemPosition
-import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
@@ -100,22 +98,14 @@ fun CollapsablePlayerScreen(
             }
         }
     ) {
-        stickyHeader(
-            key = Scroller.STICKY_HEADER_KEY_PREFIX
-        ) {
+        item(key = "playing-info") {
             playerViewModel.currentTrailer?.let { trailer ->
-                ReorderableItem(
-                    reorderableState = reorderState,
-                    key = "sticky-header",
-                    index = 0
-                ) {
-                    CollapsablePlayerDefaults.VideoDescription(
-                        trailer = trailer,
-                        modifier = Modifier
-                            .padding(12.dp)
-                            .fillMaxWidth()
-                    )
-                }
+                CollapsablePlayerDefaults.VideoDescription(
+                    trailer = trailer,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth()
+                )
             }
         }
         itemsIndexed(

@@ -74,9 +74,6 @@ class OkHttpDiskBackedFetcher<T: Any>(
                         mimeType = "image/*",
                         dataSource = DataSource.NETWORK
                     )
-                        .also {
-                            snapshot.close()
-                        }
                 }
                 CoilDiskUtils.writeToMemCache(
                     options,

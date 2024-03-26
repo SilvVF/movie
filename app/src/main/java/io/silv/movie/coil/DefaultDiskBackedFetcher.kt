@@ -99,15 +99,11 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
                         imageCacheFile,
                         options,
                         memCacheKey
-                    ).also {
-                        snapshot.close()
-                    }
+                    )
                 }
             } catch (e: Exception) {
                 snapshot?.close()
             }
-
-            snapshot?.close()
 
             fetch(data, options, memCacheKey, diskCacheKey, imageCacheFile)
         }

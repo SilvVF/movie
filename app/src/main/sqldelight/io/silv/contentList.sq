@@ -35,7 +35,7 @@ BEGIN
                                                            ELSE -1
                                                            END
     WHERE movie.id IN (
-        SELECT DISTINCT movie_id FROM contentListJunction WHERE list_id = new._id AND movie_id != -1
+        SELECT DISTINCT movie_id FROM contentItem WHERE list_id = new._id AND movie_id != -1
     );
     UPDATE show SET
         in_library_lists = show.in_library_lists + CASE WHEN new.in_library
@@ -43,7 +43,7 @@ BEGIN
                                                         ELSE -1
                                                         END
     WHERE show.id IN (
-       SELECT DISTINCT show_id FROM contentListJunction WHERE list_id = new._id AND show_id != -1
+       SELECT DISTINCT show_id FROM contentItem WHERE list_id = new._id AND show_id != -1
     );
 END;
 

@@ -108,7 +108,7 @@ fun PipedApiPlayer(
                 Toast.makeText(context, context.getString(R.string.player_error), Toast.LENGTH_SHORT).show()
             }
         }
-        exoPlayer.seekTo(playerViewModel.secondToStream[playerViewModel.currentTrailer?.trailerId] ?: 0L)
+        exoPlayer.seekTo(playerViewModel.secondToStream[playerViewModel.currentTrailer?.id] ?: 0L)
         exoPlayer.playWhenReady = true
         exoPlayer.prepare()
     }
