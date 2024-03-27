@@ -1,7 +1,14 @@
 package io.silv.movie.data.credits
 
+import io.silv.core_ui.components.PosterData
+
+data class CreditWithPoster(
+    val credit: Credit,
+    val posterData: PosterData
+)
+
 data class Credit(
-    val id: Long,
+    val creditId: String,
     val adult: Boolean,
     val gender: Long,
     val knownForDepartment: String,
@@ -10,14 +17,13 @@ data class Credit(
     val popularity: Double,
     val profilePath: String?,
     val character: String,
-    val creditId: String,
     val crew: Boolean,
-    val order: Long?
+    val order: Long?,
+    val personId: Long?
 )
 
 fun io.silv.movie.core.SCredit.toDomain(): Credit {
     return Credit(
-        id = id,
         adult = adult,
         gender = gender,
         knownForDepartment = knownForDepartment,
@@ -28,12 +34,13 @@ fun io.silv.movie.core.SCredit.toDomain(): Credit {
         character = character,
         creditId = creditId,
         crew = crew,
-        order = order
+        order = order,
+        personId = personId
     )
 }
 
 data class CreditUpdate(
-    val id: Long,
+    val creditId: String,
     val adult: Boolean? = null,
     val gender: Long?,
     val knownForDepartment: String?= null,
@@ -42,14 +49,15 @@ data class CreditUpdate(
     val popularity: Double?= null,
     val profilePath: String?= null,
     val character: String?= null,
-    val creditId: String?= null,
     val crew: Boolean?= null,
+    val title: String? = null,
     val order: Long? = null,
+    val personId: Long? = null,
 )
 
 fun Credit.toCreditUpdate(): CreditUpdate {
     return CreditUpdate(
-        id = id,
+        creditId = creditId,
         adult = adult,
         gender = gender,
         knownForDepartment = knownForDepartment,
@@ -58,9 +66,9 @@ fun Credit.toCreditUpdate(): CreditUpdate {
         popularity = popularity,
         profilePath = profilePath,
         character = character,
-        creditId = creditId,
         crew = crew,
-        order = order
+        order = order,
+        personId = personId
     )
 }
 

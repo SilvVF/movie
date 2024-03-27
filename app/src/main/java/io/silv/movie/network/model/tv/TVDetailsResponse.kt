@@ -9,7 +9,7 @@ data class TVDetailsResponse(
     @SerialName("adult")
     val adult: Boolean = false,
     @SerialName("backdrop_path")
-    val backdropPath: String = "",
+    val backdropPath: String? = null,
     @SerialName("created_by")
     val createdBy: List<CreatedBy> = emptyList(),
     @SerialName("episode_run_time")
@@ -27,9 +27,9 @@ data class TVDetailsResponse(
     @SerialName("languages")
     val languages: List<String> = emptyList(),
     @SerialName("last_air_date")
-    val lastAirDate: String = "",
+    val lastAirDate: String? = null,
     @SerialName("last_episode_to_air")
-    val lastEpisodeToAir: LastEpisodeToAir = LastEpisodeToAir(),
+    val lastEpisodeToAir: LastEpisodeToAir? = null,
     @SerialName("name")
     val name: String = "",
     @SerialName("networks")
@@ -49,7 +49,7 @@ data class TVDetailsResponse(
     @SerialName("popularity")
     val popularity: Double = 0.0,
     @SerialName("poster_path")
-    val posterPath: String = "",
+    val posterPath: String? = null,
     @SerialName("production_companies")
     val productionCompanies: List<ProductionCompanies> = emptyList(),
     @SerialName("production_countries")
@@ -146,7 +146,7 @@ data class TVDetailsResponse(
         @SerialName("id")
         val id: Int = 0,
         @SerialName("logo_path")
-        val logoPath: String = "",
+        val logoPath: String? = "",
         @SerialName("name")
         val name: String = "",
         @SerialName("origin_country")

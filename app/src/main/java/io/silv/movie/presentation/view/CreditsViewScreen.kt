@@ -61,6 +61,7 @@ import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
+import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.R
 import io.silv.movie.data.credits.CreditRepository
@@ -193,13 +194,20 @@ data class CreditsViewScreen(
             ) {
                 items(
                     count = credits.itemCount,
-                    key = credits.itemKey { it.id }
+                    key = credits.itemKey { it.creditId }
                 ) {
                     val credit = credits[it] ?: return@items
                     Row(
                         modifier = Modifier
                             .padding(12.dp)
-                            .heightIn(0.dp, 72.dp),
+                            .heightIn(0.dp, 72.dp)
+                            .colorClickable(color = primary) {
+                                credit.personId?.let {
+                                    navigator.push(
+                                        PersonViewScreen(credit.personId, credit.name, credit.profilePath)
+                                    )
+                                }
+                            },
                         horizontalArrangement = Arrangement.Start,
                         verticalAlignment = Alignment.CenterVertically
                     ) {

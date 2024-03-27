@@ -4,7 +4,7 @@ import java.io.Serializable
 
 interface SCredit : Serializable {
 
-    var id: Long
+    var creditId: String
     var adult: Boolean
     var gender: Long
     var knownForDepartment: String
@@ -13,12 +13,11 @@ interface SCredit : Serializable {
     var popularity: Double
     var profilePath: String?
     var character: String
-    var creditId: String
     var crew: Boolean
     var order: Long?
+    var personId: Long?
 
     fun copy() = create().also {
-        it.id = id
         it.adult = adult
         it.gender = gender
         it.knownForDepartment = knownForDepartment
@@ -30,6 +29,7 @@ interface SCredit : Serializable {
         it.creditId = creditId
         it.crew = crew
         it.order = order
+        it.personId = personId
     }
 
     companion object {
@@ -40,7 +40,7 @@ interface SCredit : Serializable {
 }
 
 class SCreditImpl(
-    override var id: Long = -1L,
+    override var creditId: String = "",
     override var adult: Boolean = false,
     override var gender: Long = -1L,
     override var knownForDepartment: String = "",
@@ -49,7 +49,7 @@ class SCreditImpl(
     override var popularity: Double = -1.0,
     override var profilePath: String? = null,
     override var character: String = "",
-    override var creditId: String = "",
     override var crew: Boolean = false,
-    override var order: Long? = null
+    override var order: Long? = null,
+    override var personId: Long? = null
 ) : SCredit

@@ -9,7 +9,7 @@ data class MovieDetailsResponse(
     @SerialName("adult")
     val adult: Boolean = false,
     @SerialName("backdrop_path")
-    val backdropPath: String = "",
+    val backdropPath: String? = null,
     @SerialName("belongs_to_collection")
     val belongsToCollection: Collection? = null,
     @SerialName("budget")
@@ -21,7 +21,7 @@ data class MovieDetailsResponse(
     @SerialName("id")
     val id: Int = 0,
     @SerialName("imdb_id")
-    val imdbId: String = "",
+    val imdbId: String? = null,
     @SerialName("original_language")
     val originalLanguage: String = "",
     @SerialName("original_title")
@@ -31,7 +31,7 @@ data class MovieDetailsResponse(
     @SerialName("popularity")
     val popularity: Double = 0.0,
     @SerialName("poster_path")
-    val posterPath: String = "",
+    val posterPath: String? = null,
     @SerialName("production_companies")
     val productionCompanies: List<ProductionCompany> = listOf(),
     @SerialName("production_countries")
@@ -62,9 +62,9 @@ data class MovieDetailsResponse(
         val id: Int,
         val name: String,
         @SerialName("poster_path")
-        val posterPath: String,
+        val posterPath: String? = null,
         @SerialName("backdrop_path")
-        val backdropPath: String
+        val backdropPath: String? = null
     )
 
     @Serializable

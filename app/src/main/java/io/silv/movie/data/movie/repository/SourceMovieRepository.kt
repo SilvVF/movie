@@ -53,7 +53,7 @@ class SourceMovieRepositoryImpl(
             voteCount = details.voteCount
             releaseDate = details.releaseDate
             url = "https://api.themoviedb.org/3/movie/$id"
-            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.isNotBlank() }
+            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.orEmpty().isNotBlank() }
             adult = details.adult
             originalTitle = details.originalTitle
             voteAverage = details.voteAverage

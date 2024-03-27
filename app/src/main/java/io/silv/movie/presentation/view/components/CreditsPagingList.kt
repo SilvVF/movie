@@ -37,8 +37,8 @@ import io.silv.movie.data.credits.Credit
 
 fun LazyListScope.creditsPagingList(
     creditsProvider: () -> LazyPagingItems<Credit>,
-    onCreditClick: () -> Unit,
-    onCreditLongClick: () -> Unit,
+    onCreditClick: (credit: Credit) -> Unit,
+    onCreditLongClick: (credit: Credit) -> Unit,
     onViewClick: () -> Unit,
 ) {
     item {
@@ -74,7 +74,7 @@ fun LazyListScope.creditsPagingList(
         LazyRow(Modifier.fillMaxWidth()) {
             items(
                 count = credits.itemCount,
-                key = credits.itemKey { it.id }
+                key = credits.itemKey { it.creditId }
             ) {
                 val credit = credits[it] ?: return@items
                 ElevatedCard(
@@ -85,8 +85,8 @@ fun LazyListScope.creditsPagingList(
                         .shadow(3.dp, CardDefaults.elevatedShape)
                         .clip(CardDefaults.elevatedShape)
                         .combinedClickable(
-                            onLongClick = onCreditLongClick,
-                            onClick = onCreditClick
+                            onLongClick = { onCreditLongClick(credit) },
+                            onClick =  { onCreditClick(credit) }
                         )
                 ) {
                     val context = LocalContext.current

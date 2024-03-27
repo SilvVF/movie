@@ -44,8 +44,9 @@ import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.CreditsViewScreen
 import io.silv.movie.presentation.view.MovieCoverScreenModel
+import io.silv.movie.presentation.view.PersonViewScreen
 import io.silv.movie.presentation.view.components.EditCoverAction
-import io.silv.movie.presentation.view.components.ExpandableMovieDescription
+import io.silv.movie.presentation.view.components.ExpandableDescription
 import io.silv.movie.presentation.view.components.MovieInfoBox
 import io.silv.movie.presentation.view.components.PosterCoverDialog
 import io.silv.movie.presentation.view.components.creditsPagingList
@@ -88,7 +89,18 @@ data class MovieViewScreen(
                     creditsProvider = { credits },
                     onPosterClick = { changeDialog(MovieViewScreenModel.Dialog.FullCover) },
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
-                    onViewCreditsClick = { navigator.push(CreditsViewScreen(state.movie.id, true)) }
+                    onViewCreditsClick = { navigator.push(CreditsViewScreen(state.movie.id, true)) },
+                    onCreditClick = { credit ->
+                        credit.personId?.let {
+                            navigator.push(
+                                PersonViewScreen(
+                                    it,
+                                    credit.name,
+                                    credit.profilePath
+                                )
+                            )
+                        }
+                    }
                 )
                 val onDismissRequest =  { changeDialog(null) }
                 when (state.dialog) {
@@ -137,7 +149,8 @@ fun MovieDetailsContent(
     refresh: () -> Unit,
     onPosterClick: () -> Unit,
     onViewCreditsClick: () -> Unit,
-    onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: String) -> Unit
+    onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: String) -> Unit,
+    onCreditClick: (credit: Credit) -> Unit,
 ) {
     Scaffold { paddingValues ->
 
@@ -194,7 +207,7 @@ fun MovieDetailsContent(
                     }
                     item("Description-Tags") {
                         val context = LocalContext.current
-                        ExpandableMovieDescription(
+                        ExpandableDescription(
                             defaultExpandState = false,
                             description = state.movie.overview,
                             tagsProvider = { state.movie.genres },
@@ -206,7 +219,7 @@ fun MovieDetailsContent(
                     }
                     creditsPagingList(
                         creditsProvider = creditsProvider,
-                        onCreditClick = {},
+                        onCreditClick = onCreditClick,
                         onCreditLongClick = {},
                         onViewClick = onViewCreditsClick,
                     )

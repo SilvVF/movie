@@ -5,11 +5,12 @@ import app.cash.paging.PagingSource
 interface CreditRepository {
     suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean)
     suspend fun updateCredit(update: CreditUpdate): Boolean
-    suspend fun getById(id: Long): Credit?
+    suspend fun getById(id: String): Credit?
     suspend fun getByMovieId(movieId: Long): List<Credit>
     suspend fun getByShowId(showId: Long): List<Credit>
     fun showCreditsPagingSource(showId: Long): PagingSource<Int, Credit>
     fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, Credit>
+    fun personCreditsPagingSource(personId: Long): PagingSource<Int, CreditWithPoster>
 }
 
 class CreditRepositoryImpl(
@@ -19,7 +20,7 @@ class CreditRepositoryImpl(
     override suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean) {
         handler.await(inTransaction = true) {
             creditsQueries.insert(
-                id = credit.id,
+                id = credit.creditId,
                 adult = credit.adult,
                 gender = credit.gender,
                 knownForDepartment = credit.knownForDepartment,
@@ -28,17 +29,23 @@ class CreditRepositoryImpl(
                 popularity = credit.popularity,
                 profilePath = credit.profilePath,
                 character = credit.character,
-                creditId = credit.creditId,
                 crew = credit.crew,
-                ordering = credit.order
+                ordering = credit.order,
+                personId = credit.personId,
+                movieId = contentId.takeIf { isMovie },
+                showId = contentId.takeIf { !isMovie }
             )
-            if (isMovie) {
-                creditsQueries.insertMovieCredit(contentId, credit.id)
-            } else {
-                creditsQueries.insertShowCredit(contentId, credit.id)
-            }
         }
     }
+
+    override fun personCreditsPagingSource(personId: Long): PagingSource<Int, CreditWithPoster> = handler.queryPagingSource(
+        countQuery = { creditsQueries.countCreditsForPersonId(personId) },
+        initialOffset = 0L,
+        queryProvider = { limit, offset ->
+            creditsQueries.selectByPersonId(personId, limit, offset, CreditsMapper.mapCreditWithPoster)
+        },
+        transacter = { creditsQueries }
+    )
 
     override fun showCreditsPagingSource(showId: Long): PagingSource<Int, Credit> = handler.queryPagingSource(
         countQuery = { creditsQueries.countCreditsForShowId(showId) },
@@ -60,7 +67,7 @@ class CreditRepositoryImpl(
     )
 
     override suspend fun getByMovieId(movieId: Long): List<Credit> {
-        return handler.awaitList { creditsQueries.selectByMovieId(movieId, Long.MAX_VALUE, 0,CreditsMapper.mapCredit)}
+        return handler.awaitList { creditsQueries.selectByMovieId(movieId, Long.MAX_VALUE, 0, CreditsMapper.mapCredit)}
     }
 
     override suspend fun getByShowId(showId: Long): List<Credit> {
@@ -76,7 +83,7 @@ class CreditRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun getById(id: Long): Credit? {
+    override suspend fun getById(id: String): Credit? {
         return handler.awaitOneOrNull { creditsQueries.selectById(id, CreditsMapper.mapCredit) }
     }
 
@@ -90,12 +97,11 @@ class CreditRepositoryImpl(
                     name = update.name,
                     originalName = update.originalName,
                     popularity = update.popularity,
-                    profilePath = update.profilePath,
                     character = update.character,
-                    creditId = update.creditId,
                     crew = update.crew,
                     ordering = update.order,
-                    id = update.id
+                    personId = update.personId,
+                    id = update.creditId
                 )
             }
         }

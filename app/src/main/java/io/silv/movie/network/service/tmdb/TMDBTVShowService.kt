@@ -1,6 +1,6 @@
 package io.silv.movie.network.service.tmdb
 
-import io.silv.movie.network.model.credits.CreditsResponse
+import io.silv.movie.network.model.person.CreditsResponse
 import io.silv.movie.network.model.tv.TVDetailsResponse
 import io.silv.movie.network.model.tv.TVDiscoverResponse
 import io.silv.movie.network.model.tv.TVListResponse

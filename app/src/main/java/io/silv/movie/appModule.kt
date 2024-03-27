@@ -20,6 +20,7 @@ import io.silv.movie.presentation.profile.screen.SelectProfileImageScreenModel
 import io.silv.movie.presentation.view.CreditsViewScreenModel
 import io.silv.movie.presentation.view.ImageSaver
 import io.silv.movie.presentation.view.MovieCoverScreenModel
+import io.silv.movie.presentation.view.PersonViewScreenModel
 import io.silv.movie.presentation.view.TVCoverScreenModel
 import io.silv.movie.presentation.view.movie.MovieViewScreenModel
 import io.silv.movie.presentation.view.tv.TVViewScreenModel
@@ -63,6 +64,8 @@ val appModule =
         factoryOf(::TVCoverScreenModel)
 
         factoryOf(::ListCoverScreenModel)
+
+        factoryOf(::PersonViewScreenModel)
 
         singleOf(::MovieCoverCache)
 

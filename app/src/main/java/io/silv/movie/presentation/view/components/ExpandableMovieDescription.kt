@@ -46,7 +46,7 @@ import kotlin.math.roundToInt
 private val whitespaceLineRegex = Regex("[\\r\\n]{2,}", setOf(RegexOption.MULTILINE))
 
 @Composable
-fun ExpandableMovieDescription(
+fun ExpandableDescription(
     defaultExpandState: Boolean,
     description: String?,
     tagsProvider: () -> List<String>?,
@@ -65,7 +65,7 @@ fun ExpandableMovieDescription(
                 .replace(whitespaceLineRegex, "\n")
                 .trimEnd()
         }
-        MovieSummary(
+        ExpandableSummary(
             expandedDescription = desc,
             shrunkDescription = trimmedDescription,
             expanded = expanded,
@@ -142,7 +142,7 @@ fun ExpandableMovieDescription(
 }
 
 @Composable
-private fun MovieSummary(
+fun ExpandableSummary(
     expandedDescription: String,
     shrunkDescription: String,
     expanded: Boolean,

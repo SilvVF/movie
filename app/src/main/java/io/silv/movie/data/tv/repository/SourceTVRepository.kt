@@ -43,7 +43,7 @@ class SourceTVRepositoryImpl(
         return STVShow.create().apply {
             this.id = id
             url = "https://api.themoviedb.org/3/tv/$id"
-            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.isNotBlank() }
+            posterPath = "https://image.tmdb.org/t/p/original${details.posterPath}".takeIf { details.posterPath.orEmpty().isNotBlank() }
             adult = details.adult
             releaseDate = details.firstAirDate
             overview = details.overview

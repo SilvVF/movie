@@ -3,7 +3,8 @@ package io.silv.movie.network.model
 import io.silv.movie.core.SCredit
 import io.silv.movie.core.SMovie
 import io.silv.movie.core.STVShow
-import io.silv.movie.network.model.credits.CreditsResponse
+import io.silv.movie.network.model.person.CombinedCreditsResponse
+import io.silv.movie.network.model.person.CreditsResponse
 import io.silv.movie.network.model.movie.MovieDiscoverResponse
 import io.silv.movie.network.model.movie.MovieListResponse
 import io.silv.movie.network.model.movie.MovieSearchResponse
@@ -14,29 +15,71 @@ import io.silv.movie.network.model.tv.TVResult
 import io.silv.movie.network.model.tv.TVVideoResponse
 import io.silv.movie.network.service.tmdb.TMDBConstants
 
+fun CombinedCreditsResponse.Cast.toSCredit(): SCredit {
+    val it = this
+    return SCredit.create().apply {
+        this.creditId = it.creditId
+        this.adult = it.adult
+        this.popularity = it.popularity
+        this.character = it.character
+        this.crew = false
+    }
+}
+fun CombinedCreditsResponse.Crew.toSCredit(): SCredit {
+    val it = this
+    return SCredit.create().apply {
+        this.adult = it.adult
+        this.popularity = it.popularity
+        this.character = it.job
+        this.creditId = it.creditId
+        this.crew = true
+    }
+}
+
+
+fun CombinedCreditsResponse.toSCredits(): List<SCredit> {
+    return cast.map {
+        SCredit.create().apply {
+            this.creditId = it.creditId
+            this.adult = it.adult
+            this.popularity = it.popularity
+            this.character = it.character
+            this.crew = false
+        }
+    } + crew.map {
+        SCredit.create().apply {
+            this.adult = it.adult
+            this.popularity = it.popularity
+            this.character = it.job
+            this.creditId = it.creditId
+            this.crew = true
+        }
+    }
+}
+
 fun CreditsResponse.toSCredits(): List<SCredit>  {
     return cast.map {
         SCredit.create().apply {
-            this.id = it.id
+            this.creditId = it.creditId
             this.adult = it.adult
             this.gender = it.gender
             this.knownForDepartment = it.knownForDepartment
             this.name = it.name
+            this.personId = it.id
             this.originalName = it.originalName
             this.popularity = it.popularity
             this.profilePath = if (it.profilePath != null)
                 "https://image.tmdb.org/t/p/original${it.profilePath}"
             else null
             this.character = it.character
-            this.creditId = it.creditId
             this.order = it.order.toLong()
             this.crew = false
         }
     } + crew.map {
         SCredit.create().apply {
-            this.id = it.id
             this.adult = it.adult
             this.gender = it.gender
+            this.personId = it.id
             this.knownForDepartment = it.knownForDepartment
             this.name = it.name
             this.originalName = it.originalName

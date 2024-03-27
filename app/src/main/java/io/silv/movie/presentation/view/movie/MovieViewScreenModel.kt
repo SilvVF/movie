@@ -89,6 +89,7 @@ class MovieViewScreenModel(
                         mutableState.value =
                             MovieDetailsState.Success(movie = movie)
                         refreshMovieInfo()
+                        refreshMovieCredits()
                     }
 
                     else -> {
@@ -145,7 +146,11 @@ class MovieViewScreenModel(
         runCatching { getRemoteCredits.awaitMovie(movieId) }
             .onSuccess { credits ->
                 for (sCredit in credits) {
-                    networkToLocalCredit.await(sCredit.toDomain(), movieId, true)
+                    networkToLocalCredit.await(
+                        sCredit.toDomain(),
+                        movieId,
+                        true
+                    )
                 }
             }
             .onFailure { Timber.e(it) }

@@ -1,80 +1,79 @@
 import kotlin.Boolean;
 
 CREATE TABLE credits (
-    id INTEGER NOT NULL PRIMARY KEY,
+    credit_id TEXT NOT NULL PRIMARY KEY,
+    movie_id INTEGER,
+    show_id INTEGER,
     adult INTEGER AS Boolean NOT NULL DEFAULT  0,
     gender INTEGER NOT NULL DEFAULT 1,
     known_for_department TEXT NOT NULL DEFAULT "",
     name TEXT NOT NULL DEFAULT "",
     original_name TEXT NOT NULL DEFAULT "",
     popularity REAL NOT NULL DEFAULT 0,
-    profile_path TEXT,
     character TEXT NOT NULL DEFAULT "",
-    credit_id TEXT NOT NULL DEFAULT "",
     crew INTEGER AS Boolean NOT NULL DEFAULT 0,
-    ordering INTEGER
+    ordering INTEGER,
+    person_id INTEGER,
+    profile_path TEXT,
+    FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE
 );
 
-CREATE TABLE showCredit(
-     show_id INTEGER NOT NULL,
-     credit_id INTEGER NOT NULL,
-     PRIMARY KEY(show_id, credit_id),
-     FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
-     FOREIGN KEY (credit_id) REFERENCES credits(id) ON DELETE CASCADE
-);
-
-CREATE TABLE movieCredit(
-     movie_id INTEGER NOT NULL,
-     credit_id INTEGER NOT NULL,
-     PRIMARY KEY(movie_id, credit_id),
-     FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE,
-     FOREIGN KEY (credit_id) REFERENCES credits(id) ON DELETE CASCADE
-);
 
 selectById:
-SELECT * FROM credits WHERE :id = id LIMIT 1;
+SELECT * FROM credits WHERE :id = credit_id LIMIT 1;
 
 selectByMovieId:
-SELECT credits.*
-FROM movieCredit
-JOIN credits ON credits.id = movieCredit.credit_id
-WHERE movieCredit.movie_id = :movieId
+SELECT * FROM credits
+WHERE credits.movie_id = :movieId
 ORDER BY COALESCE(credits.ordering, 999)
 LIMIT :limit OFFSET :offset;
 
 countCreditsForMovieId:
 SELECT count(*)
-FROM movieCredit
-JOIN credits ON credits.id = movieCredit.credit_id
-WHERE movieCredit.movie_id = :movieId;
+FROM credits
+WHERE credits.movie_id = :movieId;
 
 countCreditsForShowId:
 SELECT count(*)
-FROM showCredit
-JOIN credits ON credits.id = showCredit.credit_id
-WHERE showCredit.show_id = :movieId;
+FROM credits
+WHERE credits.show_id = :showId;
 
 
 selectByShowId:
-SELECT credits.*
-FROM showCredit
-JOIN credits ON credits.id = showCredit.credit_id
-WHERE showCredit.show_id = :showId
+SELECT * FROM credits
+WHERE credits.show_id = :showId
 ORDER BY COALESCE(credits.ordering, 999)
 LIMIT :limit OFFSET :offset;
 
 
-insertShowCredit:
-INSERT OR IGNORE INTO showCredit(show_id, credit_id)
- VALUES (:showId, :creditId);
 
-insertMovieCredit:
-INSERT OR IGNORE INTO movieCredit(movie_id, credit_id)
-VALUES (:movieId, :creditId);
+countCreditsForPersonId:
+SELECT count(credit_id)
+FROM credits
+WHERE credits.person_id = :personId;
+
+selectByPersonId:
+SELECT
+    credits.*,
+      COALESCE(show.id, movie.id) AS contentId,
+      COALESCE(show.title, movie.title) AS title,
+      COALESCE(show.poster_url, movie.poster_url) AS posterUrl,
+      COALESCE(show.poster_last_updated, movie.poster_last_updated) AS posterLastUpdated,
+      COALESCE(show.favorite, movie.favorite) AS favorite,
+      COALESCE(show.in_library_lists, movie.in_library_lists) AS inLibraryLists
+FROM credits
+LEFT JOIN movie ON credits.movie_id = movie.id
+LEFT JOIN show ON credits.show_id = show.id
+WHERE credits.person_id = :personId
+LIMIT :limit OFFSET :offset;
+
+
 
 insert:
-INSERT OR IGNORE INTO credits(id, adult, gender, known_for_department, name, original_name, popularity, profile_path, character, credit_id, crew, ordering)
-VALUES (:id, :adult, :gender, :knownForDepartment, :name, :originalName, :popularity, :profilePath, :character, :creditId, :crew, :ordering);
+INSERT OR REPLACE INTO credits(credit_id, show_id, movie_id, adult, gender, known_for_department, name, original_name, popularity, character, crew, ordering, person_id, profile_path)
+VALUES (:id,:showId,:movieId, :adult, :gender, :knownForDepartment, :name,
+:originalName, :popularity,:character, :crew, :ordering,:personId, :profilePath);
 
 update:
 UPDATE credits
@@ -85,9 +84,8 @@ SET
    name = COALESCE(:name, name),
    original_name = COALESCE(:originalName, original_name),
    popularity = COALESCE(:popularity, popularity),
-   profile_path = COALESCE(:profilePath, profile_path),
    character = COALESCE(:character, character),
-   credit_id = COALESCE(:creditId, credit_id),
    crew = COALESCE(:crew, crew),
-   ordering = COALESCE(:ordering, ordering)
-WHERE id = :id;
+   ordering = COALESCE(:ordering, ordering),
+   person_id = COALESCE(:personId, person_id)
+WHERE credit_id = :id;

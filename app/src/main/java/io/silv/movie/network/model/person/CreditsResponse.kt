@@ -1,4 +1,4 @@
-package io.silv.movie.network.model.credits
+package io.silv.movie.network.model.person
 
 
 import kotlinx.serialization.SerialName

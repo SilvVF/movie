@@ -145,7 +145,9 @@ class TVViewScreenModel(
             .onSuccess { credits ->
                 Timber.d(credits.toString())
                 for (sCredit in credits) {
-                    networkToLocalCredit.await(sCredit.toDomain(), showId, false)
+                    networkToLocalCredit.await(
+                        sCredit.toDomain(), showId, false
+                    )
                 }
             }
             .onFailure { Timber.e(it) }
