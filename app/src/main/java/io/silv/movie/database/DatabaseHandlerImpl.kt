@@ -17,13 +17,16 @@ limitations under the License.
 
 package io.silv.movie.database
 
+import app.cash.paging.PagingSource
 import app.cash.sqldelight.ExecutableQuery
 import app.cash.sqldelight.Query
+import app.cash.sqldelight.TransacterBase
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.coroutines.mapToOne
 import app.cash.sqldelight.coroutines.mapToOneOrNull
 import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.paging3.QueryPagingSource
 import co.touchlab.stately.concurrency.ThreadLocalRef
 import io.silv.Database
 import kotlinx.coroutines.CoroutineDispatcher
@@ -93,6 +96,24 @@ class DatabaseHandlerImpl(
 
     override fun <T : Any> subscribeToOneOrNull(block: Database.() -> Query<T>): Flow<T?> {
         return block(db).asFlow().mapToOneOrNull(queryDispatcher)
+    }
+
+
+    override fun <V : Any> queryPagingSource(
+        countQuery: Database.() -> Query<Long>,
+        transacter: Database.() -> TransacterBase,
+        queryProvider: Database.(limit: Long, offset: Long) -> Query<V>,
+        initialOffset: Long,
+    ): PagingSource<Int, V> {
+           return QueryPagingSource(
+              countQuery = db.countQuery(),
+              transacter = db.transacter(),
+              context = queryDispatcher,
+              queryProvider =  { offset, limit ->
+                  db.queryProvider(offset, limit)
+              },
+              initialOffset = initialOffset
+          )
     }
 
     private suspend fun <T> dispatch(inTransaction: Boolean, block: suspend Database.() -> T): T {

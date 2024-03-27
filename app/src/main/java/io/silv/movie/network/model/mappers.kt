@@ -24,7 +24,9 @@ fun CreditsResponse.toSCredits(): List<SCredit>  {
             this.name = it.name
             this.originalName = it.originalName
             this.popularity = it.popularity
-            this.profilePath = it.profilePath
+            this.profilePath = if (it.profilePath != null)
+                "https://image.tmdb.org/t/p/original${it.profilePath}"
+            else null
             this.character = it.character
             this.creditId = it.creditId
             this.order = it.order.toLong()
@@ -39,7 +41,9 @@ fun CreditsResponse.toSCredits(): List<SCredit>  {
             this.name = it.name
             this.originalName = it.originalName
             this.popularity = it.popularity
-            this.profilePath = it.profilePath
+            this.profilePath = if (it.profilePath != null)
+                "https://image.tmdb.org/t/p/original${it.profilePath}"
+            else null
             this.character = it.job
             this.creditId = it.creditId
             this.crew = true

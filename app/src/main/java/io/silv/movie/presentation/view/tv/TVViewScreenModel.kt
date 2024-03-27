@@ -1,9 +1,17 @@
 package io.silv.movie.presentation.view.tv
 
 import androidx.compose.runtime.Stable
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.data.cache.TVShowCoverCache
+import io.silv.movie.data.credits.CreditRepository
+import io.silv.movie.data.credits.GetRemoteCredits
+import io.silv.movie.data.credits.NetworkToLocalCredit
+import io.silv.movie.data.credits.toDomain
 import io.silv.movie.data.trailers.GetRemoteTrailers
 import io.silv.movie.data.trailers.GetTVShowTrailers
 import io.silv.movie.data.trailers.NetworkToLocalTrailer
@@ -20,15 +28,18 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class TVViewScreenModel(
     private val getTVShowTrailers: GetTVShowTrailers,
@@ -36,6 +47,9 @@ class TVViewScreenModel(
     private val networkToLocalShow: NetworkToLocalTVShow,
     private val networkToLocalTrailer: NetworkToLocalTrailer,
     private val getRemoteShow: GetRemoteTVShows,
+    private val creditRepository: CreditRepository,
+    private val getRemoteCredits: GetRemoteCredits,
+    private val networkToLocalCredit: NetworkToLocalCredit,
     private val getShow: GetShow,
     private val updateShow: UpdateShow,
     private val showCoverCache: TVShowCoverCache,
@@ -74,6 +88,7 @@ class TVViewScreenModel(
                         mutableState.value =
                             ShowDetailsState.Success(show = show)
                         refreshShowInfo()
+                        refreshShowCredits()
                     }
                     else -> {
                         mutableState.value =
@@ -112,6 +127,30 @@ class TVViewScreenModel(
         }
             .launchIn(screenModelScope)
     }
+
+    val credits = Pager(
+        config = PagingConfig(pageSize = 20),
+        pagingSourceFactory = { creditRepository.showCreditsPagingSource(showId) },
+    ).flow
+        .cachedIn(screenModelScope)
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            PagingData.empty()
+        )
+
+
+    private suspend fun refreshShowCredits() {
+        runCatching { getRemoteCredits.awaitShow(showId) }
+            .onSuccess { credits ->
+                Timber.d(credits.toString())
+                for (sCredit in credits) {
+                    networkToLocalCredit.await(sCredit.toDomain(), showId, false)
+                }
+            }
+            .onFailure { Timber.e(it) }
+    }
+
 
 
     private suspend fun refreshShowTrailers() {
@@ -169,7 +208,8 @@ class TVViewScreenModel(
 
             listOf(
                 launch { refreshShowInfo() },
-                launch { refreshShowTrailers() }
+                launch { refreshShowTrailers() },
+                launch { refreshShowCredits() }
             )
                 .joinAll()
 

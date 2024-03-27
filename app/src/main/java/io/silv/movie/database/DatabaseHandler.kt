@@ -16,8 +16,10 @@ limitations under the License.
 
 package io.silv.movie.database
 
+import app.cash.paging.PagingSource
 import app.cash.sqldelight.ExecutableQuery
 import app.cash.sqldelight.Query
+import app.cash.sqldelight.TransacterBase
 import io.silv.Database
 import kotlinx.coroutines.flow.Flow
 
@@ -54,4 +56,11 @@ interface DatabaseHandler {
     fun <T : Any> subscribeToOne(block: Database.() -> Query<T>): Flow<T>
 
     fun <T : Any> subscribeToOneOrNull(block: Database.() -> Query<T>): Flow<T?>
+
+    fun <V : Any> queryPagingSource(
+        countQuery: Database.() -> Query<Long>,
+        transacter: Database.() -> TransacterBase,
+        queryProvider: Database.(limit: Long, offset: Long) -> Query<V>,
+        initialOffset: Long,
+    ): PagingSource<Int, V>
 }

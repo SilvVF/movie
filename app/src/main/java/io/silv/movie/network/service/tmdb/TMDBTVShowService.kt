@@ -25,7 +25,7 @@ interface TMDBTVShowService {
         @Path("id") id: Long,
     ): Call<TVDetailsResponse>
 
-    @GET("{series_id}/credits")
+    @GET("tv/{series_id}/credits")
     fun credits(
         @Path("series_id") id: Long
     ): Call<CreditsResponse>

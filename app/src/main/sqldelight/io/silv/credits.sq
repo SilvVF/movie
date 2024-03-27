@@ -38,13 +38,31 @@ selectByMovieId:
 SELECT credits.*
 FROM movieCredit
 JOIN credits ON credits.id = movieCredit.credit_id
+WHERE movieCredit.movie_id = :movieId
+ORDER BY COALESCE(credits.ordering, 999)
+LIMIT :limit OFFSET :offset;
+
+countCreditsForMovieId:
+SELECT count(*)
+FROM movieCredit
+JOIN credits ON credits.id = movieCredit.credit_id
 WHERE movieCredit.movie_id = :movieId;
+
+countCreditsForShowId:
+SELECT count(*)
+FROM showCredit
+JOIN credits ON credits.id = showCredit.credit_id
+WHERE showCredit.show_id = :movieId;
+
 
 selectByShowId:
 SELECT credits.*
 FROM showCredit
 JOIN credits ON credits.id = showCredit.credit_id
-WHERE showCredit.show_id = :showId;
+WHERE showCredit.show_id = :showId
+ORDER BY COALESCE(credits.ordering, 999)
+LIMIT :limit OFFSET :offset;
+
 
 insertShowCredit:
 INSERT OR IGNORE INTO showCredit(show_id, credit_id)

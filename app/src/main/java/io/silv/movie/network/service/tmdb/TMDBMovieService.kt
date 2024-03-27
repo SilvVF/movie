@@ -33,7 +33,7 @@ interface TMDBMovieService {
         @Query("language") language: String = "en-US"
     ): Call<MovieVideoResponse>
 
-    @GET("{movie_id}/credits")
+    @GET("movie/{movie_id}/credits")
     fun credits(
         @Path("movie_id") id: Long
     ): Call<CreditsResponse>

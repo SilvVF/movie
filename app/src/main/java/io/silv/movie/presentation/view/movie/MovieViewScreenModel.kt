@@ -1,11 +1,17 @@
 package io.silv.movie.presentation.view.movie
 
 import androidx.compose.runtime.Stable
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.credits.CreditRepository
 import io.silv.movie.data.credits.GetRemoteCredits
 import io.silv.movie.data.credits.NetworkToLocalCredit
+import io.silv.movie.data.credits.toDomain
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -22,15 +28,18 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class MovieViewScreenModel(
     private val getMovieTrailers: GetMovieTrailers,
@@ -39,7 +48,7 @@ class MovieViewScreenModel(
     private val networkToLocalTrailer: NetworkToLocalTrailer,
     private val networkToLocalCredit: NetworkToLocalCredit,
     private val getRemoteCredits: GetRemoteCredits,
-
+    private val creditsRepository: CreditRepository,
     private val getRemoteMovie: GetRemoteMovie,
     private val getMovie: GetMovie,
     private val updateMovie: UpdateMovie,
@@ -120,6 +129,27 @@ class MovieViewScreenModel(
             .launchIn(screenModelScope)
     }
 
+    val credits = Pager(
+        config = PagingConfig(pageSize = 20),
+        pagingSourceFactory = { creditsRepository.movieCreditsPagingSource(movieId) },
+    ).flow
+        .cachedIn(screenModelScope)
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            PagingData.empty()
+        )
+
+
+    private suspend fun refreshMovieCredits() {
+        runCatching { getRemoteCredits.awaitMovie(movieId) }
+            .onSuccess { credits ->
+                for (sCredit in credits) {
+                    networkToLocalCredit.await(sCredit.toDomain(), movieId, true)
+                }
+            }
+            .onFailure { Timber.e(it) }
+    }
 
     private suspend fun refreshMovieTrailers() {
 
@@ -175,7 +205,8 @@ class MovieViewScreenModel(
 
             listOf(
                 launch { refreshMovieInfo() },
-                launch { refreshMovieTrailers() }
+                launch { refreshMovieTrailers() },
+                launch { refreshMovieCredits() }
             )
                 .joinAll()
 

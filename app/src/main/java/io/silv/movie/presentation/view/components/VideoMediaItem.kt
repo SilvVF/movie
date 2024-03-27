@@ -95,7 +95,10 @@ fun VideoMediaItem(
                         },
                         tooltip = stringResource(id = R.string.verified),
                         imageVector = Icons.Filled.CheckCircle,
-                        modifier = Modifier.align(Alignment.BottomEnd)
+                        modifier = Modifier
+                            .padding(vertical = 12.dp, horizontal = 12.dp)
+                            .size(18.dp)
+                            .align(Alignment.BottomEnd)
                     )
                 }
             }

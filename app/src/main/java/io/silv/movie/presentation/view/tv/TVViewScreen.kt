@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
@@ -25,22 +24,29 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
+import io.silv.movie.data.credits.Credit
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.toPoster
+import io.silv.movie.presentation.view.CreditsViewScreen
 import io.silv.movie.presentation.view.TVCoverScreenModel
 import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.components.ExpandableMovieDescription
 import io.silv.movie.presentation.view.components.MovieInfoBox
 import io.silv.movie.presentation.view.components.PosterCoverDialog
-import io.silv.movie.presentation.view.components.VideoMediaItem
+import io.silv.movie.presentation.view.components.creditsPagingList
+import io.silv.movie.presentation.view.components.trailersList
 import org.koin.core.parameter.parametersOf
 
 data class TVViewScreen(
@@ -54,6 +60,7 @@ data class TVViewScreen(
     override fun Content() {
         val screenModel = getScreenModel<TVViewScreenModel> { parametersOf(id) }
         val mainScreenModel = getActivityViewModel<PlayerViewModel>()
+        val navigator = LocalNavigator.currentOrThrow
         val changeDialog = remember {
             { dialog: TVViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
         }
@@ -71,11 +78,14 @@ data class TVViewScreen(
                 }
             }
             is ShowDetailsState.Success -> {
+                val credits = screenModel.credits.collectAsLazyPagingItems()
                 TVDetailsContent(
                     state = state,
                     refresh = screenModel::refresh,
+                    creditsProvider = { credits },
                     onPosterClick = { changeDialog(TVViewScreenModel.Dialog.FullCover) },
-                    onVideoThumbnailClick = mainScreenModel::requestMediaQueue
+                    onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
+                    onViewCreditsClick = { navigator.push(CreditsViewScreen(state.show.id, false)) }
                 )
                 val onDismissRequest =  { changeDialog(null) }
                 when (state.dialog) {
@@ -121,7 +131,9 @@ data class TVViewScreen(
 fun TVDetailsContent(
     state: ShowDetailsState.Success,
     refresh: () -> Unit,
+    creditsProvider: () -> LazyPagingItems<Credit>,
     onPosterClick: () -> Unit,
+    onViewCreditsClick: () -> Unit,
     onVideoThumbnailClick: (showId: Long, isMovie: Boolean, trailerId: String) -> Unit
 ) {
     Scaffold { paddingValues ->
@@ -182,25 +194,19 @@ fun TVDetailsContent(
                             }
                         )
                     }
-
-                    items(
-                        items = state.trailers,
-                        key = { it.id }
-                    ) {
-                        VideoMediaItem(
-                            onThumbnailClick = {
-                                onVideoThumbnailClick(state.show.id, false, it.id)
-                            },
-                            item = it,
-                            thumbnailProvider = {
-                                if (it.site == "YouTube") {
-                                    "https://img.youtube.com/vi/${it.key}/0.jpg"
-                                } else {
-                                    ""
-                                }
-                            }
-                        )
-                    }
+                    creditsPagingList(
+                        creditsProvider = creditsProvider,
+                        onCreditClick = {},
+                        onCreditLongClick = {},
+                        onViewClick = onViewCreditsClick
+                    )
+                    trailersList(
+                        trailers = state.trailers,
+                        onClick = {
+                            onVideoThumbnailClick(state.show.id, false, it.id)
+                        },
+                        onYoutubeClick = {}
+                    )
                 }
             }
         }

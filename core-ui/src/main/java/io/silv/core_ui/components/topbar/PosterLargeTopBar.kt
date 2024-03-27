@@ -88,6 +88,7 @@ class PosterTopBarState(
 @Composable
 fun PosterLargeTopBar(
     state: PosterTopBarState,
+    maxHeight: Dp = PosterBarMaxHeight,
     title: @Composable () -> Unit,
     smallTitle: @Composable (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -107,7 +108,7 @@ fun PosterLargeTopBar(
         actions = actions,
         colors = colors,
         windowInsets = windowInsets,
-        maxHeight = PosterBarMaxHeight,
+        maxHeight = maxHeight,
         pinnedHeight = PosterBarPinnedHeight,
         scrollBehavior = state.scrollBehavior,
         extraContent = searchBar,

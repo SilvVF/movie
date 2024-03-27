@@ -5,6 +5,7 @@ import io.silv.movie.core.await
 import io.silv.movie.network.model.toSCredits
 import io.silv.movie.network.service.tmdb.TMDBMovieService
 import io.silv.movie.network.service.tmdb.TMDBTVShowService
+import timber.log.Timber
 
 class GetRemoteCredits(
     private val tmdbMovieService: TMDBMovieService,
@@ -18,6 +19,7 @@ class GetRemoteCredits(
                 .toSCredits()
 
         }
+            .onFailure { Timber.e(it) }
             .getOrDefault(emptyList())
     }
 
@@ -27,6 +29,7 @@ class GetRemoteCredits(
                 .body()!!
                 .toSCredits()
         }
+            .onFailure { Timber.e(it) }
             .getOrDefault(emptyList())
     }
 }

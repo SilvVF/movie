@@ -4,6 +4,12 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import io.silv.movie.data.credits.CreditRepository
+import io.silv.movie.data.credits.CreditRepositoryImpl
+import io.silv.movie.data.credits.GetMovieCredits
+import io.silv.movie.data.credits.GetRemoteCredits
+import io.silv.movie.data.credits.GetTVShowCredits
+import io.silv.movie.data.credits.NetworkToLocalCredit
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.ContentListRepositoryImpl
 import io.silv.movie.data.lists.GetFavoritesList
@@ -82,7 +88,17 @@ val dataModule =
 
         factoryOf(::NetworkToLocalTrailer)
 
+        factoryOf(::NetworkToLocalCredit)
+
+        factoryOf(::GetRemoteCredits)
+
+        factoryOf(::GetMovieCredits)
+
+        factoryOf(::GetTVShowCredits)
+
         factoryOf(::GetRemoteTrailers)
+
+        singleOf(::CreditRepositoryImpl) { bind<CreditRepository>() }
 
         singleOf(::ContentListRepositoryImpl) { bind<ContentListRepository>() }
 
