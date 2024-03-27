@@ -89,7 +89,6 @@ class MovieViewScreenModel(
                         mutableState.value =
                             MovieDetailsState.Success(movie = movie)
                         refreshMovieInfo()
-                        refreshMovieCredits()
                     }
 
                     else -> {
@@ -97,6 +96,7 @@ class MovieViewScreenModel(
                             MovieDetailsState.Success(movie = movie)
                     }
                 }
+                refreshMovieCredits()
             } catch (e: Exception) {
                 mutableState.value =  MovieDetailsState.Error
             }
@@ -122,7 +122,7 @@ class MovieViewScreenModel(
                 }
         }
 
-        getMovie.subscribe(movieId).onEach { new ->
+        getMovie.subscribeOrNull(movieId).filterNotNull().onEach { new ->
             mutableState.updateSuccess {
                 it.copy(movie = new)
             }
@@ -145,9 +145,10 @@ class MovieViewScreenModel(
     private suspend fun refreshMovieCredits() {
         runCatching { getRemoteCredits.awaitMovie(movieId) }
             .onSuccess { credits ->
+                val movie = state.value.success?.movie
                 for (sCredit in credits) {
                     networkToLocalCredit.await(
-                        sCredit.toDomain(),
+                        sCredit.toDomain().copy(posterPath = movie?.posterUrl, title = movie?.title.orEmpty()),
                         movieId,
                         true
                     )

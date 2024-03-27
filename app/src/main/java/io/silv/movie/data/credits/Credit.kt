@@ -1,14 +1,10 @@
 package io.silv.movie.data.credits
 
-import io.silv.core_ui.components.PosterData
-
-data class CreditWithPoster(
-    val credit: Credit,
-    val posterData: PosterData
-)
 
 data class Credit(
     val creditId: String,
+    val contentId: Long,
+    val isMovie: Boolean,
     val adult: Boolean,
     val gender: Long,
     val knownForDepartment: String,
@@ -19,7 +15,9 @@ data class Credit(
     val character: String,
     val crew: Boolean,
     val order: Long?,
-    val personId: Long?
+    val personId: Long?,
+    val posterPath: String?,
+    val title: String
 )
 
 fun io.silv.movie.core.SCredit.toDomain(): Credit {
@@ -35,7 +33,11 @@ fun io.silv.movie.core.SCredit.toDomain(): Credit {
         creditId = creditId,
         crew = crew,
         order = order,
-        personId = personId
+        personId = personId,
+        posterPath = null,
+        contentId = -1,
+        isMovie = false,
+        title = ""
     )
 }
 
@@ -53,6 +55,7 @@ data class CreditUpdate(
     val title: String? = null,
     val order: Long? = null,
     val personId: Long? = null,
+    val posterPath: String?,
 )
 
 fun Credit.toCreditUpdate(): CreditUpdate {
@@ -68,7 +71,8 @@ fun Credit.toCreditUpdate(): CreditUpdate {
         character = character,
         crew = crew,
         order = order,
-        personId = personId
+        personId = personId,
+        posterPath = posterPath
     )
 }
 

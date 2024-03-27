@@ -12,6 +12,7 @@ class NetworkToLocalCredit(
             else -> {
                 val new = localCredit.copy(
                     creditId = localCredit.creditId,
+                    title = localCredit.title.ifBlank { credit.title },
                     name = localCredit.name.ifBlank { credit.name },
                     adult = localCredit.adult,
                     gender = credit.gender.takeIf { it != -1L } ?: localCredit.gender,
@@ -22,7 +23,8 @@ class NetworkToLocalCredit(
                     character = credit.character.ifBlank { localCredit.character },
                     crew = credit.crew,
                     order = credit.order ?: localCredit.order,
-                    personId = credit.personId ?: localCredit.personId
+                    personId = credit.personId ?: localCredit.personId,
+                    posterPath = credit.posterPath ?: localCredit.posterPath
                 )
                 creditRepository.updateCredit(new.toCreditUpdate())
                 new

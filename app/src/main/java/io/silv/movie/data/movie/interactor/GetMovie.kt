@@ -18,7 +18,7 @@ class GetMovie(
     }
 
     fun subscribeOrNull(id: Long): Flow<Movie?> {
-        return movieRepository.observeMovieById(id)
+        return movieRepository.observeMovieByIdOrNull(id)
     }
 
     fun subscribe(id: Long): Flow<Movie> {

@@ -77,14 +77,6 @@ import io.silv.movie.data.credits.Credit
 import io.silv.movie.data.credits.CreditRepository
 import io.silv.movie.data.credits.NetworkToLocalCredit
 import io.silv.movie.data.credits.toDomain
-import io.silv.movie.data.movie.interactor.GetMovie
-import io.silv.movie.data.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.tv.interactor.GetRemoteTVShows
-import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.tv.model.toDomain
 import io.silv.movie.network.model.toSCredit
 import io.silv.movie.network.service.tmdb.TMDBPersonService
 import io.silv.movie.presentation.view.components.ExpandableSummary
@@ -115,12 +107,6 @@ class PersonViewScreenModel(
     private val creditsRepository: CreditRepository,
     private val personService: TMDBPersonService,
     private val networkToLocalCredit: NetworkToLocalCredit,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val getRemoteTVShows: GetRemoteTVShows,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
     private val personId: Long,
     private val profilePath: String,
 ): StateScreenModel<PersonViewState>(PersonViewState.Loading) {
@@ -169,7 +155,6 @@ class PersonViewScreenModel(
                 }
             }
             runCatching {
-                Timber.d(personId.toString())
                 val credits = personService.combinedCredits(personId.toString())
                     .await()
                     .body()!!
@@ -177,14 +162,18 @@ class PersonViewScreenModel(
                 credits.cast.forEach { cast ->
                     val credit = cast.toSCredit().toDomain().copy(
                         personId = personId,
-                        profilePath = profilePath
+                        title = cast.title ?: cast.originalTitle.orEmpty(),
+                        profilePath = profilePath,
+                        posterPath = "https://image.tmdb.org/t/p/original${cast.posterPath}".takeIf { cast.posterPath.orEmpty().isNotBlank() }
                     )
                     insertCreditWithContent(credit, cast.id.toLong(), cast.mediaType == "movie")
                 }
                 credits.crew.forEach { crew ->
                     val credit = crew.toSCredit().toDomain().copy(
                         personId = personId,
-                        profilePath = profilePath
+                        title = crew.title,
+                        profilePath = profilePath,
+                        posterPath =  "https://image.tmdb.org/t/p/original${crew.posterPath}".takeIf { crew.posterPath.orEmpty().isNotBlank() }
                     )
                     insertCreditWithContent(credit, crew.id.toLong(), crew.mediaType == "movie")
                 }
@@ -199,41 +188,16 @@ class PersonViewScreenModel(
         credit: Credit,
         contentId: Long,
         isMovie: Boolean,
-    ) {
-        Timber.d(
-            "inserting $credit, $contentId, $isMovie"
-        )
-        runCatching {
-            if (isMovie) {
-                if (getMovie.await(contentId) == null) {
-                    networkToLocalMovie.await(
-                        getRemoteMovie.awaitOne(contentId)!!.toDomain()
-                    )
-                }
-                networkToLocalCredit.await(
+    ): Credit? {
+        Timber.d("inserting $credit, $contentId, $isMovie")
+        return runCatching {
+            networkToLocalCredit.await(
                     credit,
                     contentId,
-                    true
-                ).also {
-                    Timber.d(it.toString())
-                }
-            } else {
-                if (getShow.await(contentId) == null) {
-                    networkToLocalTVShow.await(
-                        getRemoteTVShows.awaitOne(contentId)!!.toDomain()
-                    )
-                }
-                networkToLocalCredit.await(
-                    credit,
-                    contentId,
-                    false
-                ).also {
-                    Timber.d(it.toString())
-                }
+                    isMovie
+                )
             }
-        }
-            .onSuccess { Timber.d("inserted $credit, $contentId, $isMovie") }
-            .onFailure { Timber.d(it) }
+            .getOrNull()
     }
 
     val credits = Pager(
@@ -304,8 +268,6 @@ data class PersonViewScreen(
 
         val navigator = LocalNavigator.currentOrThrow
         val hazeState = remember { HazeState() }
-        val context = LocalContext.current
-
         val primary by rememberDominantColor(data = posterPath)
         val background = MaterialTheme.colorScheme.background
         val topBarState = rememberPosterTopBarState()
@@ -430,7 +392,7 @@ data class PersonViewScreen(
                 }
                 items(
                     count = credits.itemCount,
-                    key = credits.itemKey { it.credit.creditId }
+                    key = credits.itemKey { it.creditId }
                 ) {
                     val credit = credits[it] ?: return@items
                     Row(
@@ -439,10 +401,10 @@ data class PersonViewScreen(
                             .heightIn(0.dp, 72.dp)
                             .colorClickable {
                                 navigator.push(
-                                    if(credit.posterData.isMovie) {
-                                        MovieViewScreen(credit.posterData.id)
+                                    if(credit.isMovie) {
+                                        MovieViewScreen(credit.contentId)
                                     } else {
-                                        TVViewScreen(credit.posterData.id)
+                                        TVViewScreen(credit.contentId)
                                     }
                                 )
                             },
@@ -454,7 +416,7 @@ data class PersonViewScreen(
                                 .weight(0.2f, fill = false)
                                 .fillMaxHeight()
                         ) {
-                            ItemCover.Square(credit.posterData)
+                            ItemCover.Square(credit.posterPath)
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(
@@ -465,13 +427,13 @@ data class PersonViewScreen(
                             horizontalAlignment = Alignment.Start
                         ) {
                             Text(
-                                text = credit.posterData.title,
+                                text = credit.title,
                                 maxLines = 2,
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = credit.credit.character,
+                                text = credit.character,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 modifier = Modifier.graphicsLayer { alpha = 0.78f }

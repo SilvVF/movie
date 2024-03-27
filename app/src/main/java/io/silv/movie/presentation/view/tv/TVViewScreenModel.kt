@@ -88,13 +88,13 @@ class TVViewScreenModel(
                         mutableState.value =
                             ShowDetailsState.Success(show = show)
                         refreshShowInfo()
-                        refreshShowCredits()
                     }
                     else -> {
                         mutableState.value =
                             ShowDetailsState.Success(show = show)
                     }
                 }
+                refreshShowCredits()
             }catch (e: Exception) {
                 mutableState.value = ShowDetailsState.Error
             }
@@ -120,7 +120,7 @@ class TVViewScreenModel(
                 }
         }
 
-        getShow.subscribe(showId).onEach { new ->
+        getShow.subscribeOrNull(showId).filterNotNull().onEach { new ->
             mutableState.updateSuccess {
                 it.copy(show = new)
             }
@@ -143,10 +143,13 @@ class TVViewScreenModel(
     private suspend fun refreshShowCredits() {
         runCatching { getRemoteCredits.awaitShow(showId) }
             .onSuccess { credits ->
+                val show =  state.value.success?.show
                 Timber.d(credits.toString())
                 for (sCredit in credits) {
                     networkToLocalCredit.await(
-                        sCredit.toDomain(), showId, false
+                        sCredit.toDomain().copy(posterPath = show?.posterUrl, title = show?.title.orEmpty()),
+                        showId,
+                        false
                     )
                 }
             }

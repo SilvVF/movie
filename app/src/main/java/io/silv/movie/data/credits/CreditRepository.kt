@@ -10,7 +10,7 @@ interface CreditRepository {
     suspend fun getByShowId(showId: Long): List<Credit>
     fun showCreditsPagingSource(showId: Long): PagingSource<Int, Credit>
     fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, Credit>
-    fun personCreditsPagingSource(personId: Long): PagingSource<Int, CreditWithPoster>
+    fun personCreditsPagingSource(personId: Long): PagingSource<Int, Credit>
 }
 
 class CreditRepositoryImpl(
@@ -33,16 +33,18 @@ class CreditRepositoryImpl(
                 ordering = credit.order,
                 personId = credit.personId,
                 movieId = contentId.takeIf { isMovie },
-                showId = contentId.takeIf { !isMovie }
+                showId = contentId.takeIf { !isMovie },
+                posterPath = credit.posterPath,
+                title = credit.title
             )
         }
     }
 
-    override fun personCreditsPagingSource(personId: Long): PagingSource<Int, CreditWithPoster> = handler.queryPagingSource(
+    override fun personCreditsPagingSource(personId: Long): PagingSource<Int, Credit> = handler.queryPagingSource(
         countQuery = { creditsQueries.countCreditsForPersonId(personId) },
         initialOffset = 0L,
         queryProvider = { limit, offset ->
-            creditsQueries.selectByPersonId(personId, limit, offset, CreditsMapper.mapCreditWithPoster)
+            creditsQueries.selectByPersonId(personId, limit, offset, CreditsMapper.mapCredit)
         },
         transacter = { creditsQueries }
     )
@@ -101,7 +103,10 @@ class CreditRepositoryImpl(
                     crew = update.crew,
                     ordering = update.order,
                     personId = update.personId,
-                    id = update.creditId
+                    id = update.creditId,
+                    posterPath = update.posterPath,
+                    profilePath = update.profilePath,
+                    title = update.title
                 )
             }
         }
