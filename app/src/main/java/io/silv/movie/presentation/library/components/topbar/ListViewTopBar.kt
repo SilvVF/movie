@@ -74,6 +74,7 @@ fun ListViewTopBar(
     changeSortMode: (ListSortMode) -> Unit,
     onPosterClick: () -> Unit,
     primary: Color,
+    isUserMe: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val background = MaterialTheme.colorScheme.background
@@ -107,7 +108,8 @@ fun ListViewTopBar(
                         name = list.name,
                         userId = userId,
                         username = username.orEmpty(),
-                        description = description
+                        description = description,
+                        isUserMe = isUserMe
                     )
                 } else {
                     Text(list.name)
@@ -123,7 +125,7 @@ fun ListViewTopBar(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
-                            model = UserProfileImageData(userId),
+                            model = UserProfileImageData(userId, isUserMe),
                             error = painterResource(id = R.drawable.user_default_proflie_icon),
                             modifier = Modifier
                                 .size(22.dp)
@@ -132,9 +134,9 @@ fun ListViewTopBar(
                             contentDescription = null,
                             contentScale = ContentScale.Crop
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            username.orEmpty(),
+                            list.name,
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
@@ -188,7 +190,8 @@ fun TitleWithProfilePicture(
     name: String,
     userId: String,
     username: String,
-    description: String
+    description: String,
+    isUserMe: Boolean,
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
@@ -204,7 +207,7 @@ fun TitleWithProfilePicture(
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = UserProfileImageData(userId),
+                model = UserProfileImageData(userId, isUserMe),
                 error = painterResource(id = R.drawable.user_default_proflie_icon),
                 modifier = Modifier
                     .size(28.dp)

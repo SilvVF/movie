@@ -12,24 +12,20 @@ import io.github.jan.supabase.gotrue.SessionStatus
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
+import io.silv.movie.data.lists.AddContentItemToList
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.lists.toUpdate
-import io.silv.movie.data.movie.interactor.GetMovie
-import io.silv.movie.data.movie.interactor.UpdateMovie
-import io.silv.movie.data.movie.model.toMovieUpdate
+import io.silv.movie.data.lists.DeleteContentList
+import io.silv.movie.data.lists.EditContentList
+import io.silv.movie.data.lists.RemoveContentItemFromList
+import io.silv.movie.data.lists.ToggleContentItemFavorite
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.recommendation.RecommendationManager
-import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.data.tv.interactor.UpdateShow
-import io.silv.movie.data.tv.model.toShowUpdate
-import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListUpdateManager
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
-import io.silv.movie.data.user.toUserListUpdate
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -38,34 +34,30 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import timber.log.Timber
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
     private val recommendationManager: RecommendationManager,
-    private val updateShow: UpdateShow,
-    private val updateMovie: UpdateMovie,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
-    private val listRepository: ListRepository,
+    private val deleteContentList: DeleteContentList,
     private val userRepository: UserRepository,
     private val listUpdateManager: ListUpdateManager,
+    private val addContentItemToList: AddContentItemToList,
     private val movieCoverCache: MovieCoverCache,
     private val showCoverCache: TVShowCoverCache,
+    private val editContentList: EditContentList,
+    private val toggleContentItemFavorite: ToggleContentItemFavorite,
+    private val removeContentItemFromList: RemoveContentItemFromList,
     private val auth: Auth,
     libraryPreferences: LibraryPreferences,
 
@@ -82,28 +74,90 @@ class ListViewScreenModel(
     var listViewDisplayMode by libraryPreferences.listViewDisplayMode().asState(screenModelScope)
         private set
 
+    private val listIdFlow = state.map { it.success?.list?.id }.filterNotNull().distinctUntilChanged()
     private var initializeJob: Job? = null
-
-    private var observing = false
-    private val mutex = Mutex()
 
     init {
         initializeList()
 
-        state.map { it.success?.list?.id }
+        state.map { it.success?.list?.createdBy }
             .filterNotNull()
             .distinctUntilChanged()
-            .onEach { id ->
-                mutex.withLock {
-                    if (!observing) {
-                        observing = true
-                        observeList(id)
-                        observeRecommendation(id)
-                        observeSearchItems(id)
-                        updateUser(state.value.success?.list?.createdBy.orEmpty())
+            .onEach { userId ->
+                val user = userRepository.getUser(userId)
+
+                mutableState.updateSuccess { state ->
+                    state.copy(user = user)
+                }
+
+                auth.sessionStatus.collect { status ->
+                    val id =  when(status) {
+                        is SessionStatus.Authenticated -> status.session.user?.id
+                        else -> null
+                    }
+                    mutableState.updateSuccess { state ->
+                        state.copy(
+                            isOwnerMe = id == state.list.createdBy || state.list.createdBy == null
+                        )
                     }
                 }
             }
+            .launchIn(screenModelScope)
+
+        listIdFlow.flatMapLatest { id ->
+            combine(
+                recommendationManager.subscribe(id).map { it.take(6) },
+                recommendationManager.isRunning(id)
+            ) {  recommendations, isRunning ->
+
+                mutableState.updateSuccess { state ->
+                    state.copy(
+                        refreshingRecommendations = isRunning,
+                        recommendations = recommendations.toImmutableList()
+                    )
+                }
+            }
+        }
+            .launchIn(screenModelScope)
+
+       listIdFlow.flatMapLatest { id ->
+            state.map { it.success?.sortMode }
+                .filterNotNull()
+                .distinctUntilChanged()
+                .combine(
+                    snapshotFlow { query },
+                ) { a, b -> a to b }
+                .mapLatest { (sortMode, search) ->
+                    contentListRepository
+                        .observeListItemsByListId(id, search, sortMode)
+                        .collect { content ->
+                            mutableState.updateSuccess { state ->
+                                state.copy(items = content.toImmutableList())
+                            }
+                        }
+                }
+        }
+           .launchIn(screenModelScope)
+
+        listIdFlow.flatMapLatest { id ->
+            combine(
+                contentListRepository.observeListById(id),
+                contentListRepository.observeListItemsByListId(id, "", ListSortMode.Title),
+            ) { list, items ->
+
+                if (list == null) {
+                    mutableState.value = ListViewState.Error("No list found")
+                    return@combine
+                } else {
+                    mutableState.updateSuccess {state ->
+                        state.copy(
+                            list = list,
+                            allItems = items.toImmutableList()
+                        )
+                    }
+                }
+            }
+        }
             .launchIn(screenModelScope)
 
         listSortMode.changes()
@@ -159,94 +213,12 @@ class ListViewScreenModel(
 
                 ListViewState.Success(
                     list = list,
-                    isOwnerMe = auth.currentUserOrNull()?.id == null || list.createdBy == auth.currentUserOrNull()?.id,
+                    isOwnerMe = list.createdBy == auth.currentUserOrNull()?.id || list.createdBy == null,
                     allItems = items.toImmutableList(),
                     sortMode = listSortMode.get()
                 )
             }
         }
-    }
-
-    private fun updateUser(userId: String) {
-        screenModelScope.launch {
-            val user = userRepository.getUser(userId)
-
-            mutableState.updateSuccess { state ->
-                state.copy(user = user)
-            }
-
-            auth.sessionStatus.onEach { status ->
-                val id =  when(status) {
-                    is SessionStatus.Authenticated -> status.session.user?.id
-                    else -> null
-                }
-                mutableState.updateSuccess { state ->
-                    state.copy(
-                        isOwnerMe = id == state.list.createdBy || state.list.createdBy == null
-                    )
-                }
-            }
-                .launchIn(this)
-        }
-    }
-
-    private fun observeSearchItems(id: Long) {
-        screenModelScope.launch {
-
-            state.map { it.success?.sortMode }
-                .filterNotNull()
-                .distinctUntilChanged()
-                .combine(
-                    snapshotFlow { query }
-                ) { a, b -> a to b }
-                .collectLatest { (sortMode, search) ->
-
-                    contentListRepository
-                        .observeListItemsByListId(id, search, sortMode)
-                        .collect { content ->
-                            mutableState.updateSuccess { state ->
-                                state.copy(items = content.toImmutableList())
-                            }
-                        }
-                }
-        }
-    }
-
-    private fun observeRecommendation(id: Long) {
-        combine(
-            recommendationManager.subscribe(id).map { it.take(6) },
-            recommendationManager.isRunning(id)
-        ) {  recommendations, isRunning ->
-
-            mutableState.updateSuccess { state ->
-                state.copy(
-                    refreshingRecommendations = isRunning,
-                    recommendations = recommendations.toImmutableList()
-                )
-            }
-        }
-            .launchIn(screenModelScope)
-    }
-
-    private fun observeList(id: Long) {
-        combine(
-            contentListRepository.observeListById(id),
-            contentListRepository.observeListItemsByListId(id, "", ListSortMode.Title)
-        ) { list, items ->
-
-            if (list == null) {
-                mutableState.value = ListViewState.Error("No list found")
-                return@combine
-            } else {
-                mutableState.updateSuccess {state ->
-                    state.copy(
-                        list = list,
-                        allItems = items.toImmutableList()
-                    )
-                }
-            }
-        }
-            .launchIn(screenModelScope)
     }
 
     fun updateQuery(q: String) {
@@ -259,34 +231,40 @@ class ListViewScreenModel(
 
     fun editDescription(description: String) {
         screenModelScope.launch {
-            val prev = state.value.success?.list ?: return@launch
-            val new = prev.copy(description = description)
-
-            if (new.supabaseId != null) {
-                val result = listRepository.updateList(new.toUserListUpdate())
-                if (!result)
-                    return@launch
+            val list = state.value.success?.list ?: return@launch
+            editContentList.await(list) { prev ->
+                prev.copy(description = description)
             }
-            Timber.d(new.toString())
-
-            contentListRepository.updateList(new.toUpdate())
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToEditListDescription)
+                }
         }
     }
 
+    fun toggleListPublic() {
+        screenModelScope.launch {
+            val list = state.value.success?.list ?: return@launch
+            editContentList.await(list) { prev ->
+                prev.copy(public = !prev.public)
+            }
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToUpdateListVisibilty)
+                }
+                .onSuccess {
+                    emitEvent(ListViewEvent.UpdatedListVisibility)
+                }
+        }
+    }
+
+
     fun editList(prev: ContentList, name: String) {
         screenModelScope.launch {
-            val new = prev.copy(name = name)
-
-            Timber.d(new.toString())
-
-            if (new.supabaseId != null) {
-               val result = listRepository.updateList(new.toUserListUpdate())
-               if (!result)
-                   return@launch
+            editContentList.await(prev) { prev ->
+                prev.copy(name = name)
             }
-            Timber.d(new.toString())
-
-            contentListRepository.updateList(new.toUpdate())
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToEditListName)
+                }
         }
     }
 
@@ -312,108 +290,60 @@ class ListViewScreenModel(
 
     fun toggleItemFavorite(contentItem: ContentItem) {
         screenModelScope.launch {
-            if (contentItem.isMovie) {
-                val movie = getMovie.await(contentItem.contentId) ?: return@launch
-                val new = movie.copy(favorite = !movie.favorite)
-                if(!new.favorite && !new.inList) {
-                    movieCoverCache.deleteFromCache(movie)
-                }
-                updateMovie.await(new.toMovieUpdate())
-            } else {
-                val show = getShow.await(contentItem.contentId) ?: return@launch
-                val new = show.copy(favorite = !show.favorite)
-                if(!new.favorite && !new.inList) {
-                    showCoverCache.deleteFromCache(show)
-                }
-                updateShow.await(new.toShowUpdate())
-            }
+           toggleContentItemFavorite.await(
+               contentItem = contentItem,
+               changeOnNetwork = auth.currentUserOrNull() != null
+           )
         }
     }
 
     fun deleteList() {
         screenModelScope.launch {
             val state = state.value.success ?: return@launch
-            runCatching {
-
-                if (state.list.supabaseId != null) {
-                    val result = listRepository.deleteList(state.list.supabaseId)
-
-                    if (!result)
-                        return@launch
+            deleteContentList.await(state.list, movieCoverCache, showCoverCache)
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToRemoveListFromNetwork)
                 }
-                supervisorScope {
-                    if (state.list.inLibrary) {
-                        for (item in state.items) {
-                            deleteContentItemFromCache(item)
-                        }
-                    }
-                }
-                contentListRepository.deleteList(state.list)
-            }
                 .onSuccess {
                     emitEvent(ListViewEvent.ListDeleted)
                 }
         }
     }
 
-    private suspend fun deleteContentItemFromCache(item: ContentItem) {
-        if (item.inLibraryLists == 1L && !item.favorite) {
-            if (item.isMovie) {
-                val movie = getMovie.await(item.contentId) ?: return
-                movieCoverCache.deleteFromCache(movie)
-            } else {
-                val show = getShow.await(item.contentId) ?: return
-                showCoverCache.deleteFromCache(show)
-            }
-        }
-    }
-
-
     fun removeFromList(contentItem: ContentItem)  {
         screenModelScope.launch {
             val list = state.value.success?.list ?: return@launch
-
-            if (list.supabaseId != null) {
-                val result = if (contentItem.isMovie) {
-                    listRepository.deleteMovieFromList(contentItem.contentId, list)
-                } else {
-                    listRepository.deleteShowFromList(contentItem.contentId, list)
+            removeContentItemFromList.await(contentItem, list, movieCoverCache, showCoverCache)
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToDeleteFromNetwork)
                 }
-
-                if (!result)
-                    return@launch
-            }
-            deleteContentItemFromCache(contentItem)
-            if (contentItem.isMovie) {
-                contentListRepository.removeMovieFromList(contentItem.contentId, list)
-            } else {
-                contentListRepository.removeShowFromList(contentItem.contentId, list)
-            }
         }
     }
 
+    fun addToAnotherList(contentItem: ContentItem, listId: Long) {
+        screenModelScope.launch {
+            val list = contentListRepository.getList(listId) ?: return@launch
+            addContentItemToList.await(contentItem, list)
+                .onSuccess {
+                    recommendationManager.removeRecommendation(contentItem, list.id)
+                    emitEvent(ListViewEvent.AddedToAnotherList(list, contentItem))
+                }
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToAddToNetwork)
+                }
+        }
+    }
 
     fun addToList(contentItem: ContentItem) {
         screenModelScope.launch {
             val list = state.value.success?.list ?: return@launch
-
-            if (list.supabaseId != null) {
-                val result = if (contentItem.isMovie) {
-                    listRepository.addMovieToList(contentItem.contentId, list)
-                } else {
-                    listRepository.addShowToList(contentItem.contentId, list)
+            addContentItemToList.await(contentItem, list)
+                .onSuccess {
+                    recommendationManager.removeRecommendation(contentItem, list.id)
                 }
-
-                if (!result)
-                    return@launch
-            }
-
-            if (contentItem.isMovie) {
-                contentListRepository.addMovieToList(contentItem.contentId, list)
-            } else {
-                contentListRepository.addShowToList(contentItem.contentId, list)
-            }
-            recommendationManager.removeRecommendation(contentItem, list.id)
+                .onFailure {
+                    emitEvent(ListViewEvent.FailedToAddToNetwork)
+                }
         }
     }
 
@@ -456,6 +386,14 @@ class ListViewScreenModel(
 
 sealed interface ListViewEvent {
     data object ListDeleted: ListViewEvent
+    data object FailedToAddToNetwork: ListViewEvent
+    data class AddedToAnotherList(val list: ContentList, val item: ContentItem): ListViewEvent
+    data object FailedToDeleteFromNetwork: ListViewEvent
+    data object FailedToRemoveListFromNetwork: ListViewEvent
+    data object FailedToEditListName: ListViewEvent
+    data object UpdatedListVisibility: ListViewEvent
+    data object FailedToUpdateListVisibilty: ListViewEvent
+    data object FailedToEditListDescription: ListViewEvent
 }
 
 sealed interface ListSortMode {

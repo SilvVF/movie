@@ -171,7 +171,7 @@ class PersonViewScreenModel(
                 credits.crew.forEach { crew ->
                     val credit = crew.toSCredit().toDomain().copy(
                         personId = personId,
-                        title = crew.title,
+                        title = crew.title.ifBlank { crew.originalTitle },
                         profilePath = profilePath,
                         posterPath =  "https://image.tmdb.org/t/p/original${crew.posterPath}".takeIf { crew.posterPath.orEmpty().isNotBlank() }
                     )

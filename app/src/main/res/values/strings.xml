@@ -99,4 +99,13 @@
     <string name="add_to_favorites">Add to favorites list</string>
     <string name="remove_from_favorite">Remove from favorites list</string>
     <string name="option_remove_from_list">Remove from this list</string>
+    <string name="failed_to_add_list_to_network">Failed adding item to list</string>
+    <string name="failed_to_delete_list_item">Failed to delete item from list</string>
+    <string name="failed_to_edit_description">Failed to edit list description</string>
+    <string name="failed_to_edit_list_name">Failed to edit list name</string>
+    <string name="failed_to_delete_list">Failed to delete list from network</string>
+    <string name="failed_to_make_public">Failed to make list public</string>
+    <string name="made_list_public">List is now public</string>
+    <string name="added_to_another_list">Added %1s to list %2s</string>
+    <string name="add_to_a_list">Select a list to add %1s</string>
 </resources>

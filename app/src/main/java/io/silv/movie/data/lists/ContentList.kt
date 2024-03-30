@@ -22,7 +22,7 @@ data class ContentList(
 ): Parcelable
 
 fun ContentList.toUpdate(): ContentListUpdate {
-    return ContentListUpdate(id, name, username, description, posterLastModified)
+    return ContentListUpdate(id, name, username, description, posterLastModified, public)
 }
 
 data class ContentListUpdate(
@@ -32,6 +32,7 @@ data class ContentListUpdate(
     val description: String? = null,
     val posterLastUpdated: Long? = null,
     val inLibrary: Boolean? = null,
+    val public: Boolean? = null
 )
 
 fun MoviePoster.toContentItem(): ContentItem {

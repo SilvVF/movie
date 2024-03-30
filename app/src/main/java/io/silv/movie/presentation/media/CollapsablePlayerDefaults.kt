@@ -118,7 +118,11 @@ private fun RerorderableVideoQueueItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.wrapContentSize(),
         ) {
-            if (idx != 1) {
+            if (idx == 0) {
+                AnimatedEqualizer(
+                    onClick = mutePlayer
+                )
+            } else {
                 Icon(
                     imageVector = Icons.Default.DragHandle,
                     contentDescription = null,
@@ -126,10 +130,6 @@ private fun RerorderableVideoQueueItem(
                         .padding(2.dp)
                         .detectReorder(reorderableState),
                     tint = MaterialTheme.colorScheme.surfaceTint
-                )
-            } else {
-                AnimatedEqualizer(
-                    onClick = mutePlayer
                 )
             }
             val cardShape = CardDefaults.elevatedShape

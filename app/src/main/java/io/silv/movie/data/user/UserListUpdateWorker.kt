@@ -41,6 +41,7 @@ class UserListUpdateWorker (
     private val getRemoteMovie: GetRemoteMovie,
     private val networkToLocalMovie: NetworkToLocalMovie,
     private val networkToLocalTVShow: NetworkToLocalTVShow,
+    private val userRepository: UserRepository,
 
     appContext: Context,
     private val params: WorkerParameters
@@ -51,7 +52,7 @@ class UserListUpdateWorker (
         val user = auth.currentUserOrNull()!!
         val userCreated = listRepository.selectListsByUserId(user.id)!!
         val subscriptions = listRepository.selectSubscriptions(user.id).orEmpty()
-
+        val username = userRepository.getUser(user.id)?.username
 
         val network = userCreated + subscriptions
 
@@ -74,6 +75,9 @@ class UserListUpdateWorker (
                         description = list.description,
                         lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
                         name = list.name,
+                        username = username ?: local.username,
+                        public = list.public,
+                        createdBy = user.id,
                         lastSynced = Clock.System.now().toEpochMilliseconds()
                     )
                         .toUpdate()

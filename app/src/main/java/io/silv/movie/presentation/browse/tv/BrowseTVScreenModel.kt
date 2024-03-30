@@ -16,23 +16,23 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
-import io.silv.movie.data.cache.TVShowCoverCache
+import io.silv.movie.data.lists.ToggleContentItemFavorite
+import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
 import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.data.tv.model.toDomain
-import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.data.tv.repository.SourceTVRepository
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -55,9 +55,9 @@ class TVScreenModel(
     private val getRemoteTVShow: GetRemoteTVShows,
     private val networkToLocalMovie: NetworkToLocalTVShow,
     private val getShow: GetShow,
-    private val updateShow: UpdateShow,
+    private val auth: Auth,
     private val sourceRepository: SourceTVRepository,
-    private val coverCache: TVShowCoverCache,
+    private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val networkMonitor: NetworkMonitor,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
@@ -165,14 +165,10 @@ class TVScreenModel(
 
     fun toggleShowFavorite(tvShow: TVShowPoster) {
         screenModelScope.launch {
-            val update = getShow.await(tvShow.id) ?: return@launch
-
-            val new = update.copy(favorite = !tvShow.favorite)
-
-            if(!new.favorite) {
-                coverCache.deleteFromCache(update)
-            }
-            updateShow.await(new.toShowUpdate())
+            toggleContentItemFavorite.await(
+                tvShow.toContentItem(),
+                changeOnNetwork = auth.currentUserOrNull() != null
+            )
         }
     }
 

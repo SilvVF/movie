@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -31,9 +32,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,7 +61,6 @@ import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.util.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ReorderableLazyListState
@@ -102,9 +104,8 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
         }
     }
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { state.currentValue }
-            .collectLatest { initial = it }
+    DisposableEffect(Unit) {
+        onDispose { initial = state.currentValue  }
     }
 
     val fullScreenVideoDraggable = remember {
@@ -126,7 +127,13 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
 
     val scope =  rememberCoroutineScope()
 
-    return remember { CollapsableVideoState(state, fullScreenVideoDraggable, scope) }
+    return remember {
+        CollapsableVideoState(
+            state,
+            fullScreenVideoDraggable,
+            scope
+        )
+    }
 }
 
 class CollapsableVideoState(
@@ -176,8 +183,8 @@ private class CollapsableVideoLayoutScrollConnection(
     scope: CoroutineScope,
 ): NestedScrollConnection {
 
-    var allowedToScroll = true
-    var preFlingIdx = 0
+    var canConsumeDelta by mutableStateOf(true)
+    var preFlingIdx by mutableIntStateOf(0)
 
     init {
         // block nested scrolling when the user scrolls the list up
@@ -185,7 +192,7 @@ private class CollapsableVideoLayoutScrollConnection(
         scope.launch {
             snapshotFlow { lazyListState.isScrollInProgress }.collectLatest { scrolling ->
 
-                allowedToScroll = lazyListState.firstVisibleItemIndex <= 0
+                canConsumeDelta = lazyListState.firstVisibleItemIndex <= 0
 
                 if (!scrolling) {
                     return@collectLatest
@@ -193,13 +200,10 @@ private class CollapsableVideoLayoutScrollConnection(
 
 
                 while (lazyListState.firstVisibleItemIndex <= 0) {
-                    ensureActive()
-                    delay(3)
+                    delay(1)
                 }
 
-                ensureActive()
-
-                allowedToScroll = lazyListState.firstVisibleItemIndex <= 0
+                canConsumeDelta = lazyListState.firstVisibleItemIndex <= 0
             }
         }
     }
@@ -209,7 +213,7 @@ private class CollapsableVideoLayoutScrollConnection(
         source: NestedScrollSource
     ): Offset {
         val delta = available.y
-        return if (delta < 0 && allowedToScroll && lazyListState.firstVisibleItemIndex == 0) {
+        return if (delta < 0 && canConsumeDelta && lazyListState.firstVisibleItemIndex == 0) {
             Offset(
                 x = available.x,
                 y = state.dispatchRawDelta(delta)
@@ -227,7 +231,7 @@ private class CollapsableVideoLayoutScrollConnection(
         val delta = available.y
         return Offset(
             x = available.x,
-            y = if (allowedToScroll && lazyListState.firstVisibleItemIndex == 0 && preFlingIdx == 0)
+            y = if (canConsumeDelta && lazyListState.firstVisibleItemIndex == 0 && preFlingIdx == 0)
                 state.dispatchRawDelta(delta)
             else
                 available.y
@@ -238,7 +242,7 @@ private class CollapsableVideoLayoutScrollConnection(
 
         preFlingIdx = lazyListState.firstVisibleItemIndex
 
-        return if (available.y < 0 && !lazyListState.canScrollBackward && allowedToScroll && lazyListState.firstVisibleItemIndex == 0) {
+        return if (available.y < 0 && !lazyListState.canScrollBackward && canConsumeDelta && lazyListState.firstVisibleItemIndex == 0) {
             state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
             available
         } else {
@@ -268,6 +272,7 @@ fun DefaultSizeCollapsableVideoLayout(
     actions: @Composable RowScope.() -> Unit,
     collapsableVideoState: CollapsableVideoState = rememberCollapsableVideoState(),
     scrollToTopButton: @Composable (triggerScroll: () -> Unit) -> Unit,
+    pinnedContent: @Composable () -> Unit,
     content: LazyListScope.() -> Unit,
 ) {
     val progress = collapsableVideoState.progress
@@ -275,19 +280,15 @@ fun DefaultSizeCollapsableVideoLayout(
     val state = collapsableVideoState.state
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(state) {
-        snapshotFlow { state.currentValue }.collect {
-            if (state.currentValue == CollapsableVideoAnchors.Dismiss) {
-                onDismissRequested()
-            }
+    LaunchedEffect(state.currentValue) {
+        if (state.currentValue == CollapsableVideoAnchors.Dismiss) {
+            onDismissRequested()
         }
     }
 
-    LaunchedEffect(collapsableVideoState.fullscreenState) {
-        snapshotFlow { collapsableVideoState.fullscreenState.currentValue }.collect {
-            if (collapsableVideoState.fullscreenState.currentValue == VideoDragAnchors.Dismiss) {
-                collapsableVideoState.fullscreenState.animateTo(VideoDragAnchors.Normal)
-            }
+    LaunchedEffect(collapsableVideoState.fullscreenState.currentValue) {
+        if (collapsableVideoState.fullscreenState.currentValue == VideoDragAnchors.Dismiss) {
+            collapsableVideoState.fullscreenState.animateTo(VideoDragAnchors.Normal)
         }
     }
 
@@ -302,6 +303,15 @@ fun DefaultSizeCollapsableVideoLayout(
 
     val actionsAlpha = lerp(1f, 0f, progress / 0.1f)
     val contentAlpha = lerp(0f, 1f, progress / 0.8f)
+
+    val nestedScrollConnection =
+        remember(reorderState.listState, collapsableVideoState.fullscreenState) {
+            CollapsableVideoLayoutScrollConnection(
+                reorderState.listState,
+                collapsableVideoState.fullscreenState,
+                scope
+            )
+        }
 
     Layout(
         {
@@ -338,47 +348,30 @@ fun DefaultSizeCollapsableVideoLayout(
                     collapsableVideoState.fullscreenState,
                     Orientation.Vertical,
                     fullscreenDraggableEnabled
-                ),
+                )
+                .graphicsLayer {
+                    alpha =
+                        minOf(
+                            1f - collapsableVideoState.fullScreenProgress,
+                            contentAlpha
+                        )
+                },
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
             ) {
-
-                val nestedScrollConnection =
-                    remember(reorderState.listState, collapsableVideoState.fullscreenState) {
-                    CollapsableVideoLayoutScrollConnection(
-                        reorderState.listState,
-                        collapsableVideoState.fullscreenState,
-                        scope
-                    )
-                }
-
-                FastScrollLazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha =
-                                minOf(1f - collapsableVideoState.fullScreenProgress, contentAlpha)
-                        }
-                        .reorderable(reorderState)
-                        .nestedScroll(nestedScrollConnection),
-                    state = reorderState.listState,
-                    userScrollEnabled = !fullscreenDraggableEnabled
-                ) {
-                    content()
-                    item {
-                        Spacer(
-                            Modifier.height(
-                                with(density) {
-                                    bottomPadding.toDp() + 42.dp
-                                }
-                            )
-                        )
+                Column {
+                    pinnedContent()
+                    LazyColumnAnimatedAlpha(
+                        reorderState = reorderState,
+                        nestedScrollConnection = nestedScrollConnection,
+                        scrollEnabled = !fullscreenDraggableEnabled,
+                        bottomPaddingPx = bottomPadding
+                    ) {
+                        content()
                     }
                 }
             }
             Box(modifier = Modifier
-                .graphicsLayer {
-                    alpha = 1f - collapsableVideoState.fullScreenProgress
-                }
+                .graphicsLayer { alpha = 1f - collapsableVideoState.fullScreenProgress }
                 .layoutId("scrollToTop")
             ) {
                 val visible by remember {
@@ -414,11 +407,11 @@ fun DefaultSizeCollapsableVideoLayout(
         val height = lerp(CollapsablePlayerMinHeight.roundToPx(), constraints.maxHeight, progress)
         val paddingTop = (topPadding * progress).roundToInt()
 
-        val isTablet = constraints.maxWidth > constraints.maxHeight
+        val landscape = constraints.maxWidth > constraints.maxHeight && state.currentValue != CollapsableVideoAnchors.Dismiss
 
         val playerPlaceable = measurables
             .first { it.layoutId == "player" }
-            .measure(constraints.copy(maxHeight = height - if(isTablet) lerp(0, bottomPadding, progress) else 0))
+            .measure(constraints.copy(maxHeight = height - if(landscape) lerp(0, bottomPadding, progress) else 0))
 
         val buttonPlaceable = measurables
             .first { it.layoutId == "scrollToTop" }
@@ -440,12 +433,16 @@ fun DefaultSizeCollapsableVideoLayout(
             }
         )
 
-        layout(constraints.maxWidth, (height - collapsableVideoState.dismissOffsetPx).coerceAtLeast(0)) {
+        layout(
+            constraints.maxWidth,
+            (height - collapsableVideoState.dismissOffsetPx)
+                .coerceAtLeast(0)
+        ) {
 
             val playerCenteredY = (constraints.maxHeight / 2f - playerPlaceable.height + paddingTop)
             val playerY = (playerCenteredY * collapsableVideoState.fullScreenProgress).roundToInt()
 
-            if (isTablet) {
+            if (landscape) {
                 val playerX = lerp(0, constraints.maxWidth / 2 - playerPlaceable.width / 2, progress)
                 playerPlaceable.placeRelative(
                     playerX,
@@ -483,6 +480,36 @@ fun DefaultSizeCollapsableVideoLayout(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LazyColumnAnimatedAlpha(
+    reorderState: ReorderableLazyListState,
+    nestedScrollConnection: NestedScrollConnection,
+    scrollEnabled: Boolean,
+    bottomPaddingPx: Int,
+    content: LazyListScope.() -> Unit,
+) {
+    val density = LocalDensity.current
+    FastScrollLazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .reorderable(reorderState)
+            .nestedScroll(nestedScrollConnection),
+        state = reorderState.listState,
+        userScrollEnabled = scrollEnabled
+    ) {
+        content()
+        item {
+            Spacer(
+                Modifier.height(
+                    with(density) {
+                        bottomPaddingPx.toDp() + 42.dp
+                    }
+                )
+            )
         }
     }
 }

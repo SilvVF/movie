@@ -1,7 +1,6 @@
 package io.silv.movie
 
 import android.net.Uri
-import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -24,16 +23,12 @@ import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
 import io.silv.movie.presentation.EventProducer
-import io.silv.movie.presentation.media.CollapsableVideoAnchors
-import io.silv.movie.presentation.media.CollapsableVideoState
 import io.silv.movie.presentation.media.PlayerHelper
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.burnoutcrew.reorderable.ItemPosition
 
 
@@ -42,8 +37,6 @@ class PlayerViewModel(
     private val pipedApi: PipedApi,
     private val savedStateHandle: SavedStateHandle
 ): ViewModel(), EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
-
-    var collapsableVideoState: CollapsableVideoState? = null
 
     private var trailerToStreams by mutableStateOf<Pair<Trailer, Streams>?>(null)
 
@@ -60,12 +53,12 @@ class PlayerViewModel(
 
     init {
         viewModelScope.launch {
-            snapshotFlow { currentTrailer  }
+            snapshotFlow { currentTrailer to trailerToStreams }
                 .filterNotNull()
                 .distinctUntilChanged()
-                .collectLatest { trailer ->
+                .collectLatest { (trailer, tTos) ->
 
-                    if (trailer == trailerToStreams?.first)
+                    if (trailer == tTos?.first || trailer == null)
                         return@collectLatest
 
                     trailerToStreams = null
@@ -114,8 +107,8 @@ class PlayerViewModel(
 
 
     fun onMove(from: ItemPosition, to: ItemPosition) {
-        val fromIdx = from.index - 1
-        val toIdx = to.index - 1
+        val fromIdx = from.index
+        val toIdx = to.index
         if (
             fromIdx < 0 ||
             toIdx < 0 ||
@@ -124,8 +117,6 @@ class PlayerViewModel(
         ) {
            return
         }
-
-        if (fromIdx >= trailerQueue.size) { return }
 
         trailerQueue.add(toIdx, trailerQueue.removeAt(fromIdx))
     }
@@ -220,17 +211,12 @@ class PlayerViewModel(
             trailerToStreams = null
             trailerQueue.clear()
             trailerQueue.addAll(mutableTrailers.toImmutableList())
-            withContext(Dispatchers.Main) {
-                collapsableVideoState?.state?.snapTo(CollapsableVideoAnchors.Start)
-            }
         }
     }
 
     fun clearMediaQueue() {
+        trailerToStreams = null
         trailerQueue.clear()
-        viewModelScope.launch {
-            collapsableVideoState?.state?.snapTo(CollapsableVideoAnchors.Dismiss)
-        }
     }
 
     sealed interface PlayerEvent {

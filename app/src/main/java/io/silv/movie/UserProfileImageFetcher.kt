@@ -29,6 +29,7 @@ private data class UserProfileImageResponse(
 
 data class UserProfileImageData(
     val userId: String,
+    val isUserMe: Boolean = false,
     val imageLastUpdated: Long = -1L
 ) {
 
@@ -91,9 +92,7 @@ class BucketItemFetcher(
             return SourceResult(
                 source = ImageSource(
                     file = cover?.toOkioPath() ?: return null,
-                    diskCacheKey = keyer.key(data, options).takeIf {
-                        !(options.parameters.value(UserProfileImageFetcher.DISABLE_KEYS) ?: false)
-                    }
+                    diskCacheKey = keyer.key(data, options)
                 ),
                 mimeType = "image/*",
                 dataSource = DataSource.DISK,
@@ -123,7 +122,7 @@ class UserProfileImageFetcher(
     override val keyer: Keyer<UserProfileImageData> =
         Keyer { data, options ->
             val hasCustomCover = profileImageCache.getCustomCoverFile(data.userId).exists()
-            if (hasCustomCover) {
+            if (hasCustomCover || data.isUserMe) {
                 "${data.userId};${data.imageLastUpdated}"
             } else {
                 "profile_pictures;${data.path}"
@@ -132,7 +131,11 @@ class UserProfileImageFetcher(
 
     override val diskStore: FetcherDiskStore<UserProfileImageData> =
         FetcherDiskStoreImageFile { data, _ ->
-            profileImageCache.getCoverFile(data.path)
+            if (data.isUserMe) {
+                profileImageCache.getCustomCoverFile(data.userId)
+            } else {
+                profileImageCache.getCoverFile(data.path)
+            }
         }
 
     override suspend fun overrideFetch(options: Options, data: UserProfileImageData): FetchResult? {
@@ -144,9 +147,7 @@ class UserProfileImageFetcher(
                 return SourceResult(
                     source = ImageSource(
                         file = customCoverFile.toOkioPath(),
-                        diskCacheKey = keyer.key(data, options).takeIf {
-                            !(options.parameters.value(DISABLE_KEYS) ?: false)
-                        }
+                        diskCacheKey = keyer.key(data, options)
                     ),
                     mimeType = "image/*",
                     dataSource = DataSource.DISK,
@@ -159,9 +160,5 @@ class UserProfileImageFetcher(
     override suspend fun fetch(options: Options, data: UserProfileImageData): ByteArray {
         val bucket = storage["profile_pictures"]
         return bucket.downloadPublic(data.path ?: error("profile image blank"))
-    }
-
-    companion object {
-        const val DISABLE_KEYS = "disable_keys"
     }
 }

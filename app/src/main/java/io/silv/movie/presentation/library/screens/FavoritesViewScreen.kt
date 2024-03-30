@@ -34,7 +34,7 @@ import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 
-object FavoritesViewScreen : Screen {
+data object FavoritesViewScreen : Screen {
 
     @Composable
     override fun Content() {
@@ -76,8 +76,8 @@ object FavoritesViewScreen : Screen {
                 else
                     navigator.push(TVViewScreen(item.contentId))
             },
-            onAddRecommendation = screenModel::addRecommendationToList,
-            onRecommendationLongClick = screenModel::addRecommendationToList,
+            onAddRecommendation = screenModel::toggleItemFavorite,
+            onRecommendationLongClick = screenModel::toggleItemFavorite,
             refreshFavorites = screenModel::refreshFavoritesFromNetwork,
             state = state
         )

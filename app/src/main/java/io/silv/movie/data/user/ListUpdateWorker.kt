@@ -119,7 +119,7 @@ class ListUpdater(
     suspend fun await(listId: String) {
 
         val list = listRepository.selectListWithItemsById(listId)!!
-        val username = userRepository.getUser(list.userId)?.username.orEmpty()
+        val username = userRepository.getUser(list.userId)?.username
         val isOwnerMe = list.userId == auth.currentUserOrNull()?.id
 
         try {
@@ -141,9 +141,10 @@ class ListUpdater(
                     description = list.description,
                     lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
                     name = list.name,
+                    public = list.public,
+                    createdBy = list.userId,
                     lastSynced = Clock.System.now().toEpochMilliseconds(),
-                    username = username,
-
+                    username = username ?: local.username,
                 )
                     .toUpdate()
             )

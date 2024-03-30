@@ -23,7 +23,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
-import org.burnoutcrew.reorderable.ItemPosition
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
@@ -36,9 +35,6 @@ fun CollapsablePlayerScreen(
 ) {
     val reorderState = rememberReorderableLazyListState(
         onMove = playerViewModel::onMove,
-        canDragOver = { draggedOver: ItemPosition, dragging: ItemPosition ->
-            draggedOver.index != 0 || dragging.index != 0
-        }
     )
 
     DefaultSizeCollapsableVideoLayout(
@@ -75,6 +71,16 @@ fun CollapsablePlayerScreen(
                 CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         },
+        pinnedContent = {
+            playerViewModel.currentTrailer?.let {
+                CollapsablePlayerDefaults.VideoDescription(
+                    trailer = it,
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth()
+                )
+            }
+        },
         scrollToTopButton = { scrollToTop ->
             FilledIconButton(
                 modifier = Modifier
@@ -98,16 +104,6 @@ fun CollapsablePlayerScreen(
             }
         }
     ) {
-        item(key = "playing-info") {
-            playerViewModel.currentTrailer?.let { trailer ->
-                CollapsablePlayerDefaults.VideoDescription(
-                    trailer = trailer,
-                    modifier = Modifier
-                        .padding(12.dp)
-                        .fillMaxWidth()
-                )
-            }
-        }
         itemsIndexed(
             items = playerViewModel.trailerQueue,
             key = { _, it -> it.id }
@@ -115,7 +111,7 @@ fun CollapsablePlayerScreen(
             CollapsablePlayerDefaults.VideoQueueItem(
                 reorderableState = reorderState,
                 trailer = trailer,
-                idx = idx + 1,
+                idx = idx,
                 onMute = {
                     playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Mute)
                 }

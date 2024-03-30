@@ -10,26 +10,33 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.UserProfileImageData
 import io.silv.movie.core.NetworkMonitor
+import io.silv.movie.data.lists.ContentListItem
+import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
+import timber.log.Timber
 
 
 class ProfileScreenModel(
     private val userRepository: UserRepository,
     private val auth: Auth,
     private val networkMonitor: NetworkMonitor,
+    private val contentListRepository: ContentListRepository,
 ):
     StateScreenModel<ProfileState>(ProfileState.Loading),
     EventProducer<ProfileEvent> by EventProducer.default() {
@@ -42,7 +49,7 @@ class ProfileScreenModel(
             .combine(isOnline) { a, b ->  a to b}
             .onEach { (status, online) ->
 
-                if (!online) {
+                if (!online && state.value.loggedIn == null) {
                     mutableState.value = ProfileState.Offline
                     return@onEach
                 }
@@ -52,6 +59,9 @@ class ProfileScreenModel(
                     SessionStatus.NetworkError ->
                         ProfileState.LoggedOut("Network Error")
                     is SessionStatus.Authenticated -> {
+                        if(state.value.loggedIn != null) {
+                            return@onEach
+                        }
                         val info =  status.session.user ?: return@onEach
                         ProfileState.LoggedIn(
                             info = info,
@@ -59,7 +69,7 @@ class ProfileScreenModel(
                                 auth.clearSession()
                                 return@onEach
                             },
-                            profileImageData = UserProfileImageData(info.id)
+                            profileImageData = UserProfileImageData(info.id, isUserMe = true)
                         )
                     }
                     is SessionStatus.NotAuthenticated -> ProfileState.LoggedOut()
@@ -83,6 +93,44 @@ class ProfileScreenModel(
         }
     }
 
+    val publicLists = contentListRepository.observeLibraryItems("")
+        .map { contentListItems ->
+            val userid =  state.value.loggedIn?.info?.id
+            contentListItems.filter { item ->
+                val createdBy = item.list.createdBy
+
+                Timber.d("pub $createdBy  $userid $item")
+                createdBy != null && createdBy == userid && item.list.public
+            }
+        }.map {
+            it.groupBy { it.list }
+                .mapValues { (k, v) ->
+                    v.mapNotNull { (it as? ContentListItem.Item)?.contentItem  }.toImmutableList()
+                }
+                .toList()
+                .toImmutableList()
+        }
+        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5_000), persistentListOf())
+
+    val subscribedLists = contentListRepository.observeLibraryItems("")
+        .map { contentListItems ->
+            val userid =  state.value.loggedIn?.info?.id
+            contentListItems.filter { item ->
+                val createdBy = item.list.createdBy
+
+                Timber.d("sub $createdBy  $userid $item")
+                createdBy != null && createdBy != userid && userid != null
+            }
+        }.map {
+            it.groupBy { it.list }
+                .mapValues { (k, v) ->
+                    v.mapNotNull { (it as? ContentListItem.Item)?.contentItem  }.toImmutableList()
+                }
+                .toList()
+                .toImmutableList()
+        }
+        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5_000), persistentListOf())
+
     fun updateProfilePicture(path: String) {
         screenModelScope.launch {
 
@@ -96,6 +144,7 @@ class ProfileScreenModel(
                     user = new,
                     profileImageData = UserProfileImageData(
                         userId = new.userId,
+                        isUserMe = true,
                         imageLastUpdated = Clock.System.now().toEpochMilliseconds()
                     )
                 )

@@ -10,9 +10,14 @@ import io.silv.movie.data.credits.GetMovieCredits
 import io.silv.movie.data.credits.GetRemoteCredits
 import io.silv.movie.data.credits.GetTVShowCredits
 import io.silv.movie.data.credits.NetworkToLocalCredit
+import io.silv.movie.data.lists.AddContentItemToList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.ContentListRepositoryImpl
+import io.silv.movie.data.lists.DeleteContentList
+import io.silv.movie.data.lists.EditContentList
 import io.silv.movie.data.lists.GetFavoritesList
+import io.silv.movie.data.lists.RemoveContentItemFromList
+import io.silv.movie.data.lists.ToggleContentItemFavorite
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -50,9 +55,10 @@ import io.silv.movie.data.user.UserListUpdateManager
 import io.silv.movie.data.user.UserListUpdateWorker
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.data.user.UserRepositoryImpl
+import io.silv.movie.database.databaseModule
 import io.silv.movie.network.networkModule
 import org.koin.android.ext.koin.androidContext
-import org.koin.androidx.workmanager.dsl.worker
+import org.koin.androidx.workmanager.dsl.workerOf
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
@@ -61,7 +67,8 @@ import org.koin.dsl.module
 val dataModule =
     module {
 
-        includes(io.silv.movie.database.databaseModule)
+        includes(databaseModule)
+
         includes(networkModule)
 
         factoryOf(::GetMovie)
@@ -124,29 +131,13 @@ val dataModule =
             DatastorePreferenceStore(androidContext().dataStore)
         }
 
-        worker { RecommendationWorker(get(), get(), get(), get(), androidContext(), get()) }
+        workerOf(::RecommendationWorker)
 
-        worker {
-            FavoritesUpdateWorker(
-                get(), get(), get(), get(), get(),get(), get(), get(), get(), get(), get(),
-                androidContext(), get()
-            )
-        }
+        workerOf(::FavoritesUpdateWorker)
 
-        worker {
-            UserListUpdateWorker(
-                get(), get(), get(), get(), get(),get(), get(), get(), get(),
-                androidContext(), get()
-            )
-        }
+        workerOf(::UserListUpdateWorker)
 
-
-        worker {
-            ListUpdateWorker(
-                get(),
-                androidContext(), get()
-            )
-        }
+        workerOf(::ListUpdateWorker)
 
         factoryOf(::ListUpdater)
 
@@ -155,6 +146,16 @@ val dataModule =
         singleOf(::FavoritesUpdateManager)
 
         singleOf(::UserListUpdateManager)
+
+        factoryOf(::EditContentList)
+
+        factoryOf(::AddContentItemToList)
+
+        factoryOf(::RemoveContentItemFromList)
+
+        factoryOf(::DeleteContentList)
+
+        factoryOf(::ToggleContentItemFavorite)
 }
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")

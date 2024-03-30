@@ -17,7 +17,13 @@ interface ContentListRepository {
     suspend fun getList(id: Long): ContentList?
     suspend fun getListForSupabaseId(supabaseId: String): ContentList?
     suspend fun getListItems(id: Long): List<ContentItem>
-    suspend fun createList(name: String, supabaseId: String? = null, userId: String? = null, createdAt: Long? = null, inLibrary: Boolean = false): Long
+    suspend fun createList(
+        name: String,
+        supabaseId: String? = null,
+        userId: String? = null,
+        createdAt: Long? = null,
+        inLibrary: Boolean = false
+    ): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addItemsToList(items: List<Pair<Long, Boolean>>, contentList: ContentList)
     suspend fun addMovieToList(movieId: Long, contentList: ContentList)
@@ -52,7 +58,8 @@ class ContentListRepositoryImpl(
                 update.description,
                 update.username,
                 update.inLibrary,
-                update.id,
+                update.public,
+                update.id
             )
         }
     }

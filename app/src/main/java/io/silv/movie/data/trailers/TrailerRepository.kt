@@ -13,9 +13,11 @@ class TrailerRepositoryImpl(
 ): TrailerRepository {
 
     override suspend fun insertTrailer(trailer: Trailer, contentId: Long, isMovie: Boolean) {
-        handler.await(inTransaction = true) {
+        handler.await {
             trailerQueries.insert(
                 trailerId = trailer.id,
+                movieId = contentId.takeIf { isMovie },
+                showId = contentId.takeIf { !isMovie },
                 name = trailer.name,
                 videoKey = trailer.key,
                 site = trailer.site,
@@ -24,11 +26,6 @@ class TrailerRepositoryImpl(
                 type = trailer.type,
                 publishedAt = trailer.publishedAt
             )
-            if (isMovie) {
-                trailerQueries.insertMovieTrailer(contentId, trailer.id)
-            } else {
-                trailerQueries.insertShowTrailer(contentId, trailer.id)
-            }
         }
     }
 

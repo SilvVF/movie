@@ -7,23 +7,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.core.Penta
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.GetFavoritesList
+import io.silv.movie.data.lists.ToggleContentItemFavorite
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.UpdateMovie
-import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.core.getOrDefault
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.UpdateShow
-import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.data.user.FavoritesUpdateManager
-import io.silv.movie.data.user.ListRepository
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -42,11 +39,10 @@ class FavoritesScreenModel(
     private val getShow: GetShow,
     private val updateShow: UpdateShow,
     private val updateMovie: UpdateMovie,
-    private val tvCoverCache: TVShowCoverCache,
-    private val movieCoverCache: MovieCoverCache,
+    private val auth: Auth,
+    private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val libraryPreferences: LibraryPreferences,
     private val favoritesUpdateManager: FavoritesUpdateManager,
-    private val listRepository: ListRepository,
 ): ScreenModel {
 
     var listViewDisplayMode by libraryPreferences.listViewDisplayMode()
@@ -120,38 +116,13 @@ class FavoritesScreenModel(
 
     fun toggleItemFavorite(contentItem: ContentItem) {
         screenModelScope.launch {
-            if (contentItem.isMovie) {
-                val movie = getMovie.await(contentItem.contentId) ?: return@launch
-
-                val new = movie.copy(favorite = !movie.favorite)
-
-                if(!new.favorite && !new.inList) {
-                    movieCoverCache.deleteFromCache(movie)
-                }
-                updateMovie .await(new.toMovieUpdate())
-            } else {
-                val show = getShow.await(contentItem.contentId) ?: return@launch
-
-                val new = show.copy(favorite = !show.favorite)
-
-                if(!new.favorite && !new.inList) {
-                    tvCoverCache.deleteFromCache(show)
-                }
-                updateShow.await(new.toShowUpdate())
-            }
-        }
-    }
-
-    fun addRecommendationToList(contentItem: ContentItem) {
-        screenModelScope.launch {
-            if (contentItem.isMovie) {
-                val movie = getMovie.await(contentItem.contentId) ?: return@launch
-                updateMovie.await(movie.copy(favorite = !movie.favorite).toMovieUpdate())
-            } else {
-                val show = getShow.await(contentItem.contentId) ?: return@launch
-                updateShow.await(show.copy(favorite = !show.favorite).toShowUpdate())
-            }
-            recommendationManager.removeRecommendation(contentItem, -1)
+           toggleContentItemFavorite.await(
+               contentItem = contentItem,
+               changeOnNetwork = auth.currentUserOrNull() != null
+           )
+           if (!contentItem.favorite) {
+               recommendationManager.removeRecommendation(contentItem, -1)
+           }
         }
     }
 

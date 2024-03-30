@@ -47,6 +47,7 @@ import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -114,6 +115,9 @@ data class CreditsViewScreen(
     val contentId: Long,
     val isMovie: Boolean,
 ): Screen {
+
+    override val key: ScreenKey
+        get() = "$contentId$isMovie"
 
     @Composable
     override fun Content() {

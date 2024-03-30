@@ -14,6 +14,12 @@ import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarResult.ActionPerformed
+import androidx.compose.material3.SnackbarResult.Dismissed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -31,6 +37,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -73,6 +80,9 @@ data class ListViewScreen(
     private val supabaseId: String = ""
 ): Screen {
 
+    override val key: ScreenKey
+        get() = "$listId$supabaseId"
+
     @Composable
     override fun Content() {
 
@@ -80,10 +90,50 @@ data class ListViewScreen(
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val refreshingList by screenModel.refreshingList.collectAsStateWithLifecycle()
+        val context = LocalContext.current
+        val snackBarState = remember { SnackbarHostState() }
+
+        suspend fun showSnackBar(message: String): SnackbarResult {
+            return snackBarState.showSnackbar(message)
+        }
 
         CollectEventsWithLifecycle(screenModel) { event ->
             when (event) {
                 ListViewEvent.ListDeleted -> navigator.pop()
+                ListViewEvent.FailedToAddToNetwork -> showSnackBar(
+                    context.getString(R.string.failed_to_add_list_to_network)
+                )
+                ListViewEvent.FailedToDeleteFromNetwork -> showSnackBar(
+                    context.getString(R.string.failed_to_delete_list_item)
+                )
+                ListViewEvent.FailedToEditListDescription -> showSnackBar(
+                    context.getString(R.string.failed_to_edit_description)
+                )
+                ListViewEvent.FailedToEditListName -> showSnackBar(
+                    context.getString(R.string.failed_to_edit_list_name)
+                )
+                ListViewEvent.FailedToRemoveListFromNetwork -> showSnackBar(
+                    context.getString(R.string.failed_to_delete_list)
+                )
+
+                ListViewEvent.FailedToUpdateListVisibilty -> showSnackBar(
+                    context.getString(R.string.failed_to_make_public)
+                )
+                ListViewEvent.UpdatedListVisibility -> showSnackBar(
+                    context.getString(R.string.made_list_public)
+                )
+
+                is ListViewEvent.AddedToAnotherList -> {
+                    val result = snackBarState.showSnackbar(
+                        context.getString(R.string.added_to_another_list, event.item.title, event.list.name),
+                        actionLabel = "Take me there",
+                        duration = SnackbarDuration.Long
+                    )
+                    when(result) {
+                        Dismissed -> Unit
+                        ActionPerformed -> navigator.replace(ListViewScreen(event.list.id))
+                    }
+                }
             }
         }
 
@@ -216,6 +266,7 @@ data class ListViewScreen(
                     },
                     primary = { primary },
                     onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
+                    snackbarHostState = snackBarState,
                     state = s
                 )
 
@@ -229,9 +280,21 @@ data class ListViewScreen(
                         )
                     }
                     is ListViewScreenModel.Dialog.ContentOptions -> {
+                        val addToAnotherListScreen = remember(dialog.item) {
+                            AddToListScreen(dialog.item.contentId, dialog.item.isMovie)
+                        }
+
+                        val launcher = rememberScreenWithResultLauncher(
+                            screen = addToAnotherListScreen
+                        ) { result ->
+                            screenModel.addToAnotherList(dialog.item, result.listId)
+                        }
+
                         ListOptionsBottomSheet(
                             onDismissRequest = onDismissRequest,
-                            onAddToAnotherListClick = {},
+                            onAddToAnotherListClick = {
+                                launcher.launch()
+                            },
                             onToggleFavoriteClicked = {
                                 screenModel.toggleItemFavorite(dialog.item)
                             },
@@ -248,7 +311,10 @@ data class ListViewScreen(
                             onAddClick = { navigator.push(ListAddScreen(s.list.id)) },
                             onEditClick = { screenResultLauncher.launch() },
                             onDeleteClick = { changeDialog(ListViewScreenModel.Dialog.DeleteList) },
-                            onShareClick = {},
+                            onShareClick = {
+                                screenModel.toggleListPublic()
+                                onDismissRequest()
+                            },
                             list = s.list,
                             onChangeDescription = { descriptionResultLauncher.launch() },
                             content = s.allItems
@@ -323,6 +389,7 @@ private fun SuccessScreenContent(
     refreshList: () -> Unit,
     refreshingList: Boolean,
     primary: () -> Color,
+    snackbarHostState: SnackbarHostState,
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
@@ -351,9 +418,11 @@ private fun SuccessScreenContent(
                         changeSortMode = changeSortMode,
                         onPosterClick = onPosterClick,
                         primary = primary(),
+                        isUserMe = state.isOwnerMe,
                         modifier = Modifier.hazeChild(hazeState)
                     )
                 },
+                snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
                 modifier = Modifier
                     .imePadding()
                     .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)

@@ -28,7 +28,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
@@ -41,6 +43,7 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.profile.screen.AuthScreenContent
 import io.silv.movie.presentation.profile.screen.ResetPasswordScreen
 import io.silv.movie.presentation.profile.screen.SelectProfileImageScreen
@@ -51,7 +54,8 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 
-object ProfileTab: Tab {
+data object ProfileTab: Tab {
+
     override val options: TabOptions
         @Composable get() = TabOptions(
             index = 2u,
@@ -67,11 +71,13 @@ object ProfileTab: Tab {
     }
 }
 
-object ProfileScreen: Screen {
+data object ProfileScreen: Screen {
+
 
     @Composable
     override fun Content() {
         val screenModel = getScreenModel<ProfileScreenModel>()
+        val navigator = LocalNavigator.currentOrThrow
         val state by screenModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -113,7 +119,7 @@ object ProfileScreen: Screen {
                     ) {
                         screenModel.updateProfilePicture(it.path)
                     }
-                    val editUsernameScreen = remember(targetState.user?.username.orEmpty()) {
+                    val editUsernameScreen = remember(targetState.user.username) {
                         UsernameEditScreen(targetState.user.username)
                     }
                     val editUsernameScreenLauncher = rememberScreenWithResultLauncher(
@@ -121,6 +127,8 @@ object ProfileScreen: Screen {
                     ) {
                         screenModel.updateUsername(it.name)
                     }
+                    val subscribed by screenModel.subscribedLists.collectAsStateWithLifecycle()
+                    val public by screenModel.publicLists.collectAsStateWithLifecycle()
 
                     SignedInScreen(
                         showOptionsClick = {
@@ -128,6 +136,11 @@ object ProfileScreen: Screen {
                         },
                         snackbarHostState = snackbarHostState,
                         onProfileImageClicked = { imageSelectScreenLauncher.launch() },
+                        subscribed = subscribed,
+                        public = public,
+                        onListClick = {
+                            navigator.push(ListViewScreen(it.id))
+                        },
                         state = targetState
                     )
                     when (targetState.dialog) {

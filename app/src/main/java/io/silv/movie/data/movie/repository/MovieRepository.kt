@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface MovieRepository {
     suspend fun getMovieById(id: Long): Movie?
-    suspend fun observeMoviePartialById(id: Long): Flow<MoviePoster>
+    fun observeMoviePartialById(id: Long): Flow<MoviePoster>
     fun observeMovieById(id: Long): Flow<Movie>
     fun observeMovieByIdOrNull(id: Long): Flow<Movie?>
     suspend fun insertMovie(movie: Movie): Long?
@@ -26,7 +26,7 @@ class MovieRepositoryImpl(
         return handler.awaitOneOrNull { movieQueries.selectById(id, MovieMapper.mapMovie) }
     }
 
-    override suspend fun observeMoviePartialById(id: Long): Flow<MoviePoster> {
+    override fun observeMoviePartialById(id: Long): Flow<MoviePoster> {
         return handler.subscribeToOne { movieQueries.selectMoviePartialById(id, MovieMapper.mapMoviePoster) }
     }
 

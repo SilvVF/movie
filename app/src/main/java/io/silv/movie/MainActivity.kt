@@ -7,9 +7,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -28,6 +30,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,11 +49,13 @@ import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
+import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import io.silv.movie.presentation.profile.ProfileTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.defaultExtras
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.resolveViewModel
@@ -98,6 +103,7 @@ class MainActivity : ComponentActivity() {
 
                 val mainScreenModel = getActivityViewModel<PlayerViewModel>()
                 val collapsableVideoState = rememberCollapsableVideoState()
+                val scope = rememberCoroutineScope()
 
                 BackHandler(
                     enabled = mainScreenModel.trailerQueue.isNotEmpty()
@@ -153,24 +159,23 @@ class MainActivity : ComponentActivity() {
                                             .wrapContentSize()
                                             .align(Alignment.BottomCenter),
                                         enter = slideInVertically { it } + fadeIn(),
-                                        exit = fadeOut()
+                                        exit = fadeOut(tween(0, 0))
                                     ) {
                                         CollapsablePlayerScreen(
                                             collapsableVideoState = collapsableVideoState,
                                             onDismissRequested = mainScreenModel::clearMediaQueue,
                                             playerViewModel = mainScreenModel
                                         )
+                                        DisposableEffect(playerVisible) {
+                                            val job = scope.launch {
+                                                collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
+                                            }
+                                            onDispose { job.cancel() }
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                }
-
-                DisposableEffect(collapsableVideoState) {
-                    mainScreenModel.collapsableVideoState = collapsableVideoState
-                    onDispose {
-                        mainScreenModel.collapsableVideoState = null
                     }
                 }
             }

@@ -85,7 +85,8 @@ UPDATE contentList SET
     poster_last_updated = COALESCE(:posterLastUpdated, poster_last_updated),
     description = COALESCE(:description, description),
     username = COALESCE(:username, username),
-    in_library = COALESCE(:inLibrary, in_library)
+    in_library = COALESCE(:inLibrary, in_library),
+    public = COALESCE(:public, public)
 WHERE _id = :id;
 
 listCount:

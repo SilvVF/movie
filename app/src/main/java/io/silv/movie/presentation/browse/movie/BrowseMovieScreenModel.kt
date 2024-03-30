@@ -16,20 +16,20 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
-import io.silv.movie.data.cache.MovieCoverCache
+import io.silv.movie.data.lists.ToggleContentItemFavorite
+import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.movie.interactor.UpdateMovie
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.movie.repository.SourceMovieRepository
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
@@ -55,9 +55,9 @@ class MovieScreenModel(
     private val getRemoteMovie: GetRemoteMovie,
     private val networkToLocalMovie: NetworkToLocalMovie,
     private val getMovie: GetMovie,
-    private val updateMovie: UpdateMovie,
+    private val auth: Auth,
     private val sourceRepository: SourceMovieRepository,
-    private val coverCache: MovieCoverCache,
+    private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val networkMonitor: NetworkMonitor,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
@@ -179,15 +179,10 @@ class MovieScreenModel(
 
     fun toggleMovieFavorite(movie: MoviePoster) {
         screenModelScope.launch {
-            val update = getMovie.await(movie.id) ?: return@launch
-
-            val new = update.copy(favorite = !movie.favorite)
-
-            if(!new.favorite && !new.inList) {
-                coverCache.deleteFromCache(update)
-            }
-
-            updateMovie.await(new.toMovieUpdate())
+            toggleContentItemFavorite.await(
+                movie.toContentItem(),
+                changeOnNetwork = auth.currentUserOrNull() != null
+            )
         }
     }
 

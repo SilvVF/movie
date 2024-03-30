@@ -13,7 +13,7 @@ class GetMovie(
         return movieRepository.getMovieById(id)
     }
 
-    suspend fun subscribePartial(id: Long): Flow<MoviePoster>  {
+    fun subscribePartial(id: Long): Flow<MoviePoster>  {
         return movieRepository.observeMoviePartialById(id)
     }
 
