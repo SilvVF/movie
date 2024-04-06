@@ -8,11 +8,10 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.UserProfileImageData
 import io.silv.movie.core.NetworkMonitor
+import io.silv.movie.data.cache.ProfileImageCache
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
 import kotlinx.collections.immutable.persistentListOf
@@ -28,7 +27,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.Clock
 import timber.log.Timber
 
 
@@ -37,12 +35,20 @@ class ProfileScreenModel(
     private val auth: Auth,
     private val networkMonitor: NetworkMonitor,
     private val contentListRepository: ContentListRepository,
+    private val profileImageCache: ProfileImageCache
 ):
     StateScreenModel<ProfileState>(ProfileState.Loading),
     EventProducer<ProfileEvent> by EventProducer.default() {
 
     private val isOnline = networkMonitor.isOnline
         .stateIn(screenModelScope, SharingStarted.Lazily, true)
+
+    val currentUser = userRepository.currentUser
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            userRepository.currentUser.value
+        )
 
     init {
         auth.sessionStatus
@@ -63,14 +69,7 @@ class ProfileScreenModel(
                             return@onEach
                         }
                         val info =  status.session.user ?: return@onEach
-                        ProfileState.LoggedIn(
-                            info = info,
-                            user = userRepository.getUser(info.id) ?: run {
-                                auth.clearSession()
-                                return@onEach
-                            },
-                            profileImageData = UserProfileImageData(info.id, isUserMe = true)
-                        )
+                        ProfileState.LoggedIn(info = info)
                     }
                     is SessionStatus.NotAuthenticated -> ProfileState.LoggedOut()
                 }
@@ -82,14 +81,9 @@ class ProfileScreenModel(
 
     fun updateUsername(name: String) {
         screenModelScope.launch {
-            val user = state.value.loggedIn?.user ?: return@launch
+            val user = userRepository.currentUser.value ?: return@launch
 
-            val new = userRepository.updateUser(user.copy(username = name))
-                ?: return@launch
-
-            mutableState.updateLoggedIn {state ->
-                state.copy(user = new)
-            }
+            userRepository.updateUser(user.copy(username = name))
         }
     }
 
@@ -133,21 +127,11 @@ class ProfileScreenModel(
 
     fun updateProfilePicture(path: String) {
         screenModelScope.launch {
-
-            val user = state.value.loggedIn?.user ?: return@launch
+            val user = userRepository.currentUser.value ?: return@launch
 
             val new = userRepository.updateUser(user.copy(profileImage = path))
-                ?: return@launch
-
-            mutableState.updateLoggedIn { state ->
-                state.copy(
-                    user = new,
-                    profileImageData = UserProfileImageData(
-                        userId = new.userId,
-                        isUserMe = true,
-                        imageLastUpdated = Clock.System.now().toEpochMilliseconds()
-                    )
-                )
+            if(new != null) {
+                profileImageCache.deleteCustomCover(new.userId)
             }
         }
     }
@@ -273,9 +257,7 @@ sealed interface ProfileState {
     @Immutable
     data class LoggedIn(
         val info: UserInfo,
-        val user: User,
-        val dialog: Dialog? = null,
-        val profileImageData: UserProfileImageData
+        val dialog: Dialog? = null
     ): ProfileState {
 
         @Stable

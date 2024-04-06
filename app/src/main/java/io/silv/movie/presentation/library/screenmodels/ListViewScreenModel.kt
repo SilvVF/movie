@@ -8,7 +8,6 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.SessionStatus
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
@@ -20,8 +19,10 @@ import io.silv.movie.data.lists.DeleteContentList
 import io.silv.movie.data.lists.EditContentList
 import io.silv.movie.data.lists.RemoveContentItemFromList
 import io.silv.movie.data.lists.ToggleContentItemFavorite
+import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.prefrences.core.getAndSet
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.data.user.ListUpdateManager
 import io.silv.movie.data.user.User
@@ -59,6 +60,7 @@ class ListViewScreenModel(
     private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val removeContentItemFromList: RemoveContentItemFromList,
     private val auth: Auth,
+    basePreferences: BasePreferences,
     libraryPreferences: LibraryPreferences,
 
     private val listId: Long,
@@ -84,20 +86,25 @@ class ListViewScreenModel(
             .filterNotNull()
             .distinctUntilChanged()
             .onEach { userId ->
-                val user = userRepository.getUser(userId)
+
+                val user = if (userId == auth.currentUserOrNull()?.id) {
+                    userRepository.currentUser.value ?: userRepository.getUser(userId)
+                } else {
+                    userRepository.getUser(userId)
+                }
 
                 mutableState.updateSuccess { state ->
                     state.copy(user = user)
                 }
 
-                auth.sessionStatus.collect { status ->
-                    val id =  when(status) {
-                        is SessionStatus.Authenticated -> status.session.user?.id
-                        else -> null
-                    }
+                userRepository.currentUser.collect { user ->
                     mutableState.updateSuccess { state ->
+
+                        val isOwnerMe =  user?.userId == state.list.createdBy || state.list.createdBy == null
+
                         state.copy(
-                            isOwnerMe = id == state.list.createdBy || state.list.createdBy == null
+                            user = if(isOwnerMe) user else state.user,
+                            isOwnerMe = isOwnerMe
                         )
                     }
                 }
@@ -118,6 +125,21 @@ class ListViewScreenModel(
                 }
             }
         }
+            .launchIn(screenModelScope)
+
+        state.map { it.success?.list }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .onEach { list ->
+                basePreferences.recentlyViewedLists().getAndSet {
+                    it.toMutableSet().apply {
+                        if (this.size > 10) {
+                           remove(first())
+                        }
+                        list.supabaseId?.let { add(it) }
+                    }
+                }
+            }
             .launchIn(screenModelScope)
 
        listIdFlow.flatMapLatest { id ->

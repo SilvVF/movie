@@ -30,10 +30,10 @@ private data class UserProfileImageResponse(
 data class UserProfileImageData(
     val userId: String,
     val isUserMe: Boolean = false,
-    val imageLastUpdated: Long = -1L
+    val path: String? = null
 ) {
 
-    val path by lazy {
+    val defaultPath by lazy {
         runBlocking {
 
             val koin = object : KoinComponent {}
@@ -123,7 +123,7 @@ class UserProfileImageFetcher(
         Keyer { data, options ->
             val hasCustomCover = profileImageCache.getCustomCoverFile(data.userId).exists()
             if (hasCustomCover || data.isUserMe) {
-                "${data.userId};${data.imageLastUpdated}"
+                "${data.userId};${data.path}"
             } else {
                 "profile_pictures;${data.path}"
             }
@@ -159,6 +159,6 @@ class UserProfileImageFetcher(
 
     override suspend fun fetch(options: Options, data: UserProfileImageData): ByteArray {
         val bucket = storage["profile_pictures"]
-        return bucket.downloadPublic(data.path ?: error("profile image blank"))
+        return bucket.downloadPublic(data.path ?: data.defaultPath ?: error("no profile image path"))
     }
 }

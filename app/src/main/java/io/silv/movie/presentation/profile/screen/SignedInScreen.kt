@@ -41,24 +41,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.lerp
-import coil.compose.AsyncImage
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
+import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.library.components.ContentListPosterItems
 import io.silv.movie.presentation.library.components.ContentListPreview
 import io.silv.movie.presentation.profile.ProfileState
+import io.silv.movie.presentation.profile.UserProfileImage
+import io.silv.movie.rememberProfileImageData
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
@@ -72,11 +73,14 @@ fun SignedInScreen(
     state: ProfileState.LoggedIn
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val user = LocalUser.current
+
+    val profileImageData = user.rememberProfileImageData()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            val dominantColor by rememberDominantColor(data = state.profileImageData)
+            val dominantColor by rememberDominantColor(data = profileImageData)
             val background = MaterialTheme.colorScheme.background
             Column(
                 Modifier
@@ -95,36 +99,31 @@ fun SignedInScreen(
                     }
             ) {
                 SearchLargeTopBar(
-                    title = { Text(state.user.username) },
+                    title = { Text(user?.username.orEmpty()) },
                     actions = {
                         IconButton(onClick = showOptionsClick) {
                             Icon(imageVector = Icons.Filled.MoreVert, null)
                         }
                     },
                     navigationIcon = {
-                        AsyncImage(
-                            model = state.profileImageData,
-                            error = painterResource(id = R.drawable.user_default_proflie_icon),
-                            modifier = Modifier
-                                .padding(horizontal = 12.dp)
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .aspectRatio(1f)
-                                .colorClickable {
-                                    onProfileImageClicked()
-                                }
-                                .graphicsLayer {
-                                    alpha = lerp(
-                                        0f,
-                                        1f,
-                                        CubicBezierEasing(.8f, 0f, .8f, .15f).transform(
-                                            scrollBehavior.state.collapsedFraction
-                                        )
-                                    )
-                                },
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
-                        )
+                       UserProfileImage(
+                           modifier = Modifier
+                               .padding(horizontal = 12.dp)
+                               .size(40.dp)
+                               .colorClickable {
+                                   onProfileImageClicked()
+                               }
+                               .graphicsLayer {
+                                   alpha = lerp(
+                                       0f,
+                                       1f,
+                                       CubicBezierEasing(.8f, 0f, .8f, .15f).transform(
+                                           scrollBehavior.state.collapsedFraction
+                                       )
+                                   )
+                               },
+                           contentDescription = null
+                       )
                     },
                     colors = TopAppBarDefaults.colors2(
                         containerColor = Color.Transparent,
@@ -135,9 +134,7 @@ fun SignedInScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Start
                         ) {
-                            AsyncImage(
-                                model = state.profileImageData,
-                                error = painterResource(id = R.drawable.user_default_proflie_icon),
+                            UserProfileImage(
                                 modifier = Modifier
                                     .padding(12.dp)
                                     .size(120.dp)
@@ -156,13 +153,13 @@ fun SignedInScreen(
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(
-                                    text = state.user.username,
+                                    text = user?.username.orEmpty(),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(bottom = 2.dp)
                                 )
                                 Text(
-                                    text = state.user.email,
+                                    text = user?.email.orEmpty(),
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.graphicsLayer { alpha = 0.78f }

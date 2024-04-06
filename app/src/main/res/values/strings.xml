@@ -108,4 +108,5 @@
     <string name="made_list_public">List is now public</string>
     <string name="added_to_another_list">Added %1s to list %2s</string>
     <string name="add_to_a_list">Select a list to add %1s</string>
+    <string name="discover_tab_title">Discover</string>
 </resources>

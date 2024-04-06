@@ -1,6 +1,5 @@
 package io.silv.movie.presentation
 
-import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -43,7 +42,6 @@ interface EventProducer <T> {
     }
 }
 
-@SuppressLint("ComposableNaming")
 @Composable
 fun <T> CollectEventsWithLifecycle(producer: EventProducer<T>, collector: FlowCollector<T>) {
     val lifecycleOwner = LocalLifecycleOwner.current

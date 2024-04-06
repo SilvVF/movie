@@ -81,6 +81,10 @@ android {
 dependencies {
 
     implementation(project(":core-ui"))
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
@@ -105,6 +109,10 @@ dependencies {
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
     implementation(libs.androidx.compose.ui.util)
+
+    implementation(libs.kotlinx.serialization.json.okio)
+    implementation(libs.quickjs.android)
+    implementation(libs.jsoup)
 
     // Paging3
     implementation(libs.androidx.paging.compose)

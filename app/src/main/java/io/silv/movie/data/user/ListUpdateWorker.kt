@@ -120,7 +120,9 @@ class ListUpdater(
 
         val list = listRepository.selectListWithItemsById(listId)!!
         val username = userRepository.getUser(list.userId)?.username
-        val isOwnerMe = list.userId == auth.currentUserOrNull()?.id
+        val isOwnerMe =
+            list.userId == auth.currentUserOrNull()?.id
+                    && auth.currentUserOrNull()?.id != null
 
         try {
             var local = contentListRepository.getListForSupabaseId(list.listId)
@@ -145,6 +147,7 @@ class ListUpdater(
                     createdBy = list.userId,
                     lastSynced = Clock.System.now().toEpochMilliseconds(),
                     username = username ?: local.username,
+                    inLibrary = isOwnerMe
                 )
                     .toUpdate()
             )

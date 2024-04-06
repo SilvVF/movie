@@ -14,29 +14,26 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.Quad
 import io.silv.movie.data.ContentPagedType
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.TVShowCoverCache
+import io.silv.movie.data.lists.AddContentItemToList
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
+import io.silv.movie.data.lists.ToggleContentItemFavorite
 import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.movie.interactor.UpdateMovie
 import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.tv.model.toDomain
-import io.silv.movie.data.tv.model.toShowUpdate
 import io.silv.movie.presentation.EventProducer
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -67,10 +64,9 @@ class ListAddScreenModel(
     private val getRemoteTVShows: GetRemoteTVShows,
     private val getShow: GetShow,
     private val getMovie: GetMovie,
-    private val updateMovie: UpdateMovie,
-    private val updateShow: UpdateShow,
-    private val tvCoverCache: TVShowCoverCache,
-    private val movieCoverCache: MovieCoverCache,
+    private val addContentItemToList: AddContentItemToList,
+    private val toggleContentItemFavorite: ToggleContentItemFavorite,
+    private val auth: Auth,
     private val listId: Long,
 ): StateScreenModel<ListAddState>(ListAddState.Loading),
     EventProducer<ListAddEvent> by EventProducer.default() {
@@ -223,41 +219,22 @@ class ListAddScreenModel(
         screenModelScope.launch {
             val state = state.value.success ?: return@launch
 
-            val list = state.list
-            if (contentItem.isMovie) {
-                contentListRepository.addMovieToList(contentItem.contentId, list)
-            } else {
-                contentListRepository.addShowToList(contentItem.contentId, list)
-            }
-
-            if (state.recommendations.contains(contentItem)) {
-                recommendationManager.removeRecommendation(contentItem, listId)
-            }
-            emitEvent(ListAddEvent.ItemAddedToList(contentItem.title))
+           addContentItemToList.await(contentItem, state.list)
+               .onSuccess {
+                   if (state.recommendations.contains(contentItem)) {
+                       recommendationManager.removeRecommendation(contentItem, listId)
+                   }
+                   emitEvent(ListAddEvent.ItemAddedToList(contentItem.title))
+               }
         }
     }
 
     fun toggleItemFavorite(contentItem: ContentItem) {
         screenModelScope.launch {
-            if (contentItem.isMovie) {
-                val movie = getMovie.await(contentItem.contentId) ?: return@launch
-
-                val new = movie.copy(favorite = !movie.favorite)
-
-                if(!new.favorite && !new.inList) {
-                    movieCoverCache.deleteFromCache(movie)
-                }
-                updateMovie .await(new.toMovieUpdate())
-            } else {
-                val show = getShow.await(contentItem.contentId) ?: return@launch
-
-                val new = show.copy(favorite = !show.favorite)
-
-                if(!new.favorite && !new.inList) {
-                    tvCoverCache.deleteFromCache(show)
-                }
-                updateShow.await(new.toShowUpdate())
-            }
+            toggleContentItemFavorite.await(
+                contentItem,
+                auth.currentUserOrNull()?.id != null
+            )
         }
     }
 

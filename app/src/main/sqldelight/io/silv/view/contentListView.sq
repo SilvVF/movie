@@ -33,8 +33,7 @@ LEFT JOIN
 
 libraryContentList:
 SELECT * FROM contentListView
-WHERE
-    inLibrary AND list_id IN (
+WHERE inLibrary AND list_id IN (
         SELECT list_id
         FROM
             contentItem sub_clj
@@ -52,7 +51,6 @@ WHERE
                 OR :query = ''
             )
     )
-    OR :query = ''
 ORDER BY
     list_id;
 

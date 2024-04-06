@@ -97,7 +97,9 @@ class ContentListRepositoryImpl(
 
     override fun observeLibraryItems(query: String): Flow<List<ContentListItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
-        return handler.subscribeToList { contentListViewQueries.libraryContentList(q, ContentListMapper.mapListItem) }
+        return handler.subscribeToList {
+            contentListViewQueries.libraryContentList(q, ContentListMapper.mapListItem)
+        }
     }
 
     override fun observeListCount(): Flow<Long> {

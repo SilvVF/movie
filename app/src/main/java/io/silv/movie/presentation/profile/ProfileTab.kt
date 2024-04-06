@@ -80,6 +80,7 @@ data object ProfileScreen: Screen {
         val navigator = LocalNavigator.currentOrThrow
         val state by screenModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }
+        val user by screenModel.currentUser.collectAsStateWithLifecycle()
 
         CollectEventsWithLifecycle(screenModel) { event ->
             when (event) {
@@ -119,8 +120,8 @@ data object ProfileScreen: Screen {
                     ) {
                         screenModel.updateProfilePicture(it.path)
                     }
-                    val editUsernameScreen = remember(targetState.user.username) {
-                        UsernameEditScreen(targetState.user.username)
+                    val editUsernameScreen = remember(user?.username) {
+                        UsernameEditScreen(user?.username.orEmpty())
                     }
                     val editUsernameScreenLauncher = rememberScreenWithResultLauncher(
                         screen = editUsernameScreen,

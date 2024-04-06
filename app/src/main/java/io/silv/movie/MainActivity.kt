@@ -26,26 +26,31 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
+import io.silv.movie.data.user.User
+import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.browse.BrowseTab
+import io.silv.movie.presentation.browse.DiscoverTab
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
@@ -55,7 +60,7 @@ import io.silv.movie.presentation.profile.ProfileTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.launch
+import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.defaultExtras
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.resolveViewModel
@@ -65,6 +70,7 @@ import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
+
 
 val LocalMainViewModelStoreOwner = staticCompositionLocalOf<ViewModelStoreOwner> { error("not provided") }
 
@@ -87,7 +93,25 @@ inline fun <reified T : ViewModel> getActivityViewModel(
     )
 }
 
+val LocalUser = compositionLocalOf<User?> { error("no user provided") }
+
+@Composable
+fun User?.rememberProfileImageData(): UserProfileImageData? {
+    val currentUser = LocalUser.current
+    return remember(this?.profileImage, currentUser?.profileImage) {
+        this?.let {
+            UserProfileImageData(
+                userId = it.userId,
+                isUserMe = it.userId == currentUser?.userId,
+                path = it.profileImage
+            )
+        }
+    }
+}
+
 class MainActivity : ComponentActivity() {
+
+    private val userRepository by inject<UserRepository>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -96,14 +120,16 @@ class MainActivity : ComponentActivity() {
 
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
+
         setContent {
+            val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
+
             CompositionLocalProvider(
                 LocalMainViewModelStoreOwner provides this,
+                LocalUser provides currentUser
             ) {
-
                 val mainScreenModel = getActivityViewModel<PlayerViewModel>()
                 val collapsableVideoState = rememberCollapsableVideoState()
-                val scope = rememberCoroutineScope()
 
                 BackHandler(
                     enabled = mainScreenModel.trailerQueue.isNotEmpty()
@@ -133,6 +159,14 @@ class MainActivity : ComponentActivity() {
                                 val playerVisible by remember {
                                     derivedStateOf { mainScreenModel.trailerQueue.isNotEmpty() }
                                 }
+                                val density = LocalDensity.current
+                                val bottomPadding by remember {
+                                    derivedStateOf {
+                                        with(density) {
+                                            CollapsablePlayerMinHeight - collapsableVideoState.dismissOffsetPx.toDp()
+                                        }
+                                    }
+                                }
                                 Box(
                                     Modifier
                                         .padding(paddingValues)
@@ -142,10 +176,7 @@ class MainActivity : ComponentActivity() {
                                         Modifier
                                             .padding(
                                                 bottom = animateDpAsState(
-                                                    targetValue = if (playerVisible)
-                                                        CollapsablePlayerMinHeight
-                                                    else
-                                                        0.dp,
+                                                    targetValue = if (playerVisible) bottomPadding else 0.dp,
                                                     label = "player-aware-padding-animated"
                                                 )
                                                     .value
@@ -166,11 +197,8 @@ class MainActivity : ComponentActivity() {
                                             onDismissRequested = mainScreenModel::clearMediaQueue,
                                             playerViewModel = mainScreenModel
                                         )
-                                        DisposableEffect(playerVisible) {
-                                            val job = scope.launch {
-                                                collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
-                                            }
-                                            onDispose { job.cancel() }
+                                        LaunchedEffect(playerVisible) {
+                                            collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
                                         }
                                     }
                                 }
@@ -195,6 +223,7 @@ fun AppBottomBar(
         persistentListOf(
             LibraryTab,
             BrowseTab,
+            DiscoverTab,
             ProfileTab
         )
     }

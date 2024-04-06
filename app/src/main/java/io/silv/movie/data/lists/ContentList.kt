@@ -1,7 +1,9 @@
 package io.silv.movie.data.lists
 
 import android.os.Parcelable
+import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.movie.model.MoviePoster
+import io.silv.movie.data.tv.model.TVShow
 import io.silv.movie.data.tv.model.TVShowPoster
 import kotlinx.parcelize.Parcelize
 
@@ -19,7 +21,25 @@ data class ContentList(
     val posterLastModified: Long,
     val createdAt: Long,
     val inLibrary: Boolean
-): Parcelable
+): Parcelable {
+
+    companion object {
+        fun create(): ContentList  = ContentList(
+            id = -1,
+            supabaseId = null,
+            createdBy = null,
+            lastSynced = null,
+            public = false,
+            name = "",
+            username = "",
+            description = "",
+            lastModified = -1L,
+            posterLastModified = -1L,
+            createdAt = -1L,
+            inLibrary = false
+        )
+    }
+}
 
 fun ContentList.toUpdate(): ContentListUpdate {
     return ContentListUpdate(id, name, username, description, posterLastModified, public)
@@ -34,6 +54,38 @@ data class ContentListUpdate(
     val inLibrary: Boolean? = null,
     val public: Boolean? = null
 )
+
+fun Movie.toContentItem(): ContentItem {
+    val it = this
+    return ContentItem(
+        title = it.title,
+        isMovie = true,
+        contentId = it.id,
+        posterUrl = it.posterUrl,
+        posterLastUpdated = it.posterLastUpdated,
+        favorite = it.favorite,
+        lastModified = it.lastModifiedAt,
+        description = it.overview,
+        popularity = it.popularity,
+        inLibraryLists = it.inLists.toLong()
+    )
+}
+
+fun TVShow.toContentItem(): ContentItem {
+    val it = this
+    return ContentItem(
+        title = it.title,
+        isMovie = false,
+        contentId = it.id,
+        posterUrl = it.posterUrl,
+        posterLastUpdated = it.posterLastUpdated,
+        favorite = it.favorite,
+        lastModified = it.lastModifiedAt,
+        description = it.overview,
+        popularity = it.popularity,
+        inLibraryLists = it.inLists.toLong()
+    )
+}
 
 fun MoviePoster.toContentItem(): ContentItem {
     val it = this
@@ -83,6 +135,21 @@ data class ContentItem(
         get() = inLibraryLists >= 1L
 
     val itemKey by lazy { "$isMovie$contentId" }
+
+    companion object {
+        fun create() = ContentItem(
+            contentId = -1,
+            isMovie = false,
+            title = "",
+            posterUrl = null,
+            posterLastUpdated = -1L,
+            favorite = false,
+            inLibraryLists = -1,
+            lastModified = -1L,
+            description = "",
+            popularity = -1.0
+        )
+    }
 }
 
 sealed class ContentListItem(

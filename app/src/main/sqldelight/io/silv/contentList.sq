@@ -66,19 +66,6 @@ NULL,
 
 CREATE INDEX supabase_id_idx ON contentList(supabase_id);
 
-updatePublic:
-UPDATE contentList SET
-    public = COALESCE(:public, public)
-WHERE _id = :id;
-
-updateSupabase:
-UPDATE contentList SET
-    supabase_id = :supabaseId,
-    created_by = :createdBy,
-    public = COALESCE(:public, public),
-    synced_at = strftime('%s', 'now')
-WHERE _id = :id;
-
 update:
 UPDATE contentList SET
     name = COALESCE(:name, name),

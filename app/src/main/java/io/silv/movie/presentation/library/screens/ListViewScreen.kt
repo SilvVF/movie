@@ -330,7 +330,6 @@ data class ListViewScreen(
                     ListViewScreenModel.Dialog.FullCover -> {
                         val sm = getScreenModel<ListCoverScreenModel> { parametersOf(s.list.id) }
                         val list by sm.state.collectAsStateWithLifecycle()
-                        val context = LocalContext.current
 
                         LaunchedEffect(s.list.id) {
                             sm.refresh(s.list.id)
@@ -403,9 +402,8 @@ private fun SuccessScreenContent(
                 topBar = {
                     ListViewTopBar(
                         state  = topBarState,
-                        username = state.user?.username.orEmpty(),
+                        user = state.user,
                         description = state.list.description,
-                        userId = state.list.createdBy,
                         query = { query },
                         changeQuery = updateQuery,
                         onSearch = updateQuery,

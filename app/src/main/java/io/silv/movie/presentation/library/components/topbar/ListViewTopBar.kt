@@ -43,24 +43,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import coil.compose.AsyncImage
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
 import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
-import io.silv.movie.UserProfileImageData
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.user.User
 import io.silv.movie.presentation.library.components.ContentListPosterItems
 import io.silv.movie.presentation.library.screenmodels.ListSortMode
+import io.silv.movie.presentation.profile.UserProfileImage
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun ListViewTopBar(
     state: PosterTopBarState,
-    userId: String? = null,
-    username: String? = null,
+    user: User?,
+    isUserMe: Boolean,
     description: String,
     query: () -> String,
     changeQuery: (String) -> Unit,
@@ -74,7 +74,6 @@ fun ListViewTopBar(
     changeSortMode: (ListSortMode) -> Unit,
     onPosterClick: () -> Unit,
     primary: Color,
-    isUserMe: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val background = MaterialTheme.colorScheme.background
@@ -103,13 +102,10 @@ fun ListViewTopBar(
         PosterLargeTopBar(
             state = state,
             title = {
-                if (userId != null) {
+                if (user != null) {
                     TitleWithProfilePicture(
-                        name = list.name,
-                        userId = userId,
-                        username = username.orEmpty(),
+                        user = user,
                         description = description,
-                        isUserMe = isUserMe
                     )
                 } else {
                     Text(list.name)
@@ -120,13 +116,12 @@ fun ListViewTopBar(
                 scrolledContainerColor = primary.copy(alpha = 0.2f)
             ),
             smallTitle = {
-                if (userId != null) {
+                if (user != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        AsyncImage(
-                            model = UserProfileImageData(userId, isUserMe),
-                            error = painterResource(id = R.drawable.user_default_proflie_icon),
+                        UserProfileImage(
+                            user = user,
                             modifier = Modifier
                                 .size(22.dp)
                                 .clip(CircleShape)
@@ -187,18 +182,15 @@ fun ListViewTopBar(
 
 @Composable
 fun TitleWithProfilePicture(
-    name: String,
-    userId: String,
-    username: String,
+    user: User,
     description: String,
-    isUserMe: Boolean,
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Bottom
     ) {
         Text(
-            text = name,
+            text = user.username,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
@@ -206,8 +198,8 @@ fun TitleWithProfilePicture(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AsyncImage(
-                model = UserProfileImageData(userId, isUserMe),
+            UserProfileImage(
+                user = user,
                 error = painterResource(id = R.drawable.user_default_proflie_icon),
                 modifier = Modifier
                     .size(28.dp)
@@ -219,7 +211,7 @@ fun TitleWithProfilePicture(
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(
-                    text = username,
+                    text = user.username,
                     style = MaterialTheme.typography.labelSmall
                 )
                 Text(
