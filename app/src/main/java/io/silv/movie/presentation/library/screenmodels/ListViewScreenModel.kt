@@ -134,9 +134,9 @@ class ListViewScreenModel(
                 basePreferences.recentlyViewedLists().getAndSet {
                     it.toMutableSet().apply {
                         if (this.size > 10) {
-                           remove(first())
+                           this.remove(first())
                         }
-                        list.supabaseId?.let { add(it) }
+                        list.supabaseId?.let { this.add(it) }
                     }
                 }
             }

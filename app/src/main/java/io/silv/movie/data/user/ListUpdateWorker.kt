@@ -120,9 +120,7 @@ class ListUpdater(
 
         val list = listRepository.selectListWithItemsById(listId)!!
         val username = userRepository.getUser(list.userId)?.username
-        val isOwnerMe =
-            list.userId == auth.currentUserOrNull()?.id
-                    && auth.currentUserOrNull()?.id != null
+        val isOwnerMe = list.userId == auth.currentUserOrNull()?.id
 
         try {
             var local = contentListRepository.getListForSupabaseId(list.listId)

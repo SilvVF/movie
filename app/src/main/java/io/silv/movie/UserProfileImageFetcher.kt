@@ -14,12 +14,11 @@ import io.silv.movie.coil.ByteArrayFetcherConfig
 import io.silv.movie.coil.FetcherDiskStore
 import io.silv.movie.coil.FetcherDiskStoreImageFile
 import io.silv.movie.data.cache.ProfileImageCache
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import okio.Path.Companion.toOkioPath
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 
 @Serializable
 private data class UserProfileImageResponse(
@@ -31,28 +30,7 @@ data class UserProfileImageData(
     val userId: String,
     val isUserMe: Boolean = false,
     val path: String? = null
-) {
-
-    val defaultPath by lazy {
-        runBlocking {
-
-            val koin = object : KoinComponent {}
-            val postgrest by koin.inject<Postgrest>()
-
-            postgrest["users"]
-                .select(
-                    columns = Columns.list("profile_image")
-                ) {
-                    filter {
-                        eq("user_id", userId)
-                    }
-                    limit(1)
-            }
-                .decodeSingle<UserProfileImageResponse>()
-                .profileImage
-        }
-    }
-}
+)
 
 data class BucketFetchItem(
     val bucket: String,
@@ -111,6 +89,7 @@ class UserProfileImageFetcher(
     override val context: Context,
     private val storageLazy: Lazy<Storage>,
     private val profileImageCacheLazy: Lazy<ProfileImageCache>,
+    private val postgrestLazy: Lazy<Postgrest>,
 ): ByteArrayFetcherConfig<UserProfileImageData> {
 
     private val storage
@@ -118,6 +97,9 @@ class UserProfileImageFetcher(
 
     private val profileImageCache
         get() = profileImageCacheLazy.value
+
+    private val postgrest
+        get() = postgrestLazy.value
 
     override val keyer: Keyer<UserProfileImageData> =
         Keyer { data, options ->
@@ -157,8 +139,26 @@ class UserProfileImageFetcher(
         return null
     }
 
+    private suspend fun getUserProfilePath(userId: String) = withContext(Dispatchers.IO) {
+        postgrest["users"]
+            .select(
+                columns = Columns.list("profile_image")
+            ) {
+                filter {
+                    eq("user_id", userId)
+                }
+                limit(1)
+            }
+            .decodeSingle<UserProfileImageResponse>()
+            .profileImage
+    }
+
     override suspend fun fetch(options: Options, data: UserProfileImageData): ByteArray {
         val bucket = storage["profile_pictures"]
-        return bucket.downloadPublic(data.path ?: data.defaultPath ?: error("no profile image path"))
+        return bucket.downloadPublic(
+            data.path
+                ?: getUserProfilePath(data.userId)
+                ?: error("failed to fetch user profile image")
+        )
     }
 }

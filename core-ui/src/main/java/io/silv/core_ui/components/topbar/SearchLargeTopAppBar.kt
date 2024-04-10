@@ -69,6 +69,7 @@ fun SearchLargeTopBar(
     windowInsets: WindowInsets = TopAppBarDefaults.windowInsets,
     colors: TopAppBarColors2 = TopAppBarDefaults.colors2(),
     scrollBehavior: TopAppBarScrollBehavior? = null,
+    maxHeight: Dp = TopBarMaxHeight,
     pinnedContent: @Composable () -> Unit = {},
     extraContent: @Composable () -> Unit = {},
 ) {
@@ -83,7 +84,7 @@ fun SearchLargeTopBar(
         actions = actions,
         colors = colors,
         windowInsets = windowInsets,
-        maxHeight = TopBarMaxHeight,
+        maxHeight = maxHeight,
         pinnedHeight = TopBarPinnedHeight,
         scrollBehavior = scrollBehavior,
         extraContent = extraContent,

@@ -69,7 +69,7 @@ inline fun <reified T : Enum<T>> PreferenceStore.getEnum(
     )
 }
 
-fun <T> Preference<T>.getOrDefault(): T {
+fun <T> Preference<T>.getOrDefaultBlocking(): T {
     return runBlocking {
         withTimeoutOrNull(50) { get() } ?: defaultValue()
     }

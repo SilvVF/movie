@@ -32,6 +32,8 @@ data class ListWithPostersRpcResponse(
     val profileImagePath: String?,
     @SerialName("ids")
     val ids: List<String?>? = listOf(),
+    @SerialName("total")
+    val total: Long? = null
 ) {
 
     val content
@@ -75,7 +77,7 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
             contentItem ?: ContentItem.create().copy(
                 contentId = contentId,
                 isMovie = isMovie,
-                posterUrl = posterPath,
+                posterUrl = "https://image.tmdb.org/t/p/original/$posterPath",
             )
         }
             .toImmutableList()

@@ -16,7 +16,7 @@ import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.UpdateMovie
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.prefrences.core.getOrDefault
+import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.UpdateShow
@@ -79,7 +79,7 @@ class FavoritesScreenModel(
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000L),
-            FavoritesListState(sortModeFavorites.getOrDefault())
+            FavoritesListState(sortModeFavorites.getOrDefaultBlocking())
         )
 
     fun setSortMode(sortMode: FavoritesSortMode) {

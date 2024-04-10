@@ -8,6 +8,7 @@ import coil.ImageLoaderFactory
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
+import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 import io.silv.movie.coil.CoilDiskCache
 import io.silv.movie.coil.CoilMemoryCache
@@ -70,7 +71,8 @@ class App: Application(), ImageLoaderFactory {
                     fetcher = UserProfileImageFetcher(
                         this@App,
                             inject<Storage>(),
-                            inject<ProfileImageCache>()
+                            inject<ProfileImageCache>(),
+                            inject<Postgrest>()
                     )
                 )
                 addByteArrayDiskFetcher(

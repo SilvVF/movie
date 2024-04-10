@@ -42,7 +42,7 @@ data class ContentList(
 }
 
 fun ContentList.toUpdate(): ContentListUpdate {
-    return ContentListUpdate(id, name, username, description, posterLastModified, public)
+    return ContentListUpdate(id, name, username, description, posterLastModified, inLibrary, public)
 }
 
 data class ContentListUpdate(

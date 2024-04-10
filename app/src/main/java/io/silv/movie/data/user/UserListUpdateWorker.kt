@@ -23,6 +23,9 @@ import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.model.toDomain
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.supervisorScope
 import kotlinx.datetime.Clock
 import timber.log.Timber
 
@@ -50,65 +53,86 @@ class UserListUpdateWorker (
     override suspend fun doWork(): Result {
 
         val user = auth.currentUserOrNull()!!
-        val userCreated = listRepository.selectListsByUserId(user.id)!!
-        val subscriptions = listRepository.selectSubscriptions(user.id).orEmpty()
-        val username = userRepository.getUser(user.id)?.username
 
-        val network = userCreated + subscriptions
+        supervisorScope {
 
-        for (list in network) {
-            try {
-                var local = contentListRepository.getListForSupabaseId(list.listId)
+            val subscriptions = async(Dispatchers.IO) {
+                listRepository.selectSubscriptions(user.id)
+            }
 
-                if (local == null) {
-                    val id = contentListRepository.createList(
-                        name = list.name,
-                        supabaseId = list.listId,
-                        userId = list.userId,
-                        createdAt = list.createdAt.toEpochMilliseconds()
+            val userCreated  = async(Dispatchers.IO) {
+                listRepository.selectListsByUserId(user.id)
+            }
+
+            val username = async(Dispatchers.IO) {
+                userRepository.getUser(user.id)?.username
+            }
+
+            val network = userCreated.await().orEmpty() + subscriptions.await().orEmpty()
+
+            for (list in network) {
+                try {
+                    var local = contentListRepository.getListForSupabaseId(list.listId)
+
+                    if (local == null) {
+                        val id = contentListRepository.createList(
+                            name = list.name,
+                            supabaseId = list.listId,
+                            userId = list.userId,
+                            inLibrary = true,
+                            createdAt = list.createdAt.toEpochMilliseconds()
+                        )
+                        local = contentListRepository.getList(id)
+                            ?: error("failed to add list $network")
+                    }
+
+                    Timber.d(local.toString())
+
+                    contentListRepository.updateList(
+                        local.copy(
+                            description = list.description,
+                            name = list.name,
+                            username = username.await() ?: local.username,
+                            public = list.public,
+                            inLibrary = true,
+                            lastSynced = Clock.System.now().toEpochMilliseconds()
+                        )
+                            .toUpdate()
                     )
-                    local = contentListRepository.getList(id)!!
-                }
 
-                contentListRepository.updateList(
-                    local.copy(
-                        description = list.description,
-                        lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
-                        name = list.name,
-                        username = username ?: local.username,
-                        public = list.public,
-                        createdBy = user.id,
-                        lastSynced = Clock.System.now().toEpochMilliseconds()
-                    )
-                        .toUpdate()
-                )
-                val items = list.items.orEmpty()
 
-                val addToList = mutableListOf<Pair<Long, Boolean>>()
+                    val items = list.items.orEmpty()
 
-                for (item in items) {
-                    try {
-                        if (item.movieId != -1L) {
-                            var movie = getMovie.await(item.movieId)
-                            if (movie == null) {
-                                movie = networkToLocalMovie.await(
-                                    getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
-                                )
+                    val addToList = mutableListOf<Pair<Long, Boolean>>()
+
+                    for (item in items) {
+                        try {
+                            if (item.movieId != -1L) {
+                                var movie = getMovie.await(item.movieId)
+                                if (movie == null) {
+                                    movie = networkToLocalMovie.await(
+                                        getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
+                                    )
+                                }
+                                addToList.add(movie.id to true)
+                            } else if (item.showId != -1L) {
+                                var show = getShow.await(item.showId)
+                                if (show == null) {
+                                    show = networkToLocalTVShow.await(
+                                        getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
+                                    )
+                                }
+                                addToList.add(show.id to false)
                             }
-                            addToList.add(movie.id to true)
-                        } else if (item.showId != -1L) {
-                            var show = getShow.await(item.showId)
-                            if (show == null) {
-                                show = networkToLocalTVShow.await(
-                                    getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
-                                )
-                            }
-                            addToList.add(show.id to false)
+                        } catch (ignored: Exception) {
+                            Timber.e(ignored)
                         }
-                    } catch (ignored: Exception){ Timber.e(ignored) }
+                    }
+                    contentListRepository.addItemsToList(addToList, local)
+                } catch (ignored: Exception) {
+                    Timber.e(ignored)
                 }
-                contentListRepository.addItemsToList(addToList, local)
-            } catch (ignored: Exception){ Timber.e(ignored) }
+            }
         }
         return Result.success()
     }
@@ -147,7 +171,7 @@ class UserListUpdateWorker (
 
             workManager.enqueueUniqueWork(
                 TAG,
-                ExistingWorkPolicy.REPLACE,
+                ExistingWorkPolicy.KEEP,
                 workRequest()
             )
         }

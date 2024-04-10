@@ -3,7 +3,7 @@ package io.silv.movie.presentation
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import io.silv.movie.data.prefrences.core.Preference
-import io.silv.movie.data.prefrences.core.getOrDefault
+import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -14,7 +14,7 @@ class PreferenceMutableState<T>(
     private val scope: CoroutineScope,
 ) : MutableState<T> {
 
-    private val state = mutableStateOf(preference.getOrDefault())
+    private val state = mutableStateOf(preference.getOrDefaultBlocking())
 
     init {
         preference.changes()
@@ -36,5 +36,4 @@ class PreferenceMutableState<T>(
         return { scope.launch { preference.set(it) } }
     }
 }
-
 fun <T> Preference<T>.asState(scope: CoroutineScope) = PreferenceMutableState(this, scope)

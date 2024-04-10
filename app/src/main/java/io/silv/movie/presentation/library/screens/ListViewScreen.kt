@@ -403,7 +403,6 @@ private fun SuccessScreenContent(
                     ListViewTopBar(
                         state  = topBarState,
                         user = state.user,
-                        description = state.list.description,
                         query = { query },
                         changeQuery = updateQuery,
                         onSearch = updateQuery,

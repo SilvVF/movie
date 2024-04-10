@@ -166,7 +166,7 @@ private fun LibraryStandardScreenContent(
 
     PullRefresh(
         refreshing = state.refreshingLists || state.refreshingFavorites,
-        enabled = { !state.refreshingLists && !state.refreshingFavorites},
+        enabled = { true },
         onRefresh = {
             refreshLists()
             refreshFavorites()

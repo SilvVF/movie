@@ -61,7 +61,6 @@ fun ListViewTopBar(
     state: PosterTopBarState,
     user: User?,
     isUserMe: Boolean,
-    description: String,
     query: () -> String,
     changeQuery: (String) -> Unit,
     onSearch: (String) -> Unit,
@@ -105,7 +104,8 @@ fun ListViewTopBar(
                 if (user != null) {
                     TitleWithProfilePicture(
                         user = user,
-                        description = description,
+                        name = list.name,
+                        description = list.description,
                     )
                 } else {
                     Text(list.name)
@@ -183,6 +183,7 @@ fun ListViewTopBar(
 @Composable
 fun TitleWithProfilePicture(
     user: User,
+    name: String,
     description: String,
 ) {
     Column(
@@ -190,7 +191,7 @@ fun TitleWithProfilePicture(
         verticalArrangement = Arrangement.Bottom
     ) {
         Text(
-            text = user.username,
+            text = name,
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )

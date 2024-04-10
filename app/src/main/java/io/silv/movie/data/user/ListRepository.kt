@@ -7,6 +7,7 @@ import io.github.jan.supabase.postgrest.rpc
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.presentation.browse.lists.ListWithPostersRpcResponse
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
@@ -92,7 +93,7 @@ private data class FavoriteMovieInsert(
     @SerialName("user_id")
     val userId: String,
     @SerialName("poster_path")
-    val posterPath: String,
+    val posterPath: String?,
     val title: String,
     val overview: String,
     @SerialName("vote_average")
@@ -142,6 +143,13 @@ private data class SubscriptionRpcParams(
     val uid: String
 )
 
+
+@Serializable
+private data class FromSubscribedRpcParams(
+    val uid: String,
+    val lim: Int
+)
+
 class ListRepository(
     private val postgrest: Postgrest,
     private val auth: Auth,
@@ -163,7 +171,7 @@ class ListRepository(
                 .insert(
                     FavoriteMovieInsert(
                         auth.currentUserOrNull()!!.id,
-                        show.posterUrl!!,
+                        show.posterUrl?.substringAfterLast('/'),
                         show.title,
                         show.overview,
                         show.popularity,
@@ -181,7 +189,7 @@ class ListRepository(
                 .insert(
                     FavoriteMovieInsert(
                         auth.currentUserOrNull()!!.id,
-                        movie.posterUrl!!,
+                        movie.posterUrl?.substringAfterLast('/'),
                         movie.title,
                         movie.overview,
                         movie.popularity,
@@ -239,6 +247,17 @@ class ListRepository(
                     filter { eq("list_id", listId) }
                 }
                 .decodeSingle<UserList>()
+        }
+            .getOrNull()
+    }
+
+    suspend fun selectRecommendedFromSubscriptions(): List<ListWithPostersRpcResponse>? {
+        return runCatching {
+            postgrest.rpc(
+                "select_recommended_by_subscriptions",
+                FromSubscribedRpcParams(auth.currentUserOrNull()!!.id, lim = 20)
+            )
+                .decodeList<ListWithPostersRpcResponse>()
         }
             .getOrNull()
     }
@@ -396,7 +415,7 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = movieId,
                         showId = -1,
-                        posterPath = posterPath
+                        posterPath = posterPath?.substringAfterLast('/')
                     )
                 )
         }
@@ -413,7 +432,7 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = -1,
                         showId = showId,
-                        posterPath = posterPath
+                        posterPath = posterPath?.substringAfterLast('/')
                     )
                 )
         }

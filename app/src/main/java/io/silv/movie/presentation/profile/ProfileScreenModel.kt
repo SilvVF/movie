@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import timber.log.Timber
 
 
 class ProfileScreenModel(
@@ -92,8 +91,6 @@ class ProfileScreenModel(
             val userid =  state.value.loggedIn?.info?.id
             contentListItems.filter { item ->
                 val createdBy = item.list.createdBy
-
-                Timber.d("pub $createdBy  $userid $item")
                 createdBy != null && createdBy == userid && item.list.public
             }
         }.map {
@@ -111,8 +108,6 @@ class ProfileScreenModel(
             val userid =  state.value.loggedIn?.info?.id
             contentListItems.filter { item ->
                 val createdBy = item.list.createdBy
-
-                Timber.d("sub $createdBy  $userid $item")
                 createdBy != null && createdBy != userid && userid != null
             }
         }.map {
