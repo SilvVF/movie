@@ -10,12 +10,12 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
-import io.silv.movie.LocalGlobalNavigator
+import io.silv.movie.Nav
 import io.silv.movie.R
 import io.silv.movie.presentation.library.screens.LibraryScreen
 
 
-object LibraryTab: Tab {
+data object LibraryTab: Tab {
 
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -26,18 +26,13 @@ object LibraryTab: Tab {
 
     @Composable
     override fun Content() {
-
-        val currentNav = LocalGlobalNavigator.current
-
         Navigator(
             LibraryScreen()
-        ) {
+        ) { navigator ->
 
-            SideEffect {
-                currentNav.value = it
-            }
+            SideEffect { Nav.setNav(navigator) }
 
-            FadeTransition(it)
+            FadeTransition(navigator)
         }
     }
 }

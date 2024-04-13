@@ -56,6 +56,7 @@ object MovieMapper {
           last_modified_at: Long,
           popularity: Double,
           inLists: Long,
+          overview: String,
          ->
             MoviePoster(
                 id = id,
@@ -63,6 +64,7 @@ object MovieMapper {
                 posterUrl  = poster_url,
                 favorite = favorite,
                 posterLastUpdated = poster_last_updated,
+                overview = overview,
                 inLibraryLists = inLists
             )
         }

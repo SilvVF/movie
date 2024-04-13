@@ -36,12 +36,11 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -49,6 +48,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
@@ -83,7 +84,17 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import kotlin.math.roundToInt
 
 
-val LocalGlobalNavigator = compositionLocalOf<MutableState<Navigator?>> { error("not provided") }
+object Nav {
+
+    var current by mutableStateOf<Navigator?>(null)
+        private set
+
+    fun setNav(navigator: Navigator) {
+        current = navigator
+    }
+
+    fun clear() { current = null }
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -99,20 +110,21 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
-            val currentNavigator = remember { mutableStateOf<Navigator?>(null) }
+
+            LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
+                Nav.clear()
+            }
 
             CompositionLocalProvider(
                 LocalMainViewModelStoreOwner provides this,
                 LocalUser provides currentUser,
                 LocalListInteractor provides mainScreenModel.listInteractor,
                 LocalContentInteractor provides mainScreenModel.contentInteractor,
-                LocalGlobalNavigator provides currentNavigator,
             ) {
                 val playerViewModel = getActivityViewModel<PlayerViewModel>()
                 val listInteractor = LocalListInteractor.current
                 val contentInteractor = LocalContentInteractor.current
                 val collapsableVideoState = rememberCollapsableVideoState()
-                val navigator by LocalGlobalNavigator.current
                 val snackbarHostState = remember { SnackbarHostState() }
 
                 val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
@@ -218,18 +230,19 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+
+                        HandleItemEvents(
+                            contentInteractor = contentInteractor,
+                            snackbarHostState = snackbarHostState,
+                            navigator = { Nav.current}
+                        )
+                        HandleListEvents(
+                            listInteractor = listInteractor,
+                            snackbarHostState = snackbarHostState,
+                            navigator = { Nav.current }
+                        )
                     }
                 }
-                HandleItemEvents(
-                    contentInteractor = contentInteractor,
-                    snackbarHostState = snackbarHostState,
-                    navigator = navigator
-                )
-                HandleListEvents(
-                    listInteractor = listInteractor,
-                    snackbarHostState = snackbarHostState,
-                    navigator = navigator
-                )
             }
         }
     }
@@ -239,7 +252,7 @@ class MainActivity : ComponentActivity() {
 private fun HandleListEvents(
     listInteractor: ListInteractor,
     snackbarHostState: SnackbarHostState,
-    navigator: Navigator?,
+    navigator: () -> Navigator?,
     context: Context = LocalContext.current
 ) {
     CollectEventsWithLifecycle(listInteractor) { event ->
@@ -254,7 +267,7 @@ private fun HandleListEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator?.push(
+                            navigator()?.push(
                                 ListViewScreen(
                                     event.list.id,
                                     event.list.supabaseId.orEmpty()
@@ -302,7 +315,7 @@ private fun HandleListEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator?.push(
+                            navigator()?.push(
                                 ListViewScreen(
                                     event.list.id,
                                     event.list.supabaseId.orEmpty()
@@ -391,7 +404,7 @@ private fun HandleListEvents(
 private fun HandleItemEvents(
     contentInteractor: ContentInteractor,
     snackbarHostState: SnackbarHostState,
-    navigator: Navigator?,
+    navigator: () -> Navigator?,
     context: Context = LocalContext.current
 ) {
     CollectEventsWithLifecycle(contentInteractor) { event ->
@@ -484,7 +497,7 @@ private fun HandleItemEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator?.push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty()))
+                            navigator()?.push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty()))
                     }
                 } else {
                     val result = snackbarHostState.showSnackbar(

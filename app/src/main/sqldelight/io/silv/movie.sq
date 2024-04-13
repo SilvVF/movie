@@ -62,7 +62,7 @@ SELECT * FROM movie WHERE id = :id LIMIT 1;
 
 
 selectMoviePartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity, in_library_lists FROM movie WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity, in_library_lists, overview FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:
 SELECT * FROM movie;

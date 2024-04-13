@@ -33,13 +33,13 @@ import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.launch
 
 @Composable
-fun ListOptionsBottomSheet(
+fun ContentOptionsBottomSheet(
     onDismissRequest: () ->  Unit,
     onAddToAnotherListClick: () -> Unit,
     onToggleFavoriteClicked: () -> Unit,
-    onRemoveFromListClicked: () -> Unit,
-    isOwnerMe: Boolean,
     item: ContentItem,
+    onRemoveFromListClicked: (() -> Unit)? = null,
+    isOwnerMe: Boolean = false,
 ) {
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
@@ -95,7 +95,7 @@ fun ListOptionsBottomSheet(
             icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
             onClick = onAddToAnotherListClick
         )
-        if(isOwnerMe) {
+        if(isOwnerMe && onRemoveFromListClicked != null) {
             BottomSheetItem(
                 title = { Text(stringResource(id = R.string.option_remove_from_list)) },
                 icon = { Icon(imageVector = Icons.Filled.RemoveCircleOutline, contentDescription = null) },

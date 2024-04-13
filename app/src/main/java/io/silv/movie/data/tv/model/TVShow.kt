@@ -11,6 +11,7 @@ import kotlinx.parcelize.Parcelize
 data class TVShowPoster(
     val id: Long,
     val title: String,
+    val overview: String,
     val posterLastUpdated: Long,
     val posterUrl: String?,
     val favorite: Boolean,

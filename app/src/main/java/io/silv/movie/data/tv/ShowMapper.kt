@@ -57,6 +57,7 @@ object ShowMapper {
           last_modified_at: Long,
           popularity: Double,
           inLists: Long,
+          overview: String
             ->
             TVShowPoster(
                 id = id,
@@ -64,7 +65,8 @@ object ShowMapper {
                 posterUrl  = poster_url,
                 favorite = favorite,
                 posterLastUpdated = poster_last_updated,
-                inLibraryLists = inLists
+                inLibraryLists = inLists,
+                overview = overview
             )
         }
 }

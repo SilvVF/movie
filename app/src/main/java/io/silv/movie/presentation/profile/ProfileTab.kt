@@ -41,7 +41,7 @@ import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
-import io.silv.movie.LocalGlobalNavigator
+import io.silv.movie.Nav
 import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
@@ -67,16 +67,11 @@ data object ProfileTab: Tab {
 
     @Composable
     override fun Content() {
+        Navigator(ProfileScreen) { navigator ->
 
-        val currentNav = LocalGlobalNavigator.current
+            SideEffect { Nav.setNav(navigator) }
 
-        Navigator(ProfileScreen) {
-
-            SideEffect {
-                currentNav.value = it
-            }
-
-            FadeTransition(it)
+            FadeTransition(navigator)
         }
     }
 }

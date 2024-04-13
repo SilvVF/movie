@@ -42,6 +42,7 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.lists.toContentItem
@@ -54,6 +55,8 @@ import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.browse.movie.components.ContentBrowseTopBar
 import io.silv.movie.presentation.browse.movie.components.MovieSourcePagingContent
 import io.silv.movie.presentation.browse.tv.BrowseTVScreen
+import io.silv.movie.presentation.library.components.dialog.ContentOptionsBottomSheet
+import io.silv.movie.presentation.library.screens.AddToListScreen
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
@@ -73,14 +76,11 @@ data class BrowseMovieScreen(
 
         // needed for movie action to be stable
         val stableChangeDialogRefrence = remember {
-            { dialog: MovieScreenModel.Dialog.RemoveMovie ->
+            { dialog: MovieScreenModel.Dialog ->
                 screenModel.changeDialog(dialog)
             }
         }
         val contentInteractor = LocalContentInteractor.current
-        val toggleMovieFavorite = remember {
-            { movie: MoviePoster -> contentInteractor.toggleFavorite(movie.toContentItem()) }
-        }
         val navigator = LocalNavigator.currentOrThrow
 
         DisposableEffectIgnoringConfiguration(Unit) {
@@ -98,11 +98,7 @@ data class BrowseMovieScreen(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
                 movieLongClick = {
-                    if(it.favorite) {
-                        stableChangeDialogRefrence(MovieScreenModel.Dialog.RemoveMovie(it))
-                    } else {
-                        toggleMovieFavorite(it)
-                    }
+                    stableChangeDialogRefrence(MovieScreenModel.Dialog.ContentOptions(it.toContentItem()))
                 },
                 movieClick = { navigator.push(MovieViewScreen(it.id)) },
                 onSearch = screenModel::onSearch,
@@ -118,6 +114,30 @@ data class BrowseMovieScreen(
         )
         val onDismissRequest = remember {{ screenModel.changeDialog(null) }}
         when (val dialog = state.dialog) {
+            null -> Unit
+            is MovieScreenModel.Dialog.ContentOptions -> {
+                val addToAnotherListScreen = remember(dialog.item) {
+                    AddToListScreen(dialog.item.contentId, dialog.item.isMovie)
+                }
+
+                val launcher = rememberScreenWithResultLauncher(
+                    screen = addToAnotherListScreen
+                ) { result ->
+                    contentInteractor.addToAnotherList(result.listId, dialog.item)
+                }
+
+                ContentOptionsBottomSheet(
+                    onDismissRequest = onDismissRequest,
+                    onAddToAnotherListClick = {
+                        launcher.launch()
+                        onDismissRequest()
+                    },
+                    onToggleFavoriteClicked = {
+                        contentInteractor.toggleFavorite(dialog.item)
+                    },
+                    item = dialog.item
+                )
+            }
             is MovieScreenModel.Dialog.RemoveMovie -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
@@ -159,7 +179,6 @@ data class BrowseMovieScreen(
                     }
                 )
             }
-            else -> Unit
         }
     }
 }

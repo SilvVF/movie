@@ -22,6 +22,7 @@ import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
@@ -229,6 +230,9 @@ class MovieScreenModel(
 
     @Stable
     sealed interface Dialog {
+
+        @Stable
+        data class ContentOptions(val item: ContentItem): Dialog
 
         @Stable
         data object Filter : Dialog

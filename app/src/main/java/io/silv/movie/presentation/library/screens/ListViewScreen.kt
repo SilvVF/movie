@@ -58,6 +58,7 @@ import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import io.silv.movie.presentation.library.components.dialog.ContentOptionsBottomSheet
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.components.dialog.ListViewCoverDialog
 import io.silv.movie.presentation.library.components.topbar.ListViewTopBar
@@ -101,9 +102,7 @@ data class ListViewScreen(
         CollectEventsWithLifecycle(screenModel) { event ->
             when (event) {
                 ListViewEvent.ListDeleted -> navigator.pop()
-                ListViewEvent.FailedToRemoveListFromNetwork -> showSnackBar(
-                    context.getString(R.string.failed_to_delete_list_item)
-                )
+                ListViewEvent.FailedToRemoveListFromNetwork -> showSnackBar(context.getString(R.string.failed_to_delete_list))
             }
         }
 
@@ -123,6 +122,7 @@ data class ListViewScreen(
             ListViewState.Loading -> Unit
             is ListViewState.Success -> {
 
+                val onDismissRequest = remember { { screenModel.changeDialog(null) } }
                 val listEditScreen = remember(s.list.name) { ListEditScreen(s.list.name) }
 
                 val screenResultLauncher = rememberScreenWithResultLauncher(
@@ -241,8 +241,6 @@ data class ListViewScreen(
                     snackbarHostState = snackBarState,
                     state = s
                 )
-
-                val onDismissRequest = remember { { screenModel.changeDialog(null) } }
                 when (val dialog = s.dialog) {
                     is ListViewScreenModel.Dialog.DeleteList -> {
                         RemoveEntryDialog(
@@ -262,10 +260,11 @@ data class ListViewScreen(
                             contentInteractor.addToAnotherList(result.listId, dialog.item)
                         }
 
-                        ListOptionsBottomSheet(
+                        ContentOptionsBottomSheet(
                             onDismissRequest = onDismissRequest,
                             onAddToAnotherListClick = {
                                 launcher.launch()
+                                onDismissRequest()
                             },
                             onToggleFavoriteClicked = {
                                 toggleItemFavorite(dialog.item)
@@ -281,7 +280,10 @@ data class ListViewScreen(
                         ListOptionsBottomSheet(
                             onDismissRequest = onDismissRequest,
                             onAddClick = { navigator.push(ListAddScreen(s.list.id)) },
-                            onEditClick = { screenResultLauncher.launch() },
+                            onEditClick = {
+                                screenResultLauncher.launch()
+                                onDismissRequest()
+                            },
                             onDeleteClick = { changeDialog(ListViewScreenModel.Dialog.DeleteList) },
                             onShareClick = {
                                 listInteractor.toggleListVisibility(s.list)

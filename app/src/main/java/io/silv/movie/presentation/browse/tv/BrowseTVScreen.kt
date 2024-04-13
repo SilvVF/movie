@@ -42,6 +42,7 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.lists.toContentItem
@@ -54,6 +55,8 @@ import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.browse.movie.BrowseMovieScreen
 import io.silv.movie.presentation.browse.movie.components.ContentBrowseTopBar
 import io.silv.movie.presentation.browse.tv.components.TVSourcePagingContent
+import io.silv.movie.presentation.library.components.dialog.ContentOptionsBottomSheet
+import io.silv.movie.presentation.library.screens.AddToListScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.StateFlow
@@ -73,7 +76,7 @@ data class BrowseTVScreen(
         val online by screenModel.online.collectAsStateWithLifecycle()
         // needed for movie action to be stable
         val stableChangeDialogRefrence = remember {
-            { dialog: TVScreenModel.Dialog.RemoveShow ->
+            { dialog: TVScreenModel.Dialog ->
                 screenModel.changeDialog(dialog)
             }
         }
@@ -95,11 +98,7 @@ data class BrowseTVScreen(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
                 showLongClick = {
-                    if(it.favorite) {
-                        stableChangeDialogRefrence(TVScreenModel.Dialog.RemoveShow(it))
-                    } else {
-                        contentInteractor.toggleFavorite(it.toContentItem())
-                    }
+                    stableChangeDialogRefrence(TVScreenModel.Dialog.ContentOptions(it.toContentItem()))
                 },
                 showClick = { navigator.push(TVViewScreen(it.id)) },
                 onSearch = screenModel::onSearch,
@@ -115,6 +114,30 @@ data class BrowseTVScreen(
         )
         val onDismissRequest = { screenModel.changeDialog(null) }
         when (val dialog = state.dialog) {
+            null -> Unit
+            is TVScreenModel.Dialog.ContentOptions -> {
+                val addToAnotherListScreen = remember(dialog.item) {
+                    AddToListScreen(dialog.item.contentId, dialog.item.isMovie)
+                }
+
+                val launcher = rememberScreenWithResultLauncher(
+                    screen = addToAnotherListScreen
+                ) { result ->
+                    contentInteractor.addToAnotherList(result.listId, dialog.item)
+                }
+
+                ContentOptionsBottomSheet(
+                    onDismissRequest = onDismissRequest,
+                    onAddToAnotherListClick = {
+                        launcher.launch()
+                        onDismissRequest()
+                    },
+                    onToggleFavoriteClicked = {
+                        contentInteractor.toggleFavorite(dialog.item)
+                    },
+                    item = dialog.item
+                )
+            }
             is TVScreenModel.Dialog.RemoveShow -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
@@ -156,7 +179,6 @@ data class BrowseTVScreen(
                     }
                 )
             }
-            else -> Unit
         }
     }
 }

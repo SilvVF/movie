@@ -97,7 +97,7 @@ fun MoviePoster.toContentItem(): ContentItem {
         posterLastUpdated = it.posterLastUpdated,
         favorite = it.favorite,
         lastModified = -1L,
-        description = "",
+        description = it.overview,
         popularity = 0.0,
         inLibraryLists = it.inLibraryLists
     )
@@ -113,7 +113,7 @@ fun TVShowPoster.toContentItem(): ContentItem {
         posterLastUpdated = it.posterLastUpdated,
         favorite = it.favorite,
         lastModified = -1L,
-        description = "",
+        description = it.overview,
         popularity = 0.0,
         inLibraryLists = it.inLibraryLists
     )
