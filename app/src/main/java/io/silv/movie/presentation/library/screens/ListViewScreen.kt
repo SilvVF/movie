@@ -366,6 +366,7 @@ private fun SuccessScreenContent(
     state: ListViewState.Success
 ) {
     val topBarState = rememberPosterTopBarState()
+
     val hazeState = remember { HazeState() }
         PullRefresh(
             refreshing = refreshingList,
