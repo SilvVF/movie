@@ -33,32 +33,22 @@ SELECT
 FROM recommendation
 LEFT JOIN movie AS m ON recommendation.movie_id = m.id
 LEFT JOIN show AS s ON recommendation.show_id = s.id
-WHERE recommendation.list_id = :id
-AND
- CASE WHEN recommendation.list_id = -1 THEN (
-        CASE WHEN recommendation.movie_id IS NOT NULL
+WHERE recommendation.list_id = :id AND
+CASE WHEN recommendation.list_id = -1 THEN COALESCE(m.favorite, s.favorite) = 0
+ELSE (
+    CASE WHEN recommendation.movie_id IS NOT NULL
               THEN recommendation.movie_id NOT IN (
-                  SELECT movie_id FROM favoriteItemsView
+                     SELECT movie_id FROM contentItem
+                     WHERE contentItem.list_id = recommendation.list_id
+                     AND contentItem.movie_id != -1
               )
               ELSE recommendation.show_id NOT IN (
-                  SELECT show_id FROM favoriteItemsView
+                     SELECT show_id FROM contentItem
+                     WHERE contentItem.list_id = recommendation.list_id
+                     AND contentItem.show_id != -1
               )
           END
-  )
-  ELSE (
-      CASE WHEN recommendation.movie_id IS NOT NULL
-          THEN recommendation.movie_id NOT IN (
-                 SELECT movie_id FROM contentItem
-                 WHERE contentItem.list_id = recommendation.list_id
-                 AND contentItem.movie_id != -1
-          )
-          ELSE recommendation.show_id NOT IN (
-                 SELECT show_id FROM contentItem
-                 WHERE contentItem.list_id = recommendation.list_id
-                 AND contentItem.show_id != -1
-          )
-      END
-  )
+ )
 END
 ORDER BY created_at DESC;
 
