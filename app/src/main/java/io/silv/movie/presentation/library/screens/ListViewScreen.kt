@@ -259,7 +259,7 @@ data class ListViewScreen(
                         val launcher = rememberScreenWithResultLauncher(
                             screen = addToAnotherListScreen
                         ) { result ->
-                            contentInteractor.addToList(result.listId, dialog.item)
+                            contentInteractor.addToAnotherList(result.listId, dialog.item)
                         }
 
                         ListOptionsBottomSheet(

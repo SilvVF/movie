@@ -15,6 +15,7 @@ import io.silv.movie.data.lists.interactor.RemoveContentItemFromList
 import io.silv.movie.data.lists.interactor.ToggleContentItemFavorite
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListUpdater
+import io.silv.movie.presentation.ContentEvent.AddToAnotherList
 import io.silv.movie.presentation.ContentEvent.AddToList
 import io.silv.movie.presentation.ContentEvent.Favorite
 import io.silv.movie.presentation.ContentEvent.RemoveFromList
@@ -34,13 +35,14 @@ sealed interface ListEvent {
     data class VisibleChanged(val list: ContentList, val success: Boolean): ListEvent
     data class Copied(val list: ContentList, val success: Boolean): ListEvent
     data class Delete(val list: ContentList, val success: Boolean): ListEvent
-    data class Edited(val list: ContentList, val success: Boolean): ListEvent
+    data class Edited(val new: ContentList, val original: ContentList, val success: Boolean): ListEvent
     data class Subscribe(val list: ContentList, val success: Boolean): ListEvent
 }
 
 sealed interface ContentEvent {
     data class Favorite(val item: ContentItem, val success: Boolean): ContentEvent
     data class AddToList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
+    data class AddToAnotherList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
     data class RemoveFromList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
 }
 
@@ -56,6 +58,7 @@ interface ListInteractor: EventProducer<ListEvent> {
 interface ContentInteractor: EventProducer<ContentEvent> {
     fun toggleFavorite(contentItem: ContentItem)
     fun addToList(contentList: ContentList, contentItem: ContentItem)
+    fun addToAnotherList(listId: Long, contentItem: ContentItem)
     fun addToList(listId: Long, contentItem: ContentItem)
     fun removeFromList(contentList: ContentList, contentItem: ContentItem)
 }
@@ -95,6 +98,19 @@ class DefaultContentInteractor(
                 }
                 .onFailure {
                     emitEvent(AddToList(contentItem, contentList, false))
+                }
+        }
+    }
+
+    override fun addToAnotherList(listId: Long, contentItem: ContentItem) {
+        scope.launch(Dispatchers.IO) {
+            val list = contentListRepository.getList(listId) ?: return@launch
+            addContentItemToList.await(contentItem, list)
+                .onSuccess {
+                    emitEvent(AddToAnotherList(contentItem, list, true))
+                }
+                .onFailure {
+                    emitEvent(AddToAnotherList(contentItem, list, false))
                 }
         }
     }
@@ -203,8 +219,8 @@ class DefaultListInteractor(
     override fun editList(contentList: ContentList, update: (ContentList) -> ContentList) {
         scope.launch(Dispatchers.IO) {
             editContentList.await(contentList, update)
-                .onSuccess { Edited(contentList, true) }
-                .onFailure { Edited(contentList, false) }
+                .onSuccess { Edited(contentList, it, true) }
+                .onFailure { Edited(contentList, update(contentList), false) }
         }
     }
 

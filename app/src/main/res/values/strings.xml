@@ -110,4 +110,23 @@
     <string name="add_to_a_list">Select a list to add %1s</string>
     <string name="discover_tab_title">Discover</string>
     <string name="enter_a_query">Enter a list id, name, or username to browse lists</string>
+    <string name="copied_list">Copied list %1s.</string>
+    <string name="take_me_there">Take me there</string>
+    <string name="copied_list_failed">Failed to copy %1s.</string>
+    <string name="deleted_list">Deleted list %1s.</string>
+    <string name="delete_list_failed">Failed to delete list %1s.</string>
+    <string name="subscribed_to_list">Subscribed to list %1s.</string>
+    <string name="subscribe_to_list_failed">Failed to subscribe to list %1s.</string>
+    <string name="undo">Undo</string>
+    <string name="made_list_private">List is now private</string>
+    <string name="visiblity_change_failed">Failed to change visiblity of %1s.</string>
+    <string name="list_edited">Changes successfull.</string>
+    <string name="edit_failed">Failed to edit %1s.</string>
+    <string name="added_to_list">Added %1s to %2s.</string>
+    <string name="add_to_list_failed">Failed to add %1s to %2s.</string>
+    <string name="added_to_favorites">Added %1s to favorites.</string>
+    <string name="removed_from_favorites">Removed %1s from favorites.</string>
+    <string name="failed_to_change_favorite">failed to change favorite status for %1s</string>
+    <string name="removed_from_list">Removed %1s from %2s.</string>
+    <string name="remove_from_list_failed">Failed to remove %1s from %2s.</string>
 </resources>

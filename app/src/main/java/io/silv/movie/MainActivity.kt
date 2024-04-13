@@ -1,5 +1,6 @@
 package io.silv.movie
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -17,15 +18,21 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -52,12 +60,15 @@ import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.ContentEvent
+import io.silv.movie.presentation.ContentInteractor
 import io.silv.movie.presentation.ListEvent
+import io.silv.movie.presentation.ListInteractor
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.browse.DiscoverTab
 import io.silv.movie.presentation.library.LibraryTab
+import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.CollapsableVideoAnchors
@@ -88,7 +99,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
-            val snackbarHostState = remember { SnackbarHostState() }
             val currentNavigator = remember { mutableStateOf<Navigator?>(null) }
 
             CompositionLocalProvider(
@@ -99,7 +109,26 @@ class MainActivity : ComponentActivity() {
                 LocalGlobalNavigator provides currentNavigator,
             ) {
                 val playerViewModel = getActivityViewModel<PlayerViewModel>()
+                val listInteractor = LocalListInteractor.current
+                val contentInteractor = LocalContentInteractor.current
                 val collapsableVideoState = rememberCollapsableVideoState()
+                val navigator by LocalGlobalNavigator.current
+                val snackbarHostState = remember { SnackbarHostState() }
+
+                val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+                    if (value != SwipeToDismissBoxValue.Settled) {
+                        snackbarHostState.currentSnackbarData?.dismiss()
+                        true
+                    } else {
+                        false
+                    }
+                })
+
+                LaunchedEffect(dismissSnackbarState.currentValue) {
+                    if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
+                        dismissSnackbarState.reset()
+                    }
+                }
 
                 BackHandler(
                     enabled = playerViewModel.trailerQueue.isNotEmpty()
@@ -127,7 +156,19 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier
                                     )
                                 },
-                                snackbarHost = { SnackbarHost(snackbarHostState) }
+                                snackbarHost = {
+                                    SwipeToDismissBox(
+                                        state = dismissSnackbarState,
+                                        backgroundContent = {},
+                                        content = {
+                                            SnackbarHost(
+                                                // classic compost
+                                                // "imePadding doesnt work on M3??"
+                                                hostState = snackbarHostState, modifier = Modifier.imePadding()
+                                            )
+                                        },
+                                    )
+                                }
                             ) { paddingValues ->
                                 val playerVisible by remember {
                                     derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
@@ -179,21 +220,166 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                HandleItemEvents(
+                    contentInteractor = contentInteractor,
+                    snackbarHostState = snackbarHostState,
+                    navigator = navigator
+                )
+                HandleListEvents(
+                    listInteractor = listInteractor,
+                    snackbarHostState = snackbarHostState,
+                    navigator = navigator
+                )
+            }
+        }
+    }
+}
 
-                CollectEventsWithLifecycle(LocalContentInteractor.current) { event ->
-                    when(event)  {
-                        is ContentEvent.AddToList -> {}
-                        is ContentEvent.Favorite -> {}
-                        is ContentEvent.RemoveFromList -> {}
+@Composable
+private fun HandleListEvents(
+    listInteractor: ListInteractor,
+    snackbarHostState: SnackbarHostState,
+    navigator: Navigator?,
+    context: Context = LocalContext.current
+) {
+    CollectEventsWithLifecycle(listInteractor) { event ->
+        when (event) {
+            is ListEvent.Copied -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.copied_list, event.list.name),
+                        actionLabel = context.getString(R.string.take_me_there),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            navigator?.push(
+                                ListViewScreen(
+                                    event.list.id,
+                                    event.list.supabaseId.orEmpty()
+                                )
+                            )
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.copied_list_failed, event.list.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> listInteractor.copyList(event.list)
                     }
                 }
-                CollectEventsWithLifecycle(LocalListInteractor.current) { event ->
-                    when (event) {
-                        is ListEvent.Copied -> {}
-                        is ListEvent.Delete -> {}
-                        is ListEvent.Subscribe -> {}
-                        is ListEvent.VisibleChanged -> {}
-                        is ListEvent.Edited -> {}
+            }
+
+            is ListEvent.Delete -> {
+                if (event.success) {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.deleted_list, event.list.name),
+                        duration = SnackbarDuration.Short
+                    )
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.delete_list_failed, event.list.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> listInteractor.deleteList(event.list)
+                    }
+                }
+            }
+
+            is ListEvent.Subscribe -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.subscribed_to_list, event.list.name),
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            navigator?.push(
+                                ListViewScreen(
+                                    event.list.id,
+                                    event.list.supabaseId.orEmpty()
+                                )
+                            )
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            R.string.subscribe_to_list_failed,
+                            event.list.name
+                        ),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> listInteractor.subscribeToList(event.list)
+                    }
+                }
+            }
+
+            is ListEvent.VisibleChanged -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.list.public) {
+                            context.getString(R.string.made_list_public)
+                        } else {
+                            context.getString(R.string.made_list_private)
+                        },
+                        actionLabel = context.getString(R.string.undo),
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            listInteractor.editList(event.list) { it.copy(public = !it.public) }
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            R.string.visiblity_change_failed,
+                            event.list.name
+                        ),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            listInteractor.editList(event.list) { it.copy(public = !it.public) }
+                    }
+                }
+            }
+
+            is ListEvent.Edited -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.list_edited),
+                        actionLabel = context.getString(R.string.undo),
+                        duration = SnackbarDuration.Short
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            listInteractor.editList(event.new) { event.original }
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.edit_failed, event.original.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            listInteractor.editList(event.original) { event.new }
                     }
                 }
             }
@@ -201,6 +387,121 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+private fun HandleItemEvents(
+    contentInteractor: ContentInteractor,
+    snackbarHostState: SnackbarHostState,
+    navigator: Navigator?,
+    context: Context = LocalContext.current
+) {
+    CollectEventsWithLifecycle(contentInteractor) { event ->
+        when(event)  {
+            is ContentEvent.AddToList -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.added_to_list, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.undo),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.removeFromList(event.list, event.item)
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.add_to_list_failed, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.addToList(event.list, event.item)
+                    }
+                }
+            }
+            is ContentEvent.Favorite -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = if (event.item.favorite) {
+                            context.getString(R.string.added_to_favorites, event.item.title)
+                        } else context.getString(R.string.removed_from_favorites, event.item.title),
+                        actionLabel = context.getString(R.string.undo),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.toggleFavorite(event.item)
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.failed_to_change_favorite, event.item.title),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.toggleFavorite(event.item)
+                    }
+                }
+            }
+            is ContentEvent.RemoveFromList -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.removed_from_list, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.undo),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.addToList(event.list, event.item)
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.remove_from_list_failed, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.removeFromList(event.list, event.item)
+                    }
+                }
+            }
+
+            is ContentEvent.AddToAnotherList -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.added_to_list, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.take_me_there),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            navigator?.push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty()))
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.add_to_list_failed, event.item.title, event.list.name),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed ->
+                            contentInteractor.addToList(event.list, event.item)
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun AppBottomBar(
