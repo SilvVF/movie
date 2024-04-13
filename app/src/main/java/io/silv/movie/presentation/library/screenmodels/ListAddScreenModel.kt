@@ -14,16 +14,13 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.Quad
 import io.silv.movie.data.ContentPagedType
-import io.silv.movie.data.lists.AddContentItemToList
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
-import io.silv.movie.data.lists.ToggleContentItemFavorite
 import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.movie.interactor.GetRemoteMovie
@@ -34,7 +31,6 @@ import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
 import io.silv.movie.data.tv.model.toDomain
-import io.silv.movie.presentation.EventProducer
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -64,12 +60,8 @@ class ListAddScreenModel(
     private val getRemoteTVShows: GetRemoteTVShows,
     private val getShow: GetShow,
     private val getMovie: GetMovie,
-    private val addContentItemToList: AddContentItemToList,
-    private val toggleContentItemFavorite: ToggleContentItemFavorite,
-    private val auth: Auth,
     private val listId: Long,
-): StateScreenModel<ListAddState>(ListAddState.Loading),
-    EventProducer<ListAddEvent> by EventProducer.default() {
+): StateScreenModel<ListAddState>(ListAddState.Loading){
 
     private fun MutableStateFlow<ListAddState>.updateSuccess(
         function: (ListAddState.Success) -> ListAddState.Success
@@ -215,28 +207,6 @@ class ListAddScreenModel(
         }
     }
 
-    fun addToList(contentItem: ContentItem) {
-        screenModelScope.launch {
-            val state = state.value.success ?: return@launch
-
-           addContentItemToList.await(contentItem, state.list)
-               .onSuccess {
-                   if (state.recommendations.contains(contentItem)) {
-                       recommendationManager.removeRecommendation(contentItem, listId)
-                   }
-                   emitEvent(ListAddEvent.ItemAddedToList(contentItem.title))
-               }
-        }
-    }
-
-    fun toggleItemFavorite(contentItem: ContentItem) {
-        screenModelScope.launch {
-            toggleContentItemFavorite.await(
-                contentItem,
-                auth.currentUserOrNull()?.id != null
-            )
-        }
-    }
 
     fun refreshRecommendations() {
         screenModelScope.launch {
@@ -259,10 +229,6 @@ class ListAddScreenModel(
 
 }
 
-
-sealed interface ListAddEvent {
-    data class ItemAddedToList(val title: String): ListAddEvent
-}
 
 @Stable
 sealed interface ListAddState {

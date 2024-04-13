@@ -23,32 +23,38 @@ import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.MovieTheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.trailers.Trailer
-import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
+import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.ContentEvent
+import io.silv.movie.presentation.ListEvent
+import io.silv.movie.presentation.LocalContentInteractor
+import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.browse.DiscoverTab
 import io.silv.movie.presentation.library.LibraryTab
@@ -61,57 +67,17 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.koin.android.ext.android.inject
-import org.koin.androidx.compose.defaultExtras
 import org.koin.androidx.viewmodel.ext.android.getViewModel
-import org.koin.androidx.viewmodel.resolveViewModel
-import org.koin.compose.currentKoinScope
-import org.koin.core.annotation.KoinInternalApi
-import org.koin.core.parameter.ParametersDefinition
-import org.koin.core.qualifier.Qualifier
-import org.koin.core.scope.Scope
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import kotlin.math.roundToInt
 
 
-val LocalMainViewModelStoreOwner = staticCompositionLocalOf<ViewModelStoreOwner> { error("not provided") }
-
-@OptIn(KoinInternalApi::class)
-@Composable
-inline fun <reified T : ViewModel> getActivityViewModel(
-    qualifier: Qualifier? = null,
-    key: String? = null,
-    scope: Scope = currentKoinScope(),
-    noinline parameters: ParametersDefinition? = null,
-): T {
-
-    val viewModelStoreOwner = checkNotNull(LocalMainViewModelStoreOwner.current) {
-        "No ViewModelStoreOwner was provided via LocalMainViewModelStoreOwner"
-    }
-    val extras = defaultExtras(viewModelStoreOwner)
-
-    return resolveViewModel(
-        T::class, viewModelStoreOwner.viewModelStore, key, extras, qualifier, scope, parameters
-    )
-}
-
-val LocalUser = compositionLocalOf<User?> { error("no user provided") }
-
-@Composable
-fun User?.rememberProfileImageData(): UserProfileImageData? {
-    val currentUser = LocalUser.current
-    return remember(this?.profileImage, currentUser?.profileImage) {
-        this?.let {
-            UserProfileImageData(
-                userId = it.userId,
-                isUserMe = it.userId == currentUser?.userId,
-                path = it.profileImage
-            )
-        }
-    }
-}
+val LocalGlobalNavigator = compositionLocalOf<MutableState<Navigator?>> { error("not provided") }
 
 class MainActivity : ComponentActivity() {
 
     private val userRepository by inject<UserRepository>()
+    private val mainScreenModel by viewModel<MainScreenModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -120,30 +86,36 @@ class MainActivity : ComponentActivity() {
 
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
-
         setContent {
             val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
+            val snackbarHostState = remember { SnackbarHostState() }
+            val currentNavigator = remember { mutableStateOf<Navigator?>(null) }
 
             CompositionLocalProvider(
                 LocalMainViewModelStoreOwner provides this,
-                LocalUser provides currentUser
+                LocalUser provides currentUser,
+                LocalListInteractor provides mainScreenModel.listInteractor,
+                LocalContentInteractor provides mainScreenModel.contentInteractor,
+                LocalGlobalNavigator provides currentNavigator,
             ) {
-                val mainScreenModel = getActivityViewModel<PlayerViewModel>()
+                val playerViewModel = getActivityViewModel<PlayerViewModel>()
                 val collapsableVideoState = rememberCollapsableVideoState()
 
                 BackHandler(
-                    enabled = mainScreenModel.trailerQueue.isNotEmpty()
+                    enabled = playerViewModel.trailerQueue.isNotEmpty()
                 ) {
-                    mainScreenModel.clearMediaQueue()
+                    playerViewModel.clearMediaQueue()
                 }
 
-                val trailers by remember(mainScreenModel.trailerQueue) {
-                    derivedStateOf { mainScreenModel.trailerQueue.toImmutableList() }
+                val trailers by remember(playerViewModel.trailerQueue) {
+                    derivedStateOf { playerViewModel.trailerQueue.toImmutableList() }
                 }
 
                 MovieTheme {
                     TabNavigator(LibraryTab) { tabNavigator ->
-                        Surface(Modifier.fillMaxSize()) {
+                        Surface(
+                            Modifier.fillMaxSize(),
+                        ) {
                             Scaffold(
                                 modifier = Modifier.fillMaxSize(),
                                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -155,9 +127,10 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier
                                     )
                                 },
+                                snackbarHost = { SnackbarHost(snackbarHostState) }
                             ) { paddingValues ->
                                 val playerVisible by remember {
-                                    derivedStateOf { mainScreenModel.trailerQueue.isNotEmpty() }
+                                    derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
                                 }
                                 val density = LocalDensity.current
                                 val bottomPadding by remember {
@@ -194,8 +167,8 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         CollapsablePlayerScreen(
                                             collapsableVideoState = collapsableVideoState,
-                                            onDismissRequested = mainScreenModel::clearMediaQueue,
-                                            playerViewModel = mainScreenModel
+                                            onDismissRequested = playerViewModel::clearMediaQueue,
+                                            playerViewModel = playerViewModel
                                         )
                                         LaunchedEffect(playerVisible) {
                                             collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
@@ -204,6 +177,23 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                    }
+                }
+
+                CollectEventsWithLifecycle(LocalContentInteractor.current) { event ->
+                    when(event)  {
+                        is ContentEvent.AddToList -> {}
+                        is ContentEvent.Favorite -> {}
+                        is ContentEvent.RemoveFromList -> {}
+                    }
+                }
+                CollectEventsWithLifecycle(LocalListInteractor.current) { event ->
+                    when (event) {
+                        is ListEvent.Copied -> {}
+                        is ListEvent.Delete -> {}
+                        is ListEvent.Subscribe -> {}
+                        is ListEvent.VisibleChanged -> {}
+                        is ListEvent.Edited -> {}
                     }
                 }
             }

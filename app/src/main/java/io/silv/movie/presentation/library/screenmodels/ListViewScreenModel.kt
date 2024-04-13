@@ -11,14 +11,10 @@ import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
-import io.silv.movie.data.lists.AddContentItemToList
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.lists.DeleteContentList
-import io.silv.movie.data.lists.EditContentList
-import io.silv.movie.data.lists.RemoveContentItemFromList
-import io.silv.movie.data.lists.ToggleContentItemFavorite
+import io.silv.movie.data.lists.interactor.DeleteContentList
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
@@ -53,12 +49,8 @@ class ListViewScreenModel(
     private val deleteContentList: DeleteContentList,
     private val userRepository: UserRepository,
     private val listUpdateManager: ListUpdateManager,
-    private val addContentItemToList: AddContentItemToList,
     private val movieCoverCache: MovieCoverCache,
     private val showCoverCache: TVShowCoverCache,
-    private val editContentList: EditContentList,
-    private val toggleContentItemFavorite: ToggleContentItemFavorite,
-    private val removeContentItemFromList: RemoveContentItemFromList,
     private val auth: Auth,
     basePreferences: BasePreferences,
     libraryPreferences: LibraryPreferences,
@@ -251,44 +243,6 @@ class ListViewScreenModel(
         listViewDisplayMode = mode
     }
 
-    fun editDescription(description: String) {
-        screenModelScope.launch {
-            val list = state.value.success?.list ?: return@launch
-            editContentList.await(list) { prev ->
-                prev.copy(description = description)
-            }
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToEditListDescription)
-                }
-        }
-    }
-
-    fun toggleListPublic() {
-        screenModelScope.launch {
-            val list = state.value.success?.list ?: return@launch
-            editContentList.await(list) { prev ->
-                prev.copy(public = !prev.public)
-            }
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToUpdateListVisibilty)
-                }
-                .onSuccess {
-                    emitEvent(ListViewEvent.UpdatedListVisibility)
-                }
-        }
-    }
-
-
-    fun editList(prev: ContentList, name: String) {
-        screenModelScope.launch {
-            editContentList.await(prev) { prev ->
-                prev.copy(name = name)
-            }
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToEditListName)
-                }
-        }
-    }
 
     fun updateSortMode(sortMode: ListSortMode) {
         screenModelScope.launch {
@@ -310,15 +264,6 @@ class ListViewScreenModel(
         }
     }
 
-    fun toggleItemFavorite(contentItem: ContentItem) {
-        screenModelScope.launch {
-           toggleContentItemFavorite.await(
-               contentItem = contentItem,
-               changeOnNetwork = auth.currentUserOrNull() != null
-           )
-        }
-    }
-
     fun deleteList() {
         screenModelScope.launch {
             val state = state.value.success ?: return@launch
@@ -328,43 +273,6 @@ class ListViewScreenModel(
                 }
                 .onSuccess {
                     emitEvent(ListViewEvent.ListDeleted)
-                }
-        }
-    }
-
-    fun removeFromList(contentItem: ContentItem)  {
-        screenModelScope.launch {
-            val list = state.value.success?.list ?: return@launch
-            removeContentItemFromList.await(contentItem, list, movieCoverCache, showCoverCache)
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToDeleteFromNetwork)
-                }
-        }
-    }
-
-    fun addToAnotherList(contentItem: ContentItem, listId: Long) {
-        screenModelScope.launch {
-            val list = contentListRepository.getList(listId) ?: return@launch
-            addContentItemToList.await(contentItem, list)
-                .onSuccess {
-                    recommendationManager.removeRecommendation(contentItem, list.id)
-                    emitEvent(ListViewEvent.AddedToAnotherList(list, contentItem))
-                }
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToAddToNetwork)
-                }
-        }
-    }
-
-    fun addToList(contentItem: ContentItem) {
-        screenModelScope.launch {
-            val list = state.value.success?.list ?: return@launch
-            addContentItemToList.await(contentItem, list)
-                .onSuccess {
-                    recommendationManager.removeRecommendation(contentItem, list.id)
-                }
-                .onFailure {
-                    emitEvent(ListViewEvent.FailedToAddToNetwork)
                 }
         }
     }
@@ -408,14 +316,7 @@ class ListViewScreenModel(
 
 sealed interface ListViewEvent {
     data object ListDeleted: ListViewEvent
-    data object FailedToAddToNetwork: ListViewEvent
-    data class AddedToAnotherList(val list: ContentList, val item: ContentItem): ListViewEvent
-    data object FailedToDeleteFromNetwork: ListViewEvent
     data object FailedToRemoveListFromNetwork: ListViewEvent
-    data object FailedToEditListName: ListViewEvent
-    data object UpdatedListVisibility: ListViewEvent
-    data object FailedToUpdateListVisibilty: ListViewEvent
-    data object FailedToEditListDescription: ListViewEvent
 }
 
 sealed interface ListSortMode {

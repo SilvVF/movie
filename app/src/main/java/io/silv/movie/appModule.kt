@@ -38,6 +38,8 @@ val appModule =
 
         includes(dataModule)
 
+        viewModelOf(::MainScreenModel)
+
         factoryOf(::MovieScreenModel)
 
         viewModelOf(::PlayerViewModel)

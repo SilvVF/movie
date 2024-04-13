@@ -23,6 +23,7 @@ import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
@@ -39,13 +40,14 @@ data object FavoritesViewScreen : Screen {
     @Composable
     override fun Content() {
 
+        val contentInteractor = LocalContentInteractor.current
         val screenModel = getScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val changeDialog =
             remember { { dialog: FavoritesScreenModel.Dialog? -> screenModel.changeDialog(dialog) } }
         val toggleItemFavorite = remember {
-            { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
+            { contentItem: ContentItem -> contentInteractor.toggleFavorite(contentItem) }
         }
 
         FavoritesScreenContent(
@@ -76,8 +78,8 @@ data object FavoritesViewScreen : Screen {
                 else
                     navigator.push(TVViewScreen(item.contentId))
             },
-            onAddRecommendation = screenModel::toggleItemFavorite,
-            onRecommendationLongClick = screenModel::toggleItemFavorite,
+            onAddRecommendation = { contentInteractor.toggleFavorite(it) },
+            onRecommendationLongClick = { contentInteractor.toggleFavorite(it) },
             refreshFavorites = screenModel::refreshFavoritesFromNetwork,
             state = state
         )

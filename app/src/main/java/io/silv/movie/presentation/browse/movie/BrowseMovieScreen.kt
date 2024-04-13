@@ -44,8 +44,10 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
+import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.components.FilterBottomSheet
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
@@ -75,8 +77,9 @@ data class BrowseMovieScreen(
                 screenModel.changeDialog(dialog)
             }
         }
+        val contentInteractor = LocalContentInteractor.current
         val toggleMovieFavorite = remember {
-            { movie: MoviePoster -> screenModel.toggleMovieFavorite(movie) }
+            { movie: MoviePoster -> contentInteractor.toggleFavorite(movie.toContentItem()) }
         }
         val navigator = LocalNavigator.currentOrThrow
 
@@ -118,7 +121,7 @@ data class BrowseMovieScreen(
             is MovieScreenModel.Dialog.RemoveMovie -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.toggleMovieFavorite(dialog.movie) },
+                    onConfirm = { contentInteractor.toggleFavorite(dialog.movie.toContentItem()) },
                     entryToRemove = dialog.movie.title
                 )
             }

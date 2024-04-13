@@ -362,6 +362,52 @@ class BrowseListsScreenModel(
     private val auth: Auth,
 ): ScreenModel {
 
+    private val jobs = listOf(
+        suspend {
+            popularResult.emit(
+                postgrest.rpc(
+                    "select_most_popular_lists_with_poster_items",
+                    PopularListParams(10, 0)
+                )
+                    .decodeList<ListWithPostersRpcResponse>()
+            )
+        },
+        suspend {
+            recentlyCreatedResult.emit(
+                postgrest.rpc(
+                    "select_most_recent_lists_with_poster_items",
+                    PopularListParams(10, 0)
+                )
+                    .decodeList<ListWithPostersRpcResponse>()
+            )
+        },
+        suspend {
+            recentlyViewedResult.emit(
+                postgrest.rpc(
+                    "select_lists_by_ids_with_poster",
+                    ListByIdParams.of(
+                        recentIds.get().toList()
+                    )
+                )
+                    .decodeList<ListWithPostersRpcResponse>()
+            )
+        },
+        suspend {
+            val lists = listRepository
+                .selectListsByUserId("c532e5da-71ca-4b4b-b896-d1d36f335149")
+                ?.map { listWithItems ->
+                    toContentListWithItems(listWithItems)
+                }
+                .orEmpty()
+                .toImmutableList()
+            _defaultLists.emit(lists)
+        },
+        suspend sub@{
+            val fromSubscribed = listRepository.selectRecommendedFromSubscriptions() ?: return@sub
+            subscribedRecommendedResult.emit(fromSubscribed)
+        }
+    )
+
     private val popularResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
     private val recentlyCreatedResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
     private val recentlyViewedResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
@@ -435,57 +481,12 @@ class BrowseListsScreenModel(
             return
 
         refreshJob = ioCoroutineScope.launch {
-            try {
-                supervisorScope {
+            supervisorScope {
+                jobs.forEach {
                     launch {
-                        popularResult.emit(
-                            postgrest.rpc(
-                                "select_most_popular_lists_with_poster_items",
-                                PopularListParams(10, 0)
-                            )
-                                .decodeList<ListWithPostersRpcResponse>()
-                        )
-                            .also { Timber.d(it.toString()) }
-                    }
-                    launch {
-                        recentlyCreatedResult.emit(
-                            postgrest.rpc(
-                                "select_most_recent_lists_with_poster_items",
-                                PopularListParams(10, 0)
-                            )
-                                .decodeList<ListWithPostersRpcResponse>()
-                        )
-                            .also { Timber.d(it.toString()) }
-                    }
-                    launch {
-                        recentlyViewedResult.emit(
-                            postgrest.rpc(
-                                "select_lists_by_ids_with_poster",
-                                ListByIdParams.of(
-                                    recentIds.get().toList()
-                                )
-                            )
-                                .decodeList<ListWithPostersRpcResponse>()
-                        )
-                            .also { Timber.d(it.toString()) }
-                    }
-                    launch {
-                        val lists = listRepository
-                            .selectListsByUserId("c532e5da-71ca-4b4b-b896-d1d36f335149")
-                            ?.map { listWithItems ->
-                                toContentListWithItems(listWithItems)
-                            }
-                            .orEmpty()
-                            .toImmutableList()
-                        _defaultLists.emit(lists)
-                    }
-                    launch sub@{
-                        val fromSubscribed = listRepository.selectRecommendedFromSubscriptions() ?: return@sub
-                        subscribedRecommendedResult.emit(fromSubscribed)
+                        runCatching { it() }.onFailure { Timber.e(it) }
                     }
                 }
-            } catch (e :Exception) {
-                Timber.e(e)
             }
         }
     }

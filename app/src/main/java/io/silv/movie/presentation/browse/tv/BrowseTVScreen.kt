@@ -44,8 +44,10 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.movie.R
 import io.silv.movie.data.ContentPagedType
+import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.tv.model.TVShowPoster
+import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.components.FilterBottomSheet
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
@@ -75,9 +77,7 @@ data class BrowseTVScreen(
                 screenModel.changeDialog(dialog)
             }
         }
-        val toggleMovieFavorite = remember {
-            { show: TVShowPoster -> screenModel.toggleShowFavorite(show) }
-        }
+        val contentInteractor = LocalContentInteractor.current
         val navigator = LocalNavigator.currentOrThrow
 
         DisposableEffectIgnoringConfiguration(Unit) {
@@ -98,7 +98,7 @@ data class BrowseTVScreen(
                     if(it.favorite) {
                         stableChangeDialogRefrence(TVScreenModel.Dialog.RemoveShow(it))
                     } else {
-                        toggleMovieFavorite(it)
+                        contentInteractor.toggleFavorite(it.toContentItem())
                     }
                 },
                 showClick = { navigator.push(TVViewScreen(it.id)) },
@@ -118,7 +118,7 @@ data class BrowseTVScreen(
             is TVScreenModel.Dialog.RemoveShow -> {
                 RemoveEntryDialog(
                     onDismissRequest = onDismissRequest,
-                    onConfirm = { screenModel.toggleShowFavorite(dialog.show) },
+                    onConfirm = { contentInteractor.toggleFavorite(dialog.show.toContentItem()) },
                     entryToRemove = dialog.show.title
                 )
             }

@@ -14,12 +14,9 @@ import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SnackbarResult.ActionPerformed
-import androidx.compose.material3.SnackbarResult.Dismissed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -56,6 +53,8 @@ import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.LocalContentInteractor
+import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
@@ -92,6 +91,8 @@ data class ListViewScreen(
         val refreshingList by screenModel.refreshingList.collectAsStateWithLifecycle()
         val context = LocalContext.current
         val snackBarState = remember { SnackbarHostState() }
+        val listInteractor = LocalListInteractor.current
+        val contentInteractor = LocalContentInteractor.current
 
         suspend fun showSnackBar(message: String): SnackbarResult {
             return snackBarState.showSnackbar(message)
@@ -100,40 +101,9 @@ data class ListViewScreen(
         CollectEventsWithLifecycle(screenModel) { event ->
             when (event) {
                 ListViewEvent.ListDeleted -> navigator.pop()
-                ListViewEvent.FailedToAddToNetwork -> showSnackBar(
-                    context.getString(R.string.failed_to_add_list_to_network)
-                )
-                ListViewEvent.FailedToDeleteFromNetwork -> showSnackBar(
+                ListViewEvent.FailedToRemoveListFromNetwork -> showSnackBar(
                     context.getString(R.string.failed_to_delete_list_item)
                 )
-                ListViewEvent.FailedToEditListDescription -> showSnackBar(
-                    context.getString(R.string.failed_to_edit_description)
-                )
-                ListViewEvent.FailedToEditListName -> showSnackBar(
-                    context.getString(R.string.failed_to_edit_list_name)
-                )
-                ListViewEvent.FailedToRemoveListFromNetwork -> showSnackBar(
-                    context.getString(R.string.failed_to_delete_list)
-                )
-
-                ListViewEvent.FailedToUpdateListVisibilty -> showSnackBar(
-                    context.getString(R.string.failed_to_make_public)
-                )
-                ListViewEvent.UpdatedListVisibility -> showSnackBar(
-                    context.getString(R.string.made_list_public)
-                )
-
-                is ListViewEvent.AddedToAnotherList -> {
-                    val result = snackBarState.showSnackbar(
-                        context.getString(R.string.added_to_another_list, event.item.title, event.list.name),
-                        actionLabel = "Take me there",
-                        duration = SnackbarDuration.Long
-                    )
-                    when(result) {
-                        Dismissed -> Unit
-                        ActionPerformed -> navigator.replace(ListViewScreen(event.list.id))
-                    }
-                }
             }
         }
 
@@ -158,7 +128,7 @@ data class ListViewScreen(
                 val screenResultLauncher = rememberScreenWithResultLauncher(
                     screen = listEditScreen
                 ) { result ->
-                    screenModel.editList(s.list, result.name)
+                    listInteractor.editList(s.list) { it.copy(name = result.name) }
                 }
 
                 val descriptionEditScreen =
@@ -167,14 +137,14 @@ data class ListViewScreen(
                 val descriptionResultLauncher = rememberScreenWithResultLauncher(
                     screen = descriptionEditScreen
                 ) { result ->
-                    screenModel.editDescription(result.description)
+                    listInteractor.editList(s.list) { it.copy(description = result.description) }
                 }
 
                 val changeDialog = remember {
                     { sheet: ListViewScreenModel.Dialog? -> screenModel.changeDialog(sheet) }
                 }
                 val toggleItemFavorite = remember {
-                    { contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem) }
+                    { contentItem: ContentItem -> contentInteractor.toggleFavorite(contentItem) }
                 }
 
 
@@ -245,7 +215,9 @@ data class ListViewScreen(
                     updateDialog = { changeDialog(it) },
                     changeSortMode = screenModel::updateSortMode,
                     refreshRecommendations = screenModel::refreshRecommendations,
-                    onAddRecommendation = screenModel::addToList,
+                    onAddRecommendation = {
+                        contentInteractor.addToList(s.list, it)
+                    },
                     onRecommendationLongClick = { item ->
                         if (item.favorite) {
                             changeDialog(ListViewScreenModel.Dialog.RemoveFromFavorites(item))
@@ -287,7 +259,7 @@ data class ListViewScreen(
                         val launcher = rememberScreenWithResultLauncher(
                             screen = addToAnotherListScreen
                         ) { result ->
-                            screenModel.addToAnotherList(dialog.item, result.listId)
+                            contentInteractor.addToList(result.listId, dialog.item)
                         }
 
                         ListOptionsBottomSheet(
@@ -296,10 +268,10 @@ data class ListViewScreen(
                                 launcher.launch()
                             },
                             onToggleFavoriteClicked = {
-                                screenModel.toggleItemFavorite(dialog.item)
+                                toggleItemFavorite(dialog.item)
                             },
                             onRemoveFromListClicked = {
-                                screenModel.removeFromList(dialog.item)
+                                contentInteractor.removeFromList(s.list, dialog.item)
                             },
                             isOwnerMe = s.isOwnerMe,
                             item = dialog.item
@@ -312,7 +284,7 @@ data class ListViewScreen(
                             onEditClick = { screenResultLauncher.launch() },
                             onDeleteClick = { changeDialog(ListViewScreenModel.Dialog.DeleteList) },
                             onShareClick = {
-                                screenModel.toggleListPublic()
+                                listInteractor.toggleListVisibility(s.list)
                                 onDismissRequest()
                             },
                             list = s.list,

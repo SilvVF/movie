@@ -16,15 +16,12 @@ import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.ContentPagedType
 import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
-import io.silv.movie.data.lists.ToggleContentItemFavorite
-import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
@@ -55,10 +52,8 @@ class TVScreenModel(
     private val getRemoteTVShow: GetRemoteTVShows,
     private val networkToLocalMovie: NetworkToLocalTVShow,
     private val getShow: GetShow,
-    private val auth: Auth,
     private val sourceRepository: SourceTVRepository,
-    private val toggleContentItemFavorite: ToggleContentItemFavorite,
-    private val networkMonitor: NetworkMonitor,
+    networkMonitor: NetworkMonitor,
     tmdbPreferences: TMDBPreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<TVState>(
@@ -162,16 +157,6 @@ class TVScreenModel(
             mutableState.update { state -> state.copy(listing = ContentPagedType.Search(query)) }
         }
     }
-
-    fun toggleShowFavorite(tvShow: TVShowPoster) {
-        screenModelScope.launch {
-            toggleContentItemFavorite.await(
-                tvShow.toContentItem(),
-                changeOnNetwork = auth.currentUserOrNull() != null
-            )
-        }
-    }
-
 
     fun resetFilters() {
         screenModelScope.launch {

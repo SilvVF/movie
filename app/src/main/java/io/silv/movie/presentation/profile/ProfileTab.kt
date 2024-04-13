@@ -13,6 +13,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,7 @@ import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.LocalGlobalNavigator
 import io.silv.movie.R
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
@@ -65,7 +67,15 @@ data object ProfileTab: Tab {
 
     @Composable
     override fun Content() {
+
+        val currentNav = LocalGlobalNavigator.current
+
         Navigator(ProfileScreen) {
+
+            SideEffect {
+                currentNav.value = it
+            }
+
             FadeTransition(it)
         }
     }

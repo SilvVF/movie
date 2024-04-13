@@ -35,7 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -69,10 +68,9 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListItem
-import io.silv.movie.presentation.library.screenmodels.ListAddEvent
 import io.silv.movie.presentation.library.screenmodels.ListAddScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListAddState
 import io.silv.movie.presentation.toPoster
@@ -93,27 +91,19 @@ data class ListAddScreen(
 
     @Composable
     override fun Content() {
+        val contentInteractor = LocalContentInteractor.current
         val screenModel = getScreenModel<ListAddScreenModel> { parametersOf(listId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val contentPagingItems = screenModel.contentPagingFlow.collectAsLazyPagingItems()
         val navigator = LocalNavigator.currentOrThrow
         val toggleFavorite = remember {
-            {contentItem: ContentItem -> screenModel.toggleItemFavorite(contentItem)}
+            {contentItem: ContentItem -> contentInteractor.toggleFavorite(contentItem)}
         }
         val changeDialog = remember {
             { dialog: ListAddScreenModel.Dialog? -> screenModel.changeDialog(dialog)}
         }
 
         val snackbarHostState = remember { SnackbarHostState() }
-
-        CollectEventsWithLifecycle(screenModel) {event ->
-            when (event) {
-                is ListAddEvent.ItemAddedToList -> snackbarHostState.showSnackbar(
-                    message = "Added ${event.title} to list",
-                    duration = SnackbarDuration.Short,
-                )
-            }
-        }
 
         when (val s = state) {
             is ListAddState.Error -> {}
@@ -127,7 +117,9 @@ data class ListAddScreen(
                         else
                             navigator.push(TVViewScreen(it.contentId))
                     },
-                    onAddClick = screenModel::addToList,
+                    onAddClick = {
+                        contentInteractor.addToList(listId, it)
+                    },
                     onLongClick = {
                         if (it.favorite) {
                             changeDialog(ListAddScreenModel.Dialog.RemoveFromFavorites(it))

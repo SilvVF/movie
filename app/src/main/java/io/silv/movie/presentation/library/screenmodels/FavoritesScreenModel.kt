@@ -7,19 +7,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.core.Penta
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.GetFavoritesList
-import io.silv.movie.data.lists.ToggleContentItemFavorite
-import io.silv.movie.data.movie.interactor.GetMovie
-import io.silv.movie.data.movie.interactor.UpdateMovie
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.recommendation.RecommendationManager
-import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.data.tv.interactor.UpdateShow
 import io.silv.movie.data.user.FavoritesUpdateManager
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -35,12 +29,6 @@ import kotlinx.coroutines.launch
 class FavoritesScreenModel(
     getFavoritesList: GetFavoritesList,
     private val recommendationManager: RecommendationManager,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
-    private val updateShow: UpdateShow,
-    private val updateMovie: UpdateMovie,
-    private val auth: Auth,
-    private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val libraryPreferences: LibraryPreferences,
     private val favoritesUpdateManager: FavoritesUpdateManager,
 ): ScreenModel {
@@ -111,18 +99,6 @@ class FavoritesScreenModel(
     fun refreshFavoritesFromNetwork() {
         screenModelScope.launch {
             favoritesUpdateManager.refreshFavorites()
-        }
-    }
-
-    fun toggleItemFavorite(contentItem: ContentItem) {
-        screenModelScope.launch {
-           toggleContentItemFavorite.await(
-               contentItem = contentItem,
-               changeOnNetwork = auth.currentUserOrNull() != null
-           )
-           if (!contentItem.favorite) {
-               recommendationManager.removeRecommendation(contentItem, -1)
-           }
         }
     }
 

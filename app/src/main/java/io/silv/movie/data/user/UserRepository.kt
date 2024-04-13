@@ -7,6 +7,7 @@ import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
+import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -36,6 +38,7 @@ interface UserRepository {
 class UserRepositoryImpl(
     private val postgrest: Postgrest,
     private val auth: Auth,
+    networkMonitor: NetworkMonitor,
     basePreferences: BasePreferences
 ): UserRepository {
 
@@ -45,8 +48,15 @@ class UserRepositoryImpl(
     private val _currentUser = MutableStateFlow<User?>(null)
     override val currentUser: StateFlow<User?> = _currentUser
         .map { user ->
-            val signedIn = auth.currentUserOrNull() != null
-            (user ?: savedUser.getOrDefaultBlocking()).takeIf { signedIn }
+            val uid = auth.currentUserOrNull()?.id
+
+            if (user == null) {
+                val saved = savedUser.getOrDefaultBlocking()
+
+                return@map saved.takeIf { uid != null && savedUser.get()?.userId == uid }
+            }
+
+            user.takeIf { uid != null }
         }
         .stateIn(
             scope,
@@ -58,13 +68,15 @@ class UserRepositoryImpl(
 
 
     init {
-        auth.sessionStatus.onEach { status ->
-            if (status is SessionStatus.Authenticated) {
-                val user = getUser(status.session.user?.id ?: return@onEach)
-                _currentUser.update { user }
-            } else {
-                _currentUser.update { null }
-            }
+        auth.sessionStatus
+            .combine(networkMonitor.isOnline) { a, b -> a to b }
+            .onEach { (status, _) ->
+                if (status is SessionStatus.Authenticated) {
+                    val user = getUser(status.session.user?.id ?: return@onEach)
+                    _currentUser.update { user }
+                } else {
+                    _currentUser.update { null }
+                }
         }
             .launchIn(scope)
 

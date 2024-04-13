@@ -10,7 +10,9 @@ import io.silv.movie.data.recommendation.RecommendationWorker.Companion.DEFAULT_
 import io.silv.movie.data.recommendation.RecommendationWorker.Companion.DEFAULT_MIN_TAKE_SIZE
 import io.silv.movie.database.DatabaseHandler
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 
 class RecommendationManager(
     context: Context,
@@ -28,16 +30,12 @@ class RecommendationManager(
         return handler.subscribeToList {
             recommendationQueries.selectRecommendationContentByListId(id, ContentListMapper.mapRecommendation)
         }
-    }
-
-    suspend fun removeRecommendation(contentItem: ContentItem, listId: Long) {
-        handler.await {
-            recommendationQueries.deleteFromList(
-                listId = listId,
-                movieId = contentItem.takeIf { it.isMovie }?.contentId,
-                showId = contentItem.takeIf { !it.isMovie }?.contentId
-            )
-        }
+            .distinctUntilChanged()
+            .onEach {
+                if (it.isEmpty()) {
+                    refreshListRecommendations(id)
+                }
+            }
     }
 
     fun refreshListRecommendations(listId: Long, amount: Int = DEFAULT_MAX_SIZE, perItem: Int = DEFAULT_MIN_TAKE_SIZE) {

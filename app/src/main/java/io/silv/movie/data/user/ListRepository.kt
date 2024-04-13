@@ -150,6 +150,14 @@ private data class FromSubscribedRpcParams(
     val lim: Int
 )
 
+@Serializable
+private data class Subscription(
+    @SerialName("user_id")
+    val userId: String,
+    @SerialName("list_id")
+    val listId: String
+)
+
 class ListRepository(
     private val postgrest: Postgrest,
     private val auth: Auth,
@@ -163,6 +171,15 @@ class ListRepository(
                 .decodeList<FavoriteMovie>()
         }
             .getOrNull()
+    }
+
+    suspend fun subscribeToList(id: String): Result<Unit> {
+        return runCatching {
+            postgrest["subscription"]
+                .insert(
+                    Subscription(auth.currentUserOrNull()!!.id, id)
+                )
+        }
     }
 
     suspend fun addShowToFavorites(show: TVShow): Boolean {
