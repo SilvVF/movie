@@ -206,7 +206,7 @@ data class ListViewScreen(
                     }
                 )
 
-                MovieTheme(themeColor = primary) {
+                MovieTheme(themeColor = primary.takeIf { it != Color.Transparent }) {
                     SuccessScreenContent(
                         query = screenModel.query,
                         refreshingList = refreshingList,
@@ -312,6 +312,8 @@ data class ListViewScreen(
                                 },
                                 list = s.list,
                                 onChangeDescription = { descriptionResultLauncher.launch() },
+                                onCopyClick = { listInteractor.copyList(s.list) },
+                                isUserMe = s.isOwnerMe,
                                 content = s.allItems
                             )
                         }
@@ -410,6 +412,12 @@ private fun SuccessScreenContent(
             lazyListState.takeIf { listViewDisplayMode() is PosterDisplayMode.List },
             lazyGridState.takeIf { listViewDisplayMode() is PosterDisplayMode.Grid }
         )
+
+        LaunchedEffect(topBarState.searching) {
+            if(!topBarState.searching) {
+                updateQuery("")
+            }
+        }
 
         SpotifyTopBarLayout(
             modifier = Modifier
@@ -663,6 +671,7 @@ fun PinnedTopBar(
         title = {
             val focusRequester = remember { FocusRequester() }
             if (topBarState.searching) {
+
                 LaunchedEffect(focusRequester) {
                     focusRequester.requestFocus()
                 }

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Movie
@@ -117,6 +118,8 @@ fun ListOptionsBottomSheet(
     onChangeDescription: () -> Unit,
     onDeleteClick: () -> Unit,
     onShareClick: () -> Unit,
+    onCopyClick: () -> Unit,
+    isUserMe: Boolean,
     list: ContentList,
     content: ImmutableList<ContentItem>
 ) {
@@ -140,31 +143,40 @@ fun ListOptionsBottomSheet(
             description = { Text(list.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
         )
         HorizontalDivider()
-        BottomSheetItem(
-            title = { Text(stringResource(id = R.string.options_add_to_list)) },
-            icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
-            onClick = onAddClick
-        )
-        BottomSheetItem(
-            title = { Text(stringResource(id = R.string.options_edit_list)) },
-            icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = null) },
-            onClick = onEditClick
-        )
-        BottomSheetItem(
-            title = { Text(stringResource(id = R.string.options_edit_description)) },
-            icon = { Icon(imageVector = Icons.Filled.EditNote, contentDescription = null) },
-            onClick = onChangeDescription
-        )
+        if (isUserMe) {
+            BottomSheetItem(
+                title = { Text(stringResource(id = R.string.options_add_to_list)) },
+                icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
+                onClick = onAddClick
+            )
+            BottomSheetItem(
+                title = { Text(stringResource(id = R.string.options_edit_list)) },
+                icon = { Icon(imageVector = Icons.Filled.Edit, contentDescription = null) },
+                onClick = onEditClick
+            )
+            BottomSheetItem(
+                title = { Text(stringResource(id = R.string.options_edit_description)) },
+                icon = { Icon(imageVector = Icons.Filled.EditNote, contentDescription = null) },
+                onClick = onChangeDescription
+            )
+            BottomSheetItem(
+                title = { Text(stringResource(id = R.string.share)) },
+                icon = { Icon(imageVector = Icons.Filled.Share, contentDescription = null) },
+                onClick = onShareClick
+            )
+        }
         BottomSheetItem(
             title = { Text(stringResource(id = R.string.options_delete_list)) },
             icon = { Icon(imageVector = Icons.Filled.Close, contentDescription = null) },
             onClick = onDeleteClick
         )
-        BottomSheetItem(
-            title = { Text(stringResource(id = R.string.share)) },
-            icon = { Icon(imageVector = Icons.Filled.Share, contentDescription = null) },
-            onClick = onShareClick
-        )
+        if (!isUserMe) {
+            BottomSheetItem(
+                title = { Text(stringResource(id = R.string.copy)) },
+                icon = { Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = null) },
+                onClick = onCopyClick
+            )
+        }
         Spacer(
             Modifier.height(
                 with(LocalDensity.current) {

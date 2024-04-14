@@ -163,7 +163,7 @@ class ListViewScreenModel(
                     mutableState.value = ListViewState.Error("No list found")
                     return@combine
                 } else {
-                    mutableState.updateSuccess {state ->
+                    mutableState.updateSuccess { state ->
                         state.copy(
                             list = list,
                             allItems = items.toImmutableList()

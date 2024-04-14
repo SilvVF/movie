@@ -47,6 +47,7 @@ import coil.request.ImageRequest
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
 import io.silv.movie.R
+import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
@@ -325,15 +326,14 @@ fun ListViewCoverDialog(
                 val cache = koinInject<ListCoverCache>()
                 var semaphor by remember { mutableIntStateOf(0) }
                 val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-
+                val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
                 val fileExists by remember(semaphor) {
                     derivedStateOf { file.exists() }
                 }
 
-                LaunchedEffect(list.posterLastModified, list.id) {
+                LaunchedEffect(list.posterLastModified) {
                     semaphor++
                 }
-
 
                 if (fileExists) {
                     val state = rememberZoomableState()
@@ -341,6 +341,8 @@ fun ListViewCoverDialog(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
                             .data(file.toUri())
+                            .diskCacheKey("$hash,${list.posterLastModified}")
+                            .memoryCacheKey("$hash,${list.posterLastModified}")
                             .crossfade(1_000)
                             .build(),
                         contentDescription = null,

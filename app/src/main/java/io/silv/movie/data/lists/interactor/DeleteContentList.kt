@@ -1,5 +1,6 @@
 package io.silv.movie.data.lists.interactor
 
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
@@ -15,6 +16,7 @@ class DeleteContentList(
     private val local: ContentListRepository,
     private val getMovie: GetMovie,
     private val getShow: GetShow,
+    private val auth: Auth,
 ) {
 
     suspend fun await(
@@ -23,7 +25,7 @@ class DeleteContentList(
         showCoverCache: TVShowCoverCache,
     ): Result<Unit> {
         return runCatching {
-            if (list.supabaseId != null) {
+            if (list.supabaseId != null && auth.currentUserOrNull()?.id == list.createdBy) {
                 val result = network.deleteList(list.supabaseId)
 
                 if (!result) {

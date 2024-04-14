@@ -1,5 +1,6 @@
 package io.silv.movie.data.lists.interactor
 
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toUpdate
@@ -10,7 +11,8 @@ import okio.IOException
 
 class EditContentList(
     private val network: ListRepository,
-    private val local: ContentListRepository
+    private val local: ContentListRepository,
+    private val auth: Auth,
 ) {
 
     suspend fun await(
@@ -19,7 +21,7 @@ class EditContentList(
     ): Result<ContentList> {
         val new = update(list)
 
-        if (new.supabaseId != null) {
+        if (new.supabaseId != null && auth.currentUserOrNull()?.id == list.createdBy) {
             val result = network.updateList(new.toUserListUpdate())
             if (!result) {
                 return Result.failure(IOException("Failed to remove from network"))

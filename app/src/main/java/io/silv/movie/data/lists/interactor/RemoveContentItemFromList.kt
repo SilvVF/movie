@@ -1,5 +1,6 @@
 package io.silv.movie.data.lists.interactor
 
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.cache.MovieCoverCache
 import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.lists.ContentItem
@@ -15,6 +16,7 @@ class RemoveContentItemFromList(
     private val getMovie: GetMovie,
     private val getShow: GetShow,
     private val local: ContentListRepository,
+    private val auth: Auth,
 ){
     suspend fun await(
         contentItem: ContentItem,
@@ -22,6 +24,11 @@ class RemoveContentItemFromList(
         movieCoverCache: MovieCoverCache,
         showCoverCache: TVShowCoverCache,
     ): Result<Unit> {
+
+        if (auth.currentUserOrNull()?.id != list.createdBy && list.createdBy != null) {
+            return Result.failure(IOException("Unable to edit unowned list"))
+        }
+
         if (list.supabaseId != null) {
             val result = if (contentItem.isMovie) {
                 network.deleteMovieFromList(contentItem.contentId, list)

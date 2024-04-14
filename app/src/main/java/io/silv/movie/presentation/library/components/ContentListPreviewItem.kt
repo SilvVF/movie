@@ -45,6 +45,7 @@ import androidx.core.net.toUri
 import coil.request.ImageRequest
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
+import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
@@ -65,7 +66,7 @@ fun ContentListPoster(
     val cache = koinInject<ListCoverCache>()
     var semaphor by remember { mutableIntStateOf(0) }
     val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-
+    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
     val fileExists by remember(semaphor) {
         derivedStateOf { file.exists() }
     }
@@ -77,7 +78,9 @@ fun ContentListPoster(
     if (fileExists) {
         ContentPreviewDefaults.CustomListPoster(
             modifier = modifier,
-            uri = file.toUri()
+            uri = file.toUri(),
+            hash = hash,
+            lastModified = list.posterLastModified
         )
     } else {
         if (items.size < 4) {
@@ -103,7 +106,7 @@ fun ContentListPosterItems(
     val cache = koinInject<ListCoverCache>()
     var semaphor by remember { mutableIntStateOf(0) }
     val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-
+    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
     val fileExists by remember(semaphor) {
         derivedStateOf { file.exists() }
     }
@@ -115,9 +118,11 @@ fun ContentListPosterItems(
     if (fileExists) {
         ContentPreviewDefaults.CustomListPoster(
             modifier = modifier,
-            uri = file.toUri()
+            uri = file.toUri(),
+            hash = hash,
+            lastModified = list.posterLastModified
         )
-    } else {
+    }else {
         if (items.size < 4) {
             ContentPreviewDefaults.SingleItemPoster(
                 modifier = modifier,
@@ -234,6 +239,8 @@ object ContentPreviewDefaults {
     fun CustomListPoster(
         modifier: Modifier,
         uri: Uri,
+        hash: String = "",
+        lastModified: Long = 0L,
     ) {
         val context = LocalContext.current
         ItemCover.Square(
@@ -241,6 +248,8 @@ object ContentPreviewDefaults {
             shape = RectangleShape,
             data = ImageRequest.Builder(context)
                 .data(uri)
+                .diskCacheKey("$hash,$lastModified")
+                .memoryCacheKey("$hash,$lastModified")
                 .build()
         )
     }
