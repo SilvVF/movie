@@ -375,6 +375,7 @@ private fun TopBarLayout(
                 val posterOffset = (posterMaxHeight - topPaddingPx - bottomPaddingPx - posterMinHeight - infoPlaceable.height)
                     .coerceAtMost(0f)
 
+
                 val posterPlaceable = poster.measure(
                     constraints.copy(
                         minHeight = posterMinHeight.roundToInt(),
@@ -399,12 +400,12 @@ private fun TopBarLayout(
 
                     posterPlaceable.placeRelative(
                         constraints.maxWidth / 2 - posterPlaceable.width / 2,
-                        maxOf(posterY, searchY.roundToInt() + searchPlaceable.height)
+                        maxOf(posterY, searchY.roundToInt() + searchPlaceable.height + TopPadding.roundToPx())
                     )
 
                     infoPlaceable.placeRelative(
                         0,
-                        (constraints.maxHeight - infoPlaceable.height - bottomPaddingPx)
+                        maxOf(posterY, searchY.roundToInt() + searchPlaceable.height) + posterPlaceable.height
                     )
                 }
             }
