@@ -91,6 +91,7 @@ fun rememberTopBarState(
     lazyGridState: LazyGridState? = null,
     coroutineScope: CoroutineScope = rememberCoroutineScope()
 ): TopBarState {
+
     val density = LocalDensity.current
     val appBarMaxHeightPx = with(density) { TopBarMaxHeight.toPx() }
     val appBarPinnedHeightPx = with(density) { TopBarPinnedHeight.toPx() }
@@ -99,10 +100,9 @@ fun rememberTopBarState(
     val flingAnimationSpec = rememberSplineBasedDecay<Float>()
 
     return rememberSaveable(
+        lazyListState, lazyGridState, coroutineScope,
         saver = Saver(
-            save = {
-                arrayOf(it.fraction, it.searching)
-            },
+            save = { arrayOf(it.fraction, it.searching) },
             restore = { (fraction, searching ) ->
                 TopBarState(
                     lazyListState,
@@ -111,7 +111,16 @@ fun rememberTopBarState(
                         val res = if ((searching as? Boolean) == true) {
                             -appBarMaxHeightPx + topAppBarHeightPx
                         } else {
-                            (-appBarMaxHeightPx + topAppBarHeightPx) * (1f - ((fraction as? Float) ?: 0f))
+                            val canConsume =    if (lazyListState != null) {
+                                !lazyListState.canScrollBackward ||
+                                        (lazyListState.firstVisibleItemScrollOffset == 0 && lazyListState.firstVisibleItemIndex == 0)
+                            } else if (lazyGridState != null) {
+                                !lazyGridState.canScrollBackward ||
+                                        (lazyGridState.firstVisibleItemScrollOffset == 0 && lazyGridState.firstVisibleItemIndex == 0)
+                            } else {
+                                false
+                            }
+                            if (canConsume) (-appBarMaxHeightPx + topAppBarHeightPx) * (1f - ((fraction as? Float) ?: 0f)) else  (-appBarMaxHeightPx + topAppBarHeightPx)
                         }
                         Timber.d("TopBarState", "restored: f $fraction, m $appBarMaxHeightPx, r $res, $searching")
                         res
@@ -125,7 +134,7 @@ fun rememberTopBarState(
                     coroutineScope
                 )
             }
-        )
+        ),
     ) {
         TopBarState(
             lazyListState,

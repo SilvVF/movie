@@ -1,14 +1,36 @@
 package io.silv.movie.presentation.library.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
@@ -18,17 +40,21 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
+import io.silv.core_ui.util.colorClickable
+import io.silv.movie.LocalUser
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
+import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.library.components.dialog.FavoriteOptionsBottomSheet
-import io.silv.movie.presentation.library.components.topbar.FavoritesViewTopBar
+import io.silv.movie.presentation.library.components.topbar.SpotifyTopBarLayout
+import io.silv.movie.presentation.library.components.topbar.TitleWithProfilePicture
+import io.silv.movie.presentation.library.components.topbar.rememberTopBarState
 import io.silv.movie.presentation.library.screenmodels.FavoritesListState
 import io.silv.movie.presentation.library.screenmodels.FavoritesScreenModel
 import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
@@ -126,6 +152,7 @@ private fun FavoritesScreenContent(
     state: FavoritesListState
 ) {
     val hazeState = remember { HazeState() }
+    val user = LocalUser.current
     val topBarState = rememberPosterTopBarState()
 
     PullRefresh(
@@ -133,29 +160,124 @@ private fun FavoritesScreenContent(
         enabled = { !state.refreshingFavorites },
         onRefresh = { refreshFavorites() }
     ) {
-        Scaffold(
-            topBar = {
-                FavoritesViewTopBar(
-                    state = topBarState,
-                    query = { query },
-                    changeQuery = updateQuery,
-                    onSearch = updateQuery,
-                    displayMode = listViewDisplayMode,
-                    setDisplayMode = updateListViewDisplayMode,
-                    onListOptionClicked = onListOptionClick,
-                    sortModeProvider = { state.sortMode },
-                    changeSortMode = changeSortMode,
-                    modifier = Modifier.hazeChild(hazeState)
+        val lazyListState = rememberLazyListState()
+        val lazyGridState = rememberLazyGridState()
+        val topBarState = rememberTopBarState(
+            lazyListState.takeIf { listViewDisplayMode() is PosterDisplayMode.List },
+            lazyGridState.takeIf { listViewDisplayMode() is PosterDisplayMode.Grid }
+        )
+
+        SpotifyTopBarLayout(
+            modifier = Modifier
+                .fillMaxSize()
+                .nestedScroll(topBarState.connection)
+                .imePadding(),
+            topBarState = topBarState,
+            info = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    if (user != null) {
+                        TitleWithProfilePicture(
+                            user = user,
+                            name = "Favorites",
+                            description = "Your favorite movies and tv-shows"
+                        )
+                    } else {
+                        Text(
+                            text = "Favorites",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier
+                        )
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ListViewDisplayMode(
+                            displayMode = listViewDisplayMode,
+                            setDisplayMode = updateListViewDisplayMode
+                        )
+                        FilledIconButton(onClick = onListOptionClick) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = null
+                            )
+                        }
+                    }
+                }
+            },
+            search = {
+                Row(Modifier.padding(horizontal = 18.dp)) {
+                    Box(
+                        Modifier
+                            .weight(0.8f)
+                            .fillMaxHeight()
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
+                            .colorClickable {
+                                topBarState.searching = !topBarState.searching
+                            }
+                            .padding(2.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(horizontal = 6.dp)
+                        ) {
+                            Icon(imageVector = Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Text("Find in list", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        Modifier
+                            .weight(0.2f)
+                            .fillMaxHeight()
+                            .clip(MaterialTheme.shapes.small)
+                            .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp))
+                            .colorClickable {
+
+                            }
+                            .padding(2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Sort", style = MaterialTheme.typography.labelLarge)
+                    }
+                }
+            },
+            poster = {
+                ContentPreviewDefaults.LibraryContentPoster(
+                    modifier = Modifier.fillMaxHeight()
                 )
             },
-            modifier = Modifier
-                .imePadding()
-                .nestedScroll(topBarState.scrollBehavior.nestedScrollConnection)
+            topAppBar = {
+                PinnedTopBar(
+                    onBackPressed = {  },
+                    setDisplayMode = updateListViewDisplayMode,
+                    displayMode = listViewDisplayMode,
+                    onListOptionClick = onListOptionClick,
+                    topBarState = topBarState,
+                    onQueryChanged = updateQuery,
+                    query = query,
+                    user = LocalUser.current,
+                    name = "Favorites"
+                )
+            },
+            snackbarHostState = remember { SnackbarHostState() }
         ) { paddingValues ->
             when (val mode = listViewDisplayMode()) {
                 is PosterDisplayMode.Grid -> {
                     ContentListPosterGrid(
                         mode = mode,
+                        lazyGridState = lazyGridState,
                         items = state.items,
                         onOptionsClick = onOptionsClick,
                         onLongClick = onLongClick,
@@ -181,6 +303,7 @@ private fun FavoritesScreenContent(
                 PosterDisplayMode.List -> {
                     ContentListPosterList(
                         items = state.items,
+                        lazyListState = lazyListState,
                         onOptionsClick = onOptionsClick,
                         onLongClick = onLongClick,
                         onClick = onClick,

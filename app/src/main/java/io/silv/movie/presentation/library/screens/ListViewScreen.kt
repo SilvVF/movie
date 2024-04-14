@@ -611,7 +611,7 @@ fun ListViewDisplayMode(
 
 
 @Composable
-private fun PinnedTopBar(
+fun PinnedTopBar(
     onBackPressed: () -> Unit,
     onListOptionClick: () -> Unit,
     setDisplayMode: (PosterDisplayMode) -> Unit,
