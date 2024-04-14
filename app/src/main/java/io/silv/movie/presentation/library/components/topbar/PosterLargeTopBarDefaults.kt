@@ -126,9 +126,10 @@ object PosterLargeTopBarDefaults {
         changeQuery: (String) -> Unit,
         onSearch: (String) -> Unit,
         placeholder: String,
+        modifier: Modifier = Modifier,
     ) {
         Column(
-            Modifier
+            modifier
                 .wrapContentHeight()
                 .fillMaxWidth()
                 .padding(vertical = 12.dp),

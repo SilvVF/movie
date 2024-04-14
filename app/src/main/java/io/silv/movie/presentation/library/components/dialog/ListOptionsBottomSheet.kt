@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.library.components.dialog
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.height
@@ -10,17 +12,25 @@ import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Title
+import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
@@ -28,7 +38,76 @@ import io.silv.movie.presentation.library.components.BottomSheetDragHandlerNoPad
 import io.silv.movie.presentation.library.components.BottomSheetHeader
 import io.silv.movie.presentation.library.components.BottomSheetItem
 import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import kotlinx.collections.immutable.ImmutableList
+
+@Composable
+fun SortOptionsBottomSheet(
+    onDismissRequest: () ->  Unit,
+    selected: ListSortMode,
+    onSortChange: (ListSortMode) -> Unit,
+    list: ContentList,
+    content: ImmutableList<ContentItem>
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        windowInsets = WindowInsets(0, 0, 0, 0),
+        dragHandle = {
+            BottomSheetDragHandlerNoPadding(Modifier.padding(top = 16.dp))
+        }
+    ) {
+        BottomSheetHeader(
+            poster = {
+                ContentListPosterItems(
+                    list = list,
+                    items = content,
+                    modifier = Modifier
+                        .padding(vertical = 12.dp)
+                )
+            },
+            title = { Text(list.name) },
+            description = { Text(list.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+        )
+        HorizontalDivider()
+
+        val filters =
+            remember {
+                listOf(
+                    Triple(R.string.title, Icons.Filled.Title, ListSortMode.Title),
+                    Triple(R.string.recently_added, Icons.Filled.NewReleases, ListSortMode.RecentlyAdded),
+                    Triple(R.string.movies, Icons.Filled.Movie, ListSortMode.Movie),
+                    Triple(R.string.shows, Icons.Filled.Tv, ListSortMode.Show)
+                )
+            }
+
+        filters.fastForEach { (resId, icon, mode) ->
+            BottomSheetItem(
+                title = { Text(stringResource(id = resId)) },
+                icon = {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null
+                    )
+                },
+                onClick = { onSortChange(mode) },
+                modifier = Modifier
+                    .background(
+                        animateColorAsState(
+                            targetValue = if(mode == selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                            label = ""
+                        ).value
+                    )
+            )
+        }
+        Spacer(
+            Modifier.height(
+                with(LocalDensity.current) {
+                    WindowInsets.systemBars.getBottom(LocalDensity.current).toDp()
+                }
+            )
+        )
+    }
+}
 
 @Composable
 fun ListOptionsBottomSheet(

@@ -188,7 +188,7 @@ fun TitleWithProfilePicture(
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Bottom
+        verticalArrangement = Arrangement.Bottom,
     ) {
         Text(
             text = name,

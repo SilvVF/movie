@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.MoreVert
@@ -42,6 +44,7 @@ fun ContentListPosterList(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     modifier: Modifier = Modifier,
+    lazyListState: LazyListState = rememberLazyListState(),
     onRecommendationClick: (item: ContentItem) -> Unit = {},
     onRecommendationLongClick: (item: ContentItem) -> Unit = {},
     onAddRecommendation: (item: ContentItem) -> Unit = {},
@@ -54,6 +57,7 @@ fun ContentListPosterList(
 ) {
     FastScrollLazyColumn(
         modifier = modifier.fillMaxSize(),
+        state = lazyListState,
         contentPadding = paddingValues
     ) {
         if (items.isEmpty() && isOwnerMe) {

@@ -297,6 +297,10 @@ class ListViewScreenModel(
     @Stable
     sealed interface Dialog {
 
+
+        @Stable
+        data object SortOptions : Dialog
+
         @Stable
         data object DeleteList : Dialog
 
@@ -324,6 +328,12 @@ sealed interface ListSortMode {
     data object RecentlyAdded: ListSortMode
     data object Movie: ListSortMode
     data object Show: ListSortMode
+
+    companion object {
+        val values = persistentListOf(
+            Title, RecentlyAdded, Movie, Show
+        )
+    }
 }
 
 sealed interface ListViewState {

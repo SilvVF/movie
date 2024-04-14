@@ -1,5 +1,6 @@
 package io.silv.core_ui.theme
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.Build
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -13,6 +14,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
@@ -21,6 +23,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.google.android.material.color.utilities.Scheme
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -68,21 +71,29 @@ fun ColorScheme.applyTonalElevation(
 }
 
 
+@SuppressLint("RestrictedApi")
 @Composable
 fun MovieTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    themeColor: Color? = null,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val context = LocalContext.current
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+    val colorScheme = remember(dynamicColor, themeColor, darkTheme) {
+        when {
+            themeColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                if (darkTheme) Scheme.dark(themeColor.toArgb()).toColorScheme()
+                else Scheme.light(themeColor.toArgb()).toColorScheme()
+            }
+            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> DarkColorScheme
+            else -> LightColorScheme
+        }
     }
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -99,3 +110,36 @@ fun MovieTheme(
         content = content
     )
 }
+
+@SuppressLint("RestrictedApi")
+fun Scheme.toColorScheme() = ColorScheme(
+    primary = Color(primary),
+    onPrimary = Color(onPrimary),
+    primaryContainer = Color(primaryContainer),
+    onPrimaryContainer = Color(onPrimaryContainer),
+    inversePrimary = Color(inversePrimary),
+    secondary = Color(secondary),
+    onSecondary = Color(onSecondary),
+    secondaryContainer = Color(secondaryContainer),
+    onSecondaryContainer = Color(onSecondaryContainer),
+    tertiary = Color(tertiary),
+    onTertiary = Color(onTertiary),
+    tertiaryContainer = Color(tertiaryContainer),
+    onTertiaryContainer = Color(onTertiaryContainer),
+    background = Color(background),
+    onBackground = Color(onBackground),
+    surface = Color(surface),
+    onSurface = Color(onSurface),
+    surfaceVariant = Color(surfaceVariant),
+    onSurfaceVariant = Color(onSurfaceVariant),
+    surfaceTint = Color(primary),
+    inverseSurface = Color(inverseSurface),
+    inverseOnSurface = Color(inverseOnSurface),
+    error = Color(error),
+    onError = Color(onError),
+    errorContainer = Color(errorContainer),
+    onErrorContainer = Color(onErrorContainer),
+    outline = Color(outline),
+    outlineVariant = Color(outlineVariant),
+    scrim = Color(scrim),
+)

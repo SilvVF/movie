@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -133,6 +134,7 @@ fun ContentListPosterGrid(
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
     modifier: Modifier = Modifier,
+    lazyGridState: LazyGridState = rememberLazyGridState(),
     onRecommendationClick: (item: ContentItem) -> Unit = {},
     onRecommendationLongClick: (item: ContentItem) -> Unit = {},
     onAddRecommendation: (item: ContentItem) -> Unit = {},
@@ -143,18 +145,17 @@ fun ContentListPosterGrid(
     onRefreshClick: () -> Unit = {},
     isOwnerMe: Boolean,
 ) {
-    val gridState = rememberLazyGridState()
     val cols = GridCells.Fixed(2)
 
     VerticalGridFastScroller(
-        state = gridState,
+        state = lazyGridState,
         columns = cols,
         contentPadding = paddingValues,
         arrangement = Arrangement.SpaceEvenly
     ) {
         LazyVerticalGrid(
             columns = cols,
-            state = gridState,
+            state = lazyGridState,
             contentPadding = paddingValues,
             modifier = modifier,
         ) {
