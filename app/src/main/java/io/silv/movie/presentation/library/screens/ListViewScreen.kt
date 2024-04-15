@@ -431,7 +431,7 @@ private fun SuccessScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     if (state.user != null) {
                         TitleWithProfilePicture(
@@ -545,7 +545,7 @@ private fun SuccessScreenContent(
                         refreshingRecommendations = state.refreshingRecommendations,
                         startAddingClick = startAddingClick,
                         isOwnerMe = state.isOwnerMe,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier,
                     )
                 }
                 PosterDisplayMode.List -> {
@@ -564,7 +564,7 @@ private fun SuccessScreenContent(
                         onRecommendationLongClick = onRecommendationLongClick,
                         startAddingClick = startAddingClick,
                         isOwnerMe = state.isOwnerMe,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier,
                     )
                 }
             }

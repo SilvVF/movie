@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyListState
@@ -78,9 +80,9 @@ import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val TopPadding = 24.dp
+private val TopPadding = 16.dp
 private val BottomPadding = 12.dp
-private val TopAppBarHeight = 64.dp + TopPadding
+private val TopAppBarHeight = 64.dp
 private val TopBarMaxHeight = 482.dp
 private val SearchBarHeight = 38.dp
 private val TopBarPinnedHeight = 64.dp + SearchBarHeight + TopPadding
@@ -93,9 +95,10 @@ fun rememberTopBarState(
 ): TopBarState {
 
     val density = LocalDensity.current
+    val inset = WindowInsets.systemBars.getTop(density)
     val appBarMaxHeightPx = with(density) { TopBarMaxHeight.toPx() }
     val appBarPinnedHeightPx = with(density) { TopBarPinnedHeight.toPx() }
-    val topAppBarHeightPx = with(density) { TopAppBarHeight.toPx() }
+    val topAppBarHeightPx = with(density) { TopAppBarHeight.toPx() + inset }
     val snapAnimationSpec = tween<Float>()
     val flingAnimationSpec = rememberSplineBasedDecay<Float>()
 
@@ -263,7 +266,7 @@ fun SpotifyTopBarLayout(
             ) {
                 Spacer(
                     modifier = Modifier.height(
-                        with(LocalDensity.current) { topBarState.spaceHeightPx.toDp() - BottomPadding }
+                        with(LocalDensity.current) { topBarState.spaceHeightPx.toDp() }
                     )
                 )
                 content(
@@ -305,7 +308,6 @@ private fun TopBarLayout(
     info: @Composable () -> Unit,
     poster: @Composable () -> Unit,
 ) {
-    val density = LocalDensity.current
     Box(
         modifier = modifier
             .wrapContentSize()
@@ -358,35 +360,33 @@ private fun TopBarLayout(
                     )
                 )
                 val infoPlaceable = info.measure(constraints)
-                val topPaddingPx = with(density) { TopPadding.roundToPx() }
-                val bottomPaddingPx = with(density) { BottomPadding.roundToPx() }
-                val posterMinHeight = with(density) { TopBarPinnedHeight.toPx() }
+                val topPaddingPx = TopPadding.roundToPx()
+                val posterMinHeight = TopBarPinnedHeight.toPx()
 
                 val searchY =
                     TopBarPinnedHeight.toPx() + state.connection.appBarOffset - SearchBarHeight.toPx()
 
-                val posterMaxHeight = with(density){
+                val posterMaxHeight =
                     minOf(
                         (TopBarMaxHeight - TopBarPinnedHeight).toPx(),
                         (TopBarMaxHeight.toPx() + state.connection.appBarOffset),
                     )
-                }
 
-                val posterOffset = (posterMaxHeight - topPaddingPx - bottomPaddingPx - posterMinHeight - infoPlaceable.height)
+                val posterOffset = (posterMaxHeight - topPaddingPx  - posterMinHeight - infoPlaceable.height)
                     .coerceAtMost(0f)
 
 
                 val posterPlaceable = poster.measure(
                     constraints.copy(
                         minHeight = posterMinHeight.roundToInt(),
-                        maxHeight = (posterMaxHeight - topPaddingPx - bottomPaddingPx - infoPlaceable.height)
+                        maxHeight = (posterMaxHeight - topPaddingPx  - infoPlaceable.height)
                             .coerceAtLeast(posterMinHeight)
                             .roundToInt()
                     )
                 )
 
 
-                val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height - bottomPaddingPx)
+                val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height)
                     .coerceAtLeast(TopPadding.roundToPx()) + posterOffset.roundToInt()
 
 
