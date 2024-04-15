@@ -305,137 +305,140 @@ private fun TopBarLayout(
     poster: @Composable () -> Unit,
 ) {
     val inset = WindowInsets.systemBars.getTop(LocalDensity.current)
-            Layout(
-                {
-                    Box(Modifier
-                        .layoutId("topBar")
-                    ) {
-                        topAppBar()
-                    }
-                    Box(Modifier
-                        .layoutId("info")
-                    ) {
-                        info()
-                    }
-                    Box(Modifier.layoutId("search")) {
-                        search()
-                    }
-                    Box(Modifier.layoutId("pinned")) {
-                        pinnedButton()
-                    }
-                    Box(
-                        Modifier
-                            .layoutId("poster")
-                            .wrapContentWidth()
-                            .graphicsLayer {
-                                alpha = lerp(
-                                    0f,
-                                    1f,
-                                    FastOutLinearInEasing.transform(
-                                        (state.fraction / 0.6f - 0.1f).coerceIn(0f..1f)
-                                    )
-                                )
-                            }
-                    ) {
-                        poster()
-                    }
-                },
-                modifier =  modifier
-                    .height(with(LocalDensity.current) { state.spaceHeightPx.toDp() })
-                    .fillMaxWidth()
-                    .appBarDraggable(state)
-            ) { measurables, constraints ->
-                val search = measurables.first { it.layoutId == "search" }
-                val pinned = measurables.first { it.layoutId == "pinned" }
-                val poster = measurables.first { it.layoutId == "poster" }
-                val info = measurables.first { it.layoutId == "info" }
-                val topBar = measurables.first { it.layoutId == "topBar" }
-
-                val topBarPlaceable = topBar.measure(constraints)
-
-                val searchPlaceable = search.measure(
-                    constraints.copy(
-                        maxHeight = SearchBarHeight.roundToPx(),
-                        minHeight = 0
-                    )
-                )
-                val pinnedPlaceable = pinned.measure(constraints.copy(
-                    minWidth = 0,
-                    minHeight = 0
-                ))
-                val pinnedPadding = 14.dp.roundToPx()
-                val minH = info.minIntrinsicHeight(
-                    constraints.maxWidth - pinnedPlaceable.width - pinnedPadding
-                )
-                val infoPlaceable = info.measure(
-                    constraints.copy(
-                        minHeight = minH,
-                        maxHeight = minH,
-                        minWidth = 0,
-                        maxWidth = constraints.maxWidth - pinnedPlaceable.width - pinnedPadding
-                    )
-                )
-                val topPaddingPx = 12.dp.roundToPx()
-                val posterMinHeight = state.connection.appBarPinnedHeight
-
-                val searchY =
-                    state.connection.appBarPinnedHeight + state.connection.appBarOffset - SearchBarHeight.toPx()
-
-                val posterMaxHeight =
-                    minOf(
-                        (state.spaceHeightPx - infoPlaceable.height - topPaddingPx - inset),
-                        (TopBarMaxHeight.toPx() - infoPlaceable.height - state.connection.appBarPinnedHeight - topPaddingPx - inset),
-                    )
-
-
-
-                val posterPlaceable = poster.measure(
-                    constraints.copy(
-                        minHeight = posterMinHeight.roundToInt(),
-                        maxHeight = posterMaxHeight
-                            .coerceAtLeast(posterMinHeight)
-                            .roundToInt()
-                    )
-                )
-
-
-                val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height)
-                    .coerceAtLeast(topPaddingPx + inset)
-
-                val infoY = constraints.maxHeight - infoPlaceable.height
-
-                layout(constraints.maxWidth, constraints.maxHeight) {
-
-                    searchPlaceable.placeRelative(
-                        constraints.maxWidth / 2 - searchPlaceable.width / 2,
-                        searchY.roundToInt()
-                    )
-
-                    posterPlaceable.placeRelative(
-                        constraints.maxWidth / 2 - posterPlaceable.width / 2,
-                         posterY
-                    )
-
-                    infoPlaceable.placeRelative(
-                        0,
-                        infoY
-                    )
-
-                    topBarPlaceable.placeWithLayer(
-                        0, 0, 1f
-                    )
-
-                    if (!state.searching) {
-                        pinnedPlaceable.placeWithLayer(
-                            constraints.maxWidth - pinnedPlaceable.width - pinnedPadding,
-                            (infoY + infoPlaceable.height / 2 - pinnedPlaceable.height / 2)
-                                .coerceAtLeast(
-                                    TopAppBarHeight.roundToPx()
-                                ),
-                            2f
+    Layout(
+        {
+            Box(Modifier
+                .layoutId("topBar")
+            ) {
+                topAppBar()
+            }
+            Box(Modifier
+                .layoutId("info")
+            ) {
+                info()
+            }
+            Box(Modifier.layoutId("search")) {
+                search()
+            }
+            Box(Modifier.layoutId("pinned")) {
+                pinnedButton()
+            }
+            Box(
+                Modifier
+                    .layoutId("poster")
+                    .wrapContentWidth()
+                    .graphicsLayer {
+                        alpha = lerp(
+                            0f,
+                            1f,
+                            FastOutLinearInEasing.transform(
+                                (state.fraction / 0.6f - 0.1f).coerceIn(0f..1f)
+                            )
                         )
                     }
-                }
+            ) {
+                poster()
+            }
+        },
+        modifier =  modifier
+            .height(with(LocalDensity.current) { state.spaceHeightPx.toDp() })
+            .fillMaxWidth()
+            .appBarDraggable(state)
+    ) { measurables, constraints ->
+        val search = measurables.first { it.layoutId == "search" }
+        val pinned = measurables.first { it.layoutId == "pinned" }
+        val poster = measurables.first { it.layoutId == "poster" }
+        val info = measurables.first { it.layoutId == "info" }
+        val topBar = measurables.first { it.layoutId == "topBar" }
+
+        val topBarPlaceable = topBar.measure(constraints)
+
+        val searchPlaceable = search.measure(
+            constraints.copy(
+                maxHeight = SearchBarHeight.roundToPx(),
+                minHeight = 0
+            )
+        )
+        val pinnedPlaceable = pinned.measure(constraints.copy(
+            minWidth = 0,
+            minHeight = 0
+        ))
+        val pinnedPadding = 14.dp.roundToPx()
+        val minH = info.minIntrinsicHeight(
+            constraints.maxWidth - pinnedPlaceable.width - pinnedPadding
+        )
+        val infoPlaceable = info.measure(
+            constraints.copy(
+                minHeight = minH,
+                maxHeight = minH,
+                minWidth = 0,
+                maxWidth = constraints.maxWidth - pinnedPlaceable.width - pinnedPadding
+            )
+        )
+        val topPaddingPx = 12.dp.roundToPx()
+        val posterMinHeight = state.connection.appBarPinnedHeight
+
+        val searchY =
+            state.connection.appBarPinnedHeight + state.connection.appBarOffset - SearchBarHeight.toPx()
+
+        val posterMaxHeight =
+            minOf(
+                (state.spaceHeightPx - infoPlaceable.height - topPaddingPx - inset),
+                (TopBarMaxHeight.toPx() - infoPlaceable.height - state.connection.appBarPinnedHeight - topPaddingPx - inset),
+            )
+
+
+
+        val posterPlaceable = poster.measure(
+            constraints.copy(
+                minHeight = posterMinHeight.roundToInt(),
+                maxHeight = posterMaxHeight
+                    .coerceAtLeast(posterMinHeight)
+                    .roundToInt()
+            )
+        )
+
+
+        val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height)
+            .coerceAtLeast(topPaddingPx + inset)
+
+        val infoY = constraints.maxHeight - infoPlaceable.height
+
+        val posterOffset =  (infoY - (posterY + posterPlaceable.height))
+            .coerceAtMost(0) * 0.6f
+
+        layout(constraints.maxWidth, constraints.maxHeight) {
+
+            searchPlaceable.placeRelative(
+                constraints.maxWidth / 2 - searchPlaceable.width / 2,
+                searchY.roundToInt()
+            )
+
+            posterPlaceable.placeRelative(
+                constraints.maxWidth / 2 - posterPlaceable.width / 2,
+                posterY + posterOffset.roundToInt()
+            )
+
+            infoPlaceable.placeRelative(
+                0,
+                infoY
+            )
+
+            topBarPlaceable.placeWithLayer(
+                0, 0, 1f
+            )
+
+            if (!state.searching) {
+                pinnedPlaceable.placeWithLayer(
+                    constraints.maxWidth - pinnedPlaceable.width - pinnedPadding,
+                    (infoY + infoPlaceable.height / 2 - pinnedPlaceable.height / 2)
+                        .coerceAtLeast(
+                            TopAppBarHeight.roundToPx()
+                        ),
+                    2f
+                )
+            }
+        }
     }
 }
 

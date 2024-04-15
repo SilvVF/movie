@@ -629,7 +629,7 @@ fun PinnedTopBar(
         lerp(
             0f,
             1f,
-            FastOutLinearInEasing.transform((topBarState.fraction / 0.4f).coerceIn(0f..1f))
+            FastOutLinearInEasing.transform((topBarState.fraction / 0.2f).coerceIn(0f..1f))
         )
     )
     TopAppBar(
