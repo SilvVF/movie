@@ -76,7 +76,6 @@ import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private val TopPadding = 16.dp
 private val TopAppBarHeight = 64.dp
 private val TopBarMaxHeight = 482.dp
 private val SearchBarHeight = 38.dp
@@ -376,7 +375,7 @@ private fun TopBarLayout(
                         maxWidth = constraints.maxWidth - pinnedPlaceable.width - pinnedPadding
                     )
                 )
-                val topPaddingPx = TopPadding.roundToPx()
+                val topPaddingPx = 12.dp.roundToPx()
                 val posterMinHeight = state.connection.appBarPinnedHeight
 
                 val searchY =
@@ -384,19 +383,16 @@ private fun TopBarLayout(
 
                 val posterMaxHeight =
                     minOf(
-                        (TopBarMaxHeight - state.connection.appBarPinnedHeight.toDp()).toPx(),
-                        (TopBarMaxHeight.toPx() + state.connection.appBarOffset),
+                        (state.spaceHeightPx - infoPlaceable.height - topPaddingPx - inset),
+                        (TopBarMaxHeight.toPx() - infoPlaceable.height - state.connection.appBarPinnedHeight - topPaddingPx - inset),
                     )
 
-                val posterOffset = (
-                        posterMaxHeight - topPaddingPx - inset - posterMinHeight - infoPlaceable.height)
-                    .coerceAtMost(0f)
 
 
                 val posterPlaceable = poster.measure(
                     constraints.copy(
                         minHeight = posterMinHeight.roundToInt(),
-                        maxHeight = (posterMaxHeight - topPaddingPx  - infoPlaceable.height - inset)
+                        maxHeight = posterMaxHeight
                             .coerceAtLeast(posterMinHeight)
                             .roundToInt()
                     )
@@ -404,12 +400,9 @@ private fun TopBarLayout(
 
 
                 val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height)
-                    .coerceAtLeast(
-                        TopPadding.roundToPx() + inset
-                    ) + posterOffset.roundToInt()
+                    .coerceAtLeast(topPaddingPx + inset)
 
-
-                val infoY = maxOf(posterY, searchY.roundToInt() + searchPlaceable.height) + posterPlaceable.height
+                val infoY = constraints.maxHeight - infoPlaceable.height
 
                 layout(constraints.maxWidth, constraints.maxHeight) {
 
@@ -420,10 +413,7 @@ private fun TopBarLayout(
 
                     posterPlaceable.placeRelative(
                         constraints.maxWidth / 2 - posterPlaceable.width / 2,
-                        maxOf(
-                            posterY,
-                            searchY.roundToInt() + searchPlaceable.height
-                        )
+                         posterY
                     )
 
                     infoPlaceable.placeRelative(
