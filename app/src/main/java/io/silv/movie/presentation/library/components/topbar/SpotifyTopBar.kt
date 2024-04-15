@@ -77,11 +77,9 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private val TopPadding = 16.dp
-private val BottomPadding = 12.dp
 private val TopAppBarHeight = 64.dp
 private val TopBarMaxHeight = 482.dp
 private val SearchBarHeight = 38.dp
-private val TopBarPinnedHeight = 64.dp + SearchBarHeight + TopPadding
 
 @Composable
 fun rememberTopBarState(
@@ -93,13 +91,13 @@ fun rememberTopBarState(
     val density = LocalDensity.current
     val inset = WindowInsets.systemBars.getTop(density)
     val appBarMaxHeightPx = with(density) { TopBarMaxHeight.toPx() }
-    val appBarPinnedHeightPx = with(density) { TopBarPinnedHeight.toPx() }
     val topAppBarHeightPx = with(density) { TopAppBarHeight.toPx() + inset }
+    val appBarPinnedHeightPx = with(density) { topAppBarHeightPx + SearchBarHeight.toPx() }
     val snapAnimationSpec = tween<Float>()
     val flingAnimationSpec = rememberSplineBasedDecay<Float>()
 
     return rememberSaveable(
-        lazyListState, lazyGridState, coroutineScope,
+        lazyListState, lazyGridState, coroutineScope, inset,
         saver = Saver(
             save = { arrayOf(it.fraction, it.searching) },
             restore = { (fraction, searching ) ->
@@ -307,6 +305,7 @@ private fun TopBarLayout(
     info: @Composable () -> Unit,
     poster: @Composable () -> Unit,
 ) {
+    val inset = WindowInsets.systemBars.getTop(LocalDensity.current)
             Layout(
                 {
                     Box(Modifier
@@ -343,8 +342,8 @@ private fun TopBarLayout(
                     }
                 },
                 modifier =  modifier
-                    .height(with(LocalDensity.current) { state.spaceHeightPx.toDp() }).
-                    fillMaxWidth()
+                    .height(with(LocalDensity.current) { state.spaceHeightPx.toDp() })
+                    .fillMaxWidth()
                     .appBarDraggable(state)
             ) { measurables, constraints ->
                 val search = measurables.first { it.layoutId == "search" }
@@ -378,25 +377,26 @@ private fun TopBarLayout(
                     )
                 )
                 val topPaddingPx = TopPadding.roundToPx()
-                val posterMinHeight = TopBarPinnedHeight.toPx()
+                val posterMinHeight = state.connection.appBarPinnedHeight
 
                 val searchY =
-                    TopBarPinnedHeight.toPx() + state.connection.appBarOffset - SearchBarHeight.toPx()
+                    state.connection.appBarPinnedHeight + state.connection.appBarOffset - SearchBarHeight.toPx()
 
                 val posterMaxHeight =
                     minOf(
-                        (TopBarMaxHeight - TopBarPinnedHeight).toPx(),
+                        (TopBarMaxHeight - state.connection.appBarPinnedHeight.toDp()).toPx(),
                         (TopBarMaxHeight.toPx() + state.connection.appBarOffset),
                     )
 
-                val posterOffset = (posterMaxHeight - topPaddingPx  - posterMinHeight - infoPlaceable.height)
+                val posterOffset = (
+                        posterMaxHeight - topPaddingPx - inset - posterMinHeight - infoPlaceable.height)
                     .coerceAtMost(0f)
 
 
                 val posterPlaceable = poster.measure(
                     constraints.copy(
                         minHeight = posterMinHeight.roundToInt(),
-                        maxHeight = (posterMaxHeight - topPaddingPx  - infoPlaceable.height)
+                        maxHeight = (posterMaxHeight - topPaddingPx  - infoPlaceable.height - inset)
                             .coerceAtLeast(posterMinHeight)
                             .roundToInt()
                     )
@@ -404,8 +404,9 @@ private fun TopBarLayout(
 
 
                 val posterY = (constraints.maxHeight - posterPlaceable.height - infoPlaceable.height)
-                    .coerceAtLeast(TopPadding.roundToPx()) + posterOffset.roundToInt()
-
+                    .coerceAtLeast(
+                        TopPadding.roundToPx() + inset
+                    ) + posterOffset.roundToInt()
 
 
                 val infoY = maxOf(posterY, searchY.roundToInt() + searchPlaceable.height) + posterPlaceable.height
@@ -419,7 +420,10 @@ private fun TopBarLayout(
 
                     posterPlaceable.placeRelative(
                         constraints.maxWidth / 2 - posterPlaceable.width / 2,
-                        maxOf(posterY, searchY.roundToInt() + searchPlaceable.height + TopPadding.roundToPx())
+                        maxOf(
+                            posterY,
+                            searchY.roundToInt() + searchPlaceable.height
+                        )
                     )
 
                     infoPlaceable.placeRelative(
@@ -431,14 +435,16 @@ private fun TopBarLayout(
                         0, 0, 1f
                     )
 
-                    pinnedPlaceable.placeWithLayer(
-                        constraints.maxWidth - pinnedPlaceable.width - pinnedPadding,
-                        (infoY + infoPlaceable.height / 2 - pinnedPlaceable.height / 2)
-                            .coerceAtLeast(
-                                TopAppBarHeight.roundToPx()
-                            ),
-                        2f
-                    )
+                    if (!state.searching) {
+                        pinnedPlaceable.placeWithLayer(
+                            constraints.maxWidth - pinnedPlaceable.width - pinnedPadding,
+                            (infoY + infoPlaceable.height / 2 - pinnedPlaceable.height / 2)
+                                .coerceAtLeast(
+                                    TopAppBarHeight.roundToPx()
+                                ),
+                            2f
+                        )
+                    }
                 }
     }
 }

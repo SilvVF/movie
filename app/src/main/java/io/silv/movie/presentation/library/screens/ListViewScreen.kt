@@ -512,7 +512,6 @@ private fun SuccessScreenContent(
                     list = state.list,
                     items = state.allItems,
                     modifier = Modifier
-                        .padding(vertical = 12.dp)
                         .fillMaxHeight()
                         .clickable { onPosterClick() }
                 )

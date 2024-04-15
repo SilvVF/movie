@@ -249,7 +249,9 @@ private fun FavoritesScreenContent(
             },
             poster = {
                 ContentPreviewDefaults.LibraryContentPoster(
-                    modifier = Modifier.fillMaxHeight()
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(12.dp)
                 )
             },
             topAppBar = {
