@@ -41,7 +41,6 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import io.silv.core_ui.components.PullRefresh
-import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.util.colorClickable
 import io.silv.movie.LocalUser
 import io.silv.movie.data.lists.ContentItem
@@ -95,6 +94,7 @@ data object FavoritesViewScreen : Screen {
                     toggleItemFavorite(item)
                 }
             },
+            onBackPressed = { navigator.pop() },
             onOptionsClick = {},
             changeSortMode = screenModel::setSortMode,
             refreshRecommendations = screenModel::refreshRecommendations,
@@ -149,11 +149,11 @@ private fun FavoritesScreenContent(
     onAddRecommendation: (item: ContentItem) -> Unit,
     refreshRecommendations: () -> Unit,
     refreshFavorites: () -> Unit,
+    onBackPressed: () -> Unit,
     state: FavoritesListState
 ) {
     val hazeState = remember { HazeState() }
     val user = LocalUser.current
-    val topBarState = rememberPosterTopBarState()
 
     PullRefresh(
         refreshing = state.refreshingFavorites,
@@ -203,12 +203,6 @@ private fun FavoritesScreenContent(
                             displayMode = listViewDisplayMode,
                             setDisplayMode = updateListViewDisplayMode
                         )
-                        FilledIconButton(onClick = onListOptionClick) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = null
-                            )
-                        }
                     }
                 }
             },
@@ -260,16 +254,26 @@ private fun FavoritesScreenContent(
             },
             topAppBar = {
                 PinnedTopBar(
-                    onBackPressed = {  },
-                    setDisplayMode = updateListViewDisplayMode,
-                    displayMode = listViewDisplayMode,
-                    onListOptionClick = onListOptionClick,
+                    onBackPressed = onBackPressed,
                     topBarState = topBarState,
                     onQueryChanged = updateQuery,
                     query = query,
                     user = LocalUser.current,
                     name = "Favorites"
                 )
+            },
+            pinnedButton = {
+                FilledIconButton(
+                    onClick = {
+                        onListOptionClick()
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = null,
+                    )
+                }
             },
             snackbarHostState = remember { SnackbarHostState() }
         ) { paddingValues ->

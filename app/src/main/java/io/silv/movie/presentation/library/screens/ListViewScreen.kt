@@ -209,6 +209,7 @@ data class ListViewScreen(
                 MovieTheme(themeColor = primary.takeIf { it != Color.Transparent }) {
                     SuccessScreenContent(
                         query = screenModel.query,
+                        onBackPressed = {navigator.pop()},
                         refreshingList = refreshingList,
                         refreshList = screenModel::refreshList,
                         updateQuery = screenModel::updateQuery,
@@ -256,7 +257,6 @@ data class ListViewScreen(
                         primary = { primary },
                         onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                         snackbarHostState = snackBarState,
-                        onBackPressed = { navigator.pop() },
                         state = s
                     )
                     when (val dialog = s.dialog) {
@@ -425,6 +425,19 @@ private fun SuccessScreenContent(
                 .nestedScroll(topBarState.connection)
                 .imePadding(),
             topBarState = topBarState,
+            pinnedButton = {
+                FilledIconButton(
+                    onClick = {
+                        onListOptionClick()
+                    },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = null,
+                    )
+                }
+            },
             info = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -447,21 +460,10 @@ private fun SuccessScreenContent(
                             modifier = Modifier
                         )
                     }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        ListViewDisplayMode(
-                            displayMode = listViewDisplayMode,
-                            setDisplayMode = updateListViewDisplayMode
-                        )
-                        FilledIconButton(onClick = onListOptionClick) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = null
-                            )
-                        }
-                    }
+                    ListViewDisplayMode(
+                        displayMode = listViewDisplayMode,
+                        setDisplayMode = updateListViewDisplayMode,
+                    )
                 }
             },
             search = {
@@ -518,9 +520,6 @@ private fun SuccessScreenContent(
             topAppBar = {
                 PinnedTopBar(
                     onBackPressed = onBackPressed,
-                    setDisplayMode = updateListViewDisplayMode,
-                    displayMode = listViewDisplayMode,
-                    onListOptionClick = onListOptionClick,
                     topBarState = topBarState,
                     onQueryChanged = updateQuery,
                     query = query,
@@ -621,9 +620,6 @@ fun ListViewDisplayMode(
 @Composable
 fun PinnedTopBar(
     onBackPressed: () -> Unit,
-    onListOptionClick: () -> Unit,
-    setDisplayMode: (PosterDisplayMode) -> Unit,
-    displayMode: () -> PosterDisplayMode,
     topBarState: TopBarState,
     query: String,
     onQueryChanged: (String) -> Unit,
@@ -651,23 +647,7 @@ fun PinnedTopBar(
                 Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, null)
             }
         },
-        actions = {
-            Box(Modifier.graphicsLayer { alpha = 1f - fractionLerp  }) {
-                ListViewDisplayMode(
-                    displayMode = displayMode,
-                    setDisplayMode = setDisplayMode,
-                )
-            }
-            IconButton(
-                onClick = onListOptionClick
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.MoreVert,
-                    null,
-                    Modifier.graphicsLayer { alpha = 1f - fractionLerp }
-                )
-            }
-        },
+        actions = {},
         title = {
             val focusRequester = remember { FocusRequester() }
             if (topBarState.searching) {
