@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.BottomAppBarDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -544,9 +546,15 @@ fun AppBottomBar(
             ProfileTab
         )
     }
+    val density = LocalDensity.current
+    val insets = WindowInsets.systemBars.getBottom(density)
+
     BottomAppBar(
         modifier
-            .heightIn(min = 0.dp, max = 72.dp)
+            .heightIn(
+                min = 0.dp,
+                max = 48.dp + with(density) { insets.toDp () }
+            )
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)
 
@@ -561,6 +569,7 @@ fun AppBottomBar(
                     placeable.placeRelative(0, 0)
                 }
             },
+        windowInsets = BottomAppBarDefaults.windowInsets
     ) {
         tabs.fastForEach { tab ->
             NavigationBarItem(

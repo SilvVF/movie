@@ -513,7 +513,14 @@ private fun SuccessScreenContent(
                     items = state.allItems,
                     modifier = Modifier
                         .fillMaxHeight()
-                        .clickable { onPosterClick() }
+                        .then(
+                            if (!topBarState.searching) {
+                                Modifier.clickable { onPosterClick() }
+                            } else {
+                                Modifier
+                            }
+                        )
+
                 )
             },
             topAppBar = {

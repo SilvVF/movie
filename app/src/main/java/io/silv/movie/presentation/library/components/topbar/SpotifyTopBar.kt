@@ -18,8 +18,6 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
@@ -63,11 +61,9 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
@@ -97,7 +93,10 @@ fun rememberTopBarState(
     val flingAnimationSpec = rememberSplineBasedDecay<Float>()
 
     return rememberSaveable(
-        lazyListState, lazyGridState, coroutineScope, appBarPinnedHeightPx,
+        coroutineScope,
+        lazyGridState,
+        lazyListState,
+        appBarPinnedHeightPx,
         saver = Saver(
             save = { arrayOf(it.fraction, it.searching) },
             restore = { (fraction, searching ) ->
@@ -108,7 +107,7 @@ fun rememberTopBarState(
                         val res = if ((searching as? Boolean) == true) {
                             -appBarMaxHeightPx + topAppBarHeightPx
                         } else {
-                            val canConsume =    if (lazyListState != null) {
+                            val canConsume= if (lazyListState != null) {
                                 !lazyListState.canScrollBackward ||
                                         (lazyListState.firstVisibleItemScrollOffset == 0 && lazyListState.firstVisibleItemIndex == 0)
                             } else if (lazyGridState != null) {
@@ -242,34 +241,59 @@ fun SpotifyTopBarLayout(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         modifier = modifier
     ) { paddingValues ->
-        Column(Modifier.fillMaxSize()) {
-            BoxWithConstraints(Modifier.zIndex(2f)) {
+        Layout(
+            {
                 TopBarLayout(
-                    topBarState,
-                    Modifier
-                        .background(
-                            brush = Brush.verticalGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    Color.Transparent
+                        topBarState,
+                        Modifier
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        Color.Transparent
+                                    )
                                 )
-                            )
-                        ),
-                    this.maxHeight,
-                    pinnedButton,
-                    search,
-                    topAppBar,
-                    info,
-                    poster
+                            ),
+                        pinnedButton,
+                        search,
+                        topAppBar,
+                        info,
+                        poster
+                    )
+                content(
+                    PaddingValues(
+                        start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
+                        end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
+                        bottom = paddingValues.calculateBottomPadding()
+                    )
                 )
-            }
-            content(
-                PaddingValues(
-                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
-                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-                    bottom = paddingValues.calculateBottomPadding()
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {measurables, constraints ->
+            val topBar = measurables[0]
+
+            val tbp = topBar.measure(
+                constraints.copy(
+                    minHeight = 0,
+                    maxHeight = TopBarMaxHeight.roundToPx()
                 )
             )
+            val content = measurables[1].measure(constraints.copy(
+                minHeight = 0,
+                maxHeight = (constraints.maxHeight - tbp.height).coerceAtLeast(0),
+            ))
+
+            layout(
+                constraints.maxWidth,
+                constraints.maxHeight
+            ) {
+                tbp.place(0, 0,  1f)
+                content.place(
+                    0,
+                    tbp.height,
+                    0f
+                )
+            }
         }
     }
 }
@@ -278,7 +302,6 @@ fun SpotifyTopBarLayout(
 private fun TopBarLayout(
     state: TopBarState,
     modifier: Modifier,
-    maxHeight: Dp,
     pinnedButton: @Composable () -> Unit,
     search: @Composable () -> Unit,
     topAppBar: @Composable () -> Unit,
@@ -324,7 +347,9 @@ private fun TopBarLayout(
         modifier = modifier
             .fillMaxWidth()
             .appBarDraggable(state)
-            .height(with(LocalDensity.current) { state.spaceHeightPx.toDp() })
+            .height(
+                with(LocalDensity.current) { state.spaceHeightPx.toDp() }
+            )
     ) { measurables, constraints ->
         val search = measurables.first { it.layoutId == "search" }
         val pinned = measurables.first { it.layoutId == "pinned" }
@@ -366,15 +391,9 @@ private fun TopBarLayout(
                 (state.spaceHeightPx - infoPlaceable.height - topPaddingPx - inset),
                 (TopBarMaxHeight.toPx() - infoPlaceable.height - state.connection.appBarPinnedHeight - topPaddingPx - inset),
             )
-                .takeIf { TopBarMaxHeight < maxHeight }
-                ?: minOf(
-                    maxHeight.toPx() - inset - infoPlaceable.height - searchPlaceable.height.toFloat() - TopAppBarHeight.toPx() - topPaddingPx,
-                    constraints.maxHeight - state.connection.appBarOffset - inset - infoPlaceable.height - searchPlaceable.height.toFloat() - TopAppBarHeight.toPx() - topPaddingPx
-                )
 
         val posterMinHeight = minOf(
-            state.connection.appBarPinnedHeight,
-            maxHeight.toPx() - inset - infoPlaceable.height - searchPlaceable.height.toFloat() - TopAppBarHeight.toPx() - topPaddingPx
+            state.connection.appBarPinnedHeight
         )
             .coerceAtLeast(0f)
 
