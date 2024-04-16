@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyListState
@@ -46,7 +45,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,7 +61,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
@@ -93,12 +90,7 @@ fun rememberTopBarState(
 
     val density = LocalDensity.current
     val inset = WindowInsets.systemBars.getTop(density)
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
-    val appBarMaxHeightPx = remember(screenHeightDp) {
-        with(density) {
-            minOf(TopBarMaxHeight.toPx(), screenHeightDp.dp.toPx())
-        }
-    }
+    val appBarMaxHeightPx = with(density)  { TopBarMaxHeight.toPx() }
     val topAppBarHeightPx = with(density) { TopAppBarHeight.toPx() + inset }
     val appBarPinnedHeightPx = with(density) { topAppBarHeightPx + SearchBarHeight.toPx() }
     val snapAnimationSpec = tween<Float>()
@@ -251,7 +243,7 @@ fun SpotifyTopBarLayout(
         modifier = modifier
     ) { paddingValues ->
         Column(Modifier.fillMaxSize()) {
-            BoxWithConstraints {
+            BoxWithConstraints(Modifier.zIndex(2f)) {
                 TopBarLayout(
                     topBarState,
                     Modifier
@@ -262,8 +254,7 @@ fun SpotifyTopBarLayout(
                                     Color.Transparent
                                 )
                             )
-                        )
-                        .zIndex(2f),
+                        ),
                     this.maxHeight,
                     pinnedButton,
                     search,
@@ -272,15 +263,13 @@ fun SpotifyTopBarLayout(
                     poster
                 )
             }
-            Box(Modifier.heightIn(0.dp, LocalConfiguration.current.screenHeightDp.dp)) {
-                content(
-                    PaddingValues(
-                        start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
-                        end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
-                        bottom = paddingValues.calculateBottomPadding()
-                    )
+            content(
+                PaddingValues(
+                    start = paddingValues.calculateStartPadding(LocalLayoutDirection.current),
+                    end = paddingValues.calculateEndPadding(LocalLayoutDirection.current),
+                    bottom = paddingValues.calculateBottomPadding()
                 )
-            }
+            )
         }
     }
 }
@@ -297,7 +286,6 @@ private fun TopBarLayout(
     poster: @Composable () -> Unit,
 ) {
     val inset = WindowInsets.systemBars.getTop(LocalDensity.current)
-    val screenHeight = LocalConfiguration.current.screenHeightDp
     Layout(
         {
             Box(Modifier
@@ -451,7 +439,7 @@ private fun Modifier.appBarDraggable(
     this.draggable(
         enabled = !topBarState.searching,
         state = rememberDraggableState {
-            if (topBarState.connection.canConsume()) {
+            if (topBarState.connection.canConsume() || topBarState.connection.appBarOffset > -topBarState.connection.appBarMaxHeight) {
                 val newOffset = topBarState.connection.appBarOffset + it
                 topBarState.connection.appBarOffset = newOffset.coerceIn(-topBarState.connection.appBarMaxHeight, 0f)
             } else {
@@ -459,7 +447,7 @@ private fun Modifier.appBarDraggable(
             }
         },
         onDragStopped = { v ->
-            if (topBarState.connection.canConsume()) {
+            if (topBarState.connection.canConsume() || topBarState.connection.appBarOffset > -topBarState.connection.appBarMaxHeight) {
                 with(topBarState.connection) {
                     settleBar(
                         { appBarOffset },
@@ -515,7 +503,9 @@ class CollapsingAppBarNestedScrollConnection internal constructor(
 
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         val delta = available.y
-        return if (canConsume()) {
+        return if (
+            canConsume() || appBarOffset > -appBarMaxHeight
+        ) {
             val newOffset = appBarOffset + delta
             val previousOffset = appBarOffset
             appBarOffset = newOffset.coerceIn(-appBarMaxHeight, 0f)
@@ -536,7 +526,9 @@ class CollapsingAppBarNestedScrollConnection internal constructor(
         source: NestedScrollSource
     ): Offset {
         val delta = available.y
-        return if (canConsume()) {
+        return if (
+            canConsume() || appBarOffset > -appBarMaxHeight
+        ) {
             val newOffset = appBarOffset + delta
             val previousOffset = appBarOffset
             appBarOffset = newOffset.coerceIn(-appBarMaxHeight, 0f)
@@ -553,7 +545,9 @@ class CollapsingAppBarNestedScrollConnection internal constructor(
 
     override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
         val superConsumed = super.onPostFling(consumed, available)
-        return superConsumed + if (canConsume()) {
+        return superConsumed + if (
+            canConsume() || appBarOffset > -appBarMaxHeight
+        ) {
             settleBar(
                 { appBarOffset },
                 appBarPinnedHeight,
