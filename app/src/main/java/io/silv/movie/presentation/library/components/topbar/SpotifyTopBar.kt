@@ -372,7 +372,10 @@ private fun TopBarLayout(
                     constraints.maxHeight - state.connection.appBarOffset - inset - infoPlaceable.height - searchPlaceable.height.toFloat() - TopAppBarHeight.toPx() - topPaddingPx
                 )
 
-        val posterMinHeight = minOf(state.connection.appBarPinnedHeight, posterMaxHeight)
+        val posterMinHeight = minOf(
+            state.connection.appBarPinnedHeight,
+            maxHeight.toPx() - inset - infoPlaceable.height - searchPlaceable.height.toFloat() - TopAppBarHeight.toPx() - topPaddingPx
+        )
             .coerceAtLeast(0f)
 
         val posterPlaceable = poster.measure(
