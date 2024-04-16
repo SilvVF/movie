@@ -53,6 +53,7 @@ fun ContentItem.toPoster(): PosterData {
         title =  title,
         favorite = favorite,
         lastModified = posterLastUpdated,
+        inList = inLibraryList
     )
 }
 

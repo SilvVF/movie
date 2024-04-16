@@ -72,6 +72,7 @@ import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
+import io.silv.movie.presentation.media.CollapsablePlayerScreenContent
 import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import io.silv.movie.presentation.profile.ProfileTab
@@ -154,9 +155,7 @@ class MainActivity : ComponentActivity() {
 
                 MovieTheme {
                     TabNavigator(LibraryTab) { tabNavigator ->
-                        Surface(
-                            Modifier.fillMaxSize(),
-                        ) {
+                        Surface(Modifier.fillMaxSize(),) {
                             Scaffold(
                                 modifier = Modifier.fillMaxSize(),
                                 contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -182,8 +181,11 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                             ) { paddingValues ->
-                                val playerVisible by remember {
+                                val trailerPlayerVisible by remember {
                                     derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
+                                }
+                                val contentPlayerVisible by remember {
+                                    derivedStateOf { playerViewModel.playingContent != null }
                                 }
                                 val density = LocalDensity.current
                                 val bottomPadding by remember {
@@ -202,7 +204,7 @@ class MainActivity : ComponentActivity() {
                                         Modifier
                                             .padding(
                                                 bottom = animateDpAsState(
-                                                    targetValue = if (playerVisible) bottomPadding else 0.dp,
+                                                    targetValue = if (trailerPlayerVisible) bottomPadding else 0.dp,
                                                     label = "player-aware-padding-animated"
                                                 )
                                                     .value
@@ -211,21 +213,32 @@ class MainActivity : ComponentActivity() {
                                         CurrentTab()
                                     }
                                     AnimatedVisibility(
-                                        visible = playerVisible,
+                                        visible = trailerPlayerVisible || contentPlayerVisible,
                                         modifier = Modifier
                                             .wrapContentSize()
                                             .align(Alignment.BottomCenter),
                                         enter = slideInVertically { it } + fadeIn(),
                                         exit = fadeOut(tween(0, 0))
                                     ) {
-                                        CollapsablePlayerScreen(
-                                            collapsableVideoState = collapsableVideoState,
-                                            onDismissRequested = playerViewModel::clearMediaQueue,
-                                            playerViewModel = playerViewModel
-                                        )
-                                        LaunchedEffect(playerVisible) {
-                                            collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
+                                        when  {
+                                            contentPlayerVisible -> playerViewModel.playingContent?.let {
+                                                    CollapsablePlayerScreenContent(
+                                                        collapsableVideoState = collapsableVideoState,
+                                                        contentItem = it    ,
+                                                        onDismissRequested = playerViewModel::clearMediaQueue,
+                                                    )
+                                                }
+                                            trailerPlayerVisible -> {
+                                                CollapsablePlayerScreen(
+                                                    collapsableVideoState = collapsableVideoState,
+                                                    onDismissRequested = playerViewModel::clearMediaQueue,
+                                                    playerViewModel = playerViewModel
+                                                )
+                                            }
                                         }
+                                    }
+                                    LaunchedEffect(trailerPlayerVisible, trailerPlayerVisible) {
+                                        collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
                                     }
                                 }
                             }

@@ -185,11 +185,15 @@ private fun MediaItemInfo(
                 horizontalArrangement = Arrangement.Start
             ) {
                 val formattedDateTime = remember {
-                    val dateTime = ZonedDateTime.parse(item.publishedAt)
+                    runCatching {
 
-                    val formatter =
-                        DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
-                    dateTime.format(formatter)
+                        val dateTime = ZonedDateTime.parse(item.publishedAt)
+
+                        val formatter =
+                            DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.getDefault())
+                        dateTime.format(formatter)
+                    }
+                        .getOrDefault("")
                 }
                 Text(
                     text = item.type,

@@ -68,6 +68,7 @@ data class MovieViewScreen(
         val changeDialog = remember {
             { dialog: MovieViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
         }
+
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
             MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
                 Icon(
@@ -87,7 +88,9 @@ data class MovieViewScreen(
                     state = state,
                     refresh = screenModel::refresh,
                     creditsProvider = { credits },
-                    onPosterClick = { changeDialog(MovieViewScreenModel.Dialog.FullCover) },
+                    onPosterClick = {
+                        changeDialog(MovieViewScreenModel.Dialog.FullCover)
+                    },
                     onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
                     onViewCreditsClick = { navigator.push(CreditsViewScreen(state.movie.id, true)) },
                     onCreditClick = { credit ->

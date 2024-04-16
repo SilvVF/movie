@@ -265,7 +265,7 @@ object ContentPreviewDefaults {
             ItemCover.Square(
                 modifier = modifier,
                 shape = RectangleShape,
-                data = remember(item) { item.toPoster() }
+                data = remember(item.posterLastUpdated) { item.toPoster() }
             )
         }
     }

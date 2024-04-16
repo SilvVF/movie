@@ -17,8 +17,12 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
+import io.silv.movie.data.lists.ContentItem
+import io.silv.movie.data.lists.toContentItem
+import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.trailers.TrailerRepository
+import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
@@ -35,10 +39,14 @@ import org.burnoutcrew.reorderable.ItemPosition
 class PlayerViewModel(
     private val trailerRepository: TrailerRepository,
     private val pipedApi: PipedApi,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    private val getMovie: GetMovie,
+    private val getShow: GetShow,
 ): ViewModel(), EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
 
     private var trailerToStreams by mutableStateOf<Pair<Trailer, Streams>?>(null)
+    var playingContent by mutableStateOf<ContentItem?>(null)
+        private set
 
     var playerState by mutableIntStateOf(Player.STATE_IDLE)
 
@@ -52,6 +60,25 @@ class PlayerViewModel(
     val secondToStream = mutableStateMapOf<String, Long>()
 
     init {
+        viewModelScope.launch {
+            val pair = savedStateHandle.get<Pair<Boolean, Long>>("item")
+            if (pair != null) {
+                val (isMovie, id) = pair
+                playingContent = if (isMovie) {
+                    getMovie.await(id)?.toContentItem()
+                } else {
+                    getShow.await(id)?.toContentItem()
+                }
+            } else {
+                run {
+                    requestMediaQueue(
+                        contentId ?: return@run,
+                        isMovie ?: return@run,
+                        trailerId ?: return@run
+                    )
+                }
+            }
+        }
         viewModelScope.launch {
             snapshotFlow { currentTrailer to trailerToStreams }
                 .filterNotNull()
@@ -158,15 +185,14 @@ class PlayerViewModel(
         }
     }
 
-
     private var contentId: Long? = savedStateHandle["content"]
         set(value) {
             savedStateHandle["content"] = value
             field = value
         }
-    private var isMovie: Boolean? = savedStateHandle["content"]
+    private var isMovie: Boolean? = savedStateHandle["isMovie"]
         set(value) {
-            savedStateHandle["content"] = value
+            savedStateHandle["isMovie"] = value
             field = value
         }
 
@@ -176,24 +202,14 @@ class PlayerViewModel(
             field = value
         }
 
-    init {
-        run {
-            requestMediaQueue(
-                contentId ?: return@run,
-                isMovie ?: return@run,
-                trailerId ?: return@run
-            )
-        }
-    }
-
     fun requestMediaQueue(contentId: Long, isMovie: Boolean, tid: String) {
+        clearMediaQueue(true)
 
         this.contentId = contentId
         this.isMovie = isMovie
         trailerId = tid
 
         viewModelScope.launch {
-
             val trailers = if (isMovie) {
                 trailerRepository.getTrailersByMovieId(contentId)
             } else {
@@ -214,9 +230,23 @@ class PlayerViewModel(
         }
     }
 
-    fun clearMediaQueue() {
+    fun setContentItem(c: ContentItem) {
+        clearMediaQueue()
+        playingContent = c
+    }
+
+    fun clearMediaQueue(clearSavedStateForContent: Boolean = false) {
+        if (clearSavedStateForContent) {
+            savedStateHandle["item"] = null
+        }
+        playingContent = null
         trailerToStreams = null
         trailerQueue.clear()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        savedStateHandle["item"] = playingContent?.isMovie to playingContent?.contentId
     }
 
     sealed interface PlayerEvent {
