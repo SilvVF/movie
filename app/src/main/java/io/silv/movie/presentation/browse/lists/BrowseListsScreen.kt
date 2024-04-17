@@ -2,8 +2,10 @@ package io.silv.movie.presentation.browse.lists
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -18,18 +20,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ExploreOff
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SearchOff
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,48 +44,38 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.paging.LoadState
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
-import androidx.paging.PagingState
-import androidx.paging.cachedIn
-import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemKey
-import androidx.paging.map
-import app.cash.paging.PagingSource
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.rpc
-import io.silv.core_ui.components.Action
-import io.silv.core_ui.components.EmptyScreen
-import io.silv.core_ui.components.NoResultsEmptyScreen
-import io.silv.core_ui.components.loadingIndicatorItem
-import io.silv.core_ui.components.topbar.SearchLargeTopBar
-import io.silv.core_ui.components.topbar.colors2
+import io.silv.core_ui.components.PullRefresh
+import io.silv.core_ui.components.shimmer.ShimmerHost
+import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.LocalUser
@@ -100,8 +91,8 @@ import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListWithItems
 import io.silv.movie.presentation.library.components.ContentItemSourceCoverOnlyGridItem
 import io.silv.movie.presentation.library.components.ContentListPosterItems
-import io.silv.movie.presentation.library.components.topbar.PosterLargeTopBarDefaults
 import io.silv.movie.presentation.library.screens.ListViewScreen
+import io.silv.movie.presentation.profile.ProfileTab
 import io.silv.movie.presentation.profile.UserProfileImage
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.movie.MovieViewScreen
@@ -110,17 +101,20 @@ import io.silv.movie.rememberProfileImageData
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import timber.log.Timber
@@ -154,252 +148,69 @@ data class ListPreviewItem(
     val items: ImmutableList<ContentItem>,
 )
 
-class ListSearchPagingSource(
-    private val postgrest: Postgrest,
-    private val query: String,
-): PagingSource<Int, ListWithPostersRpcResponse>() {
-
-    @Serializable
-    data class Params(
-        val query: String,
-        val off: Int,
-        val lim: Int
-    )
-
-    override fun getRefreshKey(state: PagingState<Int, ListWithPostersRpcResponse>): Int? {
-        return state.anchorPosition?.let { anchorPosition ->
-            val anchorPage = state.closestPageToPosition(anchorPosition)
-            anchorPage?.prevKey ?: anchorPage?.nextKey
-        }
-    }
-
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, ListWithPostersRpcResponse> {
-
-        return try {
-            val offset = (params.key ?: 0) * params.loadSize
-            val limit = params.loadSize
-
-
-            val result = postgrest.rpc(
-                "select_lists_with_poster_items_for_query",
-                Params("%$query%", offset, limit)
-            )
-                .decodeList<ListWithPostersRpcResponse>()
-
-            val nextStart = offset + limit
-
-            LoadResult.Page(
-                data = result,
-                prevKey = params.key?.minus(1),
-                nextKey = (params.key ?: 0).plus(1).takeIf {
-                    nextStart <= (result.first().total ?: Long.MAX_VALUE) && result.size >= params.loadSize
-                }
-            )
-        } catch (e: Exception) {
-            LoadResult.Error(e)
-        }
-    }
-
-}
-
-class SearchForListScreenModel(
-    private val postgrest: Postgrest,
-    private val contentListRepository: ContentListRepository,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
-): ScreenModel {
-
-    var query by mutableStateOf("")
-
-    val state = snapshotFlow { query }
-        .debounce(500L)
-        .filter { it.isNotBlank() }
-        .flatMapLatest {
-            Pager(
-                config = PagingConfig(pageSize = 30)
-            ) {
-                ListSearchPagingSource(postgrest, it)
-            }
-                .flow.cachedIn(ioCoroutineScope).map { pagingData ->
-                    pagingData.map {
-                        it.toListPreviewItem(contentListRepository, getShow, getMovie)
-                    }
-                }
-        }
-        .stateIn(
-            screenModelScope,
-            SharingStarted.WhileSubscribed(5_000),
-            PagingData.empty()
-        )
-}
-
-data object SearchForListScreen: Screen {
-
-    @Composable
-    override fun Content() {
-        val screenModel = getScreenModel<SearchForListScreenModel>()
-        val pagingItems = screenModel.state.collectAsLazyPagingItems()
-        val navigator = LocalNavigator.currentOrThrow
-        val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
-        val hazeState = remember { HazeState() }
-
-        Scaffold(
-            topBar = {
-                SearchLargeTopBar(
-                    title = { Text(text = "Search lists") },
-                    colors = TopAppBarDefaults.colors2(
-                        containerColor = Color.Transparent,
-                        scrolledContainerColor = Color.Transparent
-                    ),
-                    navigationIcon = {
-                        IconButton(onClick = { navigator.pop() }) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, null)
-                        }
-                    },
-                    maxHeight = 164.dp,
-                    extraContent = {},
-                    pinnedContent = {
-                        PosterLargeTopBarDefaults.SearchInputField(
-                            query = { screenModel.query },
-                            onSearch = { screenModel.query = it },
-                            changeQuery = { screenModel.query = it },
-                            placeholder = stringResource(id = R.string.search_placeholder, "for lists")
-                        )
-                    },
-                    scrollBehavior = scrollBehavior,
-                    modifier = Modifier.hazeChild(hazeState)
-                )
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
-        ) { paddingValues ->
-
-            if (screenModel.query.isBlank()) {
-                EmptyScreen(
-                    icon = Icons.Filled.SearchOff,
-                    iconSize = 176.dp,
-                    message = stringResource(id = R.string.enter_a_query),
-                    contentPadding = paddingValues,
-                )
-                return@Scaffold
-            }
-
-            if (pagingItems.loadState.refresh is LoadState.Loading) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
-                }
-                return@Scaffold
-            }
-
-            if (pagingItems.loadState.refresh is LoadState.Error) {
-                EmptyScreen(
-                    icon = Icons.Filled.ExploreOff,
-                    iconSize = 176.dp,
-                    message = stringResource(id = io.silv.core_ui.R.string.no_results_found),
-                    contentPadding = paddingValues,
-                    actions = remember {
-                        persistentListOf(Action(R.string.retry){ pagingItems.retry() })
-                    }
-                )
-                return@Scaffold
-            }
-
-            if (pagingItems.itemCount == 0) {
-                NoResultsEmptyScreen(contentPaddingValues = paddingValues)
-                return@Scaffold
-            }
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(128.dp),
-                contentPadding = paddingValues,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .haze(hazeState, HazeDefaults.style(MaterialTheme.colorScheme.background)),
-            ) {
-                items(
-                    count = pagingItems.itemCount,
-                    key = pagingItems.itemKey { it.list.id },
-                ) {
-                    val item = pagingItems[it] ?: return@items
-                    RowPreviewItem(
-                        modifier = Modifier
-                            .clickable {
-                                navigator.push(
-                                    ListViewScreen(
-                                        item.list.id,
-                                        item.list.supabaseId.orEmpty()
-                                    )
-                                )
-                            }
-                            .padding(12.dp),
-                        cover = {
-                            ContentListPosterItems(
-                                list = item.list,
-                                items = item.items,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(120.dp)
-                            )
-                        },
-                        name = item.list.name,
-                    )
-                }
-                loadingIndicatorItem(pagingItems)
-            }
-        }
-    }
-}
 
 class BrowseListsScreenModel(
     private val postgrest: Postgrest,
     private val contentListRepository: ContentListRepository,
     private val getMovie: GetMovie,
     private val getShow: GetShow,
-    private val basePreferences: BasePreferences,
     private val listRepository: ListRepository,
-    private val auth: Auth,
+    basePreferences: BasePreferences,
+    auth: Auth,
 ): ScreenModel {
+
+    private val DEFAULT_LIST_USER = "c532e5da-71ca-4b4b-b896-d1d36f335149"
+    var refreshing by mutableStateOf(false)
+        private set
 
     private val jobs = listOf(
         suspend {
             popularResult.emit(
-                postgrest.rpc(
-                    "select_most_popular_lists_with_poster_items",
-                    PopularListParams(10, 0)
-                )
-                    .decodeList<ListWithPostersRpcResponse>()
+                runCatching {
+                    postgrest.rpc(
+                        "select_most_popular_lists_with_poster_items",
+                        PopularListParams(10, 0)
+                    )
+                        .decodeList<ListWithPostersRpcResponse>()
+                }.getOrDefault(emptyList())
             )
         },
         suspend {
             recentlyCreatedResult.emit(
-                postgrest.rpc(
-                    "select_most_recent_lists_with_poster_items",
-                    PopularListParams(10, 0)
-                )
-                    .decodeList<ListWithPostersRpcResponse>()
+                runCatching {
+                    postgrest.rpc(
+                        "select_most_recent_lists_with_poster_items",
+                        PopularListParams(10, 0)
+                    )
+                        .decodeList<ListWithPostersRpcResponse>()
+                }.getOrDefault(emptyList())
             )
         },
         suspend {
             recentlyViewedResult.emit(
-                postgrest.rpc(
-                    "select_lists_by_ids_with_poster",
-                    ListByIdParams.of(
-                        recentIds.get().toList()
+                runCatching {
+                    postgrest.rpc(
+                        "select_lists_by_ids_with_poster",
+                        ListByIdParams.of(
+                            recentIds.get().toList()
+                        )
                     )
-                )
-                    .decodeList<ListWithPostersRpcResponse>()
+                        .decodeList<ListWithPostersRpcResponse>()
+                }.getOrDefault(emptyList())
             )
         },
         suspend {
-            val lists = listRepository
-                .selectListsByUserId("c532e5da-71ca-4b4b-b896-d1d36f335149")
-                ?.map { listWithItems ->
-                    toContentListWithItems(listWithItems)
-                }
-                .orEmpty()
-                .toImmutableList()
+            val lists = runCatching {
+                listRepository
+                    .selectListsByUserId(DEFAULT_LIST_USER)
+                    ?.map { listWithItems ->
+                        toContentListWithItems(listWithItems)
+                    }
+                    .orEmpty()
+                    .toImmutableList()
+            }
+                .getOrDefault(persistentListOf())
+
             _defaultLists.emit(lists)
         },
         suspend sub@{
@@ -408,11 +219,16 @@ class BrowseListsScreenModel(
         }
     )
 
-    private val popularResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
-    private val recentlyCreatedResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
-    private val recentlyViewedResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
-    private val subscribedRecommendedResult = MutableStateFlow<List<ListWithPostersRpcResponse>>(emptyList())
-    private val _defaultLists = MutableStateFlow<ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>>(persistentListOf())
+    private val popularResult =
+        MutableStateFlow<List<ListWithPostersRpcResponse>?>(null)
+    private val recentlyCreatedResult =
+        MutableStateFlow<List<ListWithPostersRpcResponse>?>(null)
+    private val recentlyViewedResult =
+        MutableStateFlow<List<ListWithPostersRpcResponse>?>(null)
+    private val subscribedRecommendedResult =
+        MutableStateFlow<List<ListWithPostersRpcResponse>?>(null)
+    private val _defaultLists =
+        MutableStateFlow<ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>?>(null)
 
     private val recentIds = basePreferences.recentlyViewedLists()
 
@@ -420,73 +236,100 @@ class BrowseListsScreenModel(
 
     val subscribedRecommended = subscribedRecommendedResult.asStateFlow()
         .map { response ->
-            response.map { listWithPosters ->
+            response?.map { listWithPosters ->
                 listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
             }
-                .toImmutableList()
+                ?.toImmutableList()
         }
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            persistentListOf()
+            null
         )
 
     val recentlyCreated= recentlyCreatedResult.asStateFlow()
         .map { response ->
-            response.map { listWithPosters ->
+            response?.map { listWithPosters ->
                 listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
             }
-                .toImmutableList()
+                ?.toImmutableList()
         }
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            persistentListOf()
+            null
         )
 
     val recentlyViewed= recentlyViewedResult.asStateFlow()
         .map { response ->
-            response.map { listWithPosters ->
+            response?.map { listWithPosters ->
                 listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
             }
-                .toImmutableList()
+                ?.toImmutableList()
         }
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            persistentListOf()
+            null
         )
 
     val popularLists = popularResult.asStateFlow()
         .map { response ->
-            response.map { listWithPosters ->
+            response?.map { listWithPosters ->
                 listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
             }
-                .toImmutableList()
+                ?.toImmutableList()
         }
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            persistentListOf()
+            null
         )
 
     init {
         refresh()
+
+        basePreferences.recentlyViewedLists()
+            .changes()
+            .drop(1)
+            .onEach {
+                jobs[2].invoke()
+            }
+            .launchIn(screenModelScope)
+
+        auth.sessionStatus
+            .drop(1)
+            .onEach {
+                if (it !is SessionStatus.Authenticated) {
+                    subscribedRecommendedResult.emit(persistentListOf())
+                } else {
+                    jobs.last().invoke()
+                }
+            }
+            .launchIn(screenModelScope)
     }
 
     private var refreshJob: Job?  = null
 
-    private fun refresh() {
+    fun refresh(isUserAction: Boolean = false) {
         if (refreshJob?.isActive == true)
             return
 
+        if (isUserAction) {
+            refreshing = true
+        }
+
         refreshJob = ioCoroutineScope.launch {
             supervisorScope {
-                jobs.forEach {
+                val running = jobs.map {
                     launch {
                         runCatching { it() }.onFailure { Timber.e(it) }
                     }
                 }
+
+                running.joinAll()
+
+                withContext(Dispatchers.Main) { refreshing = false }
             }
         }
     }
@@ -537,330 +380,185 @@ class BrowseListsScreenModel(
 data object BrowseListsScreen: Screen {
 
     @Composable
-    override fun Content(){
+    override fun Content() {
 
         val screenModel = getScreenModel<BrowseListsScreenModel>()
-        val lists by screenModel.popularLists.collectAsStateWithLifecycle()
-        val subscribedRecommended by  screenModel.subscribedRecommended.collectAsStateWithLifecycle()
-        val recentlyCreated by  screenModel.recentlyCreated.collectAsStateWithLifecycle()
+        val popularUserLists by screenModel.popularLists.collectAsStateWithLifecycle()
+        val subscribedRecommended by screenModel.subscribedRecommended.collectAsStateWithLifecycle()
+        val recentlyCreated by screenModel.recentlyCreated.collectAsStateWithLifecycle()
         val recentlyViewed by screenModel.recentlyViewed.collectAsStateWithLifecycle()
         val default by screenModel.defaultLists.collectAsStateWithLifecycle()
-
         val navigator = LocalNavigator.currentOrThrow
+        val tabNavigator = LocalTabNavigator.current
         val user = LocalUser.current
         val profileImageData = user.rememberProfileImageData()
-
         val hazeState = remember { HazeState() }
-
         val dominantColor by rememberDominantColor(data = profileImageData)
 
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    navigationIcon = {
-                        if (user != null) {
-                            UserProfileImage(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .size(36.dp)
-                                    .background(
-                                        brush = Brush.radialGradient(
-                                            colors = listOf(
-                                                dominantColor,
-                                                Color.Transparent
-                                            )
-                                        )
-                                    )
-                                    .padding(4.dp)
-                                    .clip(CircleShape)
-                                    .aspectRatio(1f),
-                                contentDescription = user.username
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(Color.Transparent),
-                    title = {
-                        user?.let { Text(it.username, style = MaterialTheme.typography.labelLarge) }
-                    },
-                    actions = {
-                        IconButton(onClick = { navigator.push(SearchForListScreen) }) {
-                            Icon(imageVector = Icons.Default.Search, contentDescription = null)
-                        }
-                    },
-                    modifier = Modifier.hazeChild(hazeState)
-                )
-            }
-        ) { paddingValues ->
-            LazyColumn(
-                contentPadding = paddingValues,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .haze(hazeState, HazeDefaults.style(MaterialTheme.colorScheme.background)),
-            ) {
-                item {
-                    FlowRow(
-                        maxItemsInEachRow = 2,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp)
-                            .wrapContentHeight()
-                    ) {
-                        recentlyViewed.forEachIndexed { i, it ->
-                            RecentlyViewedPreview(
-                                modifier = Modifier
-                                    .padding(vertical = 4.dp,)
-                                    .padding(
-                                        start = if (i % 2 == 0) 0.dp else 4.dp,
-                                        end = if (i % 2 == 0) 4.dp else 0.dp
-                                    )
-                                    .clickable {
-                                        navigator.push(
-                                            ListViewScreen(
-                                                it.list.id,
-                                                it.list.supabaseId.orEmpty()
-                                            )
-                                        )
-                                    }
-                                    .weight(1f)
-                                    .height(64.dp)
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .background(Color.DarkGray),
-                                cover = {
-                                    ContentListPosterItems(
-                                        list = it.list,
-                                        items = it.items,
-                                    )
-                                },
-                                name = it.list.name,
-                            )
-                        }
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Most popular",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .padding(vertical = 22.dp)
-                        )
-                        TextButton(
-                            onClick = { }
-                        ) {
-                            Text(text = "View more")
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-                item {
-                    LazyRow {
-                        item { Spacer(modifier = Modifier.width(12.dp)) }
-                        items(
-                            items = lists, key = { it.list.supabaseId.orEmpty() + it.list.id }
-                        ) {
-                            RowPreviewItem(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .clickable {
-                                        navigator.push(
-                                            ListViewScreen(
-                                                it.list.id,
-                                                it.list.supabaseId.orEmpty()
-                                            )
-                                        )
-                                    },
-                                cover = {
-                                    ContentListPosterItems(
-                                        list = it.list,
-                                        items = it.items,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(120.dp)
-                                    )
-                                },
-                                name = it.list.name,
-                            )
-                        }
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "More from subscribed",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .padding(vertical = 22.dp)
-                        )
-                        TextButton(
-                            onClick = { }
-                        ) {
-                            Text(text = "View more")
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-                item {
-                    LazyRow {
-                        item { Spacer(modifier = Modifier.width(12.dp)) }
-                        items(
-                            items = subscribedRecommended, key = { it.list.supabaseId.orEmpty() + it.list.id }
-                        ) {
-                            RowPreviewItem(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .clickable {
-                                        navigator.push(
-                                            ListViewScreen(
-                                                it.list.id,
-                                                it.list.supabaseId.orEmpty()
-                                            )
-                                        )
-                                    },
-                                cover = {
-                                    ContentListPosterItems(
-                                        list = it.list,
-                                        items = it.items,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(120.dp)
-                                    )
-                                },
-                                name = it.list.name,
-                            )
-                        }
-                    }
-                }
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Recently created",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .padding(vertical = 22.dp)
-                        )
-                        TextButton(
-                            onClick = { }
-                        ) {
-                            Text(text = "View more")
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-                item {
-                    LazyRow {
-                        item { Spacer(modifier = Modifier.width(12.dp)) }
-                        items(
-                            items = recentlyCreated, key = { it.list.supabaseId.orEmpty() + it.list.id }
-                        ) {
-                            RowPreviewItem(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .clickable {
-                                        navigator.push(
-                                            ListViewScreen(
-                                                it.list.id,
-                                                it.list.supabaseId.orEmpty()
-                                            )
-                                        )
-                                    },
-                                cover = {
-                                    ContentListPosterItems(
-                                        list = it.list,
-                                        items = it.items,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(120.dp)
-                                    )
-                                },
-                                name = it.list.name,
-                            )
-                        }
-                    }
-                }
-                default.fastForEach { (list, items) ->
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = list.name,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .padding(start = 12.dp)
-                                    .padding(vertical = 22.dp)
-                            )
-                            TextButton(
-                                onClick = { navigator.push(ListViewScreen(list.id, list.supabaseId.orEmpty())) }
+        val navigateOnListClick = { item: ListPreviewItem ->
+            navigator.push(ListViewScreen(item.list.id, item.list.supabaseId.orEmpty()))
+        }
+
+        PullRefresh(
+            refreshing = screenModel.refreshing,
+            enabled = { true },
+            onRefresh = { screenModel.refresh(true) }
+        ) {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        navigationIcon = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(text = "View list")
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp)
+                                UserProfileImage(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    dominantColor,
+                                                    Color.Transparent
+                                                )
+                                            )
+                                        )
+                                        .padding(4.dp)
+                                        .clip(CircleShape)
+                                        .aspectRatio(1f),
+                                    contentDescription = user?.username.orEmpty()
                                 )
                             }
-                        }
-                    }
-                    item {
-                        LazyRow {
-                            item { Spacer(modifier = Modifier.width(12.dp)) }
-                            items(
-                                items = items,
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            dominantColor.copy(alpha = 0.4f)
+                        ),
+                        title = {
+                            TextButton(
+                                onClick = {
+                                    tabNavigator.current = ProfileTab
+                                },
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = dominantColor
+                                )
                             ) {
-                                Box(
-                                    modifier = Modifier.height(128.dp)
-                                ) {
-                                    ContentItemSourceCoverOnlyGridItem(
-                                        favorite = it.favorite,
-                                        poster = remember(it) { it.toPoster() },
-                                        onClick = {
-                                            if (it.isMovie) {
-                                                navigator.push(MovieViewScreen(it.contentId))
-                                            } else {
-                                                navigator.push(TVViewScreen(it.contentId))
-                                            }
-                                        },
-                                        onLongClick = {
-
-                                        },
-                                    )
-                                }
+                                Text(user?.username ?: "Sign in")
                             }
-                        }
+                        },
+                        actions = {
+                            IconButton(onClick = { navigator.push(SearchForListScreen) }) {
+                                Icon(imageVector = Icons.Default.Search, contentDescription = null)
+                            }
+                        },
+                        modifier = Modifier.hazeChild(hazeState)
+                    )
+                }
+            ) { paddingValues ->
+                LazyColumn(
+                    contentPadding = paddingValues,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .haze(hazeState, HazeDefaults.style(MaterialTheme.colorScheme.background)),
+                ) {
+                    recentlyViewedListsPreview(
+                        recentlyViewed,
+                        onListClick = navigateOnListClick
+                    )
+                    listCategoryPreview(
+                        label = {
+                            TitleWithAction(
+                                title = stringResource(id = R.string.most_popular_lists),
+                                actionLabel = stringResource(id = R.string.view_more),
+                                onAction = { }
+                            )
+                        },
+                        empty = {
+                            Text(
+                                stringResource(
+                                    R.string.no_items_for,
+                                    stringResource(id = R.string.most_popular_lists),
+                                    "most popular public user lists will appear here"
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                            )
+                        },
+                        lists = popularUserLists,
+                        onListClick = navigateOnListClick,
+                        tag = "popular_lists",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (user != null) {
+                        listCategoryPreview(
+                            label = {
+                                TitleWithAction(
+                                    title = stringResource(id = R.string.more_from_subscribed),
+                                    actionLabel = stringResource(id = R.string.view_more),
+                                    onAction = { }
+                                )
+                            },
+                            empty = {
+                                Text(
+                                    stringResource(
+                                        R.string.no_items_for,
+                                        stringResource(id = R.string.more_from_subscribed),
+                                        "subscribe to lists to see more"
+                                    ),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                )
+                            },
+                            lists = subscribedRecommended,
+                            onListClick = navigateOnListClick,
+                            tag = "subscribed_recommended",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    listCategoryPreview(
+                        label = {
+                            TitleWithAction(
+                                title = stringResource(id = R.string.recently_created),
+                                actionLabel = stringResource(id = R.string.view_more),
+                                onAction = { }
+                            )
+                        },
+                        empty = {
+                            Text(
+                                stringResource(
+                                    R.string.no_items_for,
+                                    stringResource(id = R.string.recently_created),
+                                    "all users public created lists will appear here"
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                            )
+                        },
+                        lists = recentlyCreated,
+                        onListClick = navigateOnListClick,
+                        tag = "recently_created",
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    defaultListsPreview(
+                        default,
+                        onListClick = {
+                            navigator.push(ListViewScreen(it.id, it.supabaseId.orEmpty()))
+                        },
+                        onItemClick = {
+                            navigator.push(
+                                if (it.isMovie)
+                                    MovieViewScreen(it.contentId)
+                                else
+                                    TVViewScreen(it.contentId)
+                            )
+                        },
+                        onItemLongClick = {}
+                    )
+                    item {
+                        Spacer(Modifier.height(22.dp))
                     }
                 }
             }
@@ -868,6 +566,129 @@ data object BrowseListsScreen: Screen {
     }
 }
 
+
+@Composable
+fun TitleWithAction(
+    title: String,
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .padding(vertical = 22.dp)
+        )
+        TextButton(
+            onClick = onAction
+        ) {
+            Text(text = actionLabel)
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+
+fun LazyListScope.listCategoryPreview(
+    label: @Composable () -> Unit,
+    empty: @Composable BoxScope.() -> Unit,
+    lists: ImmutableList<ListPreviewItem>?,
+    onListClick: (ListPreviewItem) -> Unit,
+    tag: String,
+    modifier: Modifier = Modifier,
+) {
+    item("$tag-label") {
+        label()
+    }
+    lists?.let {
+        item(tag) {
+            if (it.isEmpty()) {
+                Box(modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .padding(12.dp)
+                ) {
+                    empty()
+                }
+            } else {
+                LazyRow(
+                    modifier = modifier
+                ) {
+                    item { Spacer(modifier = Modifier.width(12.dp)) }
+                    items(
+                        items = it,
+                        key = { it.list.supabaseId.orEmpty() + it.list.id }
+                    ) {
+                        RowPreviewItem(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .clickable { onListClick(it) },
+                            cover = {
+                                ContentListPosterItems(
+                                    list = it.list,
+                                    items = it.items,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp)
+                                )
+                            },
+                            name = it.list.name,
+                        )
+                    }
+                }
+            }
+        }
+    } ?: item("$tag-placeholder") {
+        ShimmerHost {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .horizontalScroll(
+                        rememberScrollState(),
+                        enabled = false
+                    )
+                    .fillMaxWidth()
+            ) {
+                repeat(4) {
+                    PosterShimmerItem()
+                }
+            }
+        }
+    }
+}
+
+
+
+@Composable
+fun PosterShimmerItem() {
+    Column(
+        Modifier
+            .size(120.dp)
+            .padding(horizontal = 12.dp)
+    ) {
+        Spacer(
+            modifier = Modifier
+                .weight(1f)
+                .aspectRatio(1f)
+                .clip(RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.onSurface)
+                .clipToBounds()
+        )
+        TextPlaceholder()
+    }
+}
 
 @Composable
 fun RowPreviewItem(
@@ -927,6 +748,178 @@ fun RecentlyViewedPreview(
                 maxLines = 2,
                 style = MaterialTheme.typography.titleMedium
             )
+        }
+    }
+}
+
+fun LazyListScope.defaultListsPreview(
+    defaultLists: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>?,
+    onListClick: (ContentList) -> Unit,
+    onItemClick: (ContentItem) -> Unit,
+    onItemLongClick: () -> Unit,
+) {
+    defaultLists?.fastForEach {(list, items) ->
+        item {
+            Column {
+                TitleWithAction(
+                    title = list.name,
+                    actionLabel = stringResource(id = R.string.view_more),
+                    onAction = {
+                        onListClick(list)
+                    }
+                )
+                LazyRow {
+                    items(items) {
+                        Box(Modifier.height(128.dp)) {
+                            ContentItemSourceCoverOnlyGridItem(
+                                favorite = it.favorite,
+                                poster = remember(it) { it.toPoster() },
+                                onClick = { onItemClick(it) },
+                                onLongClick = onItemLongClick,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    } ?: item {
+        ShimmerHost {
+            Column {
+                repeat(2) {
+                    Spacer(Modifier.padding(6.dp))
+                    TextPlaceholder(
+                        Modifier.padding(horizontal = 12.dp)
+                    )
+                    Spacer(Modifier.padding(6.dp))
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState(), false)
+                    ) {
+                        repeat(10) {
+                            Spacer(
+                                modifier = Modifier
+                                    .padding(horizontal = 6.dp)
+                                    .width(64.dp)
+                                    .aspectRatio(2 / 3f)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.onSurface)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+fun LazyListScope.recentlyViewedListsPreview(
+    lists: ImmutableList<ListPreviewItem>?,
+    onListClick: (ListPreviewItem) -> Unit,
+) {
+    lists?.let { recents ->
+        item(
+            "recent-items"
+        ) {
+            if (recents.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.graphicsLayer { alpha = 0.78f }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ExploreOff,
+                            contentDescription = null,
+                            Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.recently_viewed_empty),
+                            style = MaterialTheme.typography.titleMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            } else {
+                FlowRow(
+                    maxItemsInEachRow = 2,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .wrapContentHeight()
+                ) {
+                    recents.forEachIndexed { i, it ->
+                        RecentlyViewedPreview(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .padding(
+                                    start = if (i % 2 == 0) 0.dp else 4.dp,
+                                    end = if (i % 2 == 0) 4.dp else 0.dp
+                                )
+                                .clickable { onListClick(it) }
+                                .weight(1f)
+                                .height(64.dp)
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .background(Color.DarkGray),
+                            cover = {
+                                ContentListPosterItems(
+                                    list = it.list,
+                                    items = it.items,
+                                )
+                            },
+                            name = it.list.name,
+                        )
+                    }
+                }
+            }
+        }
+    } ?: item(
+        "recent-placeholder"
+    ) {
+        ShimmerHost {
+            Column(
+                Modifier
+                    .wrapContentHeight()
+                    .fillMaxWidth()
+            ) {
+                repeat(3) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    ) {
+                        Spacer(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .padding(
+                                    start = 0.dp,
+                                    end = 4.dp
+                                )
+                                .height(64.dp)
+                                .weight(1f)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.onSurface)
+                        )
+                        Spacer(
+                            modifier = Modifier
+                                .padding(vertical = 4.dp)
+                                .padding(
+                                    start = 4.dp,
+                                    end = 0.dp
+                                )
+                                .height(64.dp)
+                                .weight(1f)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.onSurface)
+                        )
+                    }
+                }
+            }
         }
     }
 }

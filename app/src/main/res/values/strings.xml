@@ -129,4 +129,10 @@
     <string name="failed_to_change_favorite">failed to change favorite status for %1s</string>
     <string name="removed_from_list">Removed %1s from %2s.</string>
     <string name="remove_from_list_failed">Failed to remove %1s from %2s.</string>
+    <string name="most_popular_lists">Most popular</string>
+    <string name="view_more">View more</string>
+    <string name="more_from_subscribed">More from subscribed</string>
+    <string name="recently_created">Recently created</string>
+    <string name="no_items_for">%1s has no items %2s</string>
+    <string name="recently_viewed_empty">Recently viewed lists will appear here</string>
 </resources>

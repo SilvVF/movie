@@ -29,8 +29,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -69,7 +67,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -79,8 +76,7 @@ private val SearchBarHeight = 38.dp
 
 @Composable
 fun rememberTopBarState(
-    lazyListState: LazyListState?,
-    lazyGridState: LazyGridState? = null,
+    scrollableState: ScrollableState,
     coroutineScope: CoroutineScope = rememberCoroutineScope()
 ): TopBarState {
 
@@ -93,34 +89,22 @@ fun rememberTopBarState(
     val flingAnimationSpec = rememberSplineBasedDecay<Float>()
 
     return rememberSaveable(
-        coroutineScope,
-        lazyGridState,
-        lazyListState,
+        scrollableState,
         appBarPinnedHeightPx,
         saver = Saver(
             save = { arrayOf(it.fraction, it.searching) },
             restore = { (fraction, searching ) ->
                 TopBarState(
-                    lazyListState,
-                    lazyGridState,
-                    run {
-                        val res = if ((searching as? Boolean) == true) {
+                    scrollableState,
+                    if ((searching as? Boolean) == true) {
                             -appBarMaxHeightPx + topAppBarHeightPx
-                        } else {
-                            val canConsume= if (lazyListState != null) {
-                                !lazyListState.canScrollBackward ||
-                                        (lazyListState.firstVisibleItemScrollOffset == 0 && lazyListState.firstVisibleItemIndex == 0)
-                            } else if (lazyGridState != null) {
-                                !lazyGridState.canScrollBackward ||
-                                        (lazyGridState.firstVisibleItemScrollOffset == 0 && lazyGridState.firstVisibleItemIndex == 0)
-                            } else {
-                                false
-                            }
-                            if (canConsume) (-appBarMaxHeightPx + topAppBarHeightPx) * (1f - ((fraction as? Float) ?: 0f)) else  (-appBarMaxHeightPx + topAppBarHeightPx)
+                    } else {
+                        if (!scrollableState.canScrollBackward) {
+                            (-appBarMaxHeightPx + topAppBarHeightPx) * (1f - ((fraction as? Float) ?: 0f))
+                        } else  {
+                            (-appBarMaxHeightPx + topAppBarHeightPx)
                         }
-                        Timber.d("TopBarState", "restored: f $fraction, m $appBarMaxHeightPx, r $res, $searching")
-                        res
-                    },
+                     },
                     searching as? Boolean == true,
                     appBarMaxHeightPx,
                     appBarPinnedHeightPx,
@@ -133,8 +117,7 @@ fun rememberTopBarState(
         ),
     ) {
         TopBarState(
-            lazyListState,
-            lazyGridState,
+            scrollableState,
             0f,
             false,
             appBarMaxHeightPx,
@@ -148,8 +131,7 @@ fun rememberTopBarState(
 }
 
 class TopBarState(
-    private val lazyListState: LazyListState?,
-    private val lazyGridState: LazyGridState?,
+    val scrollableState: ScrollableState,
     initialHeight: Float,
     initialSearching: Boolean,
     maxHeightPx: Float,
@@ -170,15 +152,7 @@ class TopBarState(
                 return@CollapsingAppBarNestedScrollConnection false
             }
 
-            if (lazyListState != null) {
-                !lazyListState.canScrollBackward ||
-                        (lazyListState.firstVisibleItemScrollOffset == 0 && lazyListState.firstVisibleItemIndex == 0)
-            } else if (lazyGridState != null) {
-                !lazyGridState.canScrollBackward ||
-                        (lazyGridState.firstVisibleItemScrollOffset == 0 && lazyGridState.firstVisibleItemIndex == 0)
-            } else {
-                false
-            }
+            !scrollableState.canScrollBackward
         },
         snapAnimationSpec,
         flingAnimationSpec
@@ -202,11 +176,6 @@ class TopBarState(
 
     val fraction by derivedStateOf {
         (maxHeightPx - topAppBarHeightPx + connection.appBarOffset) / (maxHeightPx - topAppBarHeightPx)
-    }
-
-    fun requireScrollableState(): ScrollableState {
-        val state: ScrollableState? = lazyListState ?: lazyGridState
-        return state!!
     }
 
     val spaceHeightPx by derivedStateOf {
@@ -465,7 +434,7 @@ private fun Modifier.appBarDraggable(
                 val newOffset = topBarState.connection.appBarOffset + it
                 topBarState.connection.appBarOffset = newOffset.coerceIn(-topBarState.connection.appBarMaxHeight, 0f)
             } else {
-                topBarState.requireScrollableState().dispatchRawDelta(-it)
+                topBarState.scrollableState.dispatchRawDelta(-it)
             }
         },
         onDragStopped = { v ->
@@ -483,7 +452,7 @@ private fun Modifier.appBarDraggable(
                     }
                 }
             } else {
-                topBarState.requireScrollableState().scrollBy(
+                topBarState.scrollableState.scrollBy(
                     topBarState.connection.flingAnimationSpec.calculateTargetValue(0f, -v)
                 )
             }

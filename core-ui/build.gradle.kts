@@ -62,6 +62,9 @@ dependencies {
 
     implementation(libs.androidx.compose.ui.util)
 
+    implementation(libs.compose.shimmer)
+
+
     // COIL
     implementation(libs.coil.compose)
     implementation(libs.coil)

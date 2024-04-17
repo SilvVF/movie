@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -38,6 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
@@ -79,6 +82,9 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.TooltipIconButton
+import io.silv.core_ui.components.shimmer.ButtonPlaceholder
+import io.silv.core_ui.components.shimmer.ListItemPlaceHolder
+import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.theme.MovieTheme
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
@@ -161,7 +167,43 @@ data class ListViewScreen(
                     )
                 )
             }
-            ListViewState.Loading -> Unit
+            ListViewState.Loading -> {
+                Scaffold { paddingValues ->
+                    ShimmerHost(
+                        Modifier.padding(paddingValues)
+                    ) {
+                        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .size(244.dp)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(MaterialTheme.colorScheme.onSurface)
+                                )
+                            }
+
+                            Spacer(Modifier.padding(8.dp))
+
+
+                            Row {
+                                ButtonPlaceholder(
+                                    Modifier.weight(0.8f)
+                                )
+                                Spacer(Modifier.padding(8.dp))
+                                ButtonPlaceholder(
+                                    Modifier
+                                        .weight(0.2f)
+                                        .clip(CircleShape)
+                                )
+                            }
+                        }
+
+                        repeat(6) {
+                            ListItemPlaceHolder()
+                        }
+                    }
+                }
+            }
             is ListViewState.Success -> {
 
                 val onDismissRequest = remember { { screenModel.changeDialog(null) } }
@@ -206,7 +248,9 @@ data class ListViewScreen(
                     }
                 )
 
-                MovieTheme(themeColor = primary.takeIf { it != Color.Transparent }) {
+                MovieTheme(
+                    themeColor = primary.takeIf { it != Color.Transparent }
+                ) {
                     SuccessScreenContent(
                         query = screenModel.query,
                         onBackPressed = {navigator.pop()},
@@ -254,7 +298,6 @@ data class ListViewScreen(
                                 ListAddScreen(s.list.id)
                             )
                         },
-                        primary = { primary },
                         onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                         snackbarHostState = snackBarState,
                         state = s
@@ -396,21 +439,22 @@ private fun SuccessScreenContent(
     onPosterClick: () -> Unit,
     refreshList: () -> Unit,
     refreshingList: Boolean,
-    primary: () -> Color,
     onBackPressed: () -> Unit,
     snackbarHostState: SnackbarHostState,
     state: ListViewState.Success
 ) {
     PullRefresh(
         refreshing = refreshingList,
-        enabled = { !refreshingList && state.list.supabaseId != null },
+        enabled = { state.list.supabaseId != null },
         onRefresh = refreshList
     ) {
         val lazyListState = rememberLazyListState()
         val lazyGridState = rememberLazyGridState()
         val topBarState = rememberTopBarState(
-            lazyListState.takeIf { listViewDisplayMode() is PosterDisplayMode.List },
-            lazyGridState.takeIf { listViewDisplayMode() is PosterDisplayMode.Grid }
+            if (listViewDisplayMode() is PosterDisplayMode.List)
+                lazyListState
+            else
+                lazyGridState
         )
 
         LaunchedEffect(topBarState.searching) {

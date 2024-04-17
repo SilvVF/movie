@@ -37,9 +37,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.chrisbanes.haze.HazeDefaults
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.util.colorClickable
 import io.silv.movie.LocalUser
@@ -152,19 +149,21 @@ private fun FavoritesScreenContent(
     onBackPressed: () -> Unit,
     state: FavoritesListState
 ) {
-    val hazeState = remember { HazeState() }
     val user = LocalUser.current
 
     PullRefresh(
         refreshing = state.refreshingFavorites,
-        enabled = { !state.refreshingFavorites },
+        enabled = { user != null },
         onRefresh = { refreshFavorites() }
     ) {
         val lazyListState = rememberLazyListState()
         val lazyGridState = rememberLazyGridState()
+
         val topBarState = rememberTopBarState(
-            lazyListState.takeIf { listViewDisplayMode() is PosterDisplayMode.List },
-            lazyGridState.takeIf { listViewDisplayMode() is PosterDisplayMode.Grid }
+            if (listViewDisplayMode() is PosterDisplayMode.List)
+                lazyListState
+            else
+                lazyGridState
         )
 
         SpotifyTopBarLayout(
@@ -297,12 +296,6 @@ private fun FavoritesScreenContent(
                         refreshingRecommendations = state.refreshingRecommendations,
                         onRefreshClick = refreshRecommendations,
                         isOwnerMe = true,
-                        modifier = Modifier
-                            .haze(
-                                state = hazeState,
-                                style = HazeDefaults.style(MaterialTheme.colorScheme.background),
-                            )
-                            .padding(top = 12.dp),
                     )
                 }
 
@@ -322,12 +315,6 @@ private fun FavoritesScreenContent(
                         refreshingRecommendations = state.refreshingRecommendations,
                         onRefreshClick = refreshRecommendations,
                         isOwnerMe = true,
-                        modifier = Modifier
-                            .haze(
-                                state = hazeState,
-                                style = HazeDefaults.style(MaterialTheme.colorScheme.background),
-                            )
-                            .padding(top = 12.dp),
                     )
                 }
             }

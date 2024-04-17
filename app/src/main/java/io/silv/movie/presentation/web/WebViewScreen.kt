@@ -25,7 +25,7 @@ fun WebViewScreenContent(
             override fun shouldInterceptRequest(
                     view: WebView?,
                     request: WebResourceRequest?
-                ): WebResourceResponse? {
+            ): WebResourceResponse? {
 
                     val reqUrl = request?.url.toString()
 
@@ -33,22 +33,21 @@ fun WebViewScreenContent(
                         return null
 
                     return super.shouldInterceptRequest(view, request)
-                }
-
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView?,
-                        request: WebResourceRequest?
-                    ): Boolean {
-                        val reqUrl = request?.url.toString()
-
-                        if (reqUrl != url)
-                            return true
-
-                        return super.shouldOverrideUrlLoading(view, request)
-                    }
-            },
-            onCreated = {
-                it.settings.javaScriptEnabled = true
             }
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val reqUrl = request?.url.toString()
+
+                if (reqUrl != url)
+                    return true
+
+                return super.shouldOverrideUrlLoading(view, request)
+            }
+        },
+        onCreated = {
+            it.settings.javaScriptEnabled = true
+        }
         )
     }
