@@ -7,10 +7,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import io.silv.movie.presentation.web.AccompanistWebViewClient
-import io.silv.movie.presentation.web.WebView
-import io.silv.movie.presentation.web.WebViewNavigator
-import io.silv.movie.presentation.web.rememberSaveableWebViewState
+import io.silv.core_ui.util.AccompanistWebViewClient
+import io.silv.core_ui.util.WebView
+import io.silv.core_ui.util.WebViewNavigator
+import io.silv.core_ui.util.rememberSaveableWebViewState
 
 @Composable
 fun WebViewScreenContent(

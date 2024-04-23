@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.web
+package io.silv.core_ui.util
 
 /*
  * Copyright 2021 The Android Open Source Project
@@ -46,7 +46,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
-import io.silv.movie.presentation.web.LoadingState.*
+import io.silv.core_ui.util.LoadingState.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
