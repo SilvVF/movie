@@ -31,12 +31,16 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.LocalUser
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.LocalListInteractor
+import io.silv.movie.presentation.browse.components.RemoveEntryDialog
 import io.silv.movie.presentation.library.components.LibraryGridView
 import io.silv.movie.presentation.library.components.LibraryListView
 import io.silv.movie.presentation.library.components.dialog.LibraryCoverDialog
+import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.components.topbar.LibraryBrowseTopBar
 import io.silv.movie.presentation.library.screenmodels.LibraryEvent
 import io.silv.movie.presentation.library.screenmodels.LibraryScreenModel
@@ -57,13 +61,14 @@ class LibraryScreen: Screen {
         val state by screenModel.state.collectAsStateWithLifecycle()
         val listCount by screenModel.listCount.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
+        val listInteractor = LocalListInteractor.current
 
         val listCreateScreen = remember(listCount) { ListCreateScreen(listCount) }
         val changeDialog = remember {
             { dialog: LibraryScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
         }
 
-        val screenResultLauncher = rememberScreenWithResultLauncher(
+        val createResultLauncher = rememberScreenWithResultLauncher(
             screen = listCreateScreen
         ) { result ->
             screenModel.createList(result.name, result.online)
@@ -84,9 +89,9 @@ class LibraryScreen: Screen {
             changeQuery = screenModel::updateQuery,
             setListMode = screenModel::updateListMode,
             changeSortMode = screenModel::updateSortMode,
-            createListClicked = { screenResultLauncher.launch() },
+            createListClicked = { createResultLauncher.launch() },
             onListClick = { navigator.push(ListViewScreen(it.id)) },
-            onListLongClick = {  },
+            onListLongClick = { list, items -> changeDialog(LibraryScreenModel.Dialog.ListOptions(list, items)) },
             onFavoritesClicked = { navigator.push(FavoritesViewScreen) },
             onPosterClick = {
                 changeDialog(LibraryScreenModel.Dialog.FullCover(it))
@@ -115,7 +120,7 @@ class LibraryScreen: Screen {
                         if (it == null) return@rememberLauncherForActivityResult
                         sm.editCover(context, it)
                     }
-                    val items: ImmutableList<ContentListItem> = remember(list) {
+                    val items: ImmutableList<ContentItem> = remember(list) {
                          state.contentLists
                             .firstOrNull { it.first.id == list!!.id }
                             ?.second
@@ -138,6 +143,51 @@ class LibraryScreen: Screen {
                     )
                 }
             }
+            is LibraryScreenModel.Dialog.ListOptions -> {
+                val listEditScreen = remember(dialog.contentList.name) { ListEditScreen(dialog.contentList.name) }
+
+                val editResultLauncher = rememberScreenWithResultLauncher(
+                    screen = listEditScreen
+                ) { result ->
+                    listInteractor.editList(dialog.contentList) { it.copy(name = result.name) }
+                }
+
+                val descriptionEditScreen =
+                    remember(dialog.contentList.description) { ListEditDescriptionScreen(dialog.contentList.description) }
+
+                val descriptionResultLauncher = rememberScreenWithResultLauncher(
+                    screen = descriptionEditScreen
+                ) { result ->
+                    listInteractor.editList(dialog.contentList) { it.copy(description = result.description) }
+                }
+
+                ListOptionsBottomSheet(
+                    onDismissRequest = onDismissRequest,
+                    onAddClick = { navigator.push(ListAddScreen(dialog.contentList.id)) },
+                    onEditClick = {
+                        editResultLauncher.launch()
+                        onDismissRequest()
+                    },
+                    onDeleteClick = { changeDialog(LibraryScreenModel.Dialog.DeleteList(dialog.contentList)) },
+                    onShareClick = {
+                        listInteractor.toggleListVisibility(dialog.contentList)
+                        onDismissRequest()
+                    },
+                    list = dialog.contentList,
+                    onChangeDescription = { descriptionResultLauncher.launch() },
+                    onCopyClick = { listInteractor.copyList(dialog.contentList) },
+                    isUserMe = dialog.contentList.createdBy == LocalUser.current?.userId || dialog.contentList.createdBy == null,
+                    content = dialog.items,
+                    onSubscribeClicked = { listInteractor.subscribeToList(dialog.contentList) }
+                )
+            }
+            is LibraryScreenModel.Dialog.DeleteList -> {
+                RemoveEntryDialog(
+                    onDismissRequest = onDismissRequest,
+                    onConfirm = { listInteractor.deleteList(dialog.contentList) },
+                    entryToRemove = dialog.contentList.name
+                )
+            }
         }
     }
 }
@@ -152,7 +202,7 @@ private fun LibraryStandardScreenContent(
     changeSortMode: (mode: LibrarySortMode) -> Unit,
     createListClicked: () -> Unit,
     onFavoritesClicked: () -> Unit,
-    onListLongClick: (contentList: ContentList) -> Unit,
+    onListLongClick: (contentList: ContentList, items: ImmutableList<ContentItem>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
     refreshLists: () -> Unit,

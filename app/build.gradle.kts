@@ -164,6 +164,8 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
 
+    implementation(libs.jsoup)
+
     // Database
     implementation(libs.stately.concurrency)
     implementation(libs.sqldelight.android.driver)

@@ -33,8 +33,6 @@ import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Modified from https://github.com/aniyomiorg/aniyomi AndroidPreference
@@ -89,7 +87,7 @@ sealed class DataStorePreference<T>(
         return changes().stateIn(
             scope,
             SharingStarted.Eagerly,
-            runBlocking { withTimeoutOrNull(100) { get() }  ?: defaultValue }
+            getOrDefaultBlocking()
         )
     }
 

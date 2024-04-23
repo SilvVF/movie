@@ -135,4 +135,5 @@
     <string name="recently_created">Recently created</string>
     <string name="no_items_for">%1s has no items %2s</string>
     <string name="recently_viewed_empty">Recently viewed lists will appear here</string>
+    <string name="subscribe">Subscribe to list</string>
 </resources>

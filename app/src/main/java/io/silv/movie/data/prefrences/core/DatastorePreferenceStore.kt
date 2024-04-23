@@ -2,6 +2,13 @@ package io.silv.movie.data.prefrences.core
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import io.silv.movie.data.prefrences.core.DataStorePreference.BooleanPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.FloatPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.IntPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.LongPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.ObjectPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.StringPrimitive
+import io.silv.movie.data.prefrences.core.DataStorePreference.StringSetPrimitive
 import kotlinx.coroutines.flow.firstOrNull
 
 /**
@@ -13,27 +20,27 @@ class DatastorePreferenceStore(
 ) : PreferenceStore {
 
     override fun getString(key: String, defaultValue: String): Preference<String> {
-        return DataStorePreference.StringPrimitive(datastore, key, defaultValue)
+        return StringPrimitive(datastore, key, defaultValue)
     }
 
     override fun getLong(key: String, defaultValue: Long): Preference<Long> {
-        return DataStorePreference.LongPrimitive(datastore, key, defaultValue)
+        return LongPrimitive(datastore, key, defaultValue)
     }
 
     override fun getInt(key: String, defaultValue: Int): Preference<Int> {
-        return DataStorePreference.IntPrimitive(datastore, key, defaultValue)
+        return IntPrimitive(datastore, key, defaultValue)
     }
 
     override fun getFloat(key: String, defaultValue: Float): Preference<Float> {
-        return DataStorePreference.FloatPrimitive(datastore, key, defaultValue)
+        return FloatPrimitive(datastore, key, defaultValue)
     }
 
     override fun getBoolean(key: String, defaultValue: Boolean): Preference<Boolean> {
-        return DataStorePreference.BooleanPrimitive(datastore, key, defaultValue)
+        return BooleanPrimitive(datastore, key, defaultValue)
     }
 
     override fun getStringSet(key: String, defaultValue: Set<String>): Preference<Set<String>> {
-        return DataStorePreference.StringSetPrimitive(datastore, key, defaultValue)
+        return StringSetPrimitive(datastore, key, defaultValue)
     }
 
     override fun <T> getObject(
@@ -42,7 +49,7 @@ class DatastorePreferenceStore(
         serializer: (T) -> String,
         deserializer: (String) -> T
     ): Preference<T> {
-        return DataStorePreference.ObjectPrimitive(
+        return ObjectPrimitive(
             datastore,
             key,
             defaultValue,

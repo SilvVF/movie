@@ -134,7 +134,7 @@ class SearchForListScreenModel(
     var query by mutableStateOf("")
 
     val state = snapshotFlow { query }
-        .debounce(500L)
+        .debounce(1000L)
         .filter { it.isNotBlank() }
         .flatMapLatest {
             Pager(

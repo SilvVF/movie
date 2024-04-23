@@ -70,7 +70,13 @@ class LibraryScreenModel(
 
                 val grouped = contentListItems
                     .groupBy { item -> item.list }
-                    .mapValues { (_, items) -> items.sortedByDescending { (it as? ContentListItem.Item)?.contentItem?.title.orEmpty() }.toImmutableList() }
+                    .mapValues { (_, items) ->
+                        items
+                            .filterIsInstance<ContentListItem.Item>()
+                            .sortedBy { it.createdAt }
+                            .map { it.contentItem }
+                            .toImmutableList()
+                    }
                     .applySorting(sortMode)
                     .toImmutableList()
 
@@ -157,9 +163,9 @@ class LibraryScreenModel(
         }
     }
 
-    private fun Map<ContentList, ImmutableList<ContentListItem>>.applySorting(
+    private fun Map<ContentList, ImmutableList<ContentItem>>.applySorting(
         sortMode: LibrarySortMode
-    ): List<Pair<ContentList, ImmutableList<ContentListItem>>> {
+    ): List<Pair<ContentList, ImmutableList<ContentItem>>> {
         return when (sortMode) {
             LibrarySortMode.Title ->
                 toSortedMap { a: ContentList, b: ContentList ->
@@ -169,7 +175,7 @@ class LibraryScreenModel(
             LibrarySortMode.Count ->
                 toList()
                     .sortedByDescending { (_, value) ->
-                        value.filterIsInstance<ContentListItem.Item>().size
+                        value.size
                     }
             LibrarySortMode.RecentlyAdded -> {
                 toSortedMap { a: ContentList, b: ContentList ->
@@ -193,6 +199,12 @@ class LibraryScreenModel(
 
         @Stable
         data class FullCover(val contentList: ContentList) : Dialog
+
+        @Stable
+        data class ListOptions(val contentList: ContentList, val items: ImmutableList<ContentItem>) : Dialog
+
+        @Stable
+        data class DeleteList(val contentList: ContentList) : Dialog
     }
 }
 sealed interface LibraryEvent {
@@ -208,7 +220,7 @@ sealed interface LibrarySortMode {
 
 data class LibraryState(
     val dialog: LibraryScreenModel.Dialog? = null,
-    val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentListItem>>> = persistentListOf(),
+    val contentLists: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>> = persistentListOf(),
     val favorites: ImmutableList<ContentItem> = persistentListOf(),
     val refreshingLists: Boolean = false,
     val refreshingFavorites: Boolean = false

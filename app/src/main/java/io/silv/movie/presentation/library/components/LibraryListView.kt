@@ -16,16 +16,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.movie.R
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.screenmodels.LibraryState
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun LibraryListView(
     paddingValues: PaddingValues,
     state: LibraryState,
     onFavoritesClicked: () -> Unit,
-    onListLongClick: (contentList: ContentList) -> Unit,
+    onListLongClick: (contentList: ContentList, items: ImmutableList<ContentItem>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
     modifier: Modifier = Modifier,
@@ -65,13 +66,13 @@ fun LibraryListView(
                     ContentListPreview(
                         modifier = Modifier
                             .combinedClickable(
-                                onLongClick = { onListLongClick(list) },
+                                onLongClick = { onListLongClick(list, items) },
                                 onClick = { onListClick(list) }
                             )
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPoster(
+                            ContentListPosterItems(
                                 list = list,
                                 items = items,
                                 modifier = Modifier
@@ -82,7 +83,7 @@ fun LibraryListView(
                         name = list.name,
                         description = list.description.ifEmpty {
                             when {
-                                items.first() is ContentListItem.PlaceHolder ->
+                                items.isEmpty() ->
                                     stringResource(id = R.string.content_preview_no_items)
                                 else -> stringResource(R.string.content_preview_items, items.size)
                             }

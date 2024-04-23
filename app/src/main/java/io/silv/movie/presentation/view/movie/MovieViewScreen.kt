@@ -3,18 +3,25 @@ package io.silv.movie.presentation.view.movie
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -23,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
@@ -40,6 +48,7 @@ import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
 import io.silv.movie.data.credits.Credit
+import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.CreditsViewScreen
@@ -103,7 +112,8 @@ data class MovieViewScreen(
                                 )
                             )
                         }
-                    }
+                    },
+                    onWatchMovieClick = { mainScreenModel.setContentItem(state.movie.toContentItem()) }
                 )
                 val onDismissRequest =  { changeDialog(null) }
                 when (state.dialog) {
@@ -154,8 +164,20 @@ fun MovieDetailsContent(
     onViewCreditsClick: () -> Unit,
     onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: String) -> Unit,
     onCreditClick: (credit: Credit) -> Unit,
+    onWatchMovieClick: () -> Unit,
 ) {
-    Scaffold { paddingValues ->
+    Scaffold(
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = onWatchMovieClick) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = Icons.Filled.Movie, contentDescription = null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Watch")
+                }
+
+            }
+        }
+    ) { paddingValues ->
 
         val topPadding = paddingValues.calculateTopPadding()
         val listState = rememberLazyListState()
@@ -188,6 +210,13 @@ fun MovieDetailsContent(
                         bottom = paddingValues.calculateBottomPadding()
                     ),
                 ) {
+                    item(
+                        key = "movie-actions"
+                    ) {
+                        FlowRow {
+
+                        }
+                    }
                     item(
                         key = "Info-Box",
                         contentType = "Info-Box",

@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
@@ -156,7 +157,7 @@ class ListViewScreenModel(
         listIdFlow.flatMapLatest { id ->
             combine(
                 contentListRepository.observeListById(id),
-                contentListRepository.observeListItemsByListId(id, "", ListSortMode.Title),
+                contentListRepository.observeListItemsByListId(id, "", ListSortMode.RecentlyAdded(true)),
             ) { list, items ->
 
                 if (list == null) {
@@ -176,6 +177,7 @@ class ListViewScreenModel(
 
         listSortMode.changes()
             .onEach { mode ->
+                Timber.d(mode.toString())
                 mutableState.updateSuccess {state -> state.copy(sortMode = mode) }
             }
             .launchIn(screenModelScope)
@@ -245,6 +247,7 @@ class ListViewScreenModel(
 
 
     fun updateSortMode(sortMode: ListSortMode) {
+        Timber.d(sortMode.toString())
         screenModelScope.launch {
             listSortMode.set(sortMode)
         }
@@ -323,17 +326,12 @@ sealed interface ListViewEvent {
     data object FailedToRemoveListFromNetwork: ListViewEvent
 }
 
-sealed interface ListSortMode {
-    data object Title: ListSortMode
-    data object RecentlyAdded: ListSortMode
-    data object Movie: ListSortMode
-    data object Show: ListSortMode
+sealed class ListSortMode(open val ascending: Boolean) {
 
-    companion object {
-        val values = persistentListOf(
-            Title, RecentlyAdded, Movie, Show
-        )
-    }
+    data class Title(override val ascending: Boolean): ListSortMode(ascending)
+    data class RecentlyAdded(override val ascending: Boolean): ListSortMode(ascending)
+    data class Movie(override val ascending: Boolean): ListSortMode(ascending)
+    data class Show(override val ascending: Boolean): ListSortMode(ascending)
 }
 
 sealed interface ListViewState {

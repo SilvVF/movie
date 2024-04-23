@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
@@ -74,10 +76,10 @@ fun SortOptionsBottomSheet(
         val filters =
             remember {
                 listOf(
-                    Triple(R.string.title, Icons.Filled.Title, ListSortMode.Title),
-                    Triple(R.string.recently_added, Icons.Filled.NewReleases, ListSortMode.RecentlyAdded),
-                    Triple(R.string.movies, Icons.Filled.Movie, ListSortMode.Movie),
-                    Triple(R.string.shows, Icons.Filled.Tv, ListSortMode.Show)
+                    Triple(R.string.title, Icons.Filled.Title, ListSortMode.Title::class),
+                    Triple(R.string.recently_added, Icons.Filled.NewReleases, ListSortMode.RecentlyAdded::class),
+                    Triple(R.string.movies, Icons.Filled.Movie, ListSortMode.Movie::class),
+                    Triple(R.string.shows, Icons.Filled.Tv, ListSortMode.Show::class)
                 )
             }
 
@@ -90,11 +92,33 @@ fun SortOptionsBottomSheet(
                         contentDescription = null
                     )
                 },
-                onClick = { onSortChange(mode) },
+                trailingIcon = {
+                    if (selected::class == mode) {
+                        Icon(
+                            imageVector = if (selected.ascending)
+                                Icons.Filled.ArrowUpward
+                            else
+                                Icons.Filled.ArrowDownward,
+                            contentDescription = null
+                        )
+                    }
+                },
+                onClick = {
+                    val asc = if (selected::class == mode) !selected.ascending else selected.ascending
+                    onSortChange(
+                        when (mode) {
+                            ListSortMode.Movie::class -> ListSortMode.Movie(asc)
+                            ListSortMode.RecentlyAdded::class -> ListSortMode.RecentlyAdded(asc)
+                            ListSortMode.Show::class -> ListSortMode.Show(asc)
+                            ListSortMode.Title::class -> ListSortMode.Title(asc)
+                            else -> ListSortMode.RecentlyAdded(true)
+                        }
+                    )
+                },
                 modifier = Modifier
                     .background(
                         animateColorAsState(
-                            targetValue = if(mode == selected) MaterialTheme.colorScheme.surface else Color.Transparent,
+                            targetValue =  if (selected::class == mode) MaterialTheme.colorScheme.surface else Color.Transparent,
                             label = ""
                         ).value
                     )
@@ -119,6 +143,7 @@ fun ListOptionsBottomSheet(
     onDeleteClick: () -> Unit,
     onShareClick: () -> Unit,
     onCopyClick: () -> Unit,
+    onSubscribeClicked: () -> Unit,
     isUserMe: Boolean,
     list: ContentList,
     content: ImmutableList<ContentItem>
@@ -171,6 +196,13 @@ fun ListOptionsBottomSheet(
             onClick = onDeleteClick
         )
         if (!isUserMe) {
+            if (!list.inLibrary) {
+                BottomSheetItem(
+                    title = { Text(stringResource(id = R.string.subscribe)) },
+                    icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
+                    onClick = onSubscribeClicked
+                )
+            }
             BottomSheetItem(
                 title = { Text(stringResource(id = R.string.copy)) },
                 icon = { Icon(imageVector = Icons.Filled.ContentCopy, contentDescription = null) },

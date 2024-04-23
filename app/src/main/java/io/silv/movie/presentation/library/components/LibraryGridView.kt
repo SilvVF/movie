@@ -14,16 +14,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.lazy.VerticalGridFastScroller
+import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.screenmodels.LibraryState
+import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun LibraryGridView(
     paddingValues: PaddingValues,
     state: LibraryState,
     onFavoritesClicked: () -> Unit,
-    onListLongClick: (contentList: ContentList) -> Unit,
+    onListLongClick: (contentList: ContentList, items: ImmutableList<ContentItem>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
     modifier: Modifier,
@@ -64,13 +65,13 @@ fun LibraryGridView(
                     ContentGridPreviewItem(
                         modifier = Modifier
                             .combinedClickable(
-                                onLongClick = { onListLongClick(list) },
+                                onLongClick = { onListLongClick(list, items) },
                                 onClick = { onListClick(list) }
                             )
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPoster(
+                            ContentListPosterItems(
                                 list = list,
                                 items = items,
                                 modifier =  Modifier
@@ -79,10 +80,7 @@ fun LibraryGridView(
                             )
                         },
                         name = list.name,
-                        count = when (items.first()) {
-                            is ContentListItem.PlaceHolder -> 0
-                            is ContentListItem.Item -> items.size
-                        }
+                        count = items.size
                     )
                 }
             }

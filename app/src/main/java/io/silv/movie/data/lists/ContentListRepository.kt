@@ -121,11 +121,20 @@ class ContentListRepositoryImpl(
     ): Flow<List<ContentItem>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
         return handler.subscribeToList {
-            when(sortMode) {
-                ListSortMode.Movie -> contentItemQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
-                ListSortMode.Show -> contentItemQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
-                ListSortMode.RecentlyAdded -> contentItemQueries.selectByListId(id, q, "recent", ContentListMapper.mapItem)
-                ListSortMode.Title -> contentItemQueries.selectByListId(id, q, "title", ContentListMapper.mapItem)
+            if (sortMode.ascending) {
+                when(sortMode) {
+                    is ListSortMode.Movie -> contentItemQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
+                    is ListSortMode.Show -> contentItemQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
+                    is ListSortMode.RecentlyAdded -> contentItemQueries.selectByListIdAsc(id, q, "recent", ContentListMapper.mapItem)
+                    is ListSortMode.Title -> contentItemQueries.selectByListIdAsc(id, q, "title", ContentListMapper.mapItem)
+                }
+            } else {
+                when(sortMode) {
+                    is ListSortMode.Movie -> contentItemQueries.selectMoviesByListId(id, q, ContentListMapper.mapItem)
+                    is ListSortMode.Show -> contentItemQueries.selectShowsByListId(id, q, ContentListMapper.mapItem)
+                    is ListSortMode.RecentlyAdded -> contentItemQueries.selectByListId(id, q, "recent", ContentListMapper.mapItem)
+                    is ListSortMode.Title -> contentItemQueries.selectByListId(id, q, "title", ContentListMapper.mapItem)
+                }
             }
         }
     }

@@ -357,7 +357,8 @@ data class ListViewScreen(
                                 onChangeDescription = { descriptionResultLauncher.launch() },
                                 onCopyClick = { listInteractor.copyList(s.list) },
                                 isUserMe = s.isOwnerMe,
-                                content = s.allItems
+                                content = s.allItems,
+                                onSubscribeClicked = { listInteractor.subscribeToList(s.list) }
                             )
                         }
 

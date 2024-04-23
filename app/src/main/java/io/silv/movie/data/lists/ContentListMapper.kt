@@ -126,7 +126,8 @@ object ContentListMapper {
             favorite: Boolean?,
             overview: String?,
             popularity: Double?,
-            inLists: Long?  ->
+            inLists: Long?,
+            content_last_modified: Long? ->
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
@@ -136,11 +137,12 @@ object ContentListMapper {
                    posterUrl = posterUrl,
                    posterLastUpdated = posterLastUpdated ?: 0L,
                    favorite = favorite ?: false,
-                   lastModified =  addedToListAt ?: 0L,
+                   lastModified =  content_last_modified ?: 0L,
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
                    inLibraryLists = inLists ?: 0L
                ),
+               createdAt = addedToListAt ?: 0L,
                list =  ContentList(
                    id = list_id,
                    supabaseId = supabase_id,

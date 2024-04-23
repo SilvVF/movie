@@ -96,6 +96,7 @@ AND (
     OR :query = ''
 );
 
+
 selectShowsByListId:
 SELECT
     clj.*,
@@ -116,6 +117,41 @@ AND (
     s.title LIKE :query
     OR :query = ''
 );
+
+selectByListIdAsc:
+SELECT
+    clj.*,
+    m.id AS movieId,
+    s.id AS showId,
+    COALESCE(m.title, s.title) AS title,
+    COALESCE(m.poster_url, s.poster_url) AS posterUrl,
+    COALESCE(m.poster_last_updated, s.poster_last_updated) AS posterLastUpdated,
+    COALESCE(m.favorite, s.favorite) AS favorite,
+    COALESCE(m.overview, s.overview) AS overview,
+    COALESCE(m.popularity, s.popularity) AS popularity,
+    COALESCE(m.in_library_lists, s.in_library_lists) AS inLists
+FROM contentItem AS clj
+LEFT JOIN movie AS m
+ON m.id = clj.movie_id AND movie_id != -1
+LEFT JOIN show AS s
+ON s.id = clj.show_id AND show_id != -1
+WHERE
+    list_id = :listId
+AND (
+    COALESCE(m.title, s.title) LIKE :query
+    OR :query = ''
+)
+ORDER BY
+     CASE :order
+        WHEN 'title'
+            THEN COALESCE(s.title, m.title)
+        WHEN 'popularity'
+            THEN COALESCE(s.popularity, m.popularity)
+        ELSE
+            created_at
+     END
+ASC
+;
 
 selectByListId:
 SELECT

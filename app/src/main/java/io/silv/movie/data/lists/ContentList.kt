@@ -157,6 +157,7 @@ sealed class ContentListItem(
 ) {
     data class Item(
         val contentItem: ContentItem,
+        val createdAt: Long,
         override val list: ContentList
     ): ContentListItem(list)
 

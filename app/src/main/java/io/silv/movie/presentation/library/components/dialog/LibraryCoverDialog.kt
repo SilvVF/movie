@@ -51,7 +51,6 @@ import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.components.EditCoverAction
@@ -63,7 +62,7 @@ import org.koin.compose.koinInject
 @Composable
 fun LibraryCoverDialog(
     list: ContentList,
-    items: ImmutableList<ContentListItem>,
+    items: ImmutableList<ContentItem>,
     isCustomCover: Boolean,
     snackbarHostState: SnackbarHostState,
     onShareClick: () -> Unit,
@@ -189,19 +188,19 @@ fun LibraryCoverDialog(
                         )
                     } else {
                         when {
-                            items.isEmpty() || items.firstOrNull() is ContentListItem.PlaceHolder -> {
+                            items.isEmpty() -> {
                                 ContentPreviewDefaults.PlaceholderPoster(
                                     modifier = Modifier.fillMaxSize()
                                 )
                             }
-                            items.size < 4 && items.first() is ContentListItem.Item -> {
+                            items.size < 4 -> {
                                 val state = rememberZoomableState()
                                 AsyncImage(
                                     imageLoader = LocalContext.current.imageLoader,
                                     model = ImageRequest.Builder(context)
                                         .data(
                                             remember(items) {
-                                                (items.first() as ContentListItem.Item).contentItem.toPoster()
+                                                items.first().toPoster()
                                             }
                                         )
                                         .build(),
@@ -216,9 +215,9 @@ fun LibraryCoverDialog(
                                 )
                             }
                             else -> {
-                                ContentPreviewDefaults.MultiItemPosterContentLIst(
+                                ContentPreviewDefaults.MultiItemPoster(
                                     modifier = Modifier.fillMaxSize(),
-                                    content = items
+                                    items = items
                                 )
                             }
                         }

@@ -1,8 +1,8 @@
 package io.silv.movie.data.prefrences
 
 import io.silv.movie.data.prefrences.core.PreferenceStore
-import io.silv.movie.presentation.library.screenmodels.LibrarySortMode
 import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
+import io.silv.movie.presentation.library.screenmodels.LibrarySortMode
 import io.silv.movie.presentation.library.screenmodels.ListSortMode
 
 class LibraryPreferences(
@@ -43,22 +43,23 @@ class LibraryPreferences(
     )
 
     fun sortModeList() = preferenceStore.getObject(
-        "pref_sort_mode_library_list",
-        ListSortMode.Title,
+        "pref_sort_mode_list",
+        ListSortMode.RecentlyAdded(false),
         serializer = { mode: ListSortMode ->
-            when(mode) {
-                ListSortMode.Title -> "T"
-                ListSortMode.Show -> "S"
-                ListSortMode.Movie -> "M"
-                ListSortMode.RecentlyAdded -> "R"
+            "${if (mode.ascending) '1' else '0'}" + when(mode) {
+                is ListSortMode.Title -> "T"
+                is ListSortMode.Show -> "S"
+                is ListSortMode.Movie -> "M"
+                is ListSortMode.RecentlyAdded -> "R"
             }
         },
         deserializer = {
-            when (it) {
-                "S" -> ListSortMode.Show
-                "M" -> ListSortMode.Movie
-                "R" -> ListSortMode.RecentlyAdded
-                else -> ListSortMode.Title
+            val asc = it.first() == '1'
+            when (it.last()) {
+                'S' -> ListSortMode.Show(asc)
+                'M' -> ListSortMode.Movie(asc)
+                'R' -> ListSortMode.RecentlyAdded(asc)
+                else -> ListSortMode.Title(asc)
             }
         }
     )

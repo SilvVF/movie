@@ -131,7 +131,7 @@ class ListAddScreenModel(
             }
             .launchIn(screenModelScope)
 
-        contentListRepository.observeListItemsByListId(listId, "", ListSortMode.Title)
+        contentListRepository.observeListItemsByListId(listId, "", ListSortMode.RecentlyAdded(true))
             .onEach { content ->
                 mutableState.updateSuccess {state ->
                     state.copy(listItems = content.toImmutableList())

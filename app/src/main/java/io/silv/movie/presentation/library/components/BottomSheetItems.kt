@@ -94,7 +94,8 @@ fun ColumnScope.BottomSheetItem(
     title: @Composable () -> Unit,
     icon: @Composable () -> Unit,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingIcon: @Composable (() -> Unit)? = null
 ) {
     Row(
         horizontalArrangement = Arrangement.Start,
@@ -117,6 +118,9 @@ fun ColumnScope.BottomSheetItem(
                 LocalContentColor provides AlertDialogDefaults.titleContentColor,
                 content = title
             )
+        }
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            trailingIcon?.invoke()
         }
     }
 }
