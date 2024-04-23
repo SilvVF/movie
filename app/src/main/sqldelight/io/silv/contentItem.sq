@@ -72,9 +72,6 @@ DELETE FROM contentItem WHERE movie_id = :movieId AND list_id = :listId;
 deleteShowFromList:
 DELETE FROM contentItem WHERE show_id = :showId AND list_id = :listId;
 
-selectAll:
-SELECT * FROM contentItem;
-
 selectMoviesByListId:
 SELECT
     clj.*,

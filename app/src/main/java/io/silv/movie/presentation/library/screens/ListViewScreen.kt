@@ -98,8 +98,8 @@ import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
-import io.silv.movie.presentation.library.components.ContentListPosterItems
 import io.silv.movie.presentation.library.components.ContentListPosterList
 import io.silv.movie.presentation.library.components.dialog.ContentOptionsBottomSheet
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
@@ -110,7 +110,6 @@ import io.silv.movie.presentation.library.components.topbar.TitleWithProfilePict
 import io.silv.movie.presentation.library.components.topbar.TopBarState
 import io.silv.movie.presentation.library.components.topbar.rememberTopBarState
 import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
-import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import io.silv.movie.presentation.library.screenmodels.ListViewEvent
 import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListViewState
@@ -275,7 +274,6 @@ data class ListViewScreen(
                         },
                         onOptionsClick = { changeDialog(ListViewScreenModel.Dialog.ContentOptions(it)) },
                         updateDialog = { changeDialog(it) },
-                        changeSortMode = screenModel::updateSortMode,
                         refreshRecommendations = screenModel::refreshRecommendations,
                         onAddRecommendation = {
                             contentInteractor.addToList(s.list, it)
@@ -430,7 +428,6 @@ private fun SuccessScreenContent(
     onLongClick: (item: ContentItem) -> Unit,
     onClick: (item: ContentItem) -> Unit,
     onOptionsClick: (item: ContentItem) -> Unit,
-    changeSortMode: (ListSortMode) -> Unit,
     updateDialog: (ListViewScreenModel.Dialog?) -> Unit,
     onRecommendationClick: (item: ContentItem) -> Unit,
     onRecommendationLongClick: (item: ContentItem) -> Unit,
@@ -553,7 +550,7 @@ private fun SuccessScreenContent(
                 }
             },
             poster = {
-                ContentListPosterItems(
+                ContentListPoster(
                     list = state.list,
                     items = state.allItems,
                     modifier = Modifier

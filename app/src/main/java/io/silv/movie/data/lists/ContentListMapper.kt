@@ -3,31 +3,31 @@ package io.silv.movie.data.lists
 object ContentListMapper {
 
     val mapList = {
-            _id: Long,
-            supabase_id: String?,
-            created_by: String?,
+            id: Long,
+            supabaseId: String?,
+            createdBy: String?,
             username: String,
             description: String,
-            synced_at: Long?,
+            syncedAt: Long?,
             public: Boolean,
             name: String,
-            last_modified_at: Long,
-            poster_last_updated: Long?,
-            created_at: Long,
-            in_library: Boolean ->
+            lastModifiedAt: Long,
+            posterLastUpdated: Long?,
+            createdAt: Long,
+            inLibrary: Boolean ->
         ContentList(
-            id = _id,
-            supabaseId = supabase_id,
-            createdBy = created_by,
-            lastSynced = synced_at,
+            id = id,
+            supabaseId = supabaseId,
+            createdBy = createdBy,
+            lastSynced = syncedAt,
             public = public,
             name = name,
             description = description,
-            lastModified = last_modified_at,
-            posterLastModified = poster_last_updated ?: -1L,
-            createdAt = created_at,
+            lastModified = lastModifiedAt,
+            posterLastModified = posterLastUpdated ?: -1L,
+            createdAt = createdAt,
             username = username,
-            inLibrary = in_library
+            inLibrary = inLibrary
         )
     }
 
@@ -40,7 +40,7 @@ object ContentListMapper {
         favorite: Boolean?,
         overview: String?,
         popularity: Double?,
-        last_modified_at: Long?,
+        lastModifiedAt: Long?,
         inLists: Long?
         ->
         ContentItem(
@@ -50,7 +50,7 @@ object ContentListMapper {
             posterUrl = posterUrl,
             posterLastUpdated = posterLastUpdated ?: -1L,
             favorite = favorite ?: false,
-            lastModified = last_modified_at ?: -1L,
+            lastModified = lastModifiedAt ?: -1L,
             popularity = popularity ?: 0.0,
             description = overview ?: "",
             inLibraryLists = inLists ?: 0L
@@ -58,19 +58,19 @@ object ContentListMapper {
     }
 
     val mapFavoriteItem = {
-            id: Long, title: String, poster_url: String?,
-            poster_last_updated: Long, overview: String, popularity: Double,
-            last_modified_at: Long,favorite: Boolean,  isMovie: Long,
-            favorite_last_modified: Long?,
+            id: Long, title: String, posterUrl: String?,
+            posterLastUpdated: Long, overview: String, popularity: Double,
+            lastModifiedAt: Long,favorite: Boolean,  isMovie: Long,
+            _: Long?,
         inLibraryLists: Long ->
         ContentItem(
             contentId = id,
             isMovie = isMovie == 1L,
             title = title,
-            posterUrl = poster_url,
-            posterLastUpdated = poster_last_updated,
+            posterUrl = posterUrl,
+            posterLastUpdated = posterLastUpdated,
             favorite = favorite,
-            lastModified = last_modified_at,
+            lastModified = lastModifiedAt,
             popularity = popularity,
             description = overview,
             inLibraryLists = inLibraryLists
@@ -78,10 +78,10 @@ object ContentListMapper {
     }
 
     val mapItem = {
-            movie_id: Long?,
-            show_id: Long?,
-            list_id: Long,
-            created_at: Long,
+            _: Long?,
+            _: Long?,
+            _: Long,
+            createdAt: Long,
             movieId: Long?,
             showId: Long?,
             title: String?,
@@ -97,7 +97,7 @@ object ContentListMapper {
                 posterUrl = posterUrl,
                 posterLastUpdated = posterLastUpdated ?: 0L,
                 favorite = favorite ?: false,
-                lastModified = created_at,
+                lastModified = createdAt,
                 popularity = popularity ?: 0.0,
                 description = overview ?: "",
                 inLibraryLists = inLists ?: 0L
@@ -105,17 +105,17 @@ object ContentListMapper {
     }
 
     val mapListItem = {
-            list_id: Long,
-            supabase_id: String?,
-            created_by: String?,
+            listId: Long,
+            supabaseId: String?,
+            createdBy: String?,
             username: String,
             description: String,
-            synced_at: Long?,
-            public_: Boolean,
+            _: Long?,
+            public: Boolean,
             name: String,
-            last_modified_at: Long,
-            poster_last_updated: Long?,
-            created_at: Long,
+            lastModifiedAt: Long,
+            _: Long?,
+            createdAt: Long,
             inLibrary: Boolean,
             movieId: Long?,
             showId: Long?,
@@ -127,7 +127,23 @@ object ContentListMapper {
             overview: String?,
             popularity: Double?,
             inLists: Long?,
-            content_last_modified: Long? ->
+            contentLastModified: Long? ->
+
+        val contentList = ContentList(
+            id = listId,
+            supabaseId = supabaseId,
+            createdBy = createdBy,
+            lastSynced = createdAt,
+            public = public,
+            name = name,
+            description = description,
+            lastModified = lastModifiedAt,
+            posterLastModified = posterLastUpdated ?: -1L,
+            username = username,
+            createdAt = createdAt,
+            inLibrary = inLibrary
+        )
+
         if(movieId != null || showId != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
@@ -137,44 +153,16 @@ object ContentListMapper {
                    posterUrl = posterUrl,
                    posterLastUpdated = posterLastUpdated ?: 0L,
                    favorite = favorite ?: false,
-                   lastModified =  content_last_modified ?: 0L,
+                   lastModified =  contentLastModified ?: 0L,
                    popularity = popularity ?: 0.0,
                    description = overview ?: "",
                    inLibraryLists = inLists ?: 0L
                ),
                createdAt = addedToListAt ?: 0L,
-               list =  ContentList(
-                   id = list_id,
-                   supabaseId = supabase_id,
-                   createdBy = created_by,
-                   lastSynced = synced_at,
-                   public = public_,
-                   name = name,
-                   description = description,
-                   lastModified = last_modified_at,
-                   posterLastModified = poster_last_updated ?: -1L,
-                   username = username,
-                   createdAt = created_at,
-                   inLibrary = inLibrary
-               )
+               list =  contentList
             )
         } else {
-            ContentListItem.PlaceHolder(
-                ContentList(
-                    id = list_id,
-                    supabaseId = supabase_id,
-                    createdBy = created_by,
-                    lastSynced = synced_at,
-                    public = public_,
-                    name = name,
-                    description = description,
-                    lastModified = last_modified_at,
-                    posterLastModified = poster_last_updated ?: -1L,
-                    username = username,
-                    inLibrary = inLibrary,
-                    createdAt = created_at
-                )
-            )
+            ContentListItem.PlaceHolder(contentList)
         }
     }
 }

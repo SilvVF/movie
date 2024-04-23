@@ -61,7 +61,7 @@ import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPreview
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
@@ -160,7 +160,7 @@ private fun LibraryLists(
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPosterItems(
+                            ContentListPoster(
                                 list = list,
                                 items = items,
                                 modifier = Modifier

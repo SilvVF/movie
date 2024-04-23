@@ -55,7 +55,7 @@ import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPreview
 import io.silv.movie.presentation.profile.ProfileState
 import io.silv.movie.presentation.profile.UserProfileImage
@@ -222,7 +222,7 @@ fun SubscribedListsView(
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPosterItems(
+                            ContentListPoster(
                                 list = list,
                                 items = items,
                                 modifier = Modifier
@@ -254,7 +254,7 @@ fun SubscribedListsView(
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPosterItems(
+                            ContentListPoster(
                                 list = list,
                                 items = items,
                                 modifier = Modifier

@@ -120,7 +120,7 @@
     <string name="undo">Undo</string>
     <string name="made_list_private">List is now private</string>
     <string name="visiblity_change_failed">Failed to change visiblity of %1s.</string>
-    <string name="list_edited">Changes successfull.</string>
+    <string name="list_edited">Changes successful.</string>
     <string name="edit_failed">Failed to edit %1s.</string>
     <string name="added_to_list">Added %1s to %2s.</string>
     <string name="add_to_list_failed">Failed to add %1s to %2s.</string>

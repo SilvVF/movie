@@ -49,56 +49,14 @@ import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.toImmutableList
 import org.koin.compose.koinInject
 
 private val ListItemHeight = 72.dp
 
 @Composable
 fun ContentListPoster(
-    list: ContentList,
-    items: ImmutableList<ContentListItem>,
-    modifier: Modifier = Modifier
-) {
-    val cache = koinInject<ListCoverCache>()
-    var semaphor by remember { mutableIntStateOf(0) }
-    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
-    val fileExists by remember(semaphor) {
-        derivedStateOf { file.exists() }
-    }
-
-    LaunchedEffect(list.posterLastModified) {
-        semaphor++
-    }
-
-    if (fileExists) {
-        ContentPreviewDefaults.CustomListPoster(
-            modifier = modifier,
-            uri = file.toUri(),
-            hash = hash,
-            lastModified = list.posterLastModified
-        )
-    } else {
-        if (items.size < 4) {
-            ContentPreviewDefaults.SingleItemPoster(
-                modifier = modifier,
-                item = items.first()
-            )
-        } else {
-            ContentPreviewDefaults.MultiItemPosterContentLIst(
-                modifier = modifier,
-                content = items
-            )
-        }
-    }
-}
-
-@Composable
-fun ContentListPosterItems(
     list: ContentList,
     items: ImmutableList<ContentItem>,
     modifier: Modifier = Modifier
@@ -162,25 +120,6 @@ object ContentPreviewDefaults {
                     .align(Alignment.Center)
             )
         }
-    }
-
-    @Composable
-    fun MultiItemPosterContentLIst(
-        modifier: Modifier,
-        content: ImmutableList<ContentListItem>
-    ) {
-        val contentItems = remember(content) {
-            content
-                .filterIsInstance<ContentListItem.Item>()
-                .take(4)
-                .map { it.contentItem }
-                .toImmutableList()
-        }
-
-        MultiItemPoster(
-            modifier = modifier,
-            items = contentItems
-        )
     }
 
     @Composable
@@ -267,22 +206,6 @@ object ContentPreviewDefaults {
                 shape = RectangleShape,
                 data = remember(item.posterLastUpdated) { item.toPoster() }
             )
-        }
-    }
-
-    @Composable
-    fun SingleItemPoster(
-        modifier: Modifier,
-        item: ContentListItem
-    ) {
-        when (item) {
-            is ContentListItem.Item -> {
-                SingleItemPoster(
-                    modifier = modifier,
-                    item = item.contentItem
-                )
-            }
-            is ContentListItem.PlaceHolder -> PlaceholderPoster(modifier = modifier)
         }
     }
 }

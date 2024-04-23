@@ -90,13 +90,13 @@ class ListViewScreenModel(
                     state.copy(user = user)
                 }
 
-                userRepository.currentUser.collect { user ->
+                userRepository.currentUser.collect { u ->
                     mutableState.updateSuccess { state ->
 
-                        val isOwnerMe =  user?.userId == state.list.createdBy || state.list.createdBy == null
+                        val isOwnerMe =  u?.userId == state.list.createdBy || state.list.createdBy == null
 
                         state.copy(
-                            user = if(isOwnerMe) user else state.user,
+                            user = if(isOwnerMe) u else state.user,
                             isOwnerMe = isOwnerMe
                         )
                     }
@@ -223,7 +223,6 @@ class ListViewScreenModel(
                     items.isEmpty() &&
                     list.supabaseId != null &&
                     list.createdBy != auth.currentUserOrNull()?.id) {
-                    /*** No need to fetch the items again this will be observed in [observeList] */
                     listUpdateManager.refreshList(list.supabaseId.orEmpty())
                 }
 

@@ -40,7 +40,7 @@ import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.library.components.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.library.components.BottomSheetHeader
 import io.silv.movie.presentation.library.components.BottomSheetItem
-import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import kotlinx.collections.immutable.ImmutableList
 
@@ -61,7 +61,7 @@ fun SortOptionsBottomSheet(
     ) {
         BottomSheetHeader(
             poster = {
-                ContentListPosterItems(
+                ContentListPoster(
                     list = list,
                     items = content,
                     modifier = Modifier
@@ -157,7 +157,7 @@ fun ListOptionsBottomSheet(
     ) {
         BottomSheetHeader(
             poster = {
-                ContentListPosterItems(
+                ContentListPoster(
                     list = list,
                     items = content,
                     modifier = Modifier

@@ -1,5 +1,4 @@
 
-import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
@@ -12,23 +11,6 @@ import io.silv.movie.presentation.web.AccompanistWebViewClient
 import io.silv.movie.presentation.web.WebView
 import io.silv.movie.presentation.web.WebViewNavigator
 import io.silv.movie.presentation.web.rememberSaveableWebViewState
-import timber.log.Timber
-
-fun addMyClickCallBackJs(): String {
-    var js = "javascript:"
-    js += "function myClick(event){" +
-            "if(event.target.className == null){my.myClick(event.target.id)}" + "else{my.myClick(event.target.className)}}"
-    js += "document.addEventListener(\"click\",myClick,true);"
-    return js
-}
-
-class MyJsToAndroid: Any() {
-
-    @JavascriptInterface
-    fun myClick(idOrClass: String   ) {
-        Timber.d("myClick-> " + idOrClass);
-    }
-}
 
 @Composable
 fun WebViewScreenContent(

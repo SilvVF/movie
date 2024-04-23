@@ -64,7 +64,7 @@ import io.silv.movie.R
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.topbar.PosterLargeTopBarDefaults
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import kotlinx.collections.immutable.persistentListOf
@@ -257,7 +257,7 @@ data object SearchForListScreen: Screen {
                             }
                             .padding(12.dp),
                         cover = {
-                            ContentListPosterItems(
+                            ContentListPoster(
                                 list = item.list,
                                 items = item.items,
                                 modifier = Modifier

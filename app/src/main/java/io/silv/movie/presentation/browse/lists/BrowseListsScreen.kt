@@ -90,7 +90,7 @@ import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListWithItems
 import io.silv.movie.presentation.library.components.ContentItemSourceCoverOnlyGridItem
-import io.silv.movie.presentation.library.components.ContentListPosterItems
+import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.profile.ProfileTab
 import io.silv.movie.presentation.profile.UserProfileImage
@@ -636,7 +636,7 @@ fun LazyListScope.listCategoryPreview(
                                 .padding(end = 12.dp)
                                 .clickable { onListClick(it) },
                             cover = {
-                                ContentListPosterItems(
+                                ContentListPoster(
                                     list = it.list,
                                     items = it.items,
                                     modifier = Modifier
@@ -868,7 +868,7 @@ fun LazyListScope.recentlyViewedListsPreview(
                                 .clip(MaterialTheme.shapes.extraSmall)
                                 .background(Color.DarkGray),
                             cover = {
-                                ContentListPosterItems(
+                                ContentListPoster(
                                     list = it.list,
                                     items = it.items,
                                 )

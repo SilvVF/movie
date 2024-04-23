@@ -72,7 +72,7 @@ fun LibraryListView(
                             .animateItemPlacement()
                             .padding(8.dp),
                         cover = {
-                            ContentListPosterItems(
+                            ContentListPoster(
                                 list = list,
                                 items = items,
                                 modifier = Modifier
