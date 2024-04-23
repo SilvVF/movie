@@ -31,6 +31,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,17 +49,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.lerp
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
+import io.silv.movie.presentation.LocalListInteractor
+import io.silv.movie.presentation.browse.lists.TitleWithAction
 import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPreview
+import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
+import io.silv.movie.presentation.library.screens.ListAddScreen
+import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
+import io.silv.movie.presentation.library.screens.ListEditScreen
 import io.silv.movie.presentation.profile.ProfileState
 import io.silv.movie.presentation.profile.UserProfileImage
 import io.silv.movie.rememberProfileImageData
@@ -74,8 +86,14 @@ fun SignedInScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val user = LocalUser.current
+    val navigator = LocalNavigator.currentOrThrow
+    val listInteractor = LocalListInteractor.current
 
     val profileImageData = user.rememberProfileImageData()
+
+    var selectedList by remember {
+        mutableStateOf<Pair<ContentList, ImmutableList<ContentItem>>?>(null)
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -178,7 +196,56 @@ fun SignedInScreen(
             subscribed = subscribed,
             public = public,
             onListClick = onListClick,
-            onListLongClick = {  },
+            onListLongClick = { selectedList = it },
+        )
+    }
+
+    selectedList?.let { (list, items) ->
+        val listEditScreen = remember(list.name) { ListEditScreen(list.name) }
+
+        val editResultLauncher = rememberScreenWithResultLauncher(
+            screen = listEditScreen
+        ) { result ->
+            listInteractor.editList(list) { it.copy(name = result.name) }
+        }
+
+        val descriptionEditScreen =
+            remember(list.description) { ListEditDescriptionScreen(list.description) }
+
+        val descriptionResultLauncher = rememberScreenWithResultLauncher(
+            screen = descriptionEditScreen
+        ) { result ->
+            listInteractor.editList(list) { it.copy(description = result.description) }
+        }
+
+        ListOptionsBottomSheet(
+            onDismissRequest = { selectedList = null},
+            onAddClick = { navigator.push(ListAddScreen(list.id)) },
+            onEditClick = {
+                editResultLauncher.launch()
+                selectedList = null
+            },
+            onDeleteClick = { listInteractor.deleteList(list) },
+            onShareClick = {
+                listInteractor.toggleListVisibility(list)
+                selectedList = null
+            },
+            list = list,
+            onChangeDescription = { descriptionResultLauncher.launch() },
+            onCopyClick = {
+                listInteractor.copyList(list)
+                selectedList = null
+            },
+            isUserMe = list.createdBy == user?.userId || list.createdBy == null,
+            content = items ,
+            onSubscribeClicked = {
+                listInteractor.subscribeToList(list)
+                selectedList = null
+            },
+            onUnsubscribeClicked = {
+                listInteractor.unsubscribeFromList(list)
+                selectedList = null
+            }
         )
     }
 }
@@ -188,7 +255,7 @@ fun SubscribedListsView(
     paddingValues: PaddingValues,
     subscribed: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>,
     public: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>,
-    onListLongClick: (contentList: ContentList) -> Unit,
+    onListLongClick: (Pair<ContentList, ImmutableList<ContentItem>>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -208,68 +275,84 @@ fun SubscribedListsView(
             state = listState,
             contentPadding = paddingValues,
         ) {
-            item { Text("Subscribed") }
-            subscribed.fastForEach { (list, items) ->
-                item(
-                    key = list.id.toString() + "subscribed"
-                ) {
-                    ContentListPreview(
-                        modifier = Modifier
-                            .combinedClickable(
-                                onLongClick = { onListLongClick(list) },
-                                onClick = { onListClick(list) }
-                            )
-                            .animateItemPlacement()
-                            .padding(8.dp),
-                        cover = {
-                            ContentListPoster(
-                                list = list,
-                                items = items,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable { onListClick(list) }
-                            )
-                        },
-                        name = list.name,
-                        description = list.description.ifEmpty {
-                            when {
-                                items.isEmpty() -> stringResource(id = R.string.content_preview_no_items)
-                                else -> stringResource(R.string.content_preview_items, items.size)
-                            }
-                        }
+            if (subscribed.isNotEmpty()) {
+                item {
+                    TitleWithAction(
+                        title = stringResource(R.string.subscribed),
+                        actionLabel = "",
+                        onAction = null,
                     )
                 }
-            }
-            item { Text("Public") }
-            public.fastForEach { (list, items) ->
-                item(
-                    key = list.id.toString() + "public"
-                ) {
-                    ContentListPreview(
-                        modifier = Modifier
-                            .combinedClickable(
-                                onLongClick = { onListLongClick(list) },
-                                onClick = { onListClick(list) }
-                            )
-                            .animateItemPlacement()
-                            .padding(8.dp),
-                        cover = {
-                            ContentListPoster(
-                                list = list,
-                                items = items,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clickable { onListClick(list) }
-                            )
-                        },
-                        name = list.name,
-                        description = list.description.ifEmpty {
-                            when {
-                                items.isEmpty() -> stringResource(id = R.string.content_preview_no_items)
-                                else -> stringResource(R.string.content_preview_items, items.size)
+                subscribed.fastForEach { (list, items) ->
+                    item(
+                        key = list.id.toString() + "subscribed"
+                    ) {
+                        ContentListPreview(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onLongClick = { onListLongClick(list to items) },
+                                    onClick = { onListClick(list) }
+                                )
+                                .animateItemPlacement()
+                                .padding(8.dp),
+                            cover = {
+                                ContentListPoster(
+                                    list = list,
+                                    items = items,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable { onListClick(list) }
+                                )
+                            },
+                            name = list.name,
+                            description = list.description.ifEmpty {
+                                when {
+                                    items.isEmpty() -> stringResource(id = R.string.content_preview_no_items)
+                                    else -> stringResource(R.string.content_preview_items, items.size)
+                                }
                             }
-                        }
+                        )
+                    }
+                }
+            }
+            if (public.isNotEmpty()) {
+                item {
+                    TitleWithAction(
+                        title = stringResource(R.string.public_lists),
+                        actionLabel = "",
+                        onAction = null,
                     )
+                }
+                public.fastForEach { (list, items) ->
+                    item(
+                        key = list.id.toString() + "public"
+                    ) {
+                        ContentListPreview(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onLongClick = { onListLongClick(list to items) },
+                                    onClick = { onListClick(list) }
+                                )
+                                .animateItemPlacement()
+                                .padding(8.dp),
+                            cover = {
+                                ContentListPoster(
+                                    list = list,
+                                    items = items,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clickable { onListClick(list) }
+                                )
+                            },
+                            name = list.name,
+                            description = list.description.ifEmpty {
+                                when {
+                                    items.isEmpty() -> stringResource(id = R.string.content_preview_no_items)
+                                    else -> stringResource(R.string.content_preview_items, items.size)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }

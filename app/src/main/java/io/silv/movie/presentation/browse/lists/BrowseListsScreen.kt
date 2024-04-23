@@ -1,7 +1,7 @@
 package io.silv.movie.presentation.browse.lists
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -78,6 +79,7 @@ import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
@@ -89,8 +91,13 @@ import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListWithItems
+import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.library.components.ContentItemSourceCoverOnlyGridItem
 import io.silv.movie.presentation.library.components.ContentListPoster
+import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
+import io.silv.movie.presentation.library.screens.ListAddScreen
+import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
+import io.silv.movie.presentation.library.screens.ListEditScreen
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.profile.ProfileTab
 import io.silv.movie.presentation.profile.UserProfileImage
@@ -347,8 +354,9 @@ class BrowseListsScreenModel(
             description = listWithItems.description,
             lastModified = -1L,
             posterLastModified = -1L,
-            createdAt = -1L,
-            inLibrary = false
+            createdAt = listWithItems.createdAt.toEpochMilliseconds(),
+            inLibrary = false,
+            subscribers = listWithItems.subscribers
         )
         val posters = listWithItems.items.orEmpty().map {
             val isMovie = it.movieId != -1L
@@ -390,6 +398,7 @@ data object BrowseListsScreen: Screen {
         val default by screenModel.defaultLists.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val tabNavigator = LocalTabNavigator.current
+        val listInteractor = LocalListInteractor.current
         val user = LocalUser.current
         val profileImageData = user.rememberProfileImageData()
         val hazeState = remember { HazeState() }
@@ -397,6 +406,10 @@ data object BrowseListsScreen: Screen {
 
         val navigateOnListClick = { item: ListPreviewItem ->
             navigator.push(ListViewScreen(item.list.id, item.list.supabaseId.orEmpty()))
+        }
+
+        var selectedList by remember {
+            mutableStateOf<Pair<ContentList, ImmutableList<ContentItem>>?>(null)
         }
 
         PullRefresh(
@@ -431,7 +444,7 @@ data object BrowseListsScreen: Screen {
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            dominantColor.copy(alpha = 0.4f)
+                            dominantColor.copy(alpha = 0.1f)
                         ),
                         title = {
                             TextButton(
@@ -462,7 +475,8 @@ data object BrowseListsScreen: Screen {
                 ) {
                     recentlyViewedListsPreview(
                         recentlyViewed,
-                        onListClick = navigateOnListClick
+                        onListClick = navigateOnListClick,
+                        onListLongClick = { selectedList = it.list to it.items }
                     )
                     listCategoryPreview(
                         label = {
@@ -486,6 +500,7 @@ data object BrowseListsScreen: Screen {
                         },
                         lists = popularUserLists,
                         onListClick = navigateOnListClick,
+                        onListLongClick = { selectedList = it.list to it.items },
                         tag = "popular_lists",
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -513,6 +528,7 @@ data object BrowseListsScreen: Screen {
                             },
                             lists = subscribedRecommended,
                             onListClick = navigateOnListClick,
+                            onListLongClick = { selectedList = it.list to it.items },
                             tag = "subscribed_recommended",
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -539,6 +555,7 @@ data object BrowseListsScreen: Screen {
                         },
                         lists = recentlyCreated,
                         onListClick = navigateOnListClick,
+                        onListLongClick = { selectedList = it.list to it.items },
                         tag = "recently_created",
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -555,13 +572,64 @@ data object BrowseListsScreen: Screen {
                                     TVViewScreen(it.contentId)
                             )
                         },
-                        onItemLongClick = {}
+                        onItemLongClick = {
+
+                        }
                     )
                     item {
                         Spacer(Modifier.height(22.dp))
                     }
                 }
             }
+        }
+
+        selectedList?.let { (list, items) ->
+            val listEditScreen = remember(list.name) { ListEditScreen(list.name) }
+
+            val editResultLauncher = rememberScreenWithResultLauncher(
+                screen = listEditScreen
+            ) { result ->
+                listInteractor.editList(list) { it.copy(name = result.name) }
+            }
+
+            val descriptionEditScreen =
+                remember(list.description) { ListEditDescriptionScreen(list.description) }
+
+            val descriptionResultLauncher = rememberScreenWithResultLauncher(
+                screen = descriptionEditScreen
+            ) { result ->
+                listInteractor.editList(list) { it.copy(description = result.description) }
+            }
+
+            ListOptionsBottomSheet(
+                onDismissRequest = { selectedList = null},
+                onAddClick = { navigator.push(ListAddScreen(list.id)) },
+                onEditClick = {
+                    editResultLauncher.launch()
+                    selectedList = null
+                },
+                onDeleteClick = { listInteractor.deleteList(list) },
+                onShareClick = {
+                    listInteractor.toggleListVisibility(list)
+                    selectedList = null
+                },
+                list = list,
+                onChangeDescription = { descriptionResultLauncher.launch() },
+                onCopyClick = {
+                    listInteractor.copyList(list)
+                    selectedList = null
+                },
+                isUserMe = list.createdBy == user?.userId || list.createdBy == null,
+                content = items ,
+                onSubscribeClicked = {
+                    listInteractor.subscribeToList(list)
+                    selectedList = null
+                },
+                onUnsubscribeClicked = {
+                    listInteractor.unsubscribeFromList(list)
+                    selectedList = null
+                }
+            )
         }
     }
 }
@@ -571,7 +639,7 @@ data object BrowseListsScreen: Screen {
 fun TitleWithAction(
     title: String,
     actionLabel: String,
-    onAction: () -> Unit,
+    onAction: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -587,15 +655,17 @@ fun TitleWithAction(
                 .padding(start = 12.dp)
                 .padding(vertical = 22.dp)
         )
-        TextButton(
-            onClick = onAction
-        ) {
-            Text(text = actionLabel)
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp)
-            )
+        if (onAction != null) {
+            TextButton(
+                onClick = onAction
+            ) {
+                Text(text = actionLabel)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -606,6 +676,7 @@ fun LazyListScope.listCategoryPreview(
     empty: @Composable BoxScope.() -> Unit,
     lists: ImmutableList<ListPreviewItem>?,
     onListClick: (ListPreviewItem) -> Unit,
+    onListLongClick: (ListPreviewItem) -> Unit,
     tag: String,
     modifier: Modifier = Modifier,
 ) {
@@ -633,8 +704,13 @@ fun LazyListScope.listCategoryPreview(
                     ) {
                         RowPreviewItem(
                             modifier = Modifier
-                                .padding(end = 12.dp)
-                                .clickable { onListClick(it) },
+                                .padding(end = 8.dp)
+                                .clip(MaterialTheme.shapes.small)
+                                .combinedClickable(
+                                    onLongClick = { onListLongClick(it) },
+                                    onClick = { onListClick(it) }
+                                )
+                                .padding(4.dp),
                             cover = {
                                 ContentListPoster(
                                     list = it.list,
@@ -817,6 +893,7 @@ fun LazyListScope.defaultListsPreview(
 fun LazyListScope.recentlyViewedListsPreview(
     lists: ImmutableList<ListPreviewItem>?,
     onListClick: (ListPreviewItem) -> Unit,
+    onListLongClick: (ListPreviewItem) -> Unit,
 ) {
     lists?.let { recents ->
         item(
@@ -859,14 +936,16 @@ fun LazyListScope.recentlyViewedListsPreview(
                             modifier = Modifier
                                 .padding(vertical = 4.dp)
                                 .padding(
-                                    start = if (i % 2 == 0) 0.dp else 4.dp,
-                                    end = if (i % 2 == 0) 4.dp else 0.dp
+                                    start = if (i and 1 == 0) 0.dp else 4.dp,
+                                    end = if (i and 1 == 0) 4.dp else 0.dp
                                 )
-                                .clickable { onListClick(it) }
+                                .combinedClickable(
+                                    onLongClick = { onListLongClick(it) }
+                                ) { onListClick(it) }
                                 .weight(1f)
                                 .height(64.dp)
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .background(Color.DarkGray),
+                                .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
                             cover = {
                                 ContentListPoster(
                                     list = it.list,

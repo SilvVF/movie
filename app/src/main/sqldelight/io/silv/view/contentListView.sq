@@ -12,6 +12,7 @@ SELECT
     cl.poster_last_updated AS list_poster_last_updated,
     cl.created_at AS list_created_at,
     cl.in_library AS inLibrary,
+    cl.subscribers AS subscribers,
     clj.movie_id AS movieId,
     clj.show_id AS showId,
     clj.created_at AS addedToListAt,

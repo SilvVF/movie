@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Tv
@@ -144,6 +145,7 @@ fun ListOptionsBottomSheet(
     onShareClick: () -> Unit,
     onCopyClick: () -> Unit,
     onSubscribeClicked: () -> Unit,
+    onUnsubscribeClicked: () -> Unit,
     isUserMe: Boolean,
     list: ContentList,
     content: ImmutableList<ContentItem>
@@ -201,6 +203,12 @@ fun ListOptionsBottomSheet(
                     title = { Text(stringResource(id = R.string.subscribe)) },
                     icon = { Icon(imageVector = Icons.Filled.AddCircleOutline, contentDescription = null) },
                     onClick = onSubscribeClicked
+                )
+            } else {
+                BottomSheetItem(
+                    title = { Text(stringResource(id = R.string.unsubscribe)) },
+                    icon = { Icon(imageVector = Icons.Filled.RemoveCircleOutline, contentDescription = null) },
+                    onClick = onUnsubscribeClicked
                 )
             }
             BottomSheetItem(

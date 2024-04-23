@@ -356,7 +356,8 @@ data class ListViewScreen(
                                 onCopyClick = { listInteractor.copyList(s.list) },
                                 isUserMe = s.isOwnerMe,
                                 content = s.allItems,
-                                onSubscribeClicked = { listInteractor.subscribeToList(s.list) }
+                                onSubscribeClicked = { listInteractor.subscribeToList(s.list) },
+                                onUnsubscribeClicked = { listInteractor.unsubscribeFromList(s.list) }
                             )
                         }
 

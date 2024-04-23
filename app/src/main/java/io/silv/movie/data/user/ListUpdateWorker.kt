@@ -131,7 +131,8 @@ class ListUpdater(
                     supabaseId = list.listId,
                     userId = list.userId,
                     createdAt = list.createdAt.toEpochMilliseconds(),
-                    inLibrary = isOwnerMe
+                    inLibrary = isOwnerMe,
+                    subscribers = list.subscribers
                 )
                 local = contentListRepository.getList(id)!!
             }
@@ -145,7 +146,8 @@ class ListUpdater(
                     createdBy = list.userId,
                     lastSynced = Clock.System.now().toEpochMilliseconds(),
                     username = username ?: local.username,
-                    inLibrary = isOwnerMe
+                    inLibrary = isOwnerMe,
+                    subscribers = list.subscribers
                 )
                     .toUpdate()
             )

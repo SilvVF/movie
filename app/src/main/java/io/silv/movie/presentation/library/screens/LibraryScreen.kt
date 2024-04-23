@@ -175,10 +175,20 @@ class LibraryScreen: Screen {
                     },
                     list = dialog.contentList,
                     onChangeDescription = { descriptionResultLauncher.launch() },
-                    onCopyClick = { listInteractor.copyList(dialog.contentList) },
+                    onCopyClick = {
+                        listInteractor.copyList(dialog.contentList)
+                        onDismissRequest()
+                    },
                     isUserMe = dialog.contentList.createdBy == LocalUser.current?.userId || dialog.contentList.createdBy == null,
                     content = dialog.items,
-                    onSubscribeClicked = { listInteractor.subscribeToList(dialog.contentList) }
+                    onSubscribeClicked = {
+                        listInteractor.subscribeToList(dialog.contentList)
+                        onDismissRequest()
+                    },
+                    onUnsubscribeClicked = {
+                        listInteractor.unsubscribeFromList(dialog.contentList)
+                        onDismissRequest()
+                    }
                 )
             }
             is LibraryScreenModel.Dialog.DeleteList -> {

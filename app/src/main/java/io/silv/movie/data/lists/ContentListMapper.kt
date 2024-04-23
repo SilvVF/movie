@@ -14,7 +14,8 @@ object ContentListMapper {
             lastModifiedAt: Long,
             posterLastUpdated: Long?,
             createdAt: Long,
-            inLibrary: Boolean ->
+            inLibrary: Boolean,
+            subscribers: Long->
         ContentList(
             id = id,
             supabaseId = supabaseId,
@@ -27,7 +28,8 @@ object ContentListMapper {
             posterLastModified = posterLastUpdated ?: -1L,
             createdAt = createdAt,
             username = username,
-            inLibrary = inLibrary
+            inLibrary = inLibrary,
+            subscribers = subscribers
         )
     }
 
@@ -117,6 +119,7 @@ object ContentListMapper {
             _: Long?,
             createdAt: Long,
             inLibrary: Boolean,
+            subscribers: Long,
             movieId: Long?,
             showId: Long?,
             addedToListAt: Long?,
@@ -141,7 +144,8 @@ object ContentListMapper {
             posterLastModified = posterLastUpdated ?: -1L,
             username = username,
             createdAt = createdAt,
-            inLibrary = inLibrary
+            inLibrary = inLibrary,
+            subscribers = subscribers
         )
 
         if(movieId != null || showId != null) {

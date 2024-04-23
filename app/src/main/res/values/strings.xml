@@ -136,4 +136,13 @@
     <string name="no_items_for">%1s has no items %2s</string>
     <string name="recently_viewed_empty">Recently viewed lists will appear here</string>
     <string name="subscribe">Subscribe to list</string>
+    <string name="in_library">in favorites</string>
+    <string name="add_to_library">add to favorites</string>
+    <string name="action_web_view">view on web</string>
+    <string name="select_list_to_add">add to list</string>
+    <string name="unsubscribe">Unsubscribe from list</string>
+    <string name="unsubsribed_from_list">Unsubscribed from %1s.</string>
+    <string name="unsubsribed_from_list_failed">Failed to unsubscribe from %1s.</string>
+    <string name="subscribed">Subscribed</string>
+    <string name="public_lists">Public</string>
 </resources>

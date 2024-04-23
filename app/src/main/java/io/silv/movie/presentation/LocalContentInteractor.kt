@@ -23,6 +23,7 @@ import io.silv.movie.presentation.ListEvent.Copied
 import io.silv.movie.presentation.ListEvent.Delete
 import io.silv.movie.presentation.ListEvent.Edited
 import io.silv.movie.presentation.ListEvent.Subscribe
+import io.silv.movie.presentation.ListEvent.Unsubscribe
 import io.silv.movie.presentation.ListEvent.VisibleChanged
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,7 @@ sealed interface ListEvent {
     data class Delete(val list: ContentList, val success: Boolean): ListEvent
     data class Edited(val new: ContentList, val original: ContentList, val success: Boolean): ListEvent
     data class Subscribe(val list: ContentList, val success: Boolean): ListEvent
+    data class Unsubscribe(val list: ContentList, val success: Boolean): ListEvent
 }
 
 sealed interface ContentEvent {
@@ -53,6 +55,7 @@ interface ListInteractor: EventProducer<ListEvent> {
     fun copyList(contentList: ContentList)
     fun editList(contentList: ContentList, update: (ContentList) -> ContentList)
     fun subscribeToList(contentList: ContentList)
+    fun unsubscribeFromList(contentList: ContentList)
 }
 
 interface ContentInteractor: EventProducer<ContentEvent> {
@@ -200,6 +203,7 @@ class DefaultListInteractor(
                     networkList?.listId,
                     uid,
                     networkList?.createdAt?.toEpochMilliseconds(),
+                    networkList?.subscribers,
                     true
                 )
 
@@ -246,6 +250,27 @@ class DefaultListInteractor(
             }
                 .onSuccess { emitEvent(Subscribe(it, true)) }
                 .onFailure { emitEvent(Subscribe(contentList, false)) }
+        }
+    }
+
+    override fun unsubscribeFromList(contentList: ContentList) {
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+
+                if (contentList.createdBy ==  null || contentList.createdBy == auth.currentUserOrNull()?.id) {
+                    error("cant unsubscribe from owned list")
+                }
+
+                network.unsubscribeFromList(contentList.supabaseId!!)
+
+                editContentList.await(contentList) {
+                    it.copy(inLibrary = false)
+                }
+
+                contentList
+            }
+                .onSuccess { emitEvent(Unsubscribe(it, true)) }
+                .onFailure { emitEvent(Unsubscribe(contentList, false)) }
         }
     }
 }

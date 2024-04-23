@@ -80,6 +80,7 @@ class UserListUpdateWorker (
                             supabaseId = list.listId,
                             userId = list.userId,
                             inLibrary = true,
+                            subscribers = list.subscribers,
                             createdAt = list.createdAt.toEpochMilliseconds()
                         )
                         local = contentListRepository.getList(id)
@@ -95,6 +96,7 @@ class UserListUpdateWorker (
                             username = username.await() ?: local.username,
                             public = list.public,
                             inLibrary = true,
+                            subscribers = list.subscribers,
                             lastSynced = Clock.System.now().toEpochMilliseconds()
                         )
                             .toUpdate()

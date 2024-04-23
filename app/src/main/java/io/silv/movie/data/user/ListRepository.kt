@@ -28,6 +28,7 @@ data class UserList(
     @SerialName("updated_at")
     val updatedAt: Instant?,
     val public: Boolean,
+    val subscribers: Long,
 )
 
 @Serializable
@@ -62,7 +63,7 @@ data class ListWithItems(
     @SerialName("updated_at")
     val updatedAt: Instant?,
     val public: Boolean,
-
+    val subscribers: Long,
     @SerialName("listitem")
     val items: List<ListItem>?,
 )
@@ -80,12 +81,13 @@ data class SubscriptionWithItem(
     @SerialName("updated_at")
     val updatedAt: Instant?,
     val public: Boolean,
+    val subscribers: Long,
     @SerialName("movie_id")
-    val movieId: Long?,
+    val movieId: Long? = null,
     @SerialName("show_id")
-    val showId: Long?,
+    val showId: Long? = null,
     @SerialName("poster_path")
-    val posterPath: String?
+    val posterPath: String? = null
 )
 
 @Serializable
@@ -171,6 +173,18 @@ class ListRepository(
                 .decodeList<FavoriteMovie>()
         }
             .getOrNull()
+    }
+
+    suspend fun unsubscribeFromList(id: String): Result<Unit> {
+        return runCatching {
+            postgrest["subscription"]
+                .delete {
+                   filter {
+                       eq("list_id", id)
+                       eq("user_id", auth.currentUserOrNull()?.id!!)
+                   }
+                }
+        }
     }
 
     suspend fun subscribeToList(id: String): Result<Unit> {
@@ -287,7 +301,7 @@ class ListRepository(
             )
                 .decodeList<SubscriptionWithItem>()
                 .groupBy { it.listId }
-                .map {(listId, items) ->
+                .map { (listId, items) ->
                     val first = items.first()
                     ListWithItems(
                         listId = listId,
@@ -297,6 +311,7 @@ class ListRepository(
                         name = first.name,
                         createdAt = first.createdAt,
                         updatedAt = first.updatedAt,
+                        subscribers = first.subscribers,
                         items = items.mapNotNull {
                             if (it.movieId == null || it.showId == null) null
                             else ListItem(
@@ -382,7 +397,8 @@ class ListRepository(
                     createdAt = now,
                     updatedAt = now,
                     public = false,
-                    description = ""
+                    description = "",
+                    subscribers = 0
                 )
             ) {
                 select()

@@ -12,7 +12,8 @@ CREATE TABLE contentList(
      last_modified_at INTEGER NOT NULL DEFAULT 0,
      poster_last_updated INTEGER,
      created_at INTEGER NOT NULL DEFAULT 0,
-     in_library INTEGER AS Boolean NOT NULL DEFAULT 0
+     in_library INTEGER AS Boolean NOT NULL DEFAULT 0,
+     subscribers INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX in_library_index ON contentList(in_library) WHERE in_library = 1;
@@ -52,7 +53,7 @@ select:
 SELECT * FROM contentList WHERE _id IN :ids;
 
 insert:
-INSERT OR IGNORE INTO contentList(_id, name, last_modified_at, poster_last_updated, created_at, supabase_id, created_by, in_library)
+INSERT OR IGNORE INTO contentList(_id, name, last_modified_at, poster_last_updated, created_at, supabase_id, created_by, in_library, subscribers)
 VALUES (
 NULL,
 :name,
@@ -61,7 +62,8 @@ NULL,
 :createdAt,
 :supabaseId,
 :createdBy,
-:inLibrary
+:inLibrary,
+:subscribers
 );
 
 CREATE INDEX supabase_id_idx ON contentList(supabase_id);
@@ -73,7 +75,8 @@ UPDATE contentList SET
     description = COALESCE(:description, description),
     username = COALESCE(:username, username),
     in_library = COALESCE(:inLibrary, in_library),
-    public = COALESCE(:public, public)
+    public = COALESCE(:public, public),
+    subscribers = COALESCE(:subscribers, subscribers)
 WHERE _id = :id;
 
 listCount:

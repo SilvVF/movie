@@ -74,7 +74,6 @@ import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
-import io.silv.movie.presentation.media.CollapsablePlayerScreenContent
 import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import io.silv.movie.presentation.profile.ProfileTab
@@ -186,9 +185,6 @@ class MainActivity : ComponentActivity() {
                                 val trailerPlayerVisible by remember {
                                     derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
                                 }
-                                val contentPlayerVisible by remember {
-                                    derivedStateOf { playerViewModel.playingContent != null }
-                                }
                                 val density = LocalDensity.current
                                 val bottomPadding by remember {
                                     derivedStateOf {
@@ -215,31 +211,20 @@ class MainActivity : ComponentActivity() {
                                         CurrentTab()
                                     }
                                     AnimatedVisibility(
-                                        visible = trailerPlayerVisible || contentPlayerVisible,
+                                        visible = trailerPlayerVisible,
                                         modifier = Modifier
                                             .wrapContentSize()
                                             .align(Alignment.BottomCenter),
                                         enter = slideInVertically { it } + fadeIn(),
                                         exit = fadeOut(tween(0, 0))
                                     ) {
-                                        when  {
-                                            contentPlayerVisible -> playerViewModel.playingContent?.let {
-                                                    CollapsablePlayerScreenContent(
-                                                        collapsableVideoState = collapsableVideoState,
-                                                        contentItem = it    ,
-                                                        onDismissRequested = playerViewModel::clearMediaQueue,
-                                                    )
-                                                }
-                                            trailerPlayerVisible -> {
-                                                CollapsablePlayerScreen(
-                                                    collapsableVideoState = collapsableVideoState,
-                                                    onDismissRequested = playerViewModel::clearMediaQueue,
-                                                    playerViewModel = playerViewModel
-                                                )
-                                            }
-                                        }
+                                        CollapsablePlayerScreen(
+                                            collapsableVideoState = collapsableVideoState,
+                                            onDismissRequested = playerViewModel::clearMediaQueue,
+                                            playerViewModel = playerViewModel
+                                        )
                                     }
-                                    LaunchedEffect(trailerPlayerVisible, trailerPlayerVisible) {
+                                    LaunchedEffect(trailerPlayerVisible) {
                                         collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
                                     }
                                 }
@@ -325,7 +310,8 @@ private fun HandleListEvents(
                 if (event.success) {
                     val result = snackbarHostState.showSnackbar(
                         message = context.getString(R.string.subscribed_to_list, event.list.name),
-                        duration = SnackbarDuration.Short
+                        duration = SnackbarDuration.Short,
+                        actionLabel = context.getString(R.string.take_me_there),
                     )
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
@@ -352,7 +338,6 @@ private fun HandleListEvents(
                     }
                 }
             }
-
             is ListEvent.VisibleChanged -> {
                 if (event.success) {
                     val result = snackbarHostState.showSnackbar(
@@ -385,7 +370,6 @@ private fun HandleListEvents(
                     }
                 }
             }
-
             is ListEvent.Edited -> {
                 if (event.success) {
                     val result = snackbarHostState.showSnackbar(
@@ -408,6 +392,32 @@ private fun HandleListEvents(
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
                             listInteractor.editList(event.original) { event.new }
+                    }
+                }
+            }
+            is ListEvent.Unsubscribe -> {
+                if (event.success) {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.unsubsribed_from_list, event.list.name),
+                        duration = SnackbarDuration.Short,
+                        actionLabel = context.getString(R.string.undo)
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> listInteractor.subscribeToList(event.list)
+                    }
+                } else {
+                    val result = snackbarHostState.showSnackbar(
+                        message = context.getString(
+                            R.string.unsubsribed_from_list_failed,
+                            event.list.name
+                        ),
+                        actionLabel = context.getString(R.string.retry),
+                        duration = SnackbarDuration.Short,
+                    )
+                    when (result) {
+                        SnackbarResult.Dismissed -> Unit
+                        SnackbarResult.ActionPerformed -> listInteractor.unsubscribeFromList(event.list)
                     }
                 }
             }
@@ -553,7 +563,7 @@ fun AppBottomBar(
         modifier
             .heightIn(
                 min = 0.dp,
-                max = 48.dp + with(density) { insets.toDp () }
+                max = 48.dp + with(density) { insets.toDp() }
             )
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)

@@ -3,6 +3,7 @@ package io.silv.movie.presentation.library.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -53,7 +54,7 @@ fun LibraryListView(
                         .clickable { onFavoritesClicked() }
                         .padding(8.dp),
                     cover = {
-                        ContentPreviewDefaults.LibraryContentPoster(Modifier.fillMaxSize())
+                        ContentPreviewDefaults.LibraryContentPoster(Modifier.aspectRatio(1f))
                     },
                     name = stringResource(id = R.string.library_content_name),
                     description = stringResource(R.string.content_preview_items , state.favorites.size)
@@ -76,7 +77,7 @@ fun LibraryListView(
                                 list = list,
                                 items = items,
                                 modifier = Modifier
-                                    .fillMaxSize()
+                                    .aspectRatio(1f)
                                     .clickable { onPosterClick(list) }
                             )
                         },

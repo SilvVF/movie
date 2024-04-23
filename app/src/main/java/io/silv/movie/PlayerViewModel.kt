@@ -17,8 +17,6 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.trailers.TrailerRepository
@@ -45,8 +43,6 @@ class PlayerViewModel(
 ): ViewModel(), EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
 
     private var trailerToStreams by mutableStateOf<Pair<Trailer, Streams>?>(null)
-    var playingContent by mutableStateOf<ContentItem?>(null)
-        private set
 
     var playerState by mutableIntStateOf(Player.STATE_IDLE)
 
@@ -60,24 +56,12 @@ class PlayerViewModel(
     val secondToStream = mutableStateMapOf<String, Long>()
 
     init {
-        viewModelScope.launch {
-            val pair = savedStateHandle.get<Pair<Boolean, Long>>("item")
-            if (pair != null) {
-                val (isMovie, id) = pair
-                playingContent = if (isMovie) {
-                    getMovie.await(id)?.toContentItem()
-                } else {
-                    getShow.await(id)?.toContentItem()
-                }
-            } else {
-                run {
-                    requestMediaQueue(
-                        contentId ?: return@run,
-                        isMovie ?: return@run,
-                        trailerId ?: return@run
-                    )
-                }
-            }
+        run {
+            requestMediaQueue(
+                contentId ?: return@run,
+                isMovie ?: return@run,
+                trailerId ?: return@run
+            )
         }
         viewModelScope.launch {
             snapshotFlow { currentTrailer to trailerToStreams }
@@ -230,23 +214,13 @@ class PlayerViewModel(
         }
     }
 
-    fun setContentItem(c: ContentItem) {
-        clearMediaQueue()
-        playingContent = c
-    }
 
     fun clearMediaQueue(clearSavedStateForContent: Boolean = false) {
         if (clearSavedStateForContent) {
             savedStateHandle["item"] = null
         }
-        playingContent = null
         trailerToStreams = null
         trailerQueue.clear()
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        savedStateHandle["item"] = playingContent?.isMovie to playingContent?.contentId
     }
 
     sealed interface PlayerEvent {

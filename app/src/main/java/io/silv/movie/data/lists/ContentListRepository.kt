@@ -22,6 +22,7 @@ interface ContentListRepository {
         supabaseId: String? = null,
         userId: String? = null,
         createdAt: Long? = null,
+        subscribers: Long? = null,
         inLibrary: Boolean = false
     ): Long
     suspend fun updateList(update: ContentListUpdate)
@@ -42,10 +43,18 @@ class ContentListRepositoryImpl(
         supabaseId: String?,
         userId: String?,
         createdAt: Long?,
+        subscribers: Long?,
         inLibrary: Boolean
     ): Long {
         return handler.awaitOneExecutable(inTransaction = true) {
-            contentListQueries.insert(name, createdAt ?: Clock.System.now().toEpochMilliseconds(), supabaseId, userId, inLibrary)
+            contentListQueries.insert(
+                name = name,
+                createdAt = createdAt ?: Clock.System.now().toEpochMilliseconds(),
+                supabaseId = supabaseId,
+                createdBy  = userId,
+                inLibrary = inLibrary,
+                subscribers = subscribers ?: 0
+            )
             contentListQueries.lastInsertRowId()
         }
     }
@@ -59,7 +68,8 @@ class ContentListRepositoryImpl(
                 update.username,
                 update.inLibrary,
                 update.public,
-                update.id
+                update.subscribers,
+                update.id,
             )
         }
     }
