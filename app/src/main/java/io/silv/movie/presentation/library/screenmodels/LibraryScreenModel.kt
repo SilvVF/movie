@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import timber.log.Timber
 
 class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
@@ -152,12 +154,18 @@ class LibraryScreenModel(
                     createdAt = network.createdAt.toEpochMilliseconds(),
                     inLibrary = true
                 )
+                Timber.d("created list $id online")
                 emitEvent(LibraryEvent.ListCreated(id))
             } else {
                 val id = contentListRepository.createList(
                     name = name,
-                    inLibrary = true
+                    inLibrary = true,
+                    supabaseId = null,
+                    userId = null,
+                    createdAt = Clock.System.now().toEpochMilliseconds(),
+                    subscribers = 0
                 )
+                Timber.d("created list $id offline")
                 emitEvent(LibraryEvent.ListCreated(id))
             }
         }

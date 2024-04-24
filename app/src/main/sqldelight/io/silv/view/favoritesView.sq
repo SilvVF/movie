@@ -10,7 +10,9 @@ SELECT
         favorite,
         1 AS isMovie,
         favorite_modified_at,
-        in_library_lists
+        (
+            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE movie_id = id
+        ) AS inLists
     FROM movie WHERE favorite = 1
 
     UNION
@@ -26,7 +28,9 @@ SELECT
         favorite,
         0 AS isMovie,
         favorite_modified_at,
-        in_library_lists
+       (
+            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = id
+       ) AS inLists
     FROM show WHERE favorite = 1;
 
 selectAll:

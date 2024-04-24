@@ -22,7 +22,9 @@ SELECT
     COALESCE(m.favorite, s.favorite) AS favorite,
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
-    COALESCE(m.in_library_lists, s.in_library_lists) AS inLists,
+    (
+       SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id OR movie_id = m.id
+    ),
     COALESCE(m.last_modified_at, s.last_modified_at) AS content_last_modified
 FROM
     contentList cl
@@ -35,8 +37,11 @@ LEFT JOIN
 
 libraryContentList:
 SELECT * FROM contentListView
-WHERE inLibrary AND list_id IN (
-        SELECT list_id
+WHERE contentListView.inLibrary AND (
+    :query = ''
+OR
+    contentListView.list_id IN (
+        SELECT DISTINCT(list_id)
         FROM
             contentItem sub_clj
         LEFT JOIN
@@ -48,11 +53,13 @@ WHERE inLibrary AND list_id IN (
             AND (
                 sub_m.title LIKE :query
                 OR sub_s.title LIKE :query
-                OR list_name LIKE :query
-                OR list_description LIKE :query
-                OR :query = ''
             )
     )
+    OR
+        list_name LIKE :query
+    OR
+        list_description LIKE :query
+)
 ORDER BY
     list_id;
 

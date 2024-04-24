@@ -18,13 +18,13 @@ object MovieMapper {
           posterUrl: String?,
           posterLastUpdated: Long,
           favorite: Boolean,
-          inLists: Long,
           externalUrl: String,
           popularity: Double,
           status: Long?,
           productionCompanies: List<String>?,
           last_modified_at: Long,
-          favorite_modified_at: Long?->
+          favorite_modified_at: Long?,
+          inLists: Long ->
             Movie(
                 id = id,
                 title = title,
@@ -55,9 +55,9 @@ object MovieMapper {
           favorite: Boolean,
           last_modified_at: Long,
           popularity: Double,
-          inLists: Long,
           overview: String,
-         ->
+          inLists: Long,
+            ->
             MoviePoster(
                 id = id,
                 title = title,

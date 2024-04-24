@@ -15,7 +15,6 @@ CREATE TABLE show (
         poster_url TEXT,
         poster_last_updated INTEGER NOT NULL,
         favorite INTEGER AS Boolean NOT NULL,
-        in_library_lists INTEGER NOT NULL DEFAULT 0,
         external_url TEXT NOT NULL,
         popularity REAL NOT NULL,
         status INTEGER,
@@ -54,19 +53,32 @@ END;
 
 
 selectById:
-SELECT * FROM show WHERE id = :id LIMIT 1;
-
-selectFavoritesPartial:
-SELECT id, title, poster_url, poster_last_updated, favorite FROM show WHERE favorite;
+SELECT
+    show.*,
+    (
+        SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = show.id
+    )
+FROM show WHERE id = :id LIMIT 1;
 
 selectFavorites:
-SELECT * FROM show WHERE favorite AND (title LIKE :query OR :query = '');
-
-selectAll:
-SELECT * FROM show;
+SELECT show.*, (
+                   SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = show.id
+               ) FROM show WHERE favorite AND (title LIKE :query OR :query = '');
 
 selectShowPartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity, in_library_lists, overview FROM show WHERE id = :id LIMIT 1;
+SELECT
+id,
+title,
+poster_url,
+poster_last_updated,
+favorite,
+last_modified_at,
+popularity,
+overview,
+(
+    SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = show.id
+)
+FROM show WHERE id = :id LIMIT 1;
 
 insert:
 INSERT OR IGNORE INTO show(id, title, overview, genres, genre_ids, original_language, vote_count, release_date, poster_url, poster_last_updated, favorite, external_url, popularity, status)

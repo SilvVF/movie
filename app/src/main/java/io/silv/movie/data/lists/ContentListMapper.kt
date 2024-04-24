@@ -132,21 +132,6 @@ object ContentListMapper {
             inLists: Long?,
             contentLastModified: Long? ->
 
-        val contentList = ContentList(
-            id = listId,
-            supabaseId = supabaseId,
-            createdBy = createdBy,
-            lastSynced = createdAt,
-            public = public,
-            name = name,
-            description = description,
-            lastModified = lastModifiedAt,
-            posterLastModified = posterLastUpdated ?: -1L,
-            username = username,
-            createdAt = createdAt,
-            inLibrary = inLibrary,
-            subscribers = subscribers
-        )
 
         if(movieId != null || showId != null) {
             ContentListItem.Item(
@@ -163,10 +148,40 @@ object ContentListMapper {
                    inLibraryLists = inLists ?: 0L
                ),
                createdAt = addedToListAt ?: 0L,
-               list =  contentList
+               list = ContentList(
+                   id = listId,
+                   supabaseId = supabaseId,
+                   createdBy = createdBy,
+                   lastSynced = createdAt,
+                   public = public,
+                   name = name,
+                   description = description,
+                   lastModified = lastModifiedAt,
+                   posterLastModified = posterLastUpdated ?: -1L,
+                   username = username,
+                   createdAt = createdAt,
+                   inLibrary = inLibrary,
+                   subscribers = subscribers
+               )
             )
         } else {
-            ContentListItem.PlaceHolder(contentList)
+            ContentListItem.PlaceHolder(
+                ContentList(
+                    id = listId,
+                    supabaseId = supabaseId,
+                    createdBy = createdBy,
+                    lastSynced = createdAt,
+                    public = public,
+                    name = name,
+                    description = description,
+                    lastModified = lastModifiedAt,
+                    posterLastModified = posterLastUpdated ?: -1L,
+                    username = username,
+                    createdAt = createdAt,
+                    inLibrary = inLibrary,
+                    subscribers = subscribers
+                )
+            )
         }
     }
 }

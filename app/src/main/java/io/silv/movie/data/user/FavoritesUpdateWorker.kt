@@ -46,7 +46,6 @@ class FavoritesUpdateWorker (
     private val networkToLocalTVShow: NetworkToLocalTVShow,
     private val updateMovie: UpdateMovie,
     private val updateShow: UpdateShow,
-
     appContext: Context,
     private val params: WorkerParameters
 ): CoroutineWorker(appContext, params) {
@@ -92,7 +91,6 @@ class FavoritesUpdateWorker (
                             getRemoteMovie.awaitOne(favorite.movieId)!!.toDomain()
                         )
                     }
-
                     updateMovie.await(movie.copy(favorite = true).toMovieUpdate())
                 } else if (favorite.showId != -1L) {
                     var show = getShow.await(favorite.showId)
@@ -101,7 +99,6 @@ class FavoritesUpdateWorker (
                             getRemoteTVShows.awaitOne(favorite.showId)!!.toDomain()
                         )
                     }
-
                     updateShow.await(show.copy(favorite = true).toShowUpdate())
                 }
             } catch (ignored: Exception){}

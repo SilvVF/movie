@@ -6,7 +6,7 @@ import kotlin.collections.List;
 CREATE TABLE movie (
     id INTEGER PRIMARY KEY NOT NULL,
     title TEXT NOT NULL,
-    overview TEXT NOT NULL ,
+    overview TEXT NOT NULL,
     genres TEXT AS List<String>,
     genreIds TEXT AS List<Int>,
     original_language TEXT NOT NULL,
@@ -15,7 +15,6 @@ CREATE TABLE movie (
     poster_url TEXT,
     poster_last_updated INTEGER NOT NULL,
     favorite INTEGER AS Boolean NOT NULL,
-    in_library_lists INTEGER NOT NULL DEFAULT 0,
     externalUrl TEXT NOT NULL,
     popularity REAL NOT NULL,
     status INTEGER,
@@ -51,18 +50,27 @@ BEGIN
   WHERE id = new.id;
 END;
 
-selectFavoritesPartial:
-SELECT id, title, poster_url, poster_last_updated, favorite FROM movie WHERE favorite;
-
 selectFavorites:
-SELECT * FROM movie WHERE favorite AND (title LIKE :query OR :query = '');
+SELECT
+    m.*,
+    (
+       SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = m.id
+    ) AS inLibraryLists
+FROM movie m WHERE favorite AND (title LIKE :query OR :query = '');
 
 selectById:
-SELECT * FROM movie WHERE id = :id LIMIT 1;
+SELECT movie.*,
+(
+   SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = movie.id
+)
+FROM movie WHERE id = :id LIMIT 1;
 
 
 selectMoviePartialById:
-SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity, in_library_lists, overview FROM movie WHERE id = :id LIMIT 1;
+SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity,overview,
+(
+   SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = movie.id
+) FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:
 SELECT * FROM movie;

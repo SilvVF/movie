@@ -81,13 +81,13 @@ fun ContentListPoster(
             lastModified = list.posterLastModified
         )
     }else {
-        if (items.size < 4) {
-            ContentPreviewDefaults.SingleItemPoster(
+        when {
+            items.isEmpty() -> ContentPreviewDefaults.PlaceholderPoster(modifier = modifier)
+            items.size < 4 -> ContentPreviewDefaults.SingleItemPoster(
                 modifier = modifier,
                 item = items.firstOrNull()
             )
-        } else {
-            ContentPreviewDefaults.MultiItemPoster(
+            else -> ContentPreviewDefaults.MultiItemPoster(
                 modifier = modifier,
                 items = items
             )
