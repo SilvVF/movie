@@ -9,6 +9,7 @@ import io.silv.movie.data.cache.TVShowCoverCache
 import io.silv.movie.data.dataModule
 import io.silv.movie.data.recommendation.RecommendationManager
 import io.silv.movie.presentation.browse.lists.BrowseListsScreenModel
+import io.silv.movie.presentation.browse.lists.ListPagedScreenModel
 import io.silv.movie.presentation.browse.lists.SearchForListScreenModel
 import io.silv.movie.presentation.browse.movie.MovieScreenModel
 import io.silv.movie.presentation.browse.tv.TVScreenModel
@@ -77,6 +78,8 @@ val appModule =
         factoryOf(::AddToListScreenModel)
 
         factoryOf(::SearchForListScreenModel)
+
+        factoryOf(::ListPagedScreenModel)
 
         singleOf(::MovieCoverCache)
 

@@ -40,7 +40,7 @@ class FavoritesScreenModel(
     var currentDialog by mutableStateOf<Dialog?>(null)
         private set
 
-    private val sortModeFavorites = libraryPreferences.sortModeFavorites()
+    private val sortModeFavorites = libraryPreferences.favoritesSortMode()
 
     var query by mutableStateOf("")
         private set

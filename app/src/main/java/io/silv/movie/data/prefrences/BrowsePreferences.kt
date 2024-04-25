@@ -2,24 +2,20 @@ package io.silv.movie.data.prefrences
 
 import io.silv.movie.data.prefrences.core.PreferenceStore
 
-class TMDBPreferences(
+class BrowsePreferences(
     private val preferenceStore: PreferenceStore,
 ) {
-
-    // Common options
-
-    fun sourceDisplayMode() = preferenceStore.getObject(
-        "pref_display_mode_catalogue",
+    fun browsePosterDisplayMode() = preferenceStore.getObject(
+        "pref_browse_poster_display_mode",
         PosterDisplayMode.default,
         PosterDisplayMode.Serializer::serialize,
         PosterDisplayMode.Serializer::deserialize,
     )
 
-    fun gridCellsCount() = preferenceStore.getInt("pref_grid_cells_count", 2)
+    fun browseGridCellCount() = preferenceStore.getInt("pref_browse_grid_cell_count", 2)
 
 
-
-    fun hideLibraryItems() = preferenceStore.getBoolean("hide_library_items", false)
+    fun browseHideLibraryItems() = preferenceStore.getBoolean("pref_browse_hide_library_items", false)
 
     fun showAdultSource() = preferenceStore.getBoolean("show_adult_source", false)
 }

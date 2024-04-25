@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import io.silv.core_ui.components.NoResultsEmptyScreen
-import io.silv.core_ui.theme.MovieTheme
 
 
 class WatchContentActivity : ComponentActivity() {

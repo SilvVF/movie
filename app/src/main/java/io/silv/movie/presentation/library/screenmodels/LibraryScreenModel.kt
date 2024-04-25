@@ -48,10 +48,10 @@ class LibraryScreenModel(
 
     private val queryFlow = snapshotFlow { query }
 
-    var displayInList by preferences.displayInList().asState(screenModelScope)
+    var displayInList by preferences.libraryDisplayInList().asState(screenModelScope)
         private set
 
-    var sortMode by preferences.sortMode().asState(screenModelScope)
+    var sortMode by preferences.librarySortMode().asState(screenModelScope)
         private set
 
     val listCount = contentListRepository.observeListCount()

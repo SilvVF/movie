@@ -1,6 +1,5 @@
 package io.silv.movie
 
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -13,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.gestures.snapTo
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -24,13 +24,13 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -38,6 +38,7 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,33 +57,49 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import io.silv.core_ui.theme.MovieTheme
+import io.silv.core_ui.theme.colorScheme.CloudflareColorScheme
+import io.silv.core_ui.theme.colorScheme.CottonCandyColorScheme
+import io.silv.core_ui.theme.colorScheme.DoomColorScheme
+import io.silv.core_ui.theme.colorScheme.GreenAppleColorScheme
+import io.silv.core_ui.theme.colorScheme.LavenderColorScheme
+import io.silv.core_ui.theme.colorScheme.MatrixColorScheme
+import io.silv.core_ui.theme.colorScheme.MidnightDuskColorScheme
+import io.silv.core_ui.theme.colorScheme.MochaColorScheme
+import io.silv.core_ui.theme.colorScheme.MonetColorScheme
+import io.silv.core_ui.theme.colorScheme.NordColorScheme
+import io.silv.core_ui.theme.colorScheme.SapphireColorScheme
+import io.silv.core_ui.theme.colorScheme.StrawberryColorScheme
+import io.silv.core_ui.theme.colorScheme.TachiyomiColorScheme
+import io.silv.core_ui.theme.colorScheme.TakoColorScheme
+import io.silv.core_ui.theme.colorScheme.TealTurqoiseColorScheme
+import io.silv.core_ui.theme.colorScheme.TidalWaveColorScheme
+import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
+import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
+import io.silv.movie.data.prefrences.AppTheme
+import io.silv.movie.data.prefrences.UiPreferences
+import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.user.UserRepository
-import io.silv.movie.presentation.CollectEventsWithLifecycle
-import io.silv.movie.presentation.ContentEvent
-import io.silv.movie.presentation.ContentInteractor
-import io.silv.movie.presentation.ListEvent
-import io.silv.movie.presentation.ListInteractor
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.browse.DiscoverTab
 import io.silv.movie.presentation.library.LibraryTab
-import io.silv.movie.presentation.library.screens.ListViewScreen
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.CollapsableVideoAnchors
 import io.silv.movie.presentation.media.rememberCollapsableVideoState
 import io.silv.movie.presentation.profile.ProfileTab
+import io.silv.movie.presentation.settings.SettingsTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
 
@@ -102,6 +119,7 @@ class MainActivity : ComponentActivity() {
 
     private val userRepository by inject<UserRepository>()
     private val mainScreenModel by viewModel<MainScreenModel>()
+    private val uiPreferences by inject<UiPreferences>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -155,7 +173,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 MovieTheme {
-                    TabNavigator(LibraryTab) { tabNavigator ->
+                    TabNavigator(uiPreferences.startScreen().getOrDefaultBlocking().tab) { tabNavigator ->
                         Surface(Modifier.fillMaxSize(),) {
                             Scaffold(
                                 modifier = Modifier.fillMaxSize(),
@@ -230,7 +248,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-
                         HandleItemEvents(
                             contentInteractor = contentInteractor,
                             snackbarHostState = snackbarHostState,
@@ -248,298 +265,54 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
-private fun HandleListEvents(
-    listInteractor: ListInteractor,
-    snackbarHostState: SnackbarHostState,
-    navigator: () -> Navigator?,
-    context: Context = LocalContext.current
-) {
-    CollectEventsWithLifecycle(listInteractor) { event ->
-        when (event) {
-            is ListEvent.Copied -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.copied_list, event.list.name),
-                        actionLabel = context.getString(R.string.take_me_there),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            navigator()?.push(
-                                ListViewScreen(
-                                    event.list.id,
-                                    event.list.supabaseId.orEmpty()
-                                )
-                            )
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.copied_list_failed, event.list.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> listInteractor.copyList(event.list)
-                    }
-                }
-            }
-
-            is ListEvent.Delete -> {
-                if (event.success) {
-                    snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.deleted_list, event.list.name),
-                        duration = SnackbarDuration.Short
-                    )
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.delete_list_failed, event.list.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> listInteractor.deleteList(event.list)
-                    }
-                }
-            }
-
-            is ListEvent.Subscribe -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.subscribed_to_list, event.list.name),
-                        duration = SnackbarDuration.Short,
-                        actionLabel = context.getString(R.string.take_me_there),
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            navigator()?.push(
-                                ListViewScreen(
-                                    event.list.id,
-                                    event.list.supabaseId.orEmpty()
-                                )
-                            )
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(
-                            R.string.subscribe_to_list_failed,
-                            event.list.name
-                        ),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> listInteractor.subscribeToList(event.list)
-                    }
-                }
-            }
-            is ListEvent.VisibleChanged -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = if (event.list.public) {
-                            context.getString(R.string.made_list_public)
-                        } else {
-                            context.getString(R.string.made_list_private)
-                        },
-                        actionLabel = context.getString(R.string.undo),
-                        duration = SnackbarDuration.Short
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            listInteractor.editList(event.list) { it.copy(public = !it.public) }
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(
-                            R.string.visiblity_change_failed,
-                            event.list.name
-                        ),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            listInteractor.editList(event.list) { it.copy(public = !it.public) }
-                    }
-                }
-            }
-            is ListEvent.Edited -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.list_edited),
-                        actionLabel = context.getString(R.string.undo),
-                        duration = SnackbarDuration.Short
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            listInteractor.editList(event.new) { event.original }
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.edit_failed, event.original.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            listInteractor.editList(event.original) { event.new }
-                    }
-                }
-            }
-            is ListEvent.Unsubscribe -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.unsubsribed_from_list, event.list.name),
-                        duration = SnackbarDuration.Short,
-                        actionLabel = context.getString(R.string.undo)
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> listInteractor.subscribeToList(event.list)
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(
-                            R.string.unsubsribed_from_list_failed,
-                            event.list.name
-                        ),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed -> listInteractor.unsubscribeFromList(event.list)
-                    }
-                }
-            }
-        }
+@ReadOnlyComposable
+private fun getThemeColorScheme(
+    appTheme: AppTheme?,
+    amoled: Boolean?,
+    uiPreferences: UiPreferences,
+): ColorScheme {
+    val colorScheme = when (appTheme ?: uiPreferences.appTheme().getOrDefaultBlocking()) {
+        AppTheme.DEFAULT -> TachiyomiColorScheme
+        AppTheme.MONET -> MonetColorScheme(LocalContext.current)
+        AppTheme.CLOUDFLARE -> CloudflareColorScheme
+        AppTheme.COTTONCANDY -> CottonCandyColorScheme
+        AppTheme.DOOM -> DoomColorScheme
+        AppTheme.GREEN_APPLE -> GreenAppleColorScheme
+        AppTheme.LAVENDER -> LavenderColorScheme
+        AppTheme.MATRIX -> MatrixColorScheme
+        AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
+        AppTheme.MOCHA -> MochaColorScheme
+        AppTheme.SAPPHIRE -> SapphireColorScheme
+        AppTheme.NORD -> NordColorScheme
+        AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
+        AppTheme.TAKO -> TakoColorScheme
+        AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
+        AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
+        AppTheme.YINYANG -> YinYangColorScheme
+        AppTheme.YOTSUBA -> YotsubaColorScheme
+        else -> TachiyomiColorScheme
     }
+    return colorScheme.getColorScheme(
+        isSystemInDarkTheme(),
+        amoled ?: uiPreferences.themeDarkAmoled().getOrDefaultBlocking(),
+    )
 }
 
 @Composable
-private fun HandleItemEvents(
-    contentInteractor: ContentInteractor,
-    snackbarHostState: SnackbarHostState,
-    navigator: () -> Navigator?,
-    context: Context = LocalContext.current
+fun MovieTheme(
+    appTheme: AppTheme? = null,
+    amoled: Boolean? = null,
+    content: @Composable () -> Unit,
 ) {
-    CollectEventsWithLifecycle(contentInteractor) { event ->
-        when(event)  {
-            is ContentEvent.AddToList -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.added_to_list, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.undo),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.removeFromList(event.list, event.item)
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.add_to_list_failed, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.addToList(event.list, event.item)
-                    }
-                }
-            }
-            is ContentEvent.Favorite -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = if (event.item.favorite) {
-                            context.getString(R.string.added_to_favorites, event.item.title)
-                        } else context.getString(R.string.removed_from_favorites, event.item.title),
-                        actionLabel = context.getString(R.string.undo),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.toggleFavorite(event.item)
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.failed_to_change_favorite, event.item.title),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.toggleFavorite(event.item)
-                    }
-                }
-            }
-            is ContentEvent.RemoveFromList -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.removed_from_list, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.undo),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.addToList(event.list, event.item)
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.remove_from_list_failed, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.removeFromList(event.list, event.item)
-                    }
-                }
-            }
-
-            is ContentEvent.AddToAnotherList -> {
-                if (event.success) {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.added_to_list, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.take_me_there),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            navigator()?.push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty()))
-                    }
-                } else {
-                    val result = snackbarHostState.showSnackbar(
-                        message = context.getString(R.string.add_to_list_failed, event.item.title, event.list.name),
-                        actionLabel = context.getString(R.string.retry),
-                        duration = SnackbarDuration.Short,
-                    )
-                    when (result) {
-                        SnackbarResult.Dismissed -> Unit
-                        SnackbarResult.ActionPerformed ->
-                            contentInteractor.addToList(event.list, event.item)
-                    }
-                }
-            }
-        }
-    }
+    val uiPreferences = koinInject<UiPreferences>()
+    MaterialTheme(
+        colorScheme = getThemeColorScheme(appTheme, amoled, uiPreferences),
+        content = content,
+    )
 }
+
 
 @Composable
 fun AppBottomBar(
@@ -553,7 +326,8 @@ fun AppBottomBar(
             LibraryTab,
             BrowseTab,
             DiscoverTab,
-            ProfileTab
+            ProfileTab,
+            SettingsTab
         )
     }
     val density = LocalDensity.current
@@ -563,7 +337,7 @@ fun AppBottomBar(
         modifier
             .heightIn(
                 min = 0.dp,
-                max = 48.dp + with(density) { insets.toDp() }
+                max = 52.dp + with(density) { insets.toDp() }
             )
             .layout { measurable, constraints ->
                 val placeable = measurable.measure(constraints)

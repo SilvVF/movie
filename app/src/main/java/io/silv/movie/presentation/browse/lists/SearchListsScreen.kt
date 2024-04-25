@@ -1,6 +1,6 @@
 package io.silv.movie.presentation.browse.lists
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -60,13 +60,23 @@ import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
+import io.silv.movie.LocalUser
 import io.silv.movie.R
+import io.silv.movie.data.lists.ContentItem
+import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
+import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.library.components.ContentListPoster
+import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.components.topbar.PosterLargeTopBarDefaults
+import io.silv.movie.presentation.library.screens.ListAddScreen
+import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
+import io.silv.movie.presentation.library.screens.ListEditScreen
 import io.silv.movie.presentation.library.screens.ListViewScreen
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.debounce
@@ -162,9 +172,15 @@ data object SearchForListScreen: Screen {
         val screenModel = getScreenModel<SearchForListScreenModel>()
         val pagingItems = screenModel.state.collectAsLazyPagingItems()
         val navigator = LocalNavigator.currentOrThrow
+        val listInteractor = LocalListInteractor.current
         val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
         val hazeState = remember { HazeState() }
+
+        var selectedList by remember {
+            mutableStateOf<Pair<ContentList, ImmutableList<ContentItem>>?>(null)
+        }
+
 
         Scaffold(
             topBar = {
@@ -247,7 +263,11 @@ data object SearchForListScreen: Screen {
                     val item = pagingItems[it] ?: return@items
                     RowPreviewItem(
                         modifier = Modifier
-                            .clickable {
+                            .combinedClickable(
+                                onLongClick = {
+                                    selectedList = item.list to item.items
+                                }
+                            ) {
                                 navigator.push(
                                     ListViewScreen(
                                         item.list.id,
@@ -270,6 +290,55 @@ data object SearchForListScreen: Screen {
                 }
                 loadingIndicatorItem(pagingItems)
             }
+        }
+
+        selectedList?.let { (list, items) ->
+            val listEditScreen = remember(list.name) { ListEditScreen(list.name) }
+
+            val editResultLauncher = rememberScreenWithResultLauncher(
+                screen = listEditScreen
+            ) { result ->
+                listInteractor.editList(list) { it.copy(name = result.name) }
+            }
+
+            val descriptionEditScreen =
+                remember(list.description) { ListEditDescriptionScreen(list.description) }
+
+            val descriptionResultLauncher = rememberScreenWithResultLauncher(
+                screen = descriptionEditScreen
+            ) { result ->
+                listInteractor.editList(list) { it.copy(description = result.description) }
+            }
+
+            ListOptionsBottomSheet(
+                onDismissRequest = { selectedList = null},
+                onAddClick = { navigator.push(ListAddScreen(list.id)) },
+                onEditClick = {
+                    editResultLauncher.launch()
+                    selectedList = null
+                },
+                onDeleteClick = { listInteractor.deleteList(list) },
+                onShareClick = {
+                    listInteractor.toggleListVisibility(list)
+                    selectedList = null
+                },
+                list = list,
+                onChangeDescription = { descriptionResultLauncher.launch() },
+                onCopyClick = {
+                    listInteractor.copyList(list)
+                    selectedList = null
+                },
+                isUserMe = list.createdBy == LocalUser.current?.userId || list.createdBy == null,
+                content = items ,
+                onSubscribeClicked = {
+                    listInteractor.subscribeToList(list)
+                    selectedList = null
+                },
+                onUnsubscribeClicked = {
+                    listInteractor.unsubscribeFromList(list)
+                    selectedList = null
+                }
+            )
         }
     }
 }

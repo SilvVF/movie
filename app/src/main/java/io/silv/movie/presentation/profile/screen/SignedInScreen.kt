@@ -51,6 +51,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.lerp
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
@@ -61,11 +62,14 @@ import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
+import io.silv.movie.data.user.User
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.lists.TitleWithAction
 import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPreview
+import io.silv.movie.presentation.library.components.ContentPreviewDefaults
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
+import io.silv.movie.presentation.library.screens.FavoritesViewScreen
 import io.silv.movie.presentation.library.screens.ListAddScreen
 import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
 import io.silv.movie.presentation.library.screens.ListEditScreen
@@ -193,10 +197,12 @@ fun SignedInScreen(
     ) { paddingValues ->
         SubscribedListsView(
             paddingValues = paddingValues,
+            user = user,
             subscribed = subscribed,
             public = public,
             onListClick = onListClick,
             onListLongClick = { selectedList = it },
+            onFavoritesClicked = { navigator.push(FavoritesViewScreen) }
         )
     }
 
@@ -253,10 +259,12 @@ fun SignedInScreen(
 @Composable
 fun SubscribedListsView(
     paddingValues: PaddingValues,
+    user: User?,
     subscribed: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>,
     public: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>,
     onListLongClick: (Pair<ContentList, ImmutableList<ContentItem>>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
+    onFavoritesClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val topPadding = paddingValues.calculateTopPadding()
@@ -300,6 +308,7 @@ fun SubscribedListsView(
                                     list = list,
                                     items = items,
                                     modifier = Modifier
+                                        .aspectRatio(ItemCover.Square.ratio)
                                         .fillMaxSize()
                                         .clickable { onListClick(list) }
                                 )
@@ -315,13 +324,27 @@ fun SubscribedListsView(
                     }
                 }
             }
-            if (public.isNotEmpty()) {
+            if (public.isNotEmpty() || user?.favoritesPublic == true) {
                 item {
                     TitleWithAction(
                         title = stringResource(R.string.public_lists),
                         actionLabel = "",
                         onAction = null,
                     )
+                }
+                if (user?.favoritesPublic == true) {
+                    item(key = "favorites-items") {
+                        ContentListPreview(
+                            modifier = Modifier
+                                .clickable { onFavoritesClicked() }
+                                .padding(8.dp),
+                            cover = {
+                                ContentPreviewDefaults.LibraryContentPoster(Modifier.aspectRatio(1f))
+                            },
+                            name = stringResource(id = R.string.library_content_name),
+                            description = stringResource(R.string.favorites_top_bar_title)
+                        )
+                    }
                 }
                 public.fastForEach { (list, items) ->
                     item(
@@ -340,6 +363,7 @@ fun SubscribedListsView(
                                     list = list,
                                     items = items,
                                     modifier = Modifier
+                                        .aspectRatio(ItemCover.Square.ratio)
                                         .fillMaxSize()
                                         .clickable { onListClick(list) }
                                 )

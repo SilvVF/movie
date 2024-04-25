@@ -61,7 +61,7 @@ class ListViewScreenModel(
 ): StateScreenModel<ListViewState>(ListViewState.Loading),
     EventProducer<ListViewEvent> by EventProducer.default() {
 
-    private val listSortMode = libraryPreferences.sortModeList()
+    private val listSortMode = libraryPreferences.listViewSortMode()
 
     var query by mutableStateOf("")
         private set
@@ -124,12 +124,14 @@ class ListViewScreenModel(
             .filterNotNull()
             .distinctUntilChanged()
             .onEach { list ->
-                basePreferences.recentlyViewedLists().getAndSet {
-                    it.toMutableSet().apply {
-                        if (this.size > 10) {
-                           this.remove(first())
+                basePreferences.recentlyViewedLists().getAndSet { recent ->
+                    recent.toMutableSet().apply {
+                        list.supabaseId?.let { supabaseId ->
+                            if (size == 8) {
+                                remove(first())
+                            }
+                            add(supabaseId)
                         }
-                        list.supabaseId?.let { this.add(it) }
                     }
                 }
             }

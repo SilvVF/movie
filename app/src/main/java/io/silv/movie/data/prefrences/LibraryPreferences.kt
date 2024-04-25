@@ -8,21 +8,20 @@ import io.silv.movie.presentation.library.screenmodels.ListSortMode
 class LibraryPreferences(
     private val preferenceStore: PreferenceStore
 ) {
-
-    fun displayInList() = preferenceStore.getBoolean(
-        "pref_display_mode_library",
+    fun libraryDisplayInList() = preferenceStore.getBoolean(
+        "pref_library_display_in_list",
         true
     )
 
     fun listViewDisplayMode() = preferenceStore.getObject(
-        "pref_display_mode_list_view",
+        "pref_list_view_display_mode",
         PosterDisplayMode.List,
         PosterDisplayMode.Serializer::serialize,
         PosterDisplayMode.Serializer::deserialize,
     )
 
-    fun sortModeFavorites() = preferenceStore.getObject(
-        "pref_sort_mode_library_favorites",
+    fun favoritesSortMode() = preferenceStore.getObject(
+        "pref_favorites_sort_mode",
         FavoritesSortMode.Title,
         serializer = { mode: FavoritesSortMode ->
             when(mode) {
@@ -42,8 +41,8 @@ class LibraryPreferences(
         }
     )
 
-    fun sortModeList() = preferenceStore.getObject(
-        "pref_sort_mode_list",
+    fun listViewSortMode() = preferenceStore.getObject(
+        "pref_list_view_sort_mode",
         ListSortMode.RecentlyAdded(false),
         serializer = { mode: ListSortMode ->
             "${if (mode.ascending) '1' else '0'}" + when(mode) {
@@ -64,8 +63,8 @@ class LibraryPreferences(
         }
     )
 
-    fun sortMode() = preferenceStore.getObject(
-        "pref_sort_mode_library",
+    fun librarySortMode() = preferenceStore.getObject(
+        "pref_library_sort_mode",
         LibrarySortMode.Title,
         serializer = { mode: LibrarySortMode ->
             when(mode) {

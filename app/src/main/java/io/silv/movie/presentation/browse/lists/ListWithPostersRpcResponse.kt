@@ -24,7 +24,7 @@ data class ListWithPostersRpcResponse(
     @SerialName("public")
     val `public`: Boolean = false,
     @SerialName("updated_at")
-    val updatedAt: String = "",
+    val updatedAt: String? = null,
     @SerialName("user_id")
     val userId: String = "",
     val username: String,

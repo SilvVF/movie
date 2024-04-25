@@ -85,7 +85,7 @@ import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.components.shimmer.ButtonPlaceholder
 import io.silv.core_ui.components.shimmer.ListItemPlaceHolder
 import io.silv.core_ui.components.shimmer.ShimmerHost
-import io.silv.core_ui.theme.MovieTheme
+import io.silv.core_ui.theme.SeededMaterialTheme
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
@@ -247,8 +247,9 @@ data class ListViewScreen(
                     }
                 )
 
-                MovieTheme(
-                    themeColor = primary.takeIf { it != Color.Transparent }
+                SeededMaterialTheme(
+                    fallback = MaterialTheme.colorScheme,
+                    seedColor = primary.takeIf { it != Color.Transparent }
                 ) {
                     SuccessScreenContent(
                         query = screenModel.query,

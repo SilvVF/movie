@@ -147,9 +147,10 @@ private data class SubscriptionRpcParams(
 
 
 @Serializable
-private data class FromSubscribedRpcParams(
+data class FromSubscribedRpcParams(
     val uid: String,
-    val lim: Int
+    val lim: Int,
+    val off: Int,
 )
 
 @Serializable
@@ -286,10 +287,11 @@ class ListRepository(
         return runCatching {
             postgrest.rpc(
                 "select_recommended_by_subscriptions",
-                FromSubscribedRpcParams(auth.currentUserOrNull()!!.id, lim = 20)
+                FromSubscribedRpcParams(auth.currentUserOrNull()!!.id, lim = 10, off = 0)
             )
                 .decodeList<ListWithPostersRpcResponse>()
         }
+            .onFailure { Timber.e(it) }
             .getOrNull()
     }
 

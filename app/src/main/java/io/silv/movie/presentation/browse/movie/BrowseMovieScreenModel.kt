@@ -29,8 +29,8 @@ import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.movie.model.toDomain
 import io.silv.movie.data.movie.repository.SourceMovieRepository
+import io.silv.movie.data.prefrences.BrowsePreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
 import io.silv.movie.presentation.asState
 import kotlinx.collections.immutable.ImmutableList
@@ -55,17 +55,17 @@ class MovieScreenModel(
     private val getMovie: GetMovie,
     private val sourceRepository: SourceMovieRepository,
     networkMonitor: NetworkMonitor,
-    tmdbPreferences: TMDBPreferences,
+    browsePreferences: BrowsePreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<MovieState>(
     MovieState(
         listing = savedStateContentPagedType
     )
 ) {
-    var displayMode by tmdbPreferences.sourceDisplayMode().asState(screenModelScope)
+    var displayMode by browsePreferences.browsePosterDisplayMode().asState(screenModelScope)
         private set
 
-    var gridCells by tmdbPreferences.gridCellsCount().asState(screenModelScope)
+    var gridCells by browsePreferences.browseGridCellCount().asState(screenModelScope)
         private set
 
     var query by mutableStateOf("")
@@ -98,7 +98,7 @@ class MovieScreenModel(
     }
 
     val moviePagerFlowFlow = state.map { it.listing }
-        .combine(tmdbPreferences.hideLibraryItems().changes()) { a, b -> a to b}
+        .combine(browsePreferences.browseHideLibraryItems().changes()) { a, b -> a to b}
         .distinctUntilChanged()
         .flatMapLatest { (listing, hideLibraryItems) ->
             Pager(

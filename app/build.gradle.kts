@@ -36,8 +36,7 @@ android {
 
     buildTypes {
         debug {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -92,6 +91,7 @@ dependencies {
     implementation(project(":core-ui"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
+    implementation(libs.material)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE

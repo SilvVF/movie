@@ -32,7 +32,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import io.silv.core_ui.theme.MovieTheme
+import io.silv.core_ui.theme.SeededMaterialTheme
 
 private val StateLayerSize = 40.0.dp
 private val BlockWidth = 4.dp
@@ -43,7 +43,7 @@ private val BlockMinHeight = 10.dp
 @Preview
 @Composable
 fun AnimatedEqualizerPreview() {
-    MovieTheme {
+    SeededMaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             AnimatedEqualizer(
                 onClick = { /*TODO*/ },

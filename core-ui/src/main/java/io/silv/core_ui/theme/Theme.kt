@@ -73,26 +73,25 @@ fun ColorScheme.applyTonalElevation(
 
 @SuppressLint("RestrictedApi")
 @Composable
-fun MovieTheme(
+fun SeededMaterialTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    themeColor: Color? = null,
+    seedColor: Color? = null,
+    fallback: ColorScheme? = null,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
 
-    val colorScheme = remember(dynamicColor, themeColor, darkTheme) {
+    val colorScheme = remember(fallback, seedColor, darkTheme) {
         when {
-            themeColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                if (darkTheme) Scheme.dark(themeColor.toArgb()).toColorScheme()
-                else Scheme.light(themeColor.toArgb()).toColorScheme()
+            seedColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                if (darkTheme) Scheme.dark(seedColor.toArgb()).toColorScheme()
+                else Scheme.light(seedColor.toArgb()).toColorScheme()
             }
-            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                fallback ?: if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             }
-            darkTheme -> DarkColorScheme
-            else -> LightColorScheme
+            darkTheme -> fallback ?: DarkColorScheme
+            else -> fallback ?: LightColorScheme
         }
     }
     val view = LocalView.current

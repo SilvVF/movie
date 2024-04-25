@@ -23,8 +23,8 @@ import io.silv.movie.data.Filters
 import io.silv.movie.data.Genre
 import io.silv.movie.data.SearchItem
 import io.silv.movie.data.lists.ContentItem
+import io.silv.movie.data.prefrences.BrowsePreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.prefrences.TMDBPreferences
 import io.silv.movie.data.toDomain
 import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
@@ -55,17 +55,17 @@ class TVScreenModel(
     private val getShow: GetShow,
     private val sourceRepository: SourceTVRepository,
     networkMonitor: NetworkMonitor,
-    tmdbPreferences: TMDBPreferences,
+    browsePreferences: BrowsePreferences,
     savedStateContentPagedType: ContentPagedType
 ) : StateScreenModel<TVState>(
     TVState(
         listing = savedStateContentPagedType
     )
 ) {
-    var displayMode by tmdbPreferences.sourceDisplayMode().asState(screenModelScope)
+    var displayMode by browsePreferences.browsePosterDisplayMode().asState(screenModelScope)
         private set
 
-    var gridCells by tmdbPreferences.gridCellsCount().asState(screenModelScope)
+    var gridCells by browsePreferences.browseGridCellCount().asState(screenModelScope)
         private set
 
     var query by mutableStateOf("")
@@ -97,7 +97,7 @@ class TVScreenModel(
     }
 
     val tvPagerFlowFlow = state.map { it.listing }
-        .combine(tmdbPreferences.hideLibraryItems().changes()) { a, b -> a to b}
+        .combine(browsePreferences.browseHideLibraryItems().changes()) { a, b -> a to b}
         .distinctUntilChanged()
         .flatMapLatest { (listing, hideLibraryItems) ->
             Pager(

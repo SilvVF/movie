@@ -237,16 +237,6 @@ fun MovieDetailsContent(
                     ),
                 ) {
                     item(
-                        key = "movie-actions"
-                    ) {
-                        ContentActionRow(
-                            favorite = state.movie.favorite,
-                            onAddToLibraryClicked = { contentInteractor.toggleFavorite(state.movie.toContentItem()) },
-                            onAddToList = onAddToList,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                    item(
                         key = "Info-Box",
                         contentType = "Info-Box",
                     ) {
@@ -264,6 +254,16 @@ fun MovieDetailsContent(
                             status = state.movie.status,
                             onCoverClick = onPosterClick,
                             doSearch = { _, _ -> },
+                        )
+                    }
+                    item(
+                        key = "movie-actions"
+                    ) {
+                        ContentActionRow(
+                            favorite = state.movie.favorite,
+                            onAddToLibraryClicked = { contentInteractor.toggleFavorite(state.movie.toContentItem()) },
+                            onAddToList = onAddToList,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                     item("Description-Tags") {
