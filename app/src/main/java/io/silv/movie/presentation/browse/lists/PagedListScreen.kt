@@ -2,14 +2,14 @@ package io.silv.movie.presentation.browse.lists
 
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExploreOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -67,7 +67,7 @@ import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.user.FromSubscribedRpcParams
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.library.components.ContentListPoster
+import io.silv.movie.presentation.library.components.ContentListPosterStateFlowItems
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.screens.ListAddScreen
 import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
@@ -75,6 +75,7 @@ import io.silv.movie.presentation.library.screens.ListEditScreen
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -152,7 +153,7 @@ class ListPagedScreenModel(
     }
         .flow.cachedIn(ioCoroutineScope).map { pagingData ->
             pagingData.map {
-                it.toListPreviewItem(contentListRepository, getShow, getMovie)
+                it.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
         }
         .stateIn(
@@ -196,7 +197,7 @@ data class PagedListScreen(
                     ),
                     navigationIcon = {
                         IconButton(onClick = { navigator.pop() }) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                         }
                     },
                     modifier = Modifier.hazeChild(hazeState)
@@ -231,6 +232,10 @@ data class PagedListScreen(
                 return@Scaffold
             }
 
+            val selectList = { item: ListPreviewItem ->
+                selectedList = item.list to item.items.mapNotNull { it.value }.toImmutableList()
+            }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(128.dp),
                 contentPadding = paddingValues,
@@ -246,9 +251,7 @@ data class PagedListScreen(
                     RowPreviewItem(
                         modifier = Modifier
                             .combinedClickable(
-                                onLongClick = {
-                                    selectedList = item.list to item.items
-                                }
+                                onLongClick = { selectList(item) }
                             ) {
                                 navigator.push(
                                     ListViewScreen(
@@ -259,11 +262,11 @@ data class PagedListScreen(
                             }
                             .padding(12.dp),
                         cover = {
-                            ContentListPoster(
+                            ContentListPosterStateFlowItems(
                                 list = item.list,
                                 items = item.items,
                                 modifier = Modifier
-                                    .fillMaxWidth()
+                                    .aspectRatio(1f)
                                     .height(120.dp)
                             )
                         },

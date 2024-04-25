@@ -69,7 +69,7 @@ import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.library.components.ContentListPoster
+import io.silv.movie.presentation.library.components.ContentListPosterStateFlowItems
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.components.topbar.PosterLargeTopBarDefaults
 import io.silv.movie.presentation.library.screens.ListAddScreen
@@ -78,6 +78,7 @@ import io.silv.movie.presentation.library.screens.ListEditScreen
 import io.silv.movie.presentation.library.screens.ListViewScreen
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
@@ -154,7 +155,7 @@ class SearchForListScreenModel(
             }
                 .flow.cachedIn(ioCoroutineScope).map { pagingData ->
                     pagingData.map {
-                        it.toListPreviewItem(contentListRepository, getShow, getMovie)
+                        it.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
                     }
                 }
         }
@@ -248,7 +249,9 @@ data object SearchForListScreen: Screen {
                 NoResultsEmptyScreen(contentPaddingValues = paddingValues)
                 return@Scaffold
             }
-
+            val selectList = { item: ListPreviewItem ->
+                selectedList = item.list to item.items.mapNotNull { it.value }.toImmutableList()
+            }
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(128.dp),
                 contentPadding = paddingValues,
@@ -265,7 +268,7 @@ data object SearchForListScreen: Screen {
                         modifier = Modifier
                             .combinedClickable(
                                 onLongClick = {
-                                    selectedList = item.list to item.items
+                                    selectList(item)
                                 }
                             ) {
                                 navigator.push(
@@ -277,7 +280,7 @@ data object SearchForListScreen: Screen {
                             }
                             .padding(12.dp),
                         cover = {
-                            ContentListPoster(
+                            ContentListPosterStateFlowItems(
                                 list = item.list,
                                 items = item.items,
                                 modifier = Modifier

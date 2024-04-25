@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -55,15 +56,11 @@ class ListCreateScreen(
         val primaryContainer = MaterialTheme.colorScheme.primaryContainer
         val surfaceContainer = MaterialTheme.colorScheme.surfaceContainer
         val background = MaterialTheme.colorScheme.background
-
         var name by rememberSaveable {
             mutableStateOf("My list ${if (listCount != null) "#${listCount + 1}" else ""}")
         }
-
         val auth = koinInject<Auth>()
-
         val sessionStatus by auth.sessionStatus.collectAsStateWithLifecycle()
-
 
         Box(
             modifier = Modifier
@@ -95,22 +92,28 @@ class ListCreateScreen(
                     onValueChange = { name = it }
                 )
                 Spacer(modifier = Modifier.height(22.dp))
-                Row {
-                    TextButton(
-                        onClick = { navigator.pop() }
-                    ) {
-                        Text(stringResource(id = R.string.cancel))
-                    }
-                    Spacer(modifier = Modifier.width(22.dp))
-                    Button(
-                        onClick = {
-                            setScreenResult(
-                                ListCreateResult(name)
-                            )
-                            navigator.pop()
+                Column {
+                    Row {
+                        TextButton(
+                            onClick = { navigator.pop() }
+                        ) {
+                            Text(stringResource(id = R.string.cancel))
                         }
-                    ) {
-                        Text(text = stringResource(id = R.string.create))
+                        Spacer(modifier = Modifier.width(22.dp))
+                        Button(
+                            onClick = {
+                                setScreenResult(
+                                    ListCreateResult(name)
+                                )
+                                navigator.pop()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        ) {
+                            Text(text = stringResource(id = R.string.create))
+                        }
                     }
                     when (sessionStatus) {
                         is SessionStatus.Authenticated -> {

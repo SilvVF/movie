@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,9 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,21 +37,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.TooltipIconButton
+import io.silv.core_ui.components.topbar.PosterLargeTopBar
+import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.SearchBarInputField
-import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
 import io.silv.movie.presentation.library.screenmodels.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(
-    scrollBehavior: TopAppBarScrollBehavior,
+    topBarState: PosterTopBarState,
     query: () -> String,
     sortModeProvider: () -> LibrarySortMode,
     changeSortMode: (LibrarySortMode) -> Unit,
@@ -63,23 +62,20 @@ fun LibraryBrowseTopBar(
     createListClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val barFullyCollapsed by remember {
-        derivedStateOf { scrollBehavior.state.collapsedFraction == 1f }
-    }
-
     Column(
         modifier = modifier
             .fillMaxWidth()
             .wrapContentSize(),
     ) {
-        SearchLargeTopBar(
+        PosterLargeTopBar(
+            maxHeight = 172.dp,
             title = {
-                Text(text = stringResource(id = R.string.library_top_bar_title))
+                Text(text = stringResource(id = R.string.library_top_bar_title), modifier = Modifier)
             },
-            scrollBehavior = scrollBehavior,
+            state = topBarState,
             colors = TopAppBarDefaults.colors2(
                 containerColor = MaterialTheme.colorScheme.surface,
-                scrolledContainerColor = if (barFullyCollapsed)
+                scrolledContainerColor = if (topBarState.barFullyCollapsed)
                     Color.Transparent
                 else {
                     MaterialTheme.colorScheme.surface
@@ -137,41 +133,42 @@ fun LibraryBrowseTopBar(
                 }
             },
             pinnedContent = {
-                LibraryFilterChips(sortModeProvider, changeSortMode)
+                AnimatedVisibility(visible = !topBarState.isKeyboardOpen) {
+                    LibraryFilterChips(sortModeProvider, changeSortMode)
+                }
             }
         ) {
-            val focusManager = LocalFocusManager.current
-            SearchBarInputField(
-                query = query(),
-                placeholder = {
-                    Text(stringResource(id = R.string.library_top_bar_placeholder))
-                },
-                onQueryChange = { changeQuery(it) },
-                onSearch = {
-                    onSearch(it)
-                    focusManager.clearFocus(false)
-                },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AnimatedVisibility(visible = query().isNotEmpty()) {
-                            IconButton(onClick = { changeQuery("") }) {
+            Box(modifier = Modifier.padding(vertical = 12.dp)) {
+                SearchBarInputField(
+                    query = query(),
+                    placeholder = {
+                        Text(stringResource(id = R.string.library_top_bar_placeholder))
+                    },
+                    onQueryChange = { changeQuery(it) },
+                    onSearch = {
+                        onSearch(it)
+                    },
+                    trailingIcon = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AnimatedVisibility(visible = query().isNotEmpty()) {
+                                IconButton(onClick = { changeQuery("") }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Clear,
+                                        contentDescription = stringResource(id = R.string.clear)
+                                    )
+                                }
+                            }
+                            IconButton(onClick = { onSearch(query()) }) {
                                 Icon(
-                                    imageVector = Icons.Filled.Clear,
-                                    contentDescription = stringResource(id = R.string.clear)
+                                    imageVector = Icons.Filled.Search,
+                                    contentDescription = stringResource(id = R.string.search)
                                 )
                             }
                         }
-                        IconButton(onClick = { onSearch(query()) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = stringResource(id = R.string.search)
-                            )
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-            )
+                    },
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+            }
         }
     }
 }
@@ -198,16 +195,18 @@ fun LibraryFilterChips(
     }
 
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(start = paddingHorizontal.first, end = paddingHorizontal.second),
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(
+            start = paddingHorizontal.first,
+            end = paddingHorizontal.second
+        ),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         val sortMode = sortModeProvider()
         filters.fastForEach { (tag, icon, type) ->
             item(key = tag) {
                 ElevatedFilterChip(
-                    modifier = Modifier.padding(4.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                     selected = type == sortMode,
                     onClick = {
                         changeSortMode(type)

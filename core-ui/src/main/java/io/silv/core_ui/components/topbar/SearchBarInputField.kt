@@ -3,6 +3,7 @@ package io.silv.core_ui.components.topbar
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -40,6 +41,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.VisualTransformation
@@ -78,7 +80,7 @@ fun SearchBarInputField(
         isError = false,
         interactionSource = interactionSource
     )
-
+    val focusManager = LocalFocusManager.current
 
     Surface(
         shape = CircleShape,
@@ -96,15 +98,20 @@ fun SearchBarInputField(
                 .height(SearchBarDefaults.InputFieldHeight)
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
-                .clickable {
-                    focusRequester.requestFocus()
-                },
+                .focusable()
+                .clickable { focusRequester.requestFocus() }
+                .clearFocusOnSoftKeyboardHide(),
             enabled = enabled,
             singleLine = true,
             textStyle = LocalTextStyle.current.merge(TextStyle(color = textColor)),
             cursorBrush = SolidColor(colors.cursorColor(isError = false).value),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    onSearch(query)
+                    focusManager.clearFocus()
+                }
+            ),
             interactionSource = interactionSource,
             decorationBox = @Composable { innerTextField ->
                 TextFieldDefaults.DecorationBox(

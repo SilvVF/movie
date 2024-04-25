@@ -8,11 +8,13 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.movie.Nav
 import io.silv.movie.R
+import io.silv.movie.presentation.library.LibraryTab
 
 data object SettingsTab: Tab {
 
@@ -25,12 +27,13 @@ data object SettingsTab: Tab {
 
     @Composable
     override fun Content() {
+        val tabNavigator = LocalTabNavigator.current
         Navigator(SettingsMainScreen) { navigator ->
             val pop: () -> Unit = {
                 if (navigator.canPop) {
                     navigator.pop()
                 } else {
-                    navigator.parent?.pop()
+                    tabNavigator.current = LibraryTab
                 }
             }
             CompositionLocalProvider(LocalBackPress provides pop) {

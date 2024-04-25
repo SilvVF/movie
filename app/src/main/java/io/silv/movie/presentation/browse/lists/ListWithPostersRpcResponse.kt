@@ -8,6 +8,10 @@ import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -54,6 +58,7 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
     contentListRepository: ContentListRepository,
     getShow: GetShow,
     getMovie: GetMovie,
+    scope: CoroutineScope,
 ): ListPreviewItem {
     val item = this
     return ListPreviewItem(
@@ -69,16 +74,31 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
         profileImage = item.profileImagePath,
         username = item.username,
         items = item.content.map { (isMovie, contentId, posterPath) ->
-            val contentItem = if (isMovie)
-                getMovie.await(contentId)?.toContentItem()
-            else
-                getShow.await(contentId)?.toContentItem()
 
-            contentItem ?: ContentItem.create().copy(
-                contentId = contentId,
-                isMovie = isMovie,
-                posterUrl = "https://image.tmdb.org/t/p/original/$posterPath",
-            )
+            val defItem by lazy {
+                ContentItem.create().copy(
+                    contentId = contentId,
+                    isMovie = isMovie,
+                    posterUrl = "https://image.tmdb.org/t/p/original/$posterPath",
+                )
+            }
+
+            val contentItem = if (isMovie)
+                getMovie.subscribePartialOrNull(contentId).map {
+                    it?.toContentItem() ?: defItem
+                }
+            else
+                getShow.subscribePartialOrNull(contentId).map {
+                    it?.toContentItem() ?: defItem
+                }
+
+
+            contentItem
+                .stateIn(
+                    scope,
+                    SharingStarted.Lazily,
+                    null
+                )
         }
             .toImmutableList()
     )

@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
@@ -66,7 +67,7 @@ data class ListPreviewItem(
     val list: ContentList,
     val username: String,
     val profileImage: String?,
-    val items: ImmutableList<ContentItem>,
+    val items: ImmutableList<StateFlow<ContentItem?>>,
 )
 
 
@@ -116,7 +117,7 @@ class BrowseListsScreenModel(
                     postgrest.rpc(
                         "select_lists_by_ids_with_poster",
                         ListByIdParams.of(
-                            recentIds.get().toList()
+                            recentIds.get().takeLast(8).map { it.second }
                         )
                     )
                         .decodeList<ListWithPostersRpcResponse>()
@@ -165,7 +166,7 @@ class BrowseListsScreenModel(
     val subscribedRecommended = subscribedRecommendedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
+                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
                 ?.toImmutableList()
         }
@@ -178,7 +179,7 @@ class BrowseListsScreenModel(
     val recentlyCreated= recentlyCreatedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
+                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
                 ?.toImmutableList()
         }
@@ -191,7 +192,7 @@ class BrowseListsScreenModel(
     val recentlyViewed= recentlyViewedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
+                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
                 ?.toImmutableList()
         }
@@ -204,7 +205,7 @@ class BrowseListsScreenModel(
     val popularLists = popularResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie)
+                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
                 ?.toImmutableList()
         }

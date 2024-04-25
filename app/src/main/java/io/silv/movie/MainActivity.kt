@@ -78,6 +78,9 @@ import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.prefrences.AppTheme
+import io.silv.movie.data.prefrences.ThemeMode.DARK
+import io.silv.movie.data.prefrences.ThemeMode.LIGHT
+import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.trailers.Trailer
@@ -86,6 +89,7 @@ import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.browse.DiscoverTab
+import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
@@ -271,6 +275,7 @@ class MainActivity : ComponentActivity() {
 private fun getThemeColorScheme(
     appTheme: AppTheme?,
     amoled: Boolean?,
+    dark: Boolean?,
     uiPreferences: UiPreferences,
 ): ColorScheme {
     val colorScheme = when (appTheme ?: uiPreferences.appTheme().getOrDefaultBlocking()) {
@@ -295,7 +300,11 @@ private fun getThemeColorScheme(
         else -> TachiyomiColorScheme
     }
     return colorScheme.getColorScheme(
-        isSystemInDarkTheme(),
+         dark ?: when(uiPreferences.themeMode().getOrDefaultBlocking()) {
+            LIGHT -> false
+            DARK -> true
+            SYSTEM -> isSystemInDarkTheme()
+        },
         amoled ?: uiPreferences.themeDarkAmoled().getOrDefaultBlocking(),
     )
 }
@@ -307,8 +316,13 @@ fun MovieTheme(
     content: @Composable () -> Unit,
 ) {
     val uiPreferences = koinInject<UiPreferences>()
+    val dark = when(uiPreferences.themeMode().collectAsState().value) {
+        LIGHT -> false
+        DARK -> true
+        SYSTEM -> isSystemInDarkTheme()
+    }
     MaterialTheme(
-        colorScheme = getThemeColorScheme(appTheme, amoled, uiPreferences),
+        colorScheme = getThemeColorScheme(appTheme, amoled, dark, uiPreferences),
         content = content,
     )
 }

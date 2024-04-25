@@ -21,6 +21,10 @@ class GetShow(
         return showRepository.observeShowPartialById(id)
     }
 
+    fun subscribePartialOrNull(id: Long): Flow<TVShowPoster?> {
+        return showRepository.observeShowPartialById(id)
+    }
+
     fun subscribe(id: Long): Flow<TVShow> {
         return showRepository.observeShowById(id)
     }

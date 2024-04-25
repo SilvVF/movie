@@ -79,7 +79,7 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.library.components.ContentItemSourceCoverOnlyGridItem
-import io.silv.movie.presentation.library.components.ContentListPoster
+import io.silv.movie.presentation.library.components.ContentListPosterStateFlowItems
 import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.library.screens.ListAddScreen
 import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
@@ -92,6 +92,7 @@ import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 import io.silv.movie.rememberProfileImageData
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toImmutableList
 
 
 data object BrowseListsScreen: Screen {
@@ -176,6 +177,9 @@ data object BrowseListsScreen: Screen {
                     )
                 }
             ) { paddingValues ->
+                val selectList = { item: ListPreviewItem ->
+                    selectedList = item.list to item.items.mapNotNull { it.value }.toImmutableList()
+                }
                 LazyColumn(
                     contentPadding = paddingValues,
                     modifier = Modifier
@@ -185,7 +189,9 @@ data object BrowseListsScreen: Screen {
                     recentlyViewedListsPreview(
                         recentlyViewed,
                         onListClick = navigateOnListClick,
-                        onListLongClick = { selectedList = it.list to it.items }
+                        onListLongClick = {
+
+                        }
                     )
                     listCategoryPreview(
                         label = {
@@ -209,7 +215,7 @@ data object BrowseListsScreen: Screen {
                         },
                         lists = popularUserLists,
                         onListClick = navigateOnListClick,
-                        onListLongClick = { selectedList = it.list to it.items },
+                        onListLongClick = selectList,
                         tag = "popular_lists",
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -237,7 +243,7 @@ data object BrowseListsScreen: Screen {
                             },
                             lists = subscribedRecommended,
                             onListClick = navigateOnListClick,
-                            onListLongClick = { selectedList = it.list to it.items },
+                            onListLongClick = selectList,
                             tag = "subscribed_recommended",
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -264,7 +270,7 @@ data object BrowseListsScreen: Screen {
                         },
                         lists = recentlyCreated,
                         onListClick = navigateOnListClick,
-                        onListLongClick = { selectedList = it.list to it.items },
+                        onListLongClick = selectList,
                         tag = "recently_created",
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -421,7 +427,9 @@ fun LazyListScope.listCategoryPreview(
                                 )
                                 .padding(4.dp),
                             cover = {
-                                ContentListPoster(
+                                val items =
+
+                                ContentListPosterStateFlowItems(
                                     list = it.list,
                                     items = it.items,
                                     modifier = Modifier
@@ -656,7 +664,7 @@ fun LazyListScope.recentlyViewedListsPreview(
                                 .clip(MaterialTheme.shapes.extraSmall)
                                 .background(MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)),
                             cover = {
-                                ContentListPoster(
+                                ContentListPosterStateFlowItems(
                                     list = it.list,
                                     items = it.items,
                                 )

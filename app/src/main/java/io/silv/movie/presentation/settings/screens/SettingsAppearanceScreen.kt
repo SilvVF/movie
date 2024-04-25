@@ -171,10 +171,6 @@ data object SettingsAppearanceScreen: SearchableSettings {
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_display),
             preferenceItems = persistentListOf(
-                Preference.PreferenceItem.TextPreference(
-                    title = stringResource(R.string.pref_app_language),
-                    onClick = { /*navigator.push(AppLanguageScreen())*/ },
-                ),
                 Preference.PreferenceItem.ListPreference(
                     pref = uiPreferences.tabletUiMode(),
                     title = stringResource(R.string.pref_tablet_ui_mode),

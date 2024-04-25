@@ -33,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
@@ -42,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.request.ImageRequest
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
@@ -51,9 +51,56 @@ import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.flow.StateFlow
 import org.koin.compose.koinInject
 
 private val ListItemHeight = 72.dp
+
+@Composable
+fun ContentListPosterStateFlowItems(
+    list: ContentList,
+    items: ImmutableList<StateFlow<ContentItem?>>,
+    modifier: Modifier = Modifier
+) {
+    val cache = koinInject<ListCoverCache>()
+    var semaphor by remember { mutableIntStateOf(0) }
+    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
+    val fileExists by remember(semaphor) {
+        derivedStateOf { file.exists() }
+    }
+
+    LaunchedEffect(list.posterLastModified) {
+        semaphor++
+    }
+
+    if (fileExists) {
+        ContentPreviewDefaults.CustomListPoster(
+            modifier = modifier,
+            uri = file.toUri(),
+            hash = hash,
+            lastModified = list.posterLastModified
+        )
+    }else {
+        when {
+            items.isEmpty() -> ContentPreviewDefaults.PlaceholderPoster(modifier = modifier)
+            items.size < 4 -> {
+                val item by items.first().collectAsStateWithLifecycle()
+                ContentPreviewDefaults.SingleItemPoster(
+                    modifier = modifier,
+                    item = item
+                )
+            }
+            else -> {
+                ContentPreviewDefaults.MultiItemPosterStateFlowItems(
+                    modifier = modifier,
+                    items = items
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun ContentListPoster(
@@ -101,24 +148,46 @@ object ContentPreviewDefaults {
     fun PlaceholderPoster(
         modifier: Modifier
     ) {
+        val bg = MaterialTheme.colorScheme.secondaryContainer
         Box(
             modifier = modifier
                 .aspectRatio(1f)
                 .drawWithCache {
                     onDrawBehind {
-                        drawRect(
-                            color = Color.DarkGray
-                        )
+                        drawRect(color = bg)
                     }
                 }
         ) {
             Icon(
                 imageVector = Icons.Filled.MovieFilter,
                 contentDescription = stringResource(id = R.string.filter),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier
                     .fillMaxSize(0.5f)
                     .align(Alignment.Center)
             )
+        }
+    }
+
+    @Composable
+    fun MultiItemPosterStateFlowItems(
+        modifier: Modifier,
+        items: ImmutableList<StateFlow<ContentItem?>>,
+    ) {
+        val trimmed = remember(items) { items.take(4) }
+
+        FlowRow(
+            maxItemsInEachRow = 2,
+            modifier = modifier.aspectRatio(1f)
+        ) {
+            trimmed.fastForEach {
+                val item by it.collectAsStateWithLifecycle()
+                ItemCover.Square(
+                    modifier = Modifier.weight(1f),
+                    shape = RectangleShape,
+                    data = remember(item) { item?.toPoster() }
+                )
+            }
         }
     }
 
@@ -158,7 +227,13 @@ object ContentPreviewDefaults {
                     onDrawBehind {
                         drawRect(
                             brush = Brush.verticalGradient(
-                                listOf(primary, secondary, tertiary)
+                                colors = buildList {
+                                    if (primary == secondary)
+                                        add(primary)
+                                    else
+                                        addAll(listOf(primary, secondary))
+                                    add(tertiary)
+                                },
                             )
                         )
                     }
@@ -167,6 +242,7 @@ object ContentPreviewDefaults {
             Icon(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier
                     .fillMaxSize(0.5f)
                     .align(Alignment.Center)

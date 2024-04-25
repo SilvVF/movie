@@ -79,6 +79,10 @@ class PosterTopBarState(
         scrollBehavior.state.collapsedFraction
     }
 
+    val barFullyCollapsed by  derivedStateOf {
+        progress == 1.0f
+    }
+
     val barExpandedFully by  derivedStateOf {
         progress == 0.0f
     }

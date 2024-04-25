@@ -42,6 +42,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import timber.log.Timber
 
 class ListViewScreenModel(
@@ -125,12 +126,18 @@ class ListViewScreenModel(
             .distinctUntilChanged()
             .onEach { list ->
                 basePreferences.recentlyViewedLists().getAndSet { recent ->
-                    recent.toMutableSet().apply {
-                        list.supabaseId?.let { supabaseId ->
-                            if (size == 8) {
-                                remove(first())
-                            }
-                            add(supabaseId)
+                    val lst = recent.toMutableList()
+                    lst.apply {
+                        val idx = indexOfFirst { it.second == list.supabaseId }
+                        if (idx != -1) {
+                            lst.removeAt(idx)
+                        }
+                        sortBy { it.first }
+                        if (list.supabaseId != null) {
+                            add(Clock.System.now().epochSeconds to list.supabaseId)
+                        }
+                        if (size > 20) {
+                            removeAt(0)
                         }
                     }
                 }

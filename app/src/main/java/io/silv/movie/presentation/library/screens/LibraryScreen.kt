@@ -12,7 +12,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +29,7 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.PullRefresh
+import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.LocalUser
 import io.silv.movie.data.lists.ContentItem
@@ -220,7 +220,8 @@ private fun LibraryStandardScreenContent(
     state: LibraryState
 ) {
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val topBarState = rememberPosterTopBarState()
+    val scrollBehavior = topBarState.scrollBehavior
     val hazeState = remember { HazeState() }
     val snackBarHostState = remember { SnackbarHostState() }
 
@@ -243,7 +244,7 @@ private fun LibraryStandardScreenContent(
                     setListMode = setListMode,
                     changeSortMode = changeSortMode,
                     sortModeProvider =  sortModeProvider,
-                    scrollBehavior = scrollBehavior,
+                    topBarState = topBarState,
                     createListClicked = createListClicked,
                 )
             },

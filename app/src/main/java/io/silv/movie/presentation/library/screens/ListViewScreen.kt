@@ -7,6 +7,7 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,11 +94,16 @@ import io.silv.movie.R
 import io.silv.movie.data.cache.ListCoverCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.prefrences.ThemeMode.DARK
+import io.silv.movie.data.prefrences.ThemeMode.LIGHT
+import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
+import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.user.User
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.components.RemoveEntryDialog
+import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.library.components.ContentListPoster
 import io.silv.movie.presentation.library.components.ContentListPosterGrid
 import io.silv.movie.presentation.library.components.ContentListPosterList
@@ -249,7 +255,12 @@ data class ListViewScreen(
 
                 SeededMaterialTheme(
                     fallback = MaterialTheme.colorScheme,
-                    seedColor = primary.takeIf { it != Color.Transparent }
+                    seedColor = primary.takeIf { it != Color.Transparent },
+                    darkTheme = when (koinInject<UiPreferences>().themeMode().collectAsState().value) {
+                        LIGHT -> false
+                        DARK -> true
+                        SYSTEM -> isSystemInDarkTheme()
+                    }
                 ) {
                     SuccessScreenContent(
                         query = screenModel.query,

@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 interface ShowRepository {
     suspend fun getShowById(id: Long): TVShow?
     fun observeShowPartialById(id: Long): Flow<TVShowPoster>
+    fun observeShowPartialByIdOrNull(id: Long): Flow<TVShowPoster?>
     fun observeShowById(id: Long): Flow<TVShow>
     fun observeShowByIdOrNull(id: Long): Flow<TVShow?>
     suspend fun insertShow(show: TVShow): Long?
@@ -25,6 +26,10 @@ class ShowRepositoryImpl(
 
     override suspend fun getShowById(id: Long): TVShow? {
         return handler.awaitOneOrNull { showQueries.selectById(id, ShowMapper.mapShow) }
+    }
+
+    override fun observeShowPartialByIdOrNull(id: Long): Flow<TVShowPoster?> {
+        return handler.subscribeToOneOrNull { showQueries.selectShowPartialById(id, ShowMapper.mapShowPoster) }
     }
 
     override fun observeShowPartialById(id: Long): Flow<TVShowPoster> {
