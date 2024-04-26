@@ -72,3 +72,44 @@ fun UserProfileImage(
         placeholder = placeholder
     )
 }
+
+@Composable
+fun UserProfileImage(
+    data: UserProfileImageData,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    placeholder: Painter? = null,
+    error: Painter? = painterResource(id = R.drawable.user_default_proflie_icon),
+    fallback: Painter? = error,
+    onLoading: ((AsyncImagePainter.State.Loading) -> Unit)? = null,
+    onSuccess: ((AsyncImagePainter.State.Success) -> Unit)? = null,
+    onError: ((AsyncImagePainter.State.Error) -> Unit)? = null,
+    alignment: Alignment = Alignment.Center,
+    contentScale: ContentScale = ContentScale.Fit,
+    alpha: Float = DefaultAlpha,
+    colorFilter: ColorFilter? = null,
+    filterQuality: FilterQuality = DrawScope.DefaultFilterQuality,
+    clipToBounds: Boolean = true,
+    modelEqualityDelegate: EqualityDelegate = DefaultModelEqualityDelegate,
+) {
+    AsyncImage(
+        modifier = modifier
+            .clip(CircleShape)
+            .aspectRatio(1f),
+        model = data,
+        error = error,
+        fallback = fallback,
+        onLoading = onLoading,
+        onSuccess = onSuccess,
+        onError = onError,
+        contentDescription = contentDescription,
+        contentScale = contentScale,
+        alignment = alignment,
+        alpha = alpha,
+        colorFilter = colorFilter,
+        filterQuality = filterQuality,
+        clipToBounds = clipToBounds,
+        modelEqualityDelegate = modelEqualityDelegate,
+        placeholder = placeholder
+    )
+}

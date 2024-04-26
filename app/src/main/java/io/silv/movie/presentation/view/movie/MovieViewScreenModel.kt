@@ -18,7 +18,6 @@ import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
 import io.silv.movie.data.movie.interactor.UpdateMovie
 import io.silv.movie.data.movie.model.Movie
 import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.movie.model.toMovieUpdate
 import io.silv.movie.data.trailers.GetMovieTrailers
 import io.silv.movie.data.trailers.GetRemoteTrailers
 import io.silv.movie.data.trailers.NetworkToLocalTrailer
@@ -191,19 +190,6 @@ class MovieViewScreenModel(
         }
     }
 
-    fun toggleMovieFavorite(m: Movie) {
-        screenModelScope.launch {
-            val movie = getMovie.await(m.id) ?: return@launch
-
-            val new = movie.copy(favorite = !movie.favorite)
-
-            if(!new.favorite) {
-                movieCoverCache.deleteFromCache(movie)
-            }
-            updateMovie.await(new.toMovieUpdate())
-        }
-    }
-
     fun refresh() {
         screenModelScope.launch {
 
@@ -225,6 +211,9 @@ class MovieViewScreenModel(
 
         @Stable
         data object FullCover: Dialog
+
+        @Stable
+        data object Comments: Dialog
     }
 }
 

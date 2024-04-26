@@ -21,6 +21,7 @@ import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.library.screens.AddToListScreenModel
 import io.silv.movie.presentation.profile.ProfileScreenModel
 import io.silv.movie.presentation.profile.screen.SelectProfileImageScreenModel
+import io.silv.movie.presentation.view.CommentsScreenModel
 import io.silv.movie.presentation.view.CreditsViewScreenModel
 import io.silv.movie.presentation.view.ImageSaver
 import io.silv.movie.presentation.view.MovieCoverScreenModel
@@ -64,6 +65,8 @@ val appModule =
         factoryOf(::MovieCoverScreenModel)
 
         factoryOf(::CreditsViewScreenModel)
+
+        factoryOf(::CommentsScreenModel)
 
         factoryOf(::ProfileScreenModel)
 

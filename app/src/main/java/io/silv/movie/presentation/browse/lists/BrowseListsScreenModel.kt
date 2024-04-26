@@ -15,7 +15,9 @@ import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.data.movie.interactor.GetMovie
+import io.silv.movie.data.movie.interactor.GetRemoteMovie
 import io.silv.movie.data.prefrences.BasePreferences
+import io.silv.movie.data.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.tv.interactor.GetShow
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListWithItems
@@ -76,6 +78,8 @@ class BrowseListsScreenModel(
     private val contentListRepository: ContentListRepository,
     private val getMovie: GetMovie,
     private val getShow: GetShow,
+    private val getRemoteMovie: GetRemoteMovie,
+    private val getRemoteTVShows: GetRemoteTVShows,
     private val listRepository: ListRepository,
     basePreferences: BasePreferences,
     auth: Auth,
@@ -157,7 +161,7 @@ class BrowseListsScreenModel(
     private val subscribedRecommendedResult =
         MutableStateFlow<List<ListWithPostersRpcResponse>?>(null)
     private val _defaultLists =
-        MutableStateFlow<ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>?>(null)
+        MutableStateFlow<ImmutableList<Pair<ContentList, ImmutableList<StateFlow<ContentItem>>>>?>(null)
 
     private val recentIds = basePreferences.recentlyViewedLists()
 
@@ -263,7 +267,9 @@ class BrowseListsScreenModel(
         }
     }
 
-    private suspend fun toContentListWithItems(listWithItems: ListWithItems): Pair<ContentList, ImmutableList<ContentItem>> {
+    private suspend fun toContentListWithItems(
+        listWithItems: ListWithItems
+    ): Pair<ContentList, ImmutableList<StateFlow<ContentItem>>> {
         val local = contentListRepository.getListForSupabaseId(listWithItems.listId)
         val list = local ?: ContentList(
             id = -1,
@@ -284,23 +290,27 @@ class BrowseListsScreenModel(
             val isMovie = it.movieId != -1L
             val id = it.movieId.takeIf { isMovie } ?: it.showId
 
-            val item = if(isMovie)
-                getMovie.await(id)?.toContentItem()
-            else
-                getShow.await(id)?.toContentItem()
+            val defItem by lazy {
+                ContentItem(
+                    contentId = id,
+                    isMovie = isMovie,
+                    title = it.title,
+                    posterUrl = "https://image.tmdb.org/t/p/original/${it.posterPath}",
+                    favorite = false,
+                    inLibraryLists = -1L,
+                    posterLastUpdated = -1L,
+                    lastModified = -1L,
+                    description = "",
+                    popularity = -1.0
+                )
+            }
 
-            item ?: ContentItem(
-                contentId = id,
-                isMovie = isMovie,
-                title = "",
-                posterUrl = "https://image.tmdb.org/t/p/original/${it.posterPath}",
-                favorite = false,
-                inLibraryLists = -1L,
-                posterLastUpdated = -1L,
-                lastModified = -1L,
-                description = "",
-                popularity = -1.0
-            )
+            val item = if(isMovie)
+                getMovie.subscribePartialOrNull(id).map { it?.toContentItem() ?: defItem }
+            else
+                getShow.subscribePartialOrNull(id).map { it?.toContentItem() ?: defItem }
+
+            item.stateIn(ioCoroutineScope)
         }
         return Pair(list, posters.toImmutableList())
     }

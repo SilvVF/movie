@@ -24,9 +24,9 @@ class AddContentItemToList(
 
         if (list.supabaseId != null) {
             val result = if (contentItem.isMovie) {
-                network.addMovieToList(contentItem.contentId, contentItem.posterUrl, list)
+                network.addMovieToList(contentItem.contentId, contentItem.posterUrl, contentItem.title, list)
             } else {
-                network.addShowToList(contentItem.contentId, contentItem.posterUrl, list)
+                network.addShowToList(contentItem.contentId, contentItem.posterUrl, contentItem.title, list)
             }
 
             if (!result) {

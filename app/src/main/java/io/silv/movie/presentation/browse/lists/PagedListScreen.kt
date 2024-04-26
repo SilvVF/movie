@@ -151,11 +151,12 @@ class ListPagedScreenModel(
     ) {
         ListPagingSource()
     }
-        .flow.cachedIn(ioCoroutineScope).map { pagingData ->
-            pagingData.map {
+        .flow.map { pagingData ->
+            pagingData.uniqueBy { it.listId }.map {
                 it.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
             }
         }
+        .cachedIn(ioCoroutineScope)
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),

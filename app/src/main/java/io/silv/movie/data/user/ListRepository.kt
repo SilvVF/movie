@@ -117,7 +117,8 @@ data class ListItem(
     @SerialName("show_id")
     val showId: Long,
     @SerialName("poster_path")
-    val posterPath: String?
+    val posterPath: String?,
+    val title: String,
 )
 
 fun ContentList.toUserListUpdate(): UserListUpdate {
@@ -321,7 +322,8 @@ class ListRepository(
                                 it.userId,
                                 it.movieId,
                                 it.showId,
-                                it.posterPath
+                                it.posterPath,
+                                ""
                             )
                         }
                     )
@@ -441,7 +443,7 @@ class ListRepository(
             .isSuccess
     }
 
-    suspend fun addMovieToList(movieId: Long, posterPath: String?, contentList: ContentList): Boolean {
+    suspend fun addMovieToList(movieId: Long, posterPath: String?, title: String, contentList: ContentList): Boolean {
         return runCatching {
             postgrest[LIST_ITEM]
                 .insert(
@@ -450,7 +452,8 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = movieId,
                         showId = -1,
-                        posterPath = posterPath?.substringAfterLast('/')
+                        posterPath = posterPath?.substringAfterLast('/'),
+                        title = title
                     )
                 )
         }
@@ -458,7 +461,7 @@ class ListRepository(
             .isSuccess
     }
 
-    suspend fun addShowToList(showId: Long, posterPath: String?, contentList: ContentList): Boolean {
+    suspend fun addShowToList(showId: Long, posterPath: String?, title: String, contentList: ContentList): Boolean {
         return runCatching {
             postgrest[LIST_ITEM]
                 .insert(
@@ -467,7 +470,8 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = -1,
                         showId = showId,
-                        posterPath = posterPath?.substringAfterLast('/')
+                        posterPath = posterPath?.substringAfterLast('/'),
+                        title = title
                     )
                 )
         }

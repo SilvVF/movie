@@ -93,6 +93,7 @@ import io.silv.movie.presentation.view.tv.TVViewScreen
 import io.silv.movie.rememberProfileImageData
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.flow.StateFlow
 
 
 data object BrowseListsScreen: Screen {
@@ -546,12 +547,12 @@ fun RecentlyViewedPreview(
 }
 
 fun LazyListScope.defaultListsPreview(
-    defaultLists: ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>>?,
+    defaultLists: ImmutableList<Pair<ContentList, ImmutableList<StateFlow<ContentItem>>>>?,
     onListClick: (ContentList) -> Unit,
     onItemClick: (ContentItem) -> Unit,
     onItemLongClick: () -> Unit,
 ) {
-    defaultLists?.fastForEach {(list, items) ->
+    defaultLists?.fastForEach { (list, items) ->
         item {
             Column {
                 TitleWithAction(
@@ -563,11 +564,12 @@ fun LazyListScope.defaultListsPreview(
                 )
                 LazyRow {
                     items(items) {
+                        val item by it.collectAsStateWithLifecycle()
                         Box(Modifier.height(128.dp)) {
                             ContentItemSourceCoverOnlyGridItem(
-                                favorite = it.favorite,
-                                poster = remember(it) { it.toPoster() },
-                                onClick = { onItemClick(it) },
+                                favorite = item.favorite,
+                                poster = remember(item) { item.toPoster() },
+                                onClick = { onItemClick(item) },
                                 onLongClick = onItemLongClick,
                             )
                         }
@@ -653,8 +655,8 @@ fun LazyListScope.recentlyViewedListsPreview(
                             modifier = Modifier
                                 .padding(vertical = 4.dp)
                                 .padding(
-                                    start = if (i and 1 == 0) 0.dp else 4.dp,
-                                    end = if (i and 1 == 0) 4.dp else 0.dp
+                                    start = if (i and 1 == 0 || i == recents.lastIndex) 0.dp else 4.dp,
+                                    end = if (i and 1 == 0 && i != recents.lastIndex) 4.dp else 0.dp
                                 )
                                 .combinedClickable(
                                     onLongClick = { onListLongClick(it) }
@@ -675,9 +677,7 @@ fun LazyListScope.recentlyViewedListsPreview(
                 }
             }
         }
-    } ?: item(
-        "recent-placeholder"
-    ) {
+    } ?: item("recent-placeholder") {
         ShimmerHost {
             Column(
                 Modifier

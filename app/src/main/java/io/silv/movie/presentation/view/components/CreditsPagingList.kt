@@ -41,7 +41,9 @@ fun LazyListScope.creditsPagingList(
     onCreditLongClick: (credit: Credit) -> Unit,
     onViewClick: () -> Unit,
 ) {
-    item {
+    item(
+        "credits-title"
+    ) {
         Row(
             Modifier
                 .padding(bottom = 8.dp)

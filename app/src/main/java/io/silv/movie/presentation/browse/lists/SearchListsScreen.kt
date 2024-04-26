@@ -40,6 +40,7 @@ import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
+import androidx.paging.filter
 import androidx.paging.map
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -135,6 +136,15 @@ class ListSearchPagingSource(
 
 }
 
+fun <T : Any, V> PagingData<T>.uniqueBy(
+    transform: (T) -> V
+): PagingData<T> {
+    val set = mutableSetOf<V>()
+    return filter { data ->
+        set.add(transform(data))
+    }
+}
+
 class SearchForListScreenModel(
     private val postgrest: Postgrest,
     private val contentListRepository: ContentListRepository,
@@ -153,11 +163,12 @@ class SearchForListScreenModel(
             ) {
                 ListSearchPagingSource(postgrest, it)
             }
-                .flow.cachedIn(ioCoroutineScope).map { pagingData ->
-                    pagingData.map {
+                .flow.map { pagingData ->
+                    pagingData.uniqueBy { it.listId }.map {
                         it.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
                     }
                 }
+                .cachedIn(ioCoroutineScope)
         }
         .stateIn(
             screenModelScope,

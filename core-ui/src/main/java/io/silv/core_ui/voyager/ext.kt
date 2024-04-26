@@ -2,6 +2,7 @@ package io.silv.core_ui.voyager
 
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.ScreenModelStore
+import cafe.adriel.voyager.core.screen.Screen
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,3 +17,8 @@ val ScreenModel.ioCoroutineScope: CoroutineScope
         factory = { key -> CoroutineScope(Dispatchers.IO + SupervisorJob()) + CoroutineName(key) },
         onDispose = { scope -> scope.cancel() },
     )
+
+interface ContentScreen: Screen {
+    val id: Long
+    val isMovie: Boolean
+}

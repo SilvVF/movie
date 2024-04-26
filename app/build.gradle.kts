@@ -4,7 +4,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     kotlin("plugin.serialization")
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    id("com.google.devtools.ksp") version "1.9.23-1.0.20"
     id("kotlin-parcelize")
     id("app.cash.sqldelight") version "2.0.1"
 }
@@ -77,7 +77,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = "1.5.12"
     }
     packaging {
         resources {
@@ -173,8 +173,6 @@ dependencies {
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
 
-    implementation(libs.jsoup)
-
     // Database
     implementation(libs.stately.concurrency)
     implementation(libs.sqldelight.android.driver)
@@ -193,6 +191,7 @@ dependencies {
     implementation("io.github.jan-tennert.supabase:compose-auth")
     implementation("io.github.jan-tennert.supabase:compose-auth-ui")
     implementation("io.github.jan-tennert.supabase:storage-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
 }
 
 

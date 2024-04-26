@@ -3,6 +3,8 @@ package io.silv.movie.presentation.view.movie
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,6 +31,7 @@ import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,18 +43,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -61,18 +68,25 @@ import dev.chrisbanes.haze.haze
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
+import io.silv.core_ui.voyager.ContentScreen
+import io.silv.movie.LocalUser
 import io.silv.movie.PlayerViewModel
 import io.silv.movie.R
+import io.silv.movie.UserProfileImageData
 import io.silv.movie.WatchContentActivity
 import io.silv.movie.data.credits.Credit
 import io.silv.movie.data.lists.toContentItem
 import io.silv.movie.getActivityViewModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.library.screens.AddToListScreen
+import io.silv.movie.presentation.profile.UserProfileImage
 import io.silv.movie.presentation.toPoster
+import io.silv.movie.presentation.view.CommentsScreenModel
+import io.silv.movie.presentation.view.CommentsState
 import io.silv.movie.presentation.view.CreditsViewScreen
 import io.silv.movie.presentation.view.MovieCoverScreenModel
 import io.silv.movie.presentation.view.PersonViewScreen
+import io.silv.movie.presentation.view.components.CommentsBottomSheet
 import io.silv.movie.presentation.view.components.EditCoverAction
 import io.silv.movie.presentation.view.components.ExpandableDescription
 import io.silv.movie.presentation.view.components.MovieInfoBox
@@ -82,8 +96,11 @@ import io.silv.movie.presentation.view.components.trailersList
 import org.koin.core.parameter.parametersOf
 
 data class MovieViewScreen(
-    val id: Long,
-): Screen {
+    override val id: Long,
+): ContentScreen {
+
+    override val isMovie: Boolean
+        get() = true
 
     override val key: ScreenKey
         get() = super.key + id
@@ -97,6 +114,8 @@ data class MovieViewScreen(
         val changeDialog = remember {
             { dialog: MovieViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
         }
+        val commentsScreenModel = getScreenModel<CommentsScreenModel> { parametersOf(id, isMovie) }
+        val commentsState by commentsScreenModel.state.collectAsStateWithLifecycle()
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
             MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
@@ -139,7 +158,11 @@ data class MovieViewScreen(
                                 .apply { putExtra("url", "https://vidsrc.to/embed/movie/${state.movie.id}") }
                         )
                     },
-                    onAddToList = { navigator.push(AddToListScreen(state.movie.id, true)) }
+                    onAddToList = { navigator.push(AddToListScreen(state.movie.id, true)) },
+                    onShowComments = {
+                        changeDialog(MovieViewScreenModel.Dialog.Comments)
+                    },
+                    commentsState = commentsState
                 )
                 val onDismissRequest =  { changeDialog(null) }
                 when (state.dialog) {
@@ -174,6 +197,12 @@ data class MovieViewScreen(
                             )
                         }
                     }
+                    MovieViewScreenModel.Dialog.Comments -> {
+                        CommentsBottomSheet(
+                            onDismissRequest = onDismissRequest,
+                            screenModel = commentsScreenModel
+                        )
+                    }
                 }
             }
         }
@@ -183,6 +212,7 @@ data class MovieViewScreen(
 @Composable
 fun MovieDetailsContent(
     state: MovieDetailsState.Success,
+    commentsState: CommentsState,
     creditsProvider: () -> LazyPagingItems<Credit>,
     refresh: () -> Unit,
     onPosterClick: () -> Unit,
@@ -191,6 +221,7 @@ fun MovieDetailsContent(
     onCreditClick: (credit: Credit) -> Unit,
     onWatchMovieClick: () -> Unit,
     onAddToList: () -> Unit,
+    onShowComments: () -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -278,18 +309,124 @@ fun MovieDetailsContent(
                             }
                         )
                     }
-                    creditsPagingList(
-                        creditsProvider = creditsProvider,
-                        onCreditClick = onCreditClick,
-                        onCreditLongClick = {},
-                        onViewClick = onViewCreditsClick,
-                    )
-                    trailersList(
-                        trailers = state.trailers,
-                        onClick = {
-                            onVideoThumbnailClick(state.movie.id, true, it.id)
-                        },
-                        onYoutubeClick = {}
+                    item {
+                        CommentsPreview(
+                            count = commentsState.messageCount?.toInt() ?: 0,
+                            profileImageData =  commentsState.recentMessage?.let {
+                                UserProfileImageData(
+                                    userId = it.userId,
+                                    isUserMe = it.userId == LocalUser.current?.userId,
+                                    path = it.users.profileImage
+                                )
+                            },
+                            username = commentsState.recentMessage?.users?.username,
+                            lastMessage = commentsState.recentMessage?.message,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .clickable {
+                                    onShowComments()
+                                }
+                            )
+                        }
+                        creditsPagingList(
+                            creditsProvider = creditsProvider,
+                            onCreditClick = onCreditClick,
+                            onCreditLongClick = {},
+                            onViewClick = onViewCreditsClick,
+                        )
+                        trailersList(
+                            trailers = state.trailers,
+                            onClick = {
+                                onVideoThumbnailClick(state.movie.id, true, it.id)
+                            },
+                            onYoutubeClick = {}
+                        )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CommentsPreview(
+    count: Int,
+    username: String?,
+    profileImageData: UserProfileImageData?,
+    lastMessage: String?,
+    modifier: Modifier = Modifier,
+) {
+    ElevatedCard(
+        modifier
+            .height(72.dp)
+            .fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(id = R.string.comments),
+                    style = MaterialTheme.typography.labelSmall
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Text(
+                    text = remember(count) { count.toString() },
+                    modifier = Modifier.alpha(0.78f),
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            AnimatedContent(
+                targetState = Triple(
+                    profileImageData,
+                    lastMessage,
+                    username,
+                ),
+                label = ""
+            ) { (imgData, msg, name) ->
+                imgData?.let { user ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        UserProfileImage(
+                            data = user,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxHeight()
+                        )
+                        val secondaryContainer = MaterialTheme.colorScheme.secondaryContainer
+                        Text(
+                            text = name.orEmpty(),
+                            maxLines = 1,
+                            style = MaterialTheme.typography.labelSmall,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .padding(horizontal = 6.dp)
+                                .drawWithCache {
+                                    onDrawBehind {
+                                        drawRoundRect(
+                                            color = secondaryContainer,
+                                            cornerRadius = CornerRadius(2.0.dp.toPx())
+                                        )
+                                    }
+                                }
+                                .padding(horizontal = 2.dp)
+                                .weight(0.5f, false),
+                        )
+                        Text(
+                            text = msg.orEmpty(),
+                            maxLines = 1,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f, true),
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                } ?: Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    Text(
+                        text = "Be the first to comment.",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
                     )
                 }
             }

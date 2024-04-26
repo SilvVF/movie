@@ -9,7 +9,6 @@ import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerialName
@@ -93,12 +92,7 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
                 }
 
 
-            contentItem
-                .stateIn(
-                    scope,
-                    SharingStarted.Lazily,
-                    null
-                )
+            contentItem.stateIn(scope)
         }
             .toImmutableList()
     )

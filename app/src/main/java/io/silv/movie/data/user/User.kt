@@ -11,8 +11,6 @@ data class User(
     val userId: String,
     val email: String,
     val username: String,
-    @SerialName("genre_ratings")
-    val genreRatings: String? = null,
     @SerialName("profile_image")
     val profileImage: String? = null,
     @SerialName("favorites_public")
@@ -20,6 +18,17 @@ data class User(
 ) {
 
     companion object {
+
+        fun default(): User {
+            return User(
+                "c532e5da-71ca-4b4b-b896-d1d36f335149",
+                "defaultmovielist@gmail.com",
+                "defaultmovielist",
+                "DragonBall/dbz_007.jpg",
+                true
+            )
+        }
+
         object Serializer {
             fun deserialize(serialized: String): User? {
                 return User.deserialize(serialized)

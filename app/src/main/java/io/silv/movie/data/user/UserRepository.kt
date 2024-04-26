@@ -74,6 +74,9 @@ class UserRepositoryImpl(
                 if (status is SessionStatus.Authenticated) {
                     val user = getUser(status.session.user?.id ?: return@onEach)
                     _currentUser.update { user }
+                } else if (status is SessionStatus.NotAuthenticated) {
+                    savedUser.set(null)
+                    _currentUser.update { null }
                 } else {
                     _currentUser.update { null }
                 }

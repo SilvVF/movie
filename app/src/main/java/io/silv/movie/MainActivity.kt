@@ -44,6 +44,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -54,6 +55,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
@@ -100,10 +102,21 @@ import io.silv.movie.presentation.settings.SettingsTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toLocalDateTime
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.compose.koinInject
+import java.util.Date
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 
@@ -118,6 +131,44 @@ object Nav {
 
     fun clear() { current = null }
 }
+val LocalDateFormatter = staticCompositionLocalOf<DateFormatter> { error("not provided") }
+
+class DateFormatter(
+    prefs: UiPreferences,
+    scope: CoroutineScope
+) {
+    private val relative = prefs.relativeTime().changes()
+        .stateIn(
+            scope,
+            SharingStarted.Lazily,
+            prefs.relativeTime().getOrDefaultBlocking()
+        )
+
+    private val fmt = prefs.dateFormat().changes().map { UiPreferences.dateFormat(it) }
+        .stateIn(
+            scope,
+            SharingStarted.Lazily,
+            UiPreferences.dateFormat(prefs.dateFormat().getOrDefaultBlocking())
+        )
+
+    fun format(instant: Instant): String {
+        return if (relative.value) {
+            val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val daysFromToday =  now.date.toEpochDays() - dt.date.toEpochDays()
+            when {
+                daysFromToday == 0 -> {
+                    val hours = now.hour - dt.hour
+                    "${hours}h"
+                }
+                daysFromToday <= -28 -> "${abs(daysFromToday)}d"
+                else -> "${(daysFromToday / 7).coerceAtLeast(1)}w"
+            }
+        } else {
+            fmt.value.format(Date.from(instant.toJavaInstant()))
+        }
+    }
+}
 
 class MainActivity : ComponentActivity() {
 
@@ -129,7 +180,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-
+        val dateFormatter = DateFormatter(uiPreferences, lifecycleScope)
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
         setContent {
@@ -144,6 +195,7 @@ class MainActivity : ComponentActivity() {
                 LocalUser provides currentUser,
                 LocalListInteractor provides mainScreenModel.listInteractor,
                 LocalContentInteractor provides mainScreenModel.contentInteractor,
+                LocalDateFormatter provides dateFormatter
             ) {
                 val playerViewModel = getActivityViewModel<PlayerViewModel>()
                 val listInteractor = LocalListInteractor.current
