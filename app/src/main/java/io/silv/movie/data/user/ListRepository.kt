@@ -119,6 +119,9 @@ data class ListItem(
     @SerialName("poster_path")
     val posterPath: String?,
     val title: String,
+    val description: String? = null,
+    @SerialName("created_at")
+    val createdAt: Instant
 )
 
 fun ContentList.toUserListUpdate(): UserListUpdate {
@@ -323,7 +326,9 @@ class ListRepository(
                                 it.movieId,
                                 it.showId,
                                 it.posterPath,
-                                ""
+                                "",
+                                null,
+                                Clock.System.now()
                             )
                         }
                     )
@@ -453,7 +458,8 @@ class ListRepository(
                         movieId = movieId,
                         showId = -1,
                         posterPath = posterPath?.substringAfterLast('/'),
-                        title = title
+                        title = title,
+                        createdAt = Clock.System.now()
                     )
                 )
         }
@@ -471,7 +477,8 @@ class ListRepository(
                         movieId = -1,
                         showId = showId,
                         posterPath = posterPath?.substringAfterLast('/'),
-                        title = title
+                        title = title,
+                        createdAt = Clock.System.now()
                     )
                 )
         }

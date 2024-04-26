@@ -282,7 +282,7 @@ class BrowseListsScreenModel(
             description = listWithItems.description,
             lastModified = -1L,
             posterLastModified = -1L,
-            createdAt = listWithItems.createdAt.toEpochMilliseconds(),
+            createdAt = listWithItems.createdAt.epochSeconds,
             inLibrary = false,
             subscribers = listWithItems.subscribers
         )

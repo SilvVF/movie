@@ -19,7 +19,7 @@ class UpdateMovie(
         return movieRepository.updateMovie(
             MovieUpdate(
                 movieId = id,
-                posterLastUpdated = Clock.System.now().toEpochMilliseconds()
+                posterLastUpdated = Clock.System.now().epochSeconds
             )
         )
     }

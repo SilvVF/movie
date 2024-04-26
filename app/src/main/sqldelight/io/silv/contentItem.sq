@@ -2,7 +2,7 @@ CREATE TABLE contentItem(
     movie_id INTEGER NOT NULL DEFAULT -1,
     show_id INTEGER NOT NULL DEFAULT -1,
     list_id INTEGER NOT NULL,
-    created_at INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
     PRIMARY KEY(movie_id, show_id, list_id),
     FOREIGN KEY (list_id) REFERENCES contentList(_id) ON DELETE CASCADE
 );
@@ -33,7 +33,7 @@ CREATE INDEX movie_id_index ON contentItem(movie_id);
 
 insert:
 INSERT OR IGNORE INTO contentItem(movie_id, show_id, list_id, created_at)
-VALUES (:movieId, :showId, :listId, strftime('%s', 'now'));
+VALUES (:movieId, :showId, :listId, IFNULL(:createdAt, strftime('%s', 'now')));
 
 deleteMovieFromList:
 DELETE FROM contentItem WHERE movie_id = :movieId AND list_id = :listId;

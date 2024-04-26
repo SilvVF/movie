@@ -151,7 +151,7 @@ class LibraryScreenModel(
                     name = network.name,
                     supabaseId = network.listId,
                     userId = network.userId,
-                    createdAt = network.createdAt.toEpochMilliseconds(),
+                    createdAt = network.createdAt.epochSeconds,
                     inLibrary = true
                 )
                 Timber.d("created list $id online")
@@ -162,7 +162,7 @@ class LibraryScreenModel(
                     inLibrary = true,
                     supabaseId = null,
                     userId = null,
-                    createdAt = Clock.System.now().toEpochMilliseconds(),
+                    createdAt = Clock.System.now().epochSeconds,
                     subscribers = 0
                 )
                 Timber.d("created list $id offline")

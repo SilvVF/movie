@@ -151,7 +151,7 @@ class ListCoverScreenModel(
                 contentListRepository.updateList(
                     ContentListUpdate(
                         id = mangaId,
-                        posterLastUpdated = Clock.System.now().toEpochMilliseconds()
+                        posterLastUpdated = Clock.System.now().epochSeconds
                     )
                 )
                 notifyCoverUpdated(context)
@@ -186,7 +186,7 @@ class ListCoverScreenModel(
     ) {
         coverCache.setCustomCoverToCache(this, stream)
         contentListRepository.updateList(
-            copy(posterLastModified = Clock.System.now().toEpochMilliseconds()).toUpdate()
+            copy(posterLastModified = Clock.System.now().epochSeconds).toUpdate()
         )
     }
 

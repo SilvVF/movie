@@ -71,14 +71,18 @@ class UserRepositoryImpl(
         auth.sessionStatus
             .combine(networkMonitor.isOnline) { a, b -> a to b }
             .onEach { (status, _) ->
-                if (status is SessionStatus.Authenticated) {
-                    val user = getUser(status.session.user?.id ?: return@onEach)
-                    _currentUser.update { user }
-                } else if (status is SessionStatus.NotAuthenticated) {
-                    savedUser.set(null)
-                    _currentUser.update { null }
-                } else {
-                    _currentUser.update { null }
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        val user = getUser(status.session.user?.id ?: return@onEach)
+                        _currentUser.update { user }
+                    }
+                    is SessionStatus.NotAuthenticated -> {
+                        savedUser.set(null)
+                        _currentUser.update { null }
+                    }
+                    else -> {
+                        _currentUser.update { null }
+                    }
                 }
         }
             .launchIn(scope)

@@ -20,7 +20,7 @@ class UpdateShow(
         return showRepository.updateShow(
             TVShowUpdate(
                 showId = id,
-                posterLastUpdated = Clock.System.now().toEpochMilliseconds()
+                posterLastUpdated = Clock.System.now().epochSeconds
             )
         )
     }

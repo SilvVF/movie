@@ -202,7 +202,7 @@ class DefaultListInteractor(
                     list.name,
                     networkList?.listId,
                     uid,
-                    networkList?.createdAt?.toEpochMilliseconds(),
+                    networkList?.createdAt?.epochSeconds,
                     networkList?.subscribers,
                     true
                 )

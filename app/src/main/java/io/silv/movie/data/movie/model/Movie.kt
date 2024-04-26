@@ -63,8 +63,8 @@ data class Movie(
             genreIds = emptyList(),
             status = null,
             productionCompanies = null,
-            favoriteModifiedAt = -1L,
-            lastModifiedAt = -1L,
+            favoriteModifiedAt = 0L,
+            lastModifiedAt = 0L,
             inLists = 0
        )
     }

@@ -60,22 +60,28 @@ object ContentListMapper {
     }
 
     val mapFavoriteItem = {
-            id: Long, title: String, posterUrl: String?,
-            posterLastUpdated: Long, overview: String, popularity: Double,
-            lastModifiedAt: Long,favorite: Boolean,  isMovie: Long,
-            _: Long?,
-        inLibraryLists: Long ->
+            id: Long,
+            title: String,
+            poster_url: String?,
+            poster_last_updated: Long?,
+            overview: String,
+            popularity: Double?,
+            last_modified_at: Long,
+            favorite: Boolean?,
+            isMovie: Long,
+            favorite_modified_at: Long?,
+            inLists: Long ->
         ContentItem(
             contentId = id,
             isMovie = isMovie == 1L,
             title = title,
-            posterUrl = posterUrl,
-            posterLastUpdated = posterLastUpdated,
-            favorite = favorite,
-            lastModified = lastModifiedAt,
-            popularity = popularity,
+            posterUrl = poster_url,
+            posterLastUpdated = poster_last_updated ?: -1L,
+            favorite = favorite ?: false,
+            lastModified = last_modified_at ,
+            popularity = popularity ?: -1.0,
             description = overview,
-            inLibraryLists = inLibraryLists
+            inLibraryLists = inLists
         )
     }
 

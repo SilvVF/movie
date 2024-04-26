@@ -11,7 +11,10 @@ SELECT
         1 AS isMovie,
         favorite_modified_at,
         (
-            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE movie_id = id
+            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem
+            LEFT JOIN contentList ON contentItem.list_id = contentList._id
+            WHERE movie_id = id AND contentList.in_library
+
         ) AS inLists
     FROM movie WHERE favorite = 1
 
@@ -29,7 +32,10 @@ SELECT
         0 AS isMovie,
         favorite_modified_at,
        (
-            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = id
+            SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem
+            LEFT JOIN contentList ON contentItem.list_id = contentList._id
+            WHERE show_id = id AND contentList.in_library
+
        ) AS inLists
     FROM show WHERE favorite = 1;
 

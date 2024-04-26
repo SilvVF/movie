@@ -35,9 +35,9 @@ class AddContentItemToList(
         }
 
         if (contentItem.isMovie) {
-            local.addMovieToList(contentItem.contentId, list)
+            local.addMovieToList(contentItem.contentId, list, null)
         } else {
-            local.addShowToList(contentItem.contentId, list)
+            local.addShowToList(contentItem.contentId, list, null)
         }
 
         return Result.success(Unit)

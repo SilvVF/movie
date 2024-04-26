@@ -167,7 +167,7 @@ fun Streams.toStreamItem(videoId: String): StreamItem {
         uploaderAvatar = uploaderAvatar,
         uploadedDate = uploadTimestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date
             .toString(),
-        uploaded = uploadTimestamp.toEpochMilliseconds(),
+        uploaded = uploadTimestamp.epochSeconds,
         duration = duration,
         views = views,
         uploaderVerified = uploaderVerified,

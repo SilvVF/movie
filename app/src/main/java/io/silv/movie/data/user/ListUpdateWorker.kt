@@ -17,13 +17,11 @@ import io.silv.movie.R
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.toUpdate
 import io.silv.movie.data.movie.interactor.GetMovie
-import io.silv.movie.data.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.movie.model.toDomain
-import io.silv.movie.data.tv.interactor.GetRemoteTVShows
+import io.silv.movie.data.movie.model.Movie
+import io.silv.movie.data.movie.repository.MovieRepository
 import io.silv.movie.data.tv.interactor.GetShow
-import io.silv.movie.data.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.tv.model.toDomain
+import io.silv.movie.data.tv.model.TVShow
+import io.silv.movie.data.tv.repository.ShowRepository
 import kotlinx.datetime.Clock
 import timber.log.Timber
 
@@ -108,10 +106,8 @@ class ListUpdater(
     private val listRepository: ListRepository,
     private val getShow: GetShow,
     private val getMovie: GetMovie,
-    private val getRemoteTVShows: GetRemoteTVShows,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
+    private val movieRepository: MovieRepository,
+    private val showRepository: ShowRepository,
     private val userRepository: UserRepository,
     private val auth: Auth,
 ) {
@@ -130,7 +126,7 @@ class ListUpdater(
                     name = list.name,
                     supabaseId = list.listId,
                     userId = list.userId,
-                    createdAt = list.createdAt.toEpochMilliseconds(),
+                    createdAt = list.createdAt.epochSeconds,
                     inLibrary = isOwnerMe,
                     subscribers = list.subscribers
                 )
@@ -140,11 +136,11 @@ class ListUpdater(
             contentListRepository.updateList(
                 local.copy(
                     description = list.description,
-                    lastModified = list.updatedAt?.toEpochMilliseconds() ?: local.lastModified,
+                    lastModified = list.updatedAt?.epochSeconds ?: local.lastModified,
                     name = list.name,
                     public = list.public,
                     createdBy = list.userId,
-                    lastSynced = Clock.System.now().toEpochMilliseconds(),
+                    lastSynced = Clock.System.now().epochSeconds,
                     username = username ?: local.username,
                     inLibrary = isOwnerMe,
                     subscribers = list.subscribers
@@ -158,19 +154,31 @@ class ListUpdater(
                 if (item.movieId != -1L) {
                     var movie = getMovie.await(item.movieId)
                     if (movie == null) {
-                        movie = networkToLocalMovie.await(
-                            getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
+                        val id = movieRepository.insertMovie(
+                            Movie.create().copy(
+                                id = item.movieId,
+                                title = item.title,
+                                overview = item.description.orEmpty(),
+                                posterUrl = "https://image.tmdb.org/t/p/original/${item.posterPath}".takeIf { !item.posterPath.isNullOrBlank() },
+                            )
                         )
+                        movie = getMovie.await(id!!)!!
                     }
-                    contentListRepository.addMovieToList(movie.id, local)
+                    contentListRepository.addMovieToList(movie.id, local, item.createdAt.epochSeconds)
                 } else if (item.showId != -1L) {
                     var show = getShow.await(item.showId)
                     if (show == null) {
-                        show = networkToLocalTVShow.await(
-                            getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
+                        val id = showRepository.insertShow(
+                            TVShow.create().copy(
+                                id = item.showId,
+                                title = item.title,
+                                overview = item.description.orEmpty(),
+                                posterUrl =  "https://image.tmdb.org/t/p/original/${item.posterPath}".takeIf { !item.posterPath.isNullOrBlank() },
+                            )
                         )
+                        show = getShow.await(id!!)!!
                     }
-                    contentListRepository.addShowToList(show.id, local)
+                    contentListRepository.addShowToList(show.id, local, item.createdAt.epochSeconds)
                 }
             }
 

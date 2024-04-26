@@ -9,14 +9,14 @@ CREATE TABLE movie (
     overview TEXT NOT NULL,
     genres TEXT AS List<String>,
     genreIds TEXT AS List<Int>,
-    original_language TEXT NOT NULL,
-    vote_count INTEGER NOT NULL,
-    release_date TEXT NOT NULL,
+    original_language TEXT,
+    vote_count INTEGER,
+    release_date TEXT,
     poster_url TEXT,
-    poster_last_updated INTEGER NOT NULL,
-    favorite INTEGER AS Boolean NOT NULL,
-    externalUrl TEXT NOT NULL,
-    popularity REAL NOT NULL,
+    poster_last_updated INTEGER NOT NULL DEFAULT 0,
+    favorite INTEGER AS Boolean NOT NULL DEFAULT 0,
+    externalUrl TEXT,
+    popularity REAL,
     status INTEGER,
     production_companies TEXT AS List<String>,
     last_modified_at INTEGER NOT NULL DEFAULT 0,
@@ -54,14 +54,20 @@ selectFavorites:
 SELECT
     m.*,
     (
-       SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = m.id
+       SELECT DISTINCT COUNT(contentItem.list_id)
+       FROM contentItem
+       LEFT JOIN contentList ON contentItem.list_id = contentList._id
+       WHERE movie_id = id AND contentList.in_library
     ) AS inLibraryLists
 FROM movie m WHERE favorite AND (title LIKE :query OR :query = '');
 
 selectById:
 SELECT movie.*,
 (
-   SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = movie.id
+   SELECT DISTINCT COUNT(contentItem.list_id)
+   FROM contentItem
+   LEFT JOIN contentList ON contentItem.list_id = contentList._id
+   WHERE movie_id = id AND contentList.in_library
 )
 FROM movie WHERE id = :id LIMIT 1;
 
@@ -69,7 +75,10 @@ FROM movie WHERE id = :id LIMIT 1;
 selectMoviePartialById:
 SELECT id, title, poster_url, poster_last_updated, favorite, last_modified_at, popularity,overview,
 (
-   SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = movie.id
+   SELECT DISTINCT COUNT(contentItem.list_id)
+   FROM contentItem
+   LEFT JOIN contentList ON contentItem.list_id = contentList._id
+   WHERE movie_id = id AND contentList.in_library
 ) FROM movie WHERE id = :id LIMIT 1;
 
 selectAll:

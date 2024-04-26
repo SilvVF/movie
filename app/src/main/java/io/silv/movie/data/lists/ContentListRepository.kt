@@ -27,9 +27,9 @@ interface ContentListRepository {
     ): Long
     suspend fun updateList(update: ContentListUpdate)
     suspend fun addItemsToList(items: List<Pair<Long, Boolean>>, contentList: ContentList)
-    suspend fun addMovieToList(movieId: Long, contentList: ContentList)
+    suspend fun addMovieToList(movieId: Long, contentList: ContentList, createdAt: Long?)
     suspend fun removeMovieFromList(movieId: Long, contentList: ContentList)
-    suspend fun addShowToList(showId: Long, contentList: ContentList)
+    suspend fun addShowToList(showId: Long, contentList: ContentList, createdAt: Long?)
     suspend fun removeShowFromList(showId: Long, contentList: ContentList)
 }
 
@@ -49,7 +49,7 @@ class ContentListRepositoryImpl(
         return handler.awaitOneExecutable(inTransaction = true) {
             contentListQueries.insert(
                 name = name,
-                createdAt = createdAt ?: Clock.System.now().toEpochMilliseconds(),
+                createdAt = createdAt ?: Clock.System.now().epochSeconds,
                 supabaseId = supabaseId,
                 createdBy  = userId,
                 inLibrary = inLibrary,
@@ -81,24 +81,24 @@ class ContentListRepositoryImpl(
         handler.await(true) {
             items.forEach { (id, isMovie) ->
                 if (isMovie) {
-                    contentItemQueries.insert(id, -1, contentList.id)
+                    contentItemQueries.insert(id, -1, contentList.id, null)
                 } else {
-                    contentItemQueries.insert(-1, id, contentList.id)
+                    contentItemQueries.insert(-1, id, contentList.id, null)
                 }
             }
         }
     }
 
-    override suspend fun addMovieToList(movieId: Long, contentList: ContentList) {
-        handler.await { contentItemQueries.insert(movieId, -1, contentList.id) }
+    override suspend fun addMovieToList(movieId: Long, contentList: ContentList, createdAt: Long?) {
+        handler.await { contentItemQueries.insert(movieId, -1, contentList.id, createdAt.toString()) }
     }
 
     override suspend fun removeMovieFromList(movieId: Long, contentList: ContentList) {
         handler.await { contentItemQueries.deleteMovieFromList(movieId, contentList.id) }
     }
 
-    override suspend fun addShowToList(showId: Long, contentList: ContentList) {
-        handler.await { contentItemQueries.insert(-1, showId, contentList.id) }
+    override suspend fun addShowToList(showId: Long, contentList: ContentList,  createdAt: Long?) {
+        handler.await { contentItemQueries.insert(-1, showId, contentList.id, createdAt.toString()) }
     }
 
     override suspend fun removeShowFromList(showId: Long, contentList: ContentList) {

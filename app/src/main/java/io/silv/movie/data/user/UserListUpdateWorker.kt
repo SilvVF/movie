@@ -81,7 +81,7 @@ class UserListUpdateWorker (
                             userId = list.userId,
                             inLibrary = true,
                             subscribers = list.subscribers,
-                            createdAt = list.createdAt.toEpochMilliseconds()
+                            createdAt = list.createdAt.epochSeconds
                         )
                         local = contentListRepository.getList(id)
                             ?: error("failed to add list $network")
