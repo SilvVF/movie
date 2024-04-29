@@ -225,7 +225,7 @@ private fun MovieStandardScreenSizeContent(
                     setDisplayMode = { actions.setDisplayMode(it) },
                     onSearch = { actions.onSearch(it) },
                     changeQuery = { actions.changeQuery(it) },
-                    onFilterClick = {changeDialog(MovieScreenModel.Dialog.Filter) }
+                    onFilterClick = { changeDialog(MovieScreenModel.Dialog.Filter) }
                 )
             },
             floatingActionButton = {

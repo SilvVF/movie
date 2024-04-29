@@ -2,6 +2,7 @@ package io.silv.movie.data.movie.model
 
 import android.os.Parcelable
 import androidx.compose.runtime.Stable
+import kotlinx.datetime.Clock
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
@@ -52,7 +53,7 @@ data class Movie(
             posterUrl = "",
             title = "",
             favorite = false,
-            posterLastUpdated = -1L,
+            posterLastUpdated = Clock.System.now().epochSeconds,
             externalUrl = "",
             overview = "",
             genres = emptyList(),

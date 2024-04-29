@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.browse.tv.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +25,7 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
+import io.silv.movie.presentation.showSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
@@ -57,11 +59,13 @@ fun BrowseTVSourceList(
         ) { index ->
             val tvShow by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
 
-            BrowseTVSourceListItem(
-                show = tvShow,
-                onClick = { onShowClick(tvShow) },
-                onLongClick = { onShowLongClick(tvShow) },
-            )
+            Box(Modifier.showSharedElement(tvShow.id)) {
+                BrowseTVSourceListItem(
+                    show = tvShow,
+                    onClick = { onShowClick(tvShow) },
+                    onLongClick = { onShowLongClick(tvShow) },
+                )
+            }
         }
 
         if (pagingItems.loadState.append is LoadState.Loading) {

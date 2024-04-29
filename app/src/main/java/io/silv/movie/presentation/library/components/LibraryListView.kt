@@ -20,6 +20,8 @@ import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
 import io.silv.movie.presentation.library.screenmodels.LibraryState
+import io.silv.movie.presentation.listNameSharedElement
+import io.silv.movie.presentation.posterSharedElement
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
@@ -52,11 +54,13 @@ fun LibraryListView(
                 ContentListPreview(
                     modifier = Modifier
                         .clickable { onFavoritesClicked() }
-                        .padding(8.dp),
+                        .padding(8.dp)
+                        .posterSharedElement(-1),
+                    textModifier = Modifier.listNameSharedElement(-1),
                     cover = {
                         ContentPreviewDefaults.LibraryContentPoster(Modifier.aspectRatio(1f))
                     },
-                    name = stringResource(id = R.string.library_content_name),
+                    name = stringResource(id = R.string.favorites_top_bar_title),
                     description = stringResource(R.string.content_preview_items , state.favorites.size)
                 )
             }
@@ -79,8 +83,10 @@ fun LibraryListView(
                                 modifier = Modifier
                                     .aspectRatio(1f)
                                     .clickable { onPosterClick(list) }
+                                    .posterSharedElement(list.id)
                             )
                         },
+                        textModifier = Modifier.listNameSharedElement(list.id),
                         name = list.name,
                         description = list.description.ifEmpty {
                             when {

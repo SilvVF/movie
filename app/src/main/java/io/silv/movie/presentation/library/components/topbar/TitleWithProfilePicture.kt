@@ -30,6 +30,7 @@ fun TitleWithProfilePicture(
     user: User,
     name: String,
     description: String,
+    titleModifier: Modifier = Modifier,
 ) {
     Column(
         horizontalAlignment = Alignment.Start,
@@ -38,7 +39,8 @@ fun TitleWithProfilePicture(
         Text(
             text = name,
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier =  titleModifier
         )
         Spacer(Modifier.height(8.dp))
         Row(

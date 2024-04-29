@@ -14,8 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import io.silv.core_ui.theme.SeededMaterialTheme
-import io.silv.movie.MovieTheme
 
 @Composable
 internal fun InfoWidget(text: String) {
@@ -42,7 +40,7 @@ internal fun InfoWidget(text: String) {
 @PreviewLightDark
 @Composable
 private fun InfoWidgetPreview() {
-    MovieTheme {
+    MaterialTheme {
         Surface {
             InfoWidget(text = "kdjflkasjf;asjk;dfjl;adsfjkl")
         }

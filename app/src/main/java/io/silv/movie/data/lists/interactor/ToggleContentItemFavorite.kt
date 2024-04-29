@@ -65,7 +65,7 @@ class ToggleContentItemFavorite(
                     if (new.favorite) {
                         network.addShowToFavorites(new)
                     } else {
-                        network.deleteMovieFromFavorites(new.id)
+                        network.deleteShowFromFavorites(new.id)
                     }
                 }
 

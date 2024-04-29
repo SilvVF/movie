@@ -336,7 +336,8 @@ fun LazyItemScope.ContentListPreview(
     cover: @Composable () -> Unit,
     name: String,
     description: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    textModifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier.heightIn(0.dp, ListItemHeight),
@@ -352,11 +353,11 @@ fun LazyItemScope.ContentListPreview(
         }
         Spacer(Modifier.width(12.dp))
         Column(
-            modifier = Modifier
+            modifier = textModifier
                 .weight(0.8f, true)
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
+            horizontalAlignment = Alignment.Start,
         ) {
             Text(
                 text = name,

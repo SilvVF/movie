@@ -52,11 +52,10 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import org.koin.core.parameter.parametersOf
 
-class LibraryScreen: Screen {
+data object LibraryScreen: Screen {
 
     @Composable
     override fun Content() {
-
         val screenModel = getScreenModel<LibraryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val listCount by screenModel.listCount.collectAsStateWithLifecycle()
@@ -90,12 +89,14 @@ class LibraryScreen: Screen {
             setListMode = screenModel::updateListMode,
             changeSortMode = screenModel::updateSortMode,
             createListClicked = { createResultLauncher.launch() },
-            onListClick = { navigator.push(ListViewScreen(it.id)) },
+            onListClick = {
+                navigator.push(
+                    ListViewScreen(it.id)
+                )
+            },
             onListLongClick = { list, items -> changeDialog(LibraryScreenModel.Dialog.ListOptions(list, items)) },
             onFavoritesClicked = { navigator.push(FavoritesViewScreen) },
-            onPosterClick = {
-                changeDialog(LibraryScreenModel.Dialog.FullCover(it))
-            },
+            onPosterClick = { changeDialog(LibraryScreenModel.Dialog.FullCover(it)) },
             refreshLists = screenModel::refreshUserLists,
             refreshFavorites = screenModel::refreshFavoritesList,
             state = state

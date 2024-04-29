@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.browse.movie.components
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +24,7 @@ import io.silv.core_ui.util.plus
 import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.LocalIsScrolling
+import io.silv.movie.presentation.movieSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
@@ -56,11 +58,13 @@ fun BrowseMovieSourceList(
         ) { index ->
             val movie by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
 
-            BrowseMovieSourceListItem(
-                movie = movie,
-                onClick = { onMovieClick(movie) },
-                onLongClick = { onMovieLongClick(movie) },
-            )
+            Box(Modifier.movieSharedElement(movie.id)) {
+                BrowseMovieSourceListItem(
+                    movie = movie,
+                    onClick = { onMovieClick(movie) },
+                    onLongClick = { onMovieLongClick(movie) },
+                )
+            }
         }
 
         if (pagingItems.loadState.append is LoadState.Loading) {

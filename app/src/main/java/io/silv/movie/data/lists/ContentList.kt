@@ -154,12 +154,12 @@ data class ContentItem(
             isMovie = false,
             title = "",
             posterUrl = null,
-            posterLastUpdated = -1L,
+            posterLastUpdated = 0L,
             favorite = false,
-            inLibraryLists = -1,
-            lastModified = -1L,
+            inLibraryLists = 0,
+            lastModified = 0L,
             description = "",
-            popularity = -1.0
+            popularity = 0.0
         )
     }
 }

@@ -35,6 +35,7 @@ import io.silv.movie.data.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.movie.MovieActions
+import io.silv.movie.presentation.movieSharedElement
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -142,28 +143,29 @@ fun MovieSourcePosterGrid(
 
             val movie by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
 
-
-            when(mode) {
-                PosterDisplayMode.Grid.ComfortableGrid -> {
-                    BrowseMovieSourceComfortableGridItem(
-                        movie = movie,
-                        onClick = onMovieClick,
-                        onLongClick = onMovieLongClick
-                    )
-                }
-                PosterDisplayMode.Grid.CompactGrid -> {
-                    BrowseMovieSourceCompactGridItem(
-                        movie = movie,
-                        onClick = onMovieClick,
-                        onLongClick = onMovieLongClick
-                    )
-                }
-                PosterDisplayMode.Grid.CoverOnlyGrid -> {
-                    BrowseMovieSourceCoverOnlyGridItem(
-                        movie = movie,
-                        onClick = onMovieClick,
-                        onLongClick = onMovieLongClick
-                    )
+            Box(Modifier.movieSharedElement(movie.id)) {
+                when(mode) {
+                    PosterDisplayMode.Grid.ComfortableGrid -> {
+                        BrowseMovieSourceComfortableGridItem(
+                            movie = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
+                    PosterDisplayMode.Grid.CompactGrid -> {
+                        BrowseMovieSourceCompactGridItem(
+                            movie = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
+                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                        BrowseMovieSourceCoverOnlyGridItem(
+                            movie = movie,
+                            onClick = onMovieClick,
+                            onLongClick = onMovieLongClick
+                        )
+                    }
                 }
             }
         }

@@ -118,6 +118,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.util)
     implementation(libs.kotlinx.serialization.json.okio)
 
+    implementation("androidx.compose.ui:ui:1.7.0-alpha07")
+    implementation("androidx.compose.animation:animation:1.7.0-alpha07")
+
     // Paging3
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.paging.runtime)
@@ -201,6 +204,7 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.freeCompilerArgs += listOf(
             "-Xcontext-receivers",
+            "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
             "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
             "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
             "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",

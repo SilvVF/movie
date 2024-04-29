@@ -3,6 +3,7 @@ package io.silv.movie.data.tv.model
 import android.os.Parcelable
 import androidx.compose.runtime.Stable
 import io.silv.movie.core.STVShow
+import kotlinx.datetime.Clock
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 
@@ -52,7 +53,7 @@ data class TVShow(
             posterUrl = "",
             title = "",
             favorite = false,
-            posterLastUpdated = -1L,
+            posterLastUpdated = Clock.System.now().epochSeconds,
             externalUrl = "",
             overview = "",
             genres = emptyList(),
@@ -63,9 +64,9 @@ data class TVShow(
             genreIds = emptyList(),
             status = null,
             productionCompanies = emptyList(),
-            lastModifiedAt = -1L,
+            lastModifiedAt = 0L,
             inLists = 0,
-            favoriteLastModified = -1L
+            favoriteLastModified = 0L
         )
     }
 }

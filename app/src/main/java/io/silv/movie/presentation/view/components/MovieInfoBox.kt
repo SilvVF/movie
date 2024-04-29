@@ -53,6 +53,7 @@ import io.silv.core_ui.util.copyToClipboard
 import io.silv.movie.R
 import io.silv.movie.core.Status
 import io.silv.movie.core.getString
+import io.silv.movie.presentation.coverDataSharedElement
 
 @Composable
 fun MovieInfoBox(
@@ -144,9 +145,10 @@ private fun MovieAndSourceTitlesLarge(
             .padding(start = 16.dp, top = appBarPadding + 16.dp, end = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val data = coverDataProvider()
         ItemCover.Book(
-            modifier = Modifier.fillMaxWidth(0.65f),
-            data = coverDataProvider(),
+            modifier = Modifier.fillMaxWidth(0.65f).coverDataSharedElement(data),
+            data = data,
             contentDescription = stringResource(id = R.string.cover),
             onClick = onCoverClick,
         )
@@ -184,11 +186,13 @@ private fun MovieAndSourceTitlesSmall(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        val data = coverDataProvider()
         ItemCover.Book(
             modifier = Modifier
                 .sizeIn(maxWidth = 100.dp)
-                .align(Alignment.Top),
-            data = coverDataProvider(),
+                .align(Alignment.Top)
+                .coverDataSharedElement(data),
+            data = data,
             contentDescription = stringResource(id = R.string.cover),
             onClick = onCoverClick,
         )

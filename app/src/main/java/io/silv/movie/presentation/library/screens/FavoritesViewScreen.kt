@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -40,6 +41,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.util.colorClickable
 import io.silv.movie.LocalUser
+import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalContentInteractor
@@ -54,6 +56,8 @@ import io.silv.movie.presentation.library.components.topbar.rememberTopBarState
 import io.silv.movie.presentation.library.screenmodels.FavoritesListState
 import io.silv.movie.presentation.library.screenmodels.FavoritesScreenModel
 import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
+import io.silv.movie.presentation.listNameSharedElement
+import io.silv.movie.presentation.posterSharedElement
 import io.silv.movie.presentation.view.movie.MovieViewScreen
 import io.silv.movie.presentation.view.tv.TVViewScreen
 
@@ -178,20 +182,21 @@ private fun FavoritesScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(16.dp),
                 ) {
                     if (user != null) {
                         TitleWithProfilePicture(
                             user = user,
-                            name = "Favorites",
-                            description = "Your favorite movies and tv-shows"
+                            name = stringResource(id = R.string.favorites_top_bar_title),
+                            description = "Your favorite movies and tv-shows",
+                            titleModifier = Modifier.listNameSharedElement(-1)
                         )
                     } else {
                         Text(
-                            text = "Favorites",
+                            text = stringResource(id = R.string.favorites_top_bar_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier
+                            modifier = Modifier.listNameSharedElement(-1)
                         )
                     }
                     Row(
@@ -248,7 +253,9 @@ private fun FavoritesScreenContent(
             },
             poster = {
                 ContentPreviewDefaults.LibraryContentPoster(
-                    modifier = Modifier.fillMaxHeight()
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .posterSharedElement(-1)
                 )
             },
             topAppBar = {

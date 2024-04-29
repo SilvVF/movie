@@ -35,6 +35,7 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.tv.model.TVShowPoster
 import io.silv.movie.presentation.browse.LocalIsScrolling
 import io.silv.movie.presentation.browse.tv.TVActions
+import io.silv.movie.presentation.showSharedElement
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -138,27 +139,31 @@ fun TVSourcePosterGrid(
             contentType = pagingItems.itemContentType { mode.hashCode() }
         ) {
             val tvShow by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
-            when(mode) {
-                PosterDisplayMode.Grid.ComfortableGrid -> {
-                    BrowseShowSourceComfortableGridItem(
-                        show = tvShow,
-                        onClick = onShowClick,
-                        onLongClick = onShowLongClick
-                    )
-                }
-                PosterDisplayMode.Grid.CompactGrid -> {
-                    BrowsShowSourceCompactGridItem(
-                        show = tvShow,
-                        onClick = onShowClick,
-                        onLongClick = onShowLongClick
-                    )
-                }
-                PosterDisplayMode.Grid.CoverOnlyGrid -> {
-                    BrowseShowSourceCoverOnlyGridItem(
-                        show = tvShow,
-                        onClick = onShowClick,
-                        onLongClick = onShowLongClick
-                    )
+            Box(Modifier.showSharedElement(tvShow.id)) {
+                when (mode) {
+                    PosterDisplayMode.Grid.ComfortableGrid -> {
+                        BrowseShowSourceComfortableGridItem(
+                            show = tvShow,
+                            onClick = onShowClick,
+                            onLongClick = onShowLongClick
+                        )
+                    }
+
+                    PosterDisplayMode.Grid.CompactGrid -> {
+                        BrowsShowSourceCompactGridItem(
+                            show = tvShow,
+                            onClick = onShowClick,
+                            onLongClick = onShowLongClick
+                        )
+                    }
+
+                    PosterDisplayMode.Grid.CoverOnlyGrid -> {
+                        BrowseShowSourceCoverOnlyGridItem(
+                            show = tvShow,
+                            onClick = onShowClick,
+                            onLongClick = onShowLongClick
+                        )
+                    }
                 }
             }
         }

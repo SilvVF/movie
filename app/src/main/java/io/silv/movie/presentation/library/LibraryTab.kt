@@ -1,5 +1,8 @@
 package io.silv.movie.presentation.library
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.runtime.Composable
@@ -7,15 +10,15 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.movie.Nav
 import io.silv.movie.R
+import io.silv.movie.presentation.AnimatedContentTransition
+import io.silv.movie.presentation.SharedTransitionTab
 import io.silv.movie.presentation.library.screens.LibraryScreen
 
 
-data object LibraryTab: Tab {
+data object LibraryTab: SharedTransitionTab() {
 
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -27,15 +30,21 @@ data object LibraryTab: Tab {
     @Composable
     override fun Content() {
         Navigator(
-            LibraryScreen()
+            LibraryScreen
         ) { navigator ->
 
             SideEffect { Nav.setNav(navigator) }
 
-            FadeTransition(navigator)
+            AnimatedContentTransition(
+                navigator,
+                transform = {
+                    fadeIn() togetherWith fadeOut()
+                }
+            )
         }
     }
 }
+
 
 
 

@@ -42,7 +42,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.voyager.ContentScreen
-import io.silv.movie.LocalDateFormatter
+import io.silv.movie.LocalAppState
 import io.silv.movie.LocalUser
 import io.silv.movie.R
 import io.silv.movie.UserProfileImageData
@@ -59,7 +59,7 @@ fun ContentScreen.CommentsBottomSheet(
     val bottomSheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
     val user = LocalUser.current
-    val formatter = LocalDateFormatter.current
+    val appState = LocalAppState.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
 
     fun dismissSheet() {
@@ -156,7 +156,7 @@ fun ContentScreen.CommentsBottomSheet(
                             DotSeparatorText()
                             Text(
                                 text = remember(comment.createdAt) {
-                                    formatter.format(comment.createdAt)
+                                    appState.formatDate(comment.createdAt)
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.alpha(0.78f)

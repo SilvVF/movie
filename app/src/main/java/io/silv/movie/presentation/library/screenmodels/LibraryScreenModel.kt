@@ -69,9 +69,11 @@ class LibraryScreenModel(
                 snapshotFlow { sortMode }.distinctUntilChanged()
             ) { a, b -> Pair(a, b) }
             .onEach { (contentListItems, sortMode) ->
-
                 val grouped = contentListItems
-                    .groupBy { item -> item.list }
+                    .groupBy { item -> item.list.id }
+                    .mapKeys { (k, _) ->
+                        contentListItems.first { it.list.id == k }.list
+                    }
                     .mapValues { (_, items) ->
                         items
                             .filterIsInstance<ContentListItem.Item>()
@@ -179,19 +181,19 @@ class LibraryScreenModel(
                 toSortedMap { a: ContentList, b: ContentList ->
                     a.name.compareTo(b.name).takeIf { it != 0 }  ?: 1
                 }
-                    .toList()
             LibrarySortMode.Count ->
-                toList()
-                    .sortedByDescending { (_, value) ->
-                        value.size
-                    }
+                toSortedMap { a: ContentList, b: ContentList ->
+                    this[b]!!.size.compareTo(this[a]!!.size)
+                }
             LibrarySortMode.RecentlyAdded -> {
                 toSortedMap { a: ContentList, b: ContentList ->
-                    (b.lastModified - a.lastModified).toInt().takeIf { it != 0 }  ?: 1
+                    b.lastModified.compareTo(a.lastModified)
                 }
-                    .toList()
+
             }
         }
+            .toMap()
+            .toList()
     }
 
     fun updateDialog(dialog: Dialog?) {

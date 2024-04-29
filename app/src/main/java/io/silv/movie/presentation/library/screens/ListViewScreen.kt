@@ -119,6 +119,8 @@ import io.silv.movie.presentation.library.screenmodels.ListCoverScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListViewEvent
 import io.silv.movie.presentation.library.screenmodels.ListViewScreenModel
 import io.silv.movie.presentation.library.screenmodels.ListViewState
+import io.silv.movie.presentation.listNameSharedElement
+import io.silv.movie.presentation.posterSharedElement
 import io.silv.movie.presentation.profile.UserProfileImage
 import io.silv.movie.presentation.toPoster
 import io.silv.movie.presentation.view.components.EditCoverAction
@@ -135,6 +137,7 @@ data class ListViewScreen(
 
     override val key: ScreenKey
         get() = "$listId$supabaseId"
+
 
     @Composable
     override fun Content() {
@@ -506,6 +509,7 @@ private fun SuccessScreenContent(
                             user = state.user,
                             name = state.list.name,
                             description = state.list.description,
+                            titleModifier = Modifier.listNameSharedElement(state.list.id)
                         )
                     } else {
                         Text(
@@ -575,7 +579,7 @@ private fun SuccessScreenContent(
                                 Modifier
                             }
                         )
-
+                        .posterSharedElement(state.list.id)
                 )
             },
             topAppBar = {

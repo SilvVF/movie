@@ -1,12 +1,12 @@
 package io.silv.movie.presentation.settings.screens
 
-import android.app.Activity
 import android.os.Build
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +36,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -47,10 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.ItemCover
+import io.silv.movie.LocalAppState
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.AppTheme
@@ -59,7 +56,6 @@ import io.silv.movie.data.prefrences.StartScreen
 import io.silv.movie.data.prefrences.TabletUiMode
 import io.silv.movie.data.prefrences.ThemeMode
 import io.silv.movie.data.prefrences.UiPreferences
-import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings
 import io.silv.movie.presentation.settings.widgets.BasePreferenceWidget
@@ -101,17 +97,18 @@ data object SettingsAppearanceScreen: SearchableSettings {
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
+        val appState = LocalAppState.current
 
         val scope = rememberCoroutineScope()
 
-        val themeModePref = uiPreferences.themeMode()
-        val themeMode by themeModePref.collectAsState()
+        val themeModePref = remember { uiPreferences.themeMode() }
+        val themeMode = appState.themeMode
 
-        val appThemePref = uiPreferences.appTheme()
-        val appTheme by appThemePref.collectAsState()
+        val appThemePref  = remember { uiPreferences.appTheme() }
+        val appTheme = appState.appTheme
 
-        val amoledPref = uiPreferences.themeDarkAmoled()
-        val amoled by amoledPref.collectAsState()
+        val amoledPref   = remember { uiPreferences.themeDarkAmoled() }
+        val amoled = appState.amoled
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_theme),
@@ -129,7 +126,6 @@ data object SettingsAppearanceScreen: SearchableSettings {
                                 }
                             },
                         )
-
                         AppThemePreferenceWidget(
                             value = appTheme,
                             amoled = amoled,
@@ -146,8 +142,8 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     title = stringResource(R.string.pref_dark_theme_pure_black),
                     enabled = themeMode != ThemeMode.LIGHT,
                     onValueChanged = {
-                        (context as? Activity)?.let { ActivityCompat.recreate(it) }
-                        true
+                        amoledPref.set(it)
+                        amoledPref.get()
                     },
                 ),
             ),
@@ -159,13 +155,11 @@ data object SettingsAppearanceScreen: SearchableSettings {
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
+        val fmt = LocalAppState.current.dateFormat
 
         val now = remember { Instant.now().toEpochMilli() }
-
-        val dateFormat by uiPreferences.dateFormat().collectAsState()
-        val formattedNow = remember(dateFormat) {
-            UiPreferences.dateFormat(dateFormat).format(now)
+        val formattedNow = remember(fmt) {
+            fmt.format(now)
         }
 
         return Preference.PreferenceGroup(
@@ -282,7 +276,6 @@ private fun AppThemesList(
     amoled: Boolean,
     onItemClick: (AppTheme) -> Unit,
 ) {
-    val context = LocalContext.current
     val appThemes = remember {
         AppTheme.entries
             .filterNot { it.titleRes == null || (it == AppTheme.MONET && !isDynamicColorAvailable) }
@@ -303,12 +296,16 @@ private fun AppThemesList(
                 MovieTheme(
                     appTheme = appTheme,
                     amoled = amoled,
+                    dark = when(LocalAppState.current.themeMode) {
+                        ThemeMode.LIGHT -> false
+                        ThemeMode.DARK -> true
+                        ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    }
                 ) {
                     AppThemePreviewItem(
                         selected = currentTheme == appTheme,
                         onClick = {
                             onItemClick(appTheme)
-                            (context as? Activity)?.let { ActivityCompat.recreate(it) }
                         },
                     )
                 }

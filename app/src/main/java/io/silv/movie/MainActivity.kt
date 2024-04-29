@@ -1,6 +1,7 @@
 package io.silv.movie
 
 import android.os.Bundle
+import android.text.format.DateUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -37,14 +38,16 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -58,6 +61,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
+import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.colorScheme.CloudflareColorScheme
 import io.silv.core_ui.theme.colorScheme.CottonCandyColorScheme
@@ -80,18 +84,20 @@ import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.prefrences.AppTheme
+import io.silv.movie.data.prefrences.ThemeMode
 import io.silv.movie.data.prefrences.ThemeMode.DARK
 import io.silv.movie.data.prefrences.ThemeMode.LIGHT
 import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.prefrences.UiPreferences
-import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.trailers.Trailer
+import io.silv.movie.data.user.User
 import io.silv.movie.data.user.UserRepository
+import io.silv.movie.presentation.ContentInteractor
+import io.silv.movie.presentation.ListInteractor
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.browse.BrowseTab
 import io.silv.movie.presentation.browse.DiscoverTab
-import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.library.LibraryTab
 import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
 import io.silv.movie.presentation.media.CollapsablePlayerScreen
@@ -103,20 +109,15 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaInstant
-import kotlinx.datetime.toLocalDateTime
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.compose.koinInject
-import java.util.Date
-import kotlin.math.abs
+import java.text.DateFormat
 import kotlin.math.roundToInt
 
 
@@ -131,42 +132,84 @@ object Nav {
 
     fun clear() { current = null }
 }
-val LocalDateFormatter = staticCompositionLocalOf<DateFormatter> { error("not provided") }
 
-class DateFormatter(
-    prefs: UiPreferences,
+@Stable
+@Immutable
+data class AppState(
+    val appTheme: AppTheme,
+    val themeMode: ThemeMode,
+    val amoled: Boolean,
+    val dateFormat: DateFormat,
+    val relativeTimestamp: Boolean,
+    val startScreen: Tab
+) {
+
+    fun formatDate(i: Instant): String {
+        return if (relativeTimestamp) {
+            DateUtils.getRelativeTimeSpanString(
+                i.toEpochMilliseconds(),
+                Clock.System.now().toEpochMilliseconds(),
+                DateUtils.MINUTE_IN_MILLIS
+            )
+                .toString()
+        } else {
+            dateFormat.format(i.toJavaInstant())
+        }
+    }
+}
+
+val LocalAppState = compositionLocalOf<AppState> { error("Not provided in scope") }
+
+@Stable
+class AppStateProvider(
+    private val uiPreferences: UiPreferences,
     scope: CoroutineScope
 ) {
-    private val relative = prefs.relativeTime().changes()
-        .stateIn(
-            scope,
-            SharingStarted.Lazily,
-            prefs.relativeTime().getOrDefaultBlocking()
-        )
+    var state by mutableStateOf<State>(State.Loading)
+        private set
 
-    private val fmt = prefs.dateFormat().changes().map { UiPreferences.dateFormat(it) }
-        .stateIn(
-            scope,
-            SharingStarted.Lazily,
-            UiPreferences.dateFormat(prefs.dateFormat().getOrDefaultBlocking())
-        )
+    private val appStateChanges = combine(
+        uiPreferences.themeMode().changes(),
+        uiPreferences.appTheme().changes(),
+        uiPreferences.dateFormat().changes(),
+        uiPreferences.themeDarkAmoled().changes(),
+        uiPreferences.relativeTime().changes(),
+    ) { themeMode, appTheme, dateFormat, amoled, relative ->
+       AppState(
+           appTheme,
+           themeMode,
+           amoled,
+           UiPreferences.dateFormat(dateFormat),
+           relative,
+           (state as? State.Success)?.state?.startScreen
+               ?: uiPreferences.startScreen().get().tab,
+       )
+    }
 
-    fun format(instant: Instant): String {
-        return if (relative.value) {
-            val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val daysFromToday =  now.date.toEpochDays() - dt.date.toEpochDays()
-            when {
-                daysFromToday == 0 -> {
-                    val hours = now.hour - dt.hour
-                    "${hours}h"
-                }
-                daysFromToday <= -28 -> "${abs(daysFromToday)}d"
-                else -> "${(daysFromToday / 7).coerceAtLeast(1)}w"
+    init {
+        scope.launch {
+            state = State.Success(
+                AppState(
+                    appTheme = uiPreferences.appTheme().get(),
+                    amoled = uiPreferences.themeDarkAmoled().get(),
+                    themeMode = uiPreferences.themeMode().get(),
+                    dateFormat = UiPreferences.dateFormat(uiPreferences.dateFormat().get()),
+                    startScreen = uiPreferences.startScreen().get().tab,
+                    relativeTimestamp = uiPreferences.relativeTime().get()
+                )
+            )
+
+            appStateChanges.collect {
+                state = State.Success(it)
             }
-        } else {
-            fmt.value.format(Date.from(instant.toJavaInstant()))
         }
+    }
+    @Stable
+    sealed interface State {
+        @Stable
+        data object Loading: State
+        @Stable
+        data class Success(val state: AppState): State
     }
 }
 
@@ -180,7 +223,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
-        val dateFormatter = DateFormatter(uiPreferences, lifecycleScope)
+
+        val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope)
+
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
         setContent {
@@ -192,127 +237,15 @@ class MainActivity : ComponentActivity() {
 
             CompositionLocalProvider(
                 LocalMainViewModelStoreOwner provides this,
-                LocalUser provides currentUser,
-                LocalListInteractor provides mainScreenModel.listInteractor,
-                LocalContentInteractor provides mainScreenModel.contentInteractor,
-                LocalDateFormatter provides dateFormatter
             ) {
-                val playerViewModel = getActivityViewModel<PlayerViewModel>()
-                val listInteractor = LocalListInteractor.current
-                val contentInteractor = LocalContentInteractor.current
-                val collapsableVideoState = rememberCollapsableVideoState()
-                val snackbarHostState = remember { SnackbarHostState() }
-
-                val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
-                    if (value != SwipeToDismissBoxValue.Settled) {
-                        snackbarHostState.currentSnackbarData?.dismiss()
-                        true
-                    } else {
-                        false
-                    }
-                })
-
-                LaunchedEffect(dismissSnackbarState.currentValue) {
-                    if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
-                        dismissSnackbarState.reset()
-                    }
-                }
-
-                BackHandler(
-                    enabled = playerViewModel.trailerQueue.isNotEmpty()
-                ) {
-                    playerViewModel.clearMediaQueue()
-                }
-
-                val trailers by remember(playerViewModel.trailerQueue) {
-                    derivedStateOf { playerViewModel.trailerQueue.toImmutableList() }
-                }
-
-                MovieTheme {
-                    TabNavigator(uiPreferences.startScreen().getOrDefaultBlocking().tab) { tabNavigator ->
-                        Surface(Modifier.fillMaxSize(),) {
-                            Scaffold(
-                                modifier = Modifier.fillMaxSize(),
-                                contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                                bottomBar = {
-                                    AppBottomBar(
-                                        videos = trailers,
-                                        progress = { collapsableVideoState.progress },
-                                        tabNavigator = tabNavigator,
-                                        modifier = Modifier
-                                    )
-                                },
-                                snackbarHost = {
-                                    SwipeToDismissBox(
-                                        state = dismissSnackbarState,
-                                        backgroundContent = {},
-                                        content = {
-                                            SnackbarHost(
-                                                // classic compost
-                                                // "imePadding doesnt work on M3??"
-                                                hostState = snackbarHostState, modifier = Modifier.imePadding()
-                                            )
-                                        },
-                                    )
-                                }
-                            ) { paddingValues ->
-                                val trailerPlayerVisible by remember {
-                                    derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
-                                }
-                                val density = LocalDensity.current
-                                val bottomPadding by remember {
-                                    derivedStateOf {
-                                        with(density) {
-                                            CollapsablePlayerMinHeight - collapsableVideoState.dismissOffsetPx.toDp()
-                                        }
-                                    }
-                                }
-                                Box(
-                                    Modifier
-                                        .padding(paddingValues)
-                                        .consumeWindowInsets(paddingValues)
-                                ) {
-                                    Box(
-                                        Modifier
-                                            .padding(
-                                                bottom = animateDpAsState(
-                                                    targetValue = if (trailerPlayerVisible) bottomPadding else 0.dp,
-                                                    label = "player-aware-padding-animated"
-                                                )
-                                                    .value
-                                            )
-                                    ) {
-                                        CurrentTab()
-                                    }
-                                    AnimatedVisibility(
-                                        visible = trailerPlayerVisible,
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .align(Alignment.BottomCenter),
-                                        enter = slideInVertically { it } + fadeIn(),
-                                        exit = fadeOut(tween(0, 0))
-                                    ) {
-                                        CollapsablePlayerScreen(
-                                            collapsableVideoState = collapsableVideoState,
-                                            onDismissRequested = playerViewModel::clearMediaQueue,
-                                            playerViewModel = playerViewModel
-                                        )
-                                    }
-                                    LaunchedEffect(trailerPlayerVisible) {
-                                        collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
-                                    }
-                                }
-                            }
-                        }
-                        HandleItemEvents(
-                            contentInteractor = contentInteractor,
-                            snackbarHostState = snackbarHostState,
-                            navigator = { Nav.current}
-                        )
-                        HandleListEvents(
-                            listInteractor = listInteractor,
-                            snackbarHostState = snackbarHostState,
-                            navigator = { Nav.current }
+                when(val s = appStateProvider.state) {
+                    AppStateProvider.State.Loading -> {}
+                    is AppStateProvider.State.Success -> {
+                        MainContent(
+                            appState = s.state,
+                            currentUser = currentUser,
+                            contentInteractor = mainScreenModel.contentInteractor,
+                            listInteractor = mainScreenModel.listInteractor
                         )
                     }
                 }
@@ -321,60 +254,191 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+private fun MainContent(
+    appState: AppState,
+    currentUser: User?,
+    contentInteractor: ContentInteractor,
+    listInteractor: ListInteractor,
+) {
+    CompositionLocalProvider(
+        LocalUser provides currentUser,
+        LocalListInteractor provides listInteractor,
+        LocalContentInteractor provides contentInteractor,
+        LocalAppState provides appState
+    ) {
+        val playerViewModel = getActivityViewModel<PlayerViewModel>()
+        val collapsableVideoState = rememberCollapsableVideoState()
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+            if (value != SwipeToDismissBoxValue.Settled) {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                true
+            } else {
+                false
+            }
+        })
+
+        LaunchedEffect(dismissSnackbarState.currentValue) {
+            if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
+                dismissSnackbarState.reset()
+            }
+        }
+
+        BackHandler(
+            enabled = playerViewModel.trailerQueue.isNotEmpty()
+        ) {
+            playerViewModel.clearMediaQueue()
+        }
+
+        val trailers by remember(playerViewModel.trailerQueue) {
+            derivedStateOf { playerViewModel.trailerQueue.toImmutableList() }
+        }
+
+
+        MovieTheme(
+            appState.appTheme,
+            appState.amoled,
+            dark = when(appState.themeMode) {
+                LIGHT -> false
+                DARK -> true
+                SYSTEM -> isSystemInDarkTheme()
+            }
+        ) {
+            TabNavigator(appState.startScreen) { tabNavigator ->
+                Surface(Modifier.fillMaxSize(),) {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                        bottomBar = {
+                            AppBottomBar(
+                                videos = trailers,
+                                progress = { collapsableVideoState.progress },
+                                tabNavigator = tabNavigator,
+                                modifier = Modifier
+                            )
+                        },
+                        snackbarHost = {
+                            SwipeToDismissBox(
+                                state = dismissSnackbarState,
+                                backgroundContent = {},
+                                content = {
+                                    SnackbarHost(
+                                        // classic compost
+                                        // "imePadding doesnt work on M3??"
+                                        hostState = snackbarHostState,
+                                        modifier = Modifier.imePadding()
+                                    )
+                                },
+                            )
+                        }
+                    ) { paddingValues ->
+                        val trailerPlayerVisible by remember {
+                            derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
+                        }
+                        val density = LocalDensity.current
+                        val bottomPadding by remember {
+                            derivedStateOf {
+                                with(density) {
+                                    CollapsablePlayerMinHeight - collapsableVideoState.dismissOffsetPx.toDp()
+                                }
+                            }
+                        }
+                        Box(
+                            Modifier
+                                .padding(paddingValues)
+                                .consumeWindowInsets(paddingValues)
+                        ) {
+                            Box(
+                                Modifier
+                                    .padding(
+                                        bottom = animateDpAsState(
+                                            targetValue = if (trailerPlayerVisible) bottomPadding else 0.dp,
+                                            label = "player-aware-padding-animated"
+                                        )
+                                            .value
+                                    )
+                            ) {
+                                CurrentTab()
+                            }
+                            AnimatedVisibility(
+                                visible = trailerPlayerVisible,
+                                modifier = Modifier
+                                    .wrapContentSize()
+                                    .align(Alignment.BottomCenter),
+                                enter = slideInVertically { it } + fadeIn(),
+                                exit = fadeOut(tween(0, 0))
+                            ) {
+                                CollapsablePlayerScreen(
+                                    collapsableVideoState = collapsableVideoState,
+                                    onDismissRequested = playerViewModel::clearMediaQueue,
+                                    playerViewModel = playerViewModel
+                                )
+                            }
+                            LaunchedEffect(trailerPlayerVisible) {
+                                collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
+                            }
+                        }
+                    }
+                }
+                HandleItemEvents(
+                    contentInteractor = contentInteractor,
+                    snackbarHostState = snackbarHostState,
+                    navigator = { Nav.current }
+                )
+                HandleListEvents(
+                    listInteractor = listInteractor,
+                    snackbarHostState = snackbarHostState,
+                    navigator = { Nav.current }
+                )
+            }
+        }
+    }
+}
+
 
 @Composable
 @ReadOnlyComposable
-private fun getThemeColorScheme(
-    appTheme: AppTheme?,
-    amoled: Boolean?,
-    dark: Boolean?,
-    uiPreferences: UiPreferences,
+private fun rememberColorScheme(
+    appTheme: AppTheme,
+    amoled: Boolean,
+    dark: Boolean,
 ): ColorScheme {
-    val colorScheme = when (appTheme ?: uiPreferences.appTheme().getOrDefaultBlocking()) {
-        AppTheme.DEFAULT -> TachiyomiColorScheme
-        AppTheme.MONET -> MonetColorScheme(LocalContext.current)
-        AppTheme.CLOUDFLARE -> CloudflareColorScheme
-        AppTheme.COTTONCANDY -> CottonCandyColorScheme
-        AppTheme.DOOM -> DoomColorScheme
-        AppTheme.GREEN_APPLE -> GreenAppleColorScheme
-        AppTheme.LAVENDER -> LavenderColorScheme
-        AppTheme.MATRIX -> MatrixColorScheme
-        AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
-        AppTheme.MOCHA -> MochaColorScheme
-        AppTheme.SAPPHIRE -> SapphireColorScheme
-        AppTheme.NORD -> NordColorScheme
-        AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
-        AppTheme.TAKO -> TakoColorScheme
-        AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
-        AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
-        AppTheme.YINYANG -> YinYangColorScheme
-        AppTheme.YOTSUBA -> YotsubaColorScheme
-        else -> TachiyomiColorScheme
-    }
-    return colorScheme.getColorScheme(
-         dark ?: when(uiPreferences.themeMode().getOrDefaultBlocking()) {
-            LIGHT -> false
-            DARK -> true
-            SYSTEM -> isSystemInDarkTheme()
-        },
-        amoled ?: uiPreferences.themeDarkAmoled().getOrDefaultBlocking(),
-    )
+    val colorScheme =
+        when (appTheme) {
+            AppTheme.DEFAULT -> TachiyomiColorScheme
+            AppTheme.MONET -> MonetColorScheme(LocalContext.current)
+            AppTheme.CLOUDFLARE -> CloudflareColorScheme
+            AppTheme.COTTONCANDY -> CottonCandyColorScheme
+            AppTheme.DOOM -> DoomColorScheme
+            AppTheme.GREEN_APPLE -> GreenAppleColorScheme
+            AppTheme.LAVENDER -> LavenderColorScheme
+            AppTheme.MATRIX -> MatrixColorScheme
+            AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
+            AppTheme.MOCHA -> MochaColorScheme
+            AppTheme.SAPPHIRE -> SapphireColorScheme
+            AppTheme.NORD -> NordColorScheme
+            AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
+            AppTheme.TAKO -> TakoColorScheme
+            AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
+            AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
+            AppTheme.YINYANG -> YinYangColorScheme
+            AppTheme.YOTSUBA -> YotsubaColorScheme
+            else -> TachiyomiColorScheme
+        }
+    return colorScheme.getColorScheme(dark, amoled)
 }
 
 @Composable
 fun MovieTheme(
-    appTheme: AppTheme? = null,
-    amoled: Boolean? = null,
+    appTheme: AppTheme = AppTheme.MONET,
+    amoled: Boolean = false ,
+    dark: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val uiPreferences = koinInject<UiPreferences>()
-    val dark = when(uiPreferences.themeMode().collectAsState().value) {
-        LIGHT -> false
-        DARK -> true
-        SYSTEM -> isSystemInDarkTheme()
-    }
     MaterialTheme(
-        colorScheme = getThemeColorScheme(appTheme, amoled, dark, uiPreferences),
+        colorScheme = rememberColorScheme(appTheme, amoled, dark),
         content = content,
     )
 }
