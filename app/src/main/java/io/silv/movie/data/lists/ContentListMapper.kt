@@ -15,7 +15,8 @@ object ContentListMapper {
             posterLastUpdated: Long?,
             createdAt: Long,
             inLibrary: Boolean,
-            subscribers: Long->
+            subscribers: Long,
+            pinned: Boolean ->
         ContentList(
             id = id,
             supabaseId = supabaseId,
@@ -29,7 +30,8 @@ object ContentListMapper {
             createdAt = createdAt,
             username = username,
             inLibrary = inLibrary,
-            subscribers = subscribers
+            subscribers = subscribers,
+            pinned = pinned
         )
     }
 
@@ -126,6 +128,7 @@ object ContentListMapper {
             createdAt: Long,
             inLibrary: Boolean,
             subscribers: Long,
+            pinned: Boolean,
             movieId: Long?,
             showId: Long?,
             addedToListAt: Long?,
@@ -138,6 +141,22 @@ object ContentListMapper {
             inLists: Long?,
             contentLastModified: Long? ->
 
+        val list = ContentList(
+            id = listId,
+            supabaseId = supabaseId,
+            createdBy = createdBy,
+            lastSynced = createdAt,
+            public = public,
+            name = name,
+            description = description,
+            lastModified = lastModifiedAt,
+            posterLastModified = posterLastUpdated ?: 0L,
+            username = username,
+            createdAt = createdAt,
+            inLibrary = inLibrary,
+            subscribers = subscribers,
+            pinned = pinned
+        )
 
         if(movieId != null || showId != null) {
             ContentListItem.Item(
@@ -154,40 +173,10 @@ object ContentListMapper {
                    inLibraryLists = inLists ?: 0L
                ),
                createdAt = addedToListAt ?: 0L,
-               list = ContentList(
-                   id = listId,
-                   supabaseId = supabaseId,
-                   createdBy = createdBy,
-                   lastSynced = createdAt,
-                   public = public,
-                   name = name,
-                   description = description,
-                   lastModified = lastModifiedAt,
-                   posterLastModified = posterLastUpdated ?: -1L,
-                   username = username,
-                   createdAt = createdAt,
-                   inLibrary = inLibrary,
-                   subscribers = subscribers
-               )
+               list = list
             )
         } else {
-            ContentListItem.PlaceHolder(
-                ContentList(
-                    id = listId,
-                    supabaseId = supabaseId,
-                    createdBy = createdBy,
-                    lastSynced = createdAt,
-                    public = public,
-                    name = name,
-                    description = description,
-                    lastModified = lastModifiedAt,
-                    posterLastModified = posterLastUpdated ?: -1L,
-                    username = username,
-                    createdAt = createdAt,
-                    inLibrary = inLibrary,
-                    subscribers = subscribers
-                )
-            )
+            ContentListItem.PlaceHolder(list)
         }
     }
 }

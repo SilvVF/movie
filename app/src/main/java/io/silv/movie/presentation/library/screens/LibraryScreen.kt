@@ -189,6 +189,10 @@ data object LibraryScreen: Screen {
                     onUnsubscribeClicked = {
                         listInteractor.unsubscribeFromList(dialog.contentList)
                         onDismissRequest()
+                    },
+                    onTogglePinned = {
+                        listInteractor.togglePinned(dialog.contentList)
+                        onDismissRequest()
                     }
                 )
             }

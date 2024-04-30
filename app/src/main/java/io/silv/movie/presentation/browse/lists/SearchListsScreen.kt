@@ -351,6 +351,10 @@ data object SearchForListScreen: Screen {
                 onUnsubscribeClicked = {
                     listInteractor.unsubscribeFromList(list)
                     selectedList = null
+                },
+                onTogglePinned = {
+                    listInteractor.togglePinned(list)
+                    selectedList = null
                 }
             )
         }

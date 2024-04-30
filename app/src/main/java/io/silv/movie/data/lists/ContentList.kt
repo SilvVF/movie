@@ -22,6 +22,7 @@ data class ContentList(
     val createdAt: Long,
     val inLibrary: Boolean,
     val subscribers: Long,
+    val pinned: Boolean
 ): Parcelable {
 
     companion object {
@@ -38,7 +39,8 @@ data class ContentList(
             posterLastModified = -1L,
             createdAt = -1L,
             inLibrary = false,
-            subscribers = -1L
+            subscribers = -1L,
+            pinned = false
         )
     }
 }
@@ -52,7 +54,8 @@ fun ContentList.toUpdate(): ContentListUpdate {
         posterLastUpdated = posterLastModified,
         inLibrary = inLibrary,
         public = public,
-        subscribers = subscribers
+        subscribers = subscribers,
+        pinned = pinned
     )
 }
 
@@ -65,6 +68,7 @@ data class ContentListUpdate(
     val inLibrary: Boolean? = null,
     val public: Boolean? = null,
     val subscribers: Long? = null,
+    val pinned: Boolean? = null
 )
 
 fun Movie.toContentItem(): ContentItem {

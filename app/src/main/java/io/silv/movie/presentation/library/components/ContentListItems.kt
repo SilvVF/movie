@@ -32,6 +32,7 @@ import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.presentation.browse.movie.components.InLibraryBadge
+import io.silv.movie.presentation.coverDataSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -86,24 +87,22 @@ fun ContentListPosterList(
             }
         }
         items(items, { it.itemKey }) {
-            Box(Modifier.animateItemPlacement()) {
-                ContentListItem(
-                    title = it.title,
-                    favorite = showFavorite && it.favorite,
-                    poster = remember(it) { it.toPoster() },
-                    onClick = { onClick(it) },
-                    onLongClick = { onLongClick(it) },
+            ContentListItem(
+                title = it.title,
+                favorite = showFavorite && it.favorite,
+                poster = remember(it) { it.toPoster() },
+                onClick = { onClick(it) },
+                onLongClick = { onLongClick(it) },
+            ) {
+                IconButton(
+                    onClick = { onOptionsClick(it) },
+                    modifier = Modifier.size(28.dp),
                 ) {
-                    IconButton(
-                        onClick = { onOptionsClick(it) },
-                        modifier = Modifier.size(28.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = "Options",
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = "Options",
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
             }
         }
@@ -187,6 +186,7 @@ fun ContentListItem(
         badge = {
             InLibraryBadge(enabled = favorite)
         },
+        coverModifier = Modifier.coverDataSharedElement(poster),
         onLongClick = onLongClick,
         onClick = onClick,
         endButton = content,

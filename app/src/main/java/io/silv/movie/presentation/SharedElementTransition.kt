@@ -6,7 +6,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.EaseOutSine
+import androidx.compose.animation.core.EaseOutCubic
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -25,11 +25,12 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import io.silv.core_ui.components.PosterData
+import io.silv.movie.data.lists.ContentItem
 
 abstract class SharedTransitionTab : Tab {
 
     open val transform: BoundsTransform = BoundsTransform { _, _ ->
-        tween(550, easing = EaseOutSine)
+        tween(450, easing = EaseOutCubic)
     }
 
     val LocalSharedTransitionState: ProvidableCompositionLocal<SharedTransitionState?> =
@@ -65,11 +66,13 @@ fun AnimatedContentTransition(
             label = label
         ) { screen ->
             CompositionLocalProvider(
-                LocalSharedTransitionState.provides(SharedTransitionState(
-                    transitionScope = this@SharedTransitionScope,
-                    visibilityScope = this@AnimatedContent,
-                    transform =  this@SharedTransitionTab.transform
-                ))
+                LocalSharedTransitionState.provides(
+                    SharedTransitionState(
+                        transitionScope = this@SharedTransitionScope,
+                        visibilityScope = this@AnimatedContent,
+                        transform =  this@SharedTransitionTab.transform
+                    )
+                )
             ) {
                 navigator.saveableState("transition", screen) {
                     this@AnimatedContent.content(screen)
@@ -79,7 +82,7 @@ fun AnimatedContentTransition(
     }
 }
 
-fun Modifier.listNameSharedElement(listId: Long): Modifier = this.composed {
+fun Modifier.listNameSharedElement(listId: Long, inOverlay: Boolean = true): Modifier = this.composed {
 
     val transitionState =
         (LocalTabNavigator.current.current as? SharedTransitionTab)
@@ -95,6 +98,7 @@ fun Modifier.listNameSharedElement(listId: Long): Modifier = this.composed {
                         state = rememberSharedContentState(key = "listName-$listId"),
                         animatedVisibilityScope = transitionState.visibilityScope,
                         boundsTransform = transitionState.transform,
+                        renderInOverlayDuringTransition = inOverlay
                     )
                 }
             }
@@ -148,6 +152,33 @@ fun Modifier.showSharedElement(showId: Long): Modifier = this.composed {
     )
 }
 
+fun Modifier.contentItemSharedElement(contentItem: ContentItem): Modifier = this.composed {
+
+    val transitionState =
+        (LocalTabNavigator.current.current as? SharedTransitionTab)
+            ?.LocalSharedTransitionState
+            ?.current
+
+    this.then(
+        when(transitionState) {
+            null -> Modifier
+            else -> {
+                with(transitionState.transitionScope) {
+                    val tag = remember(contentItem) {
+                        val prefix = if (contentItem.isMovie) "movie" else "show"
+                        "$prefix-${contentItem.contentId}"
+                    }
+                    Modifier.sharedElement(
+                        state = rememberSharedContentState(key = tag),
+                        animatedVisibilityScope = transitionState.visibilityScope,
+                        boundsTransform = transitionState.transform,
+                    )
+                }
+            }
+        }
+    )
+}
+
 fun Modifier.coverDataSharedElement(coverData: PosterData): Modifier = this.composed {
 
     val transitionState =
@@ -175,7 +206,32 @@ fun Modifier.coverDataSharedElement(coverData: PosterData): Modifier = this.comp
     )
 }
 
-fun Modifier.posterSharedElement(listId: Long): Modifier = this.composed {
+fun Modifier.posterSharedElementWithCallerManagedVisibility(listId: Long, visible: Boolean): Modifier = this.composed {
+
+    val transitionState =
+        (LocalTabNavigator.current.current as? SharedTransitionTab)
+            ?.LocalSharedTransitionState
+            ?.current
+
+    this.then(
+        when(transitionState) {
+            null -> Modifier
+            else -> {
+                with(transitionState.transitionScope) {
+                    Modifier.sharedElementWithCallerManagedVisibility(
+                        sharedContentState = rememberSharedContentState(key = "poster-$listId"),
+                        visible = visible,
+                        renderInOverlayDuringTransition = false,
+                        zIndexInOverlay = 0f,
+                        boundsTransform = transitionState.transform,
+                    )
+                }
+            }
+        }
+    )
+}
+
+fun Modifier.posterSharedElement(listId: Long, inOverlay: Boolean = true): Modifier = this.composed {
 
     val transitionState =
         (LocalTabNavigator.current.current as? SharedTransitionTab)
@@ -190,6 +246,7 @@ fun Modifier.posterSharedElement(listId: Long): Modifier = this.composed {
                     Modifier.sharedElement(
                         state = rememberSharedContentState(key = "poster-$listId"),
                         animatedVisibilityScope = transitionState.visibilityScope,
+                        renderInOverlayDuringTransition = inOverlay,
                         boundsTransform = transitionState.transform,
                     )
                 }

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -38,6 +39,7 @@ fun LibraryListView(
     val listState = rememberLazyListState()
     val layoutDirection = LocalLayoutDirection.current
 
+
     VerticalFastScroller(
         listState = listState,
         topContentPadding = topPadding,
@@ -54,11 +56,16 @@ fun LibraryListView(
                 ContentListPreview(
                     modifier = Modifier
                         .clickable { onFavoritesClicked() }
-                        .padding(8.dp)
-                        .posterSharedElement(-1),
-                    textModifier = Modifier.listNameSharedElement(-1),
+                        .padding(8.dp),
+                    textModifier = Modifier
+                        .fillMaxWidth()
+                        .listNameSharedElement(-1),
                     cover = {
-                        ContentPreviewDefaults.LibraryContentPoster(Modifier.aspectRatio(1f))
+                        ContentPreviewDefaults.LibraryContentPoster(
+                            Modifier
+                                .aspectRatio(1f)
+                                .posterSharedElement(-1)
+                        )
                     },
                     name = stringResource(id = R.string.favorites_top_bar_title),
                     description = stringResource(R.string.content_preview_items , state.favorites.size)
@@ -76,6 +83,7 @@ fun LibraryListView(
                             )
                             .animateItemPlacement()
                             .padding(8.dp),
+                        pinned = list.pinned,
                         cover = {
                             ContentListPoster(
                                 list = list,
@@ -86,7 +94,9 @@ fun LibraryListView(
                                     .posterSharedElement(list.id)
                             )
                         },
-                        textModifier = Modifier.listNameSharedElement(list.id),
+                        textModifier = Modifier
+                            .fillMaxWidth()
+                            .listNameSharedElement(list.id),
                         name = list.name,
                         description = list.description.ifEmpty {
                             when {

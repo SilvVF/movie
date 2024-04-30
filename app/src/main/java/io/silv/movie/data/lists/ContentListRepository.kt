@@ -69,7 +69,8 @@ class ContentListRepositoryImpl(
                 update.inLibrary,
                 update.public,
                 update.subscribers,
-                update.id,
+                update.pinned,
+                update.id
             )
         }
     }

@@ -387,6 +387,7 @@ fun EntryListItem(
     onClick: () -> Unit,
     badge: @Composable (RowScope.() -> Unit),
     endButton: @Composable (() -> Unit)? = null,
+    coverModifier: Modifier = Modifier
 ) {
     Row(
         modifier = Modifier
@@ -402,7 +403,8 @@ fun EntryListItem(
         ItemCover.Square(
             modifier = Modifier
                 .fillMaxHeight()
-                .alpha(coverAlpha),
+                .alpha(coverAlpha)
+                .then(coverModifier),
             data = coverData,
         )
         Text(

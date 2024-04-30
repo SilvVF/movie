@@ -185,6 +185,22 @@ internal fun HandleListEvents(
                     }
                 }
             }
+
+            is ListEvent.Pinned -> {
+                val result = snackbarHostState.showSnackbar(
+                    message = if (event.list.pinned) {
+                        context.getString(R.string.pinned, event.list.name)
+                    } else {
+                        context.getString(R.string.unpinned, event.list.name)
+                    },
+                    duration = SnackbarDuration.Short,
+                    actionLabel = context.getString(R.string.undo)
+                )
+                when (result) {
+                    SnackbarResult.Dismissed -> Unit
+                    SnackbarResult.ActionPerformed -> listInteractor.togglePinned(event.list)
+                }
+            }
         }
     }
 }

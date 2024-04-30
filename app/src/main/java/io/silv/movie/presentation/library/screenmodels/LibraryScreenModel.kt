@@ -69,11 +69,10 @@ class LibraryScreenModel(
                 snapshotFlow { sortMode }.distinctUntilChanged()
             ) { a, b -> Pair(a, b) }
             .onEach { (contentListItems, sortMode) ->
+                val seen = mutableSetOf<Long>()
                 val grouped = contentListItems
-                    .groupBy { item -> item.list.id }
-                    .mapKeys { (k, _) ->
-                        contentListItems.first { it.list.id == k }.list
-                    }
+                    .groupBy { item -> item.list }
+                    .filterKeys { (k) -> seen.add(k) }
                     .mapValues { (_, items) ->
                         items
                             .filterIsInstance<ContentListItem.Item>()
@@ -179,20 +178,31 @@ class LibraryScreenModel(
         return when (sortMode) {
             LibrarySortMode.Title ->
                 toSortedMap { a: ContentList, b: ContentList ->
-                    a.name.compareTo(b.name).takeIf { it != 0 }  ?: 1
+
+                    val aVal =  a.name.takeIf { !a.pinned } ?: return@toSortedMap -1
+                    val bVal = b.name.takeIf { !b.pinned } ?: return@toSortedMap 1
+
+                    aVal.compareTo(bVal).takeIf { it != 0 } ?: 1
                 }
             LibrarySortMode.Count ->
                 toSortedMap { a: ContentList, b: ContentList ->
-                    this[b]!!.size.compareTo(this[a]!!.size)
+
+                    val aVal = this[a]!!.size.takeIf { !a.pinned } ?: return@toSortedMap -1
+                    val bVal = this[b]!!.size.takeIf { !b.pinned } ?: return@toSortedMap 1
+
+                    bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
                 }
             LibrarySortMode.RecentlyAdded -> {
                 toSortedMap { a: ContentList, b: ContentList ->
-                    b.lastModified.compareTo(a.lastModified)
+
+                    val aVal = a.lastModified.takeIf { !a.pinned } ?: return@toSortedMap -1
+                    val bVal = b.lastModified.takeIf { !b.pinned } ?: return@toSortedMap 1
+
+                    bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
                 }
 
             }
         }
-            .toMap()
             .toList()
     }
 

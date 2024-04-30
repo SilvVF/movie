@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.NewReleases
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Title
@@ -146,6 +147,7 @@ fun ListOptionsBottomSheet(
     onCopyClick: () -> Unit,
     onSubscribeClicked: () -> Unit,
     onUnsubscribeClicked: () -> Unit,
+    onTogglePinned: () -> Unit,
     isUserMe: Boolean,
     list: ContentList,
     content: ImmutableList<ContentItem>
@@ -170,6 +172,13 @@ fun ListOptionsBottomSheet(
             description = { Text(list.description, maxLines = 2, overflow = TextOverflow.Ellipsis) }
         )
         HorizontalDivider()
+        if (list.inLibrary) {
+            BottomSheetItem(
+                title = { Text(stringResource(id = if (list.pinned) R.string.unpin else R.string.pin)) },
+                icon = { Icon(imageVector = Icons.Filled.PushPin, contentDescription = null) },
+                onClick = onTogglePinned
+            )
+        }
         if (isUserMe) {
             BottomSheetItem(
                 title = { Text(stringResource(id = R.string.options_add_to_list)) },

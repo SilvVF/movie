@@ -10,6 +10,7 @@ import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.interactor.AddContentItemToList
 import io.silv.movie.data.lists.interactor.DeleteContentList
 import io.silv.movie.data.lists.interactor.EditContentList
+import io.silv.movie.data.lists.toUpdate
 import io.silv.movie.data.user.ListRepository
 import io.silv.movie.data.user.ListUpdater
 import io.silv.movie.presentation.ListEvent.Copied
@@ -31,6 +32,7 @@ sealed interface ListEvent {
     data class Edited(val new: ContentList, val original: ContentList, val success: Boolean): ListEvent
     data class Subscribe(val list: ContentList, val success: Boolean): ListEvent
     data class Unsubscribe(val list: ContentList, val success: Boolean): ListEvent
+    data class Pinned(val list: ContentList): ListEvent
 }
 
 interface ListInteractor: EventProducer<ListEvent> {
@@ -40,6 +42,7 @@ interface ListInteractor: EventProducer<ListEvent> {
     fun editList(contentList: ContentList, update: (ContentList) -> ContentList)
     fun subscribeToList(contentList: ContentList)
     fun unsubscribeFromList(contentList: ContentList)
+    fun togglePinned(contentList: ContentList)
 }
 
 @Stable
@@ -174,6 +177,18 @@ class DefaultListInteractor(
             }
                 .onSuccess { emitEvent(Unsubscribe(it, true)) }
                 .onFailure { emitEvent(Unsubscribe(contentList, false)) }
+        }
+    }
+
+    override fun togglePinned(contentList: ContentList) {
+        scope.launch(Dispatchers.IO) {
+            runCatching {
+                val new = contentList.copy(pinned = !contentList.pinned)
+                local.updateList(new.toUpdate())
+                new
+            }
+                .onSuccess { emitEvent(ListEvent.Pinned(it)) }
+                .onFailure { emitEvent(ListEvent.Pinned(contentList)) }
         }
     }
 }

@@ -48,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -301,7 +302,7 @@ private fun TopBarLayout(
                     .layoutId("poster")
                     .wrapContentWidth()
                     .graphicsLayer {
-                        alpha = lerp(
+                        alpha =  lerp(
                             0f,
                             1f,
                             FastOutLinearInEasing.transform(
@@ -309,6 +310,7 @@ private fun TopBarLayout(
                             )
                         )
                     }
+                    .clipToBounds()
             ) {
                 poster()
             }
@@ -412,10 +414,10 @@ private fun TopBarLayout(
             if (!state.searching) {
                 pinnedPlaceable.placeRelative(
                     constraints.maxWidth - pinnedPlaceable.width - pinnedPadding,
-                    (infoY + infoPlaceable.height / 2 - pinnedPlaceable.height / 2)
+                    (infoY + infoPlaceable.height / 2)
                         .coerceAtLeast(
-                            TopAppBarHeight.roundToPx()
-                        ),
+                            TopAppBarHeight.roundToPx() + inset
+                        ) - pinnedPlaceable.height / 2,
                     2f
                 )
             }

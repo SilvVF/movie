@@ -23,13 +23,17 @@ import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.presentation.browse.lists.uniqueBy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -53,6 +57,15 @@ data class Comment(
     @SerialName("show_id")
     val showId: Long,
     val likes: Long
+)
+
+@Serializable
+data class SendComment(
+    val message: String,
+    @SerialName("movie_id")
+    val movieId: Long,
+    @SerialName("show_id")
+    val showId: Long,
 )
 
 @Serializable
@@ -98,7 +111,9 @@ data class CommentWithUser(
 
 data class CommentsState(
     val messageCount: Long? = null,
-    val recentMessage: CommentWithUser? = null
+    val recentMessage: CommentWithUser? = null,
+    val sending: Boolean = false,
+    val error: Boolean = false,
 )
 
 enum class CommentsPagedType {
@@ -185,7 +200,12 @@ class CommentsScreenModel(
     private val showId: Long
         get() = contentId.takeIf { !isMovie } ?: -1L
 
+    private val commentRefreshTrigger = Channel<Unit>()
+
     var sortMode by mutableStateOf(CommentsPagedType.Newest)
+        private set
+
+    var comment by mutableStateOf("")
         private set
 
     val likedComments = mutableStateMapOf<Long, Boolean>()
@@ -238,6 +258,9 @@ class CommentsScreenModel(
     }
 
     val pagingData = snapshotFlow { sortMode }
+        .combine(
+            commentRefreshTrigger.receiveAsFlow().onStart { emit(Unit) }
+        ) { a, b -> a }
         .flatMapLatest { pagedType ->
             Pager(
                 config = PagingConfig(30)
@@ -263,15 +286,18 @@ class CommentsScreenModel(
     fun likeComment(commentId: Long) {
         screenModelScope.launch {
             try {
-                postgrest["clikes"]
+                val result = postgrest["clikes"]
                     .insert(
                         CLike(
                             userId = auth.currentUserOrNull()!!.id,
                             cid = commentId
                         )
-                    )
+                    ) {
+                        select()
+                    }
+                        .decodeSingle<CLike>()
 
-                likedComments[commentId] = true
+                likedComments[result.cid] = true
             } catch (e: Exception) {
                 Timber.e(e)
             }
@@ -281,19 +307,61 @@ class CommentsScreenModel(
     fun unlikeComment(commentId: Long) {
         screenModelScope.launch {
             try {
-                postgrest["clikes"]
+                val result = postgrest["clikes"]
                     .delete {
+                        select()
                         filter {
                             eq("cid", commentId)
                             eq("user_id", auth.currentUserOrNull()!!.id)
                         }
                     }
+                    .decodeSingle<CLike>()
 
-                likedComments[commentId] = false
+
+                likedComments[result.cid] = false
             } catch (e: Exception) {
                 Timber.e(e)
             }
         }
+    }
+
+    fun sendMessage(text: String) {
+        ioCoroutineScope.launch {
+            withContext(Dispatchers.Main) {
+                mutableState.update { state -> state.copy(sending = true) }
+            }
+            try {
+                if (text.isEmpty())
+                    error("text empty")
+
+                postgrest["comment"]
+                    .insert(
+                        SendComment(
+                            message = text,
+                            movieId = movieId,
+                            showId = showId,
+                        )
+                    )
+
+                comment = ""
+                commentRefreshTrigger.trySend(Unit)
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state -> state.copy(error = false) }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state -> state.copy(error = true) }
+                }
+            }finally {
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state -> state.copy(sending = false) }
+                }
+            }
+        }
+    }
+
+    fun updateComment(text: String) {
+        comment = text
     }
 
     fun updateSortMode(type: CommentsPagedType) {

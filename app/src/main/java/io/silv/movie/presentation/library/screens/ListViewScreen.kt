@@ -52,6 +52,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -372,7 +373,8 @@ data class ListViewScreen(
                                 isUserMe = s.isOwnerMe,
                                 content = s.allItems,
                                 onSubscribeClicked = { listInteractor.subscribeToList(s.list) },
-                                onUnsubscribeClicked = { listInteractor.unsubscribeFromList(s.list) }
+                                onUnsubscribeClicked = { listInteractor.unsubscribeFromList(s.list) },
+                                onTogglePinned = { listInteractor.togglePinned(s.list) }
                             )
                         }
 
@@ -464,6 +466,7 @@ private fun SuccessScreenContent(
     ) {
         val lazyListState = rememberLazyListState()
         val lazyGridState = rememberLazyGridState()
+
         val topBarState = rememberTopBarState(
             if (listViewDisplayMode() is PosterDisplayMode.List)
                 lazyListState
@@ -476,6 +479,11 @@ private fun SuccessScreenContent(
                 updateQuery("")
             }
         }
+
+        val inOverlay by remember {
+            derivedStateOf { topBarState.fraction > 0.2f && !topBarState.scrollableState.isScrollInProgress }
+        }
+
 
         SpotifyTopBarLayout(
             modifier = Modifier
@@ -502,21 +510,21 @@ private fun SuccessScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(16.dp),
                 ) {
                     if (state.user != null) {
                         TitleWithProfilePicture(
                             user = state.user,
                             name = state.list.name,
                             description = state.list.description,
-                            titleModifier = Modifier.listNameSharedElement(state.list.id)
+                            textModifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
                         )
                     } else {
                         Text(
                             text = state.list.name,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier
+                            modifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
                         )
                     }
                     ListViewDisplayMode(
@@ -579,7 +587,7 @@ private fun SuccessScreenContent(
                                 Modifier
                             }
                         )
-                        .posterSharedElement(state.list.id)
+                        .posterSharedElement(state.list.id, inOverlay)
                 )
             },
             topAppBar = {

@@ -13,7 +13,8 @@ CREATE TABLE contentList(
      poster_last_updated INTEGER,
      created_at INTEGER NOT NULL DEFAULT 0,
      in_library INTEGER AS Boolean NOT NULL DEFAULT 0,
-     subscribers INTEGER NOT NULL DEFAULT 0
+     subscribers INTEGER NOT NULL DEFAULT 0,
+     pinned INTEGER AS Boolean NOT NULL DEFAULT 0
 );
 
 CREATE INDEX supabase_id_idx ON contentList(supabase_id);
@@ -37,7 +38,8 @@ UPDATE contentList SET
     username = COALESCE(:username, username),
     in_library = COALESCE(:inLibrary, in_library),
     public = COALESCE(:public, public),
-    subscribers = COALESCE(:subscribers, subscribers)
+    subscribers = COALESCE(:subscribers, subscribers),
+    pinned = COALESCE(:pinned, pinned)
 WHERE _id = :id;
 
 insert:

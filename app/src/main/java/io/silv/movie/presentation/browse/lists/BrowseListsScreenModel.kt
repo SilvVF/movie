@@ -284,7 +284,8 @@ class BrowseListsScreenModel(
             posterLastModified = -1L,
             createdAt = listWithItems.createdAt.epochSeconds,
             inLibrary = false,
-            subscribers = listWithItems.subscribers
+            subscribers = listWithItems.subscribers,
+            pinned = false
         )
         val posters = listWithItems.items.orEmpty().map {
             val isMovie = it.movieId != -1L

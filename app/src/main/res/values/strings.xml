@@ -194,4 +194,9 @@
     <string name="action_search_settings">Search settings</string>
     <string name="settings_tab_title">Settings</string>
     <string name="comments">Comments</string>
+    <string name="pinned">Pinned %1s</string>
+    <string name="unpinned">Unpinned %1s</string>
+    <string name="pin">Pin list</string>
+    <string name="unpin">Unpin list</string>
+    <string name="comment_hint">Add a comment…</string>
 </resources>
