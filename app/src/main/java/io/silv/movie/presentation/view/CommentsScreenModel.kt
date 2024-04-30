@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.view
 
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,15 +22,21 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.presentation.browse.lists.uniqueBy
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -60,6 +67,12 @@ data class Comment(
 )
 
 @Serializable
+data class SendReply(
+    val message: String,
+    val cid: Long
+)
+
+@Serializable
 data class SendComment(
     val message: String,
     @SerialName("movie_id")
@@ -69,6 +82,7 @@ data class SendComment(
 )
 
 @Serializable
+@Stable
 data class PagedComment(
     val id: Long,
     @SerialName("created_at")
@@ -86,9 +100,29 @@ data class PagedComment(
     val likes: Long,
     @SerialName("user_liked")
     val userLiked: Boolean,
+    val replies: Long,
     val total: Long,
 )
 
+@Serializable
+data class ReplyWithUser(
+    val id: Long,
+    @SerialName("created_at")
+    val createdAt: Instant,
+    @SerialName("user_id")
+    val userId: String,
+    val message: String,
+    val cid: Long,
+    val users: Users,
+) {
+
+    @Serializable
+    data class Users(
+        val username: String,
+        @SerialName("profile_image")
+        val profileImage: String,
+    )
+}
 
 @Serializable
 data class CommentWithUser(
@@ -114,6 +148,8 @@ data class CommentsState(
     val recentMessage: CommentWithUser? = null,
     val sending: Boolean = false,
     val error: Boolean = false,
+    val replyingTo: PagedComment? = null,
+    val viewingReplies: PagedComment? = null
 )
 
 enum class CommentsPagedType {
@@ -154,16 +190,18 @@ private class CommentsPagingSource(
             val limit = params.loadSize
 
             val result = postgrest.rpc(
-                "select_comments_for_content_with_info",
-                        Params(
-                            uid = userId,
-                            movieId = movieId,
-                            showId = showId,
-                            lim = limit,
-                            off = offset
-                        )
+                function =  when(pagedType) {
+                    CommentsPagedType.Newest -> "select_comments_for_content_with_info"
+                    CommentsPagedType.Top -> "select_top_comments_for_content_with_info"
+                },
+                parameters = Params(
+                    uid = userId,
+                    movieId = movieId,
+                    showId = showId,
+                    lim = limit,
+                    off = offset
+                )
             )
-
             Timber.d(result.data)
             val data = result.decodeList<PagedComment>()
 
@@ -257,6 +295,33 @@ class CommentsScreenModel(
         }
     }
 
+    val replies: StateFlow<ImmutableList<ReplyWithUser>> = state.map { it.viewingReplies }
+        .filterNotNull()
+        .distinctUntilChanged()
+        .map { comment ->
+            val result = runCatching {
+                postgrest.from("reply")
+                    .select(
+                        columns = Columns.raw("*, users:users!reply_user_id_fkey(username, profile_image)")
+                    ) {
+                        order(column = "created_at", order = Order.DESCENDING)
+                        filter {
+                            eq("cid", comment.id)
+                        }
+                    }
+                    .decodeList<ReplyWithUser>()
+            }
+                .getOrDefault(emptyList())
+
+            result.toImmutableList()
+        }
+        .stateIn(
+            ioCoroutineScope,
+            SharingStarted.WhileSubscribed(5_000),
+            persistentListOf()
+        )
+
+
     val pagingData = snapshotFlow { sortMode }
         .combine(
             commentRefreshTrigger.receiveAsFlow().onStart { emit(Unit) }
@@ -297,7 +362,11 @@ class CommentsScreenModel(
                     }
                         .decodeSingle<CLike>()
 
-                likedComments[result.cid] = true
+                if (likedComments.containsKey(result.cid)) {
+                    likedComments.remove(result.cid)
+                } else {
+                    likedComments[result.cid] = true
+                }
             } catch (e: Exception) {
                 Timber.e(e)
             }
@@ -318,7 +387,11 @@ class CommentsScreenModel(
                     .decodeSingle<CLike>()
 
 
-                likedComments[result.cid] = false
+                if (likedComments.containsKey(result.cid)) {
+                    likedComments.remove(result.cid)
+                } else {
+                    likedComments[result.cid] = false
+                }
             } catch (e: Exception) {
                 Timber.e(e)
             }
@@ -357,6 +430,57 @@ class CommentsScreenModel(
                     mutableState.update { state -> state.copy(sending = false) }
                 }
             }
+        }
+    }
+
+    fun sendReply(text: String, pagedComment: PagedComment) {
+        ioCoroutineScope.launch {
+            withContext(Dispatchers.Main) {
+                mutableState.update { state -> state.copy(sending = true) }
+            }
+            try {
+                if (text.isEmpty())
+                    error("text empty")
+
+                postgrest["reply"]
+                    .insert(
+                        SendReply(text, pagedComment.id)
+                    )
+
+                comment = ""
+                commentRefreshTrigger.trySend(Unit)
+
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state ->
+                        state.copy(
+                            error = false,
+                            replyingTo = null
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state -> state.copy(error = true) }
+                }
+            } finally {
+                withContext(Dispatchers.Main) {
+                    mutableState.update { state ->
+                        state.copy(sending = false)
+                    }
+                }
+            }
+        }
+    }
+
+    fun updateViewing(comment: PagedComment?) {
+        screenModelScope.launch {
+            mutableState.update { it.copy(viewingReplies = comment) }
+        }
+    }
+
+    fun updateReplyingTo(comment: PagedComment?) {
+        screenModelScope.launch {
+            mutableState.update { it.copy(replyingTo = comment) }
         }
     }
 

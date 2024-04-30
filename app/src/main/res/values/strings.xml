@@ -199,4 +199,6 @@
     <string name="pin">Pin list</string>
     <string name="unpin">Unpin list</string>
     <string name="comment_hint">Add a comment…</string>
+    <string name="reply_hint">Replying to %1s</string>
+    <string name="replies_for">Replies</string>
 </resources>
