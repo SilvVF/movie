@@ -25,6 +25,33 @@ data class ContentList(
     val pinned: Boolean
 ): Parcelable {
 
+    override fun equals(other: Any?): Boolean {
+        val other = other as? ContentList
+        return if (other != null) {
+            other.id == id && other.supabaseId == supabaseId && other.createdBy == createdBy
+        } else {
+            false
+        }
+    }
+
+    override fun hashCode(): Int {
+        var result = id.hashCode()
+        result = 31 * result + (supabaseId?.hashCode() ?: 0)
+        result = 31 * result + (createdBy?.hashCode() ?: 0)
+        result = 31 * result + (lastSynced?.hashCode() ?: 0)
+        result = 31 * result + public.hashCode()
+        result = 31 * result + name.hashCode()
+        result = 31 * result + username.hashCode()
+        result = 31 * result + description.hashCode()
+        result = 31 * result + lastModified.hashCode()
+        result = 31 * result + posterLastModified.hashCode()
+        result = 31 * result + createdAt.hashCode()
+        result = 31 * result + inLibrary.hashCode()
+        result = 31 * result + subscribers.hashCode()
+        result = 31 * result + pinned.hashCode()
+        return result
+    }
+
     companion object {
         fun create(): ContentList  = ContentList(
             id = -1,

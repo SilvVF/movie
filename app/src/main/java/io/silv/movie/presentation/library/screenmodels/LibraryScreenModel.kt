@@ -9,7 +9,6 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.lists.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
@@ -69,17 +68,7 @@ class LibraryScreenModel(
                 snapshotFlow { sortMode }.distinctUntilChanged()
             ) { a, b -> Pair(a, b) }
             .onEach { (contentListItems, sortMode) ->
-                val seen = mutableSetOf<Long>()
                 val grouped = contentListItems
-                    .groupBy { item -> item.list }
-                    .filterKeys { (k) -> seen.add(k) }
-                    .mapValues { (_, items) ->
-                        items
-                            .filterIsInstance<ContentListItem.Item>()
-                            .sortedBy { it.createdAt }
-                            .map { it.contentItem }
-                            .toImmutableList()
-                    }
                     .applySorting(sortMode)
                     .toImmutableList()
 
@@ -172,38 +161,19 @@ class LibraryScreenModel(
         }
     }
 
-    private fun Map<ContentList, ImmutableList<ContentItem>>.applySorting(
+    private fun List<Pair<ContentList, List<ContentItem>>>.applySorting(
         sortMode: LibrarySortMode
     ): List<Pair<ContentList, ImmutableList<ContentItem>>> {
         return when (sortMode) {
             LibrarySortMode.Title ->
-                toSortedMap { a: ContentList, b: ContentList ->
-
-                    val aVal =  a.name.takeIf { !a.pinned } ?: return@toSortedMap -1
-                    val bVal = b.name.takeIf { !b.pinned } ?: return@toSortedMap 1
-
-                    aVal.compareTo(bVal).takeIf { it != 0 } ?: 1
-                }
+                sortedBy { it.first.name }
             LibrarySortMode.Count ->
-                toSortedMap { a: ContentList, b: ContentList ->
-
-                    val aVal = this[a]!!.size.takeIf { !a.pinned } ?: return@toSortedMap -1
-                    val bVal = this[b]!!.size.takeIf { !b.pinned } ?: return@toSortedMap 1
-
-                    bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
-                }
+                sortedBy { it.second.size }
             LibrarySortMode.RecentlyAdded -> {
-                toSortedMap { a: ContentList, b: ContentList ->
-
-                    val aVal = a.lastModified.takeIf { !a.pinned } ?: return@toSortedMap -1
-                    val bVal = b.lastModified.takeIf { !b.pinned } ?: return@toSortedMap 1
-
-                    bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
-                }
-
+                sortedBy { it.first.lastModified }
             }
         }
-            .toList()
+            .map { it.first to it.second.toImmutableList() }
     }
 
     fun updateDialog(dialog: Dialog?) {

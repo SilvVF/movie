@@ -1,6 +1,6 @@
 CREATE VIEW contentListView AS
 SELECT
-    cl._id AS list_id,
+    DISTINCT(cl._id) AS list_id,
     cl.supabase_id AS supabase_id,
     cl.created_by  AS created_by,
     cl.username AS username,
@@ -24,7 +24,13 @@ SELECT
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
     (
-       SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id OR movie_id = m.id
+       SELECT DISTINCT COUNT(contentItem.list_id)
+       FROM contentItem
+       WHERE show_id = s.id OR movie_id = m.id AND (
+            SELECT in_library
+            FROM contentList
+            WHERE contentList._id = contentItem.list_id
+       )
     ),
     COALESCE(m.last_modified_at, s.last_modified_at) AS content_last_modified
 FROM

@@ -150,7 +150,7 @@ object ContentListMapper {
             name = name,
             description = description,
             lastModified = lastModifiedAt,
-            posterLastModified = posterLastUpdated ?: 0L,
+            posterLastModified = posterLastUpdated ?: -1L,
             username = username,
             createdAt = createdAt,
             inLibrary = inLibrary,
@@ -158,7 +158,7 @@ object ContentListMapper {
             pinned = pinned
         )
 
-        if(movieId != null || showId != null) {
+        if(movieId.takeIf { it != -1L } != null || showId.takeIf { it != -1L } != null) {
             ContentListItem.Item(
                contentItem = ContentItem(
                    contentId = showId.takeIf { it != -1L } ?: movieId!!,

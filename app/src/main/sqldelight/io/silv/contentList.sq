@@ -1,7 +1,7 @@
 import kotlin.Boolean;
 
 CREATE TABLE contentList(
-     _id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+     _id INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT NOT NULL,
      supabase_id TEXT,
      created_by TEXT,
      username TEXT NOT NULL DEFAULT "",

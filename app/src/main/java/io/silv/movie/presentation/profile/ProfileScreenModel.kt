@@ -12,7 +12,6 @@ import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.cache.ProfileImageCache
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
@@ -98,19 +97,7 @@ class ProfileScreenModel(
         .flatMapLatest { userId ->
             contentListRepository.observeLibraryItems("")
                 .map { contentListItems ->
-                    contentListItems
-                        .groupBy { it.list }
-                        .filterKeys { list ->
-                            val createdBy = list.createdBy
-                            createdBy != null && createdBy == userId && list.public
-                        }
-                        .mapValues {
-                            it.value
-                                .filterIsInstance<ContentListItem.Item>()
-                                .map { it.contentItem }
-                                .toImmutableList()
-                        }
-                        .applySorting()
+                    contentListItems.applySorting()
                 }
         }
         .stateIn(
@@ -125,19 +112,7 @@ class ProfileScreenModel(
         .flatMapLatest { userId ->
             contentListRepository.observeLibraryItems("")
                 .map { contentListItems ->
-                    contentListItems
-                        .groupBy { it.list }
-                        .filterKeys { list ->
-                            val createdBy = list.createdBy
-                            createdBy != null && createdBy != userId
-                        }
-                        .mapValues {
-                            it.value
-                                .filterIsInstance<ContentListItem.Item>()
-                                .map { it.contentItem }
-                                .toImmutableList()
-                        }
-                        .applySorting()
+                    contentListItems.applySorting()
                 }
 
         }
@@ -147,15 +122,9 @@ class ProfileScreenModel(
                 persistentListOf()
             )
 
-    private fun Map<ContentList, ImmutableList<ContentItem>>.applySorting(): ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>> {
-        return toSortedMap { a: ContentList, b: ContentList ->
-
-            val aVal = a.lastModified.takeIf { !a.pinned } ?: return@toSortedMap -1
-            val bVal = b.lastModified.takeIf { !b.pinned } ?: return@toSortedMap 1
-
-            bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
-        }
-            .toList()
+    private fun  List<Pair<ContentList, List<ContentItem>>>.applySorting(): ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>> {
+        return sortedBy {it.first.lastModified }
+            .map { it.first to it.second.toImmutableList() }
             .toImmutableList()
     }
 

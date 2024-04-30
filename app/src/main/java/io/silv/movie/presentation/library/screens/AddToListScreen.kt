@@ -58,7 +58,6 @@ import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
 import io.silv.movie.data.lists.ContentItem
 import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.movie.interactor.GetMovie
 import io.silv.movie.data.tv.interactor.GetShow
@@ -104,22 +103,14 @@ class AddToListScreenModel(
 
     val lists = contentListRepository.observeLibraryItems("")
         .map { contentListItems ->
-            val seen = mutableSetOf<Long>()
             contentListItems
-                .groupBy { it.list }
-                .filterKeys { seen.add(it.id) }
-                .filterKeys { it.createdBy == null || it.createdBy == auth.currentUserOrNull()?.id }
-                .mapValues { (_, items) ->
-                    items.filterIsInstance<ContentListItem.Item>()
-                        .map { item -> item.contentItem }
-                        .toImmutableList()
-                }
-                .toList()
+                .filter { it.first.createdBy == null || it.first.createdBy == auth.currentUserOrNull()?.id }
                 .filterNot { (_, items) ->
                     items.any { item ->
                         item.isMovie == isMovie && item.contentId == contentId
                     }
                 }
+                .map { it.first to it.second.toImmutableList() }
                 .toImmutableList()
         }
         .stateIn(

@@ -5,10 +5,11 @@ import io.silv.movie.database.DatabaseHandler
 import io.silv.movie.presentation.library.screenmodels.FavoritesSortMode
 import io.silv.movie.presentation.library.screenmodels.ListSortMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 
 interface ContentListRepository {
-    fun observeLibraryItems(query: String): Flow<List<ContentListItem>>
+    fun observeLibraryItems(query: String): Flow<List<Pair<ContentList, List<ContentItem>>>>
     fun observeListCount(): Flow<Long>
     fun observeListById(id: Long): Flow<ContentList?>
     fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>>
@@ -106,11 +107,21 @@ class ContentListRepositoryImpl(
         handler.await { contentItemQueries.deleteShowFromList(showId, contentList.id) }
     }
 
-    override fun observeLibraryItems(query: String): Flow<List<ContentListItem>> {
+    override fun observeLibraryItems(query: String): Flow<List<Pair<ContentList, List<ContentItem>>>> {
         val q = query.takeIf { it.isNotBlank() }?.let { "%$query%" } ?: ""
-        return handler.subscribeToList {
-            contentListViewQueries.libraryContentList(q, ContentListMapper.mapListItem)
-        }
+        return handler.subscribeToList { contentListViewQueries.libraryContentList(q, ContentListMapper.mapListItem) }
+            .map { contentListItems ->
+                contentListItems.groupBy { it.list.id }
+                    .map { (_, v) ->
+                        Pair(
+                            v.first().list,
+                            v.filterIsInstance<ContentListItem.Item>()
+                                .sortedBy { it.createdAt }
+                                .map { it.contentItem }
+                        )
+                    }
+
+            }
     }
 
     override fun observeListCount(): Flow<Long> {
