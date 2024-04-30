@@ -20,8 +20,8 @@ data class Credit(
     val title: String
 )
 
-fun io.silv.movie.core.SCredit.toDomain(): io.silv.movie.data.content.credits.Credit {
-    return io.silv.movie.data.content.credits.Credit(
+fun io.silv.movie.core.SCredit.toDomain(): Credit {
+    return Credit(
         adult = adult,
         gender = gender,
         knownForDepartment = knownForDepartment,
@@ -58,8 +58,8 @@ data class CreditUpdate(
     val posterPath: String?,
 )
 
-fun io.silv.movie.data.content.credits.Credit.toCreditUpdate(): io.silv.movie.data.content.credits.CreditUpdate {
-    return io.silv.movie.data.content.credits.CreditUpdate(
+fun Credit.toCreditUpdate(): CreditUpdate {
+    return CreditUpdate(
         creditId = creditId,
         adult = adult,
         gender = gender,

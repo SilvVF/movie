@@ -36,9 +36,9 @@ import io.silv.movie.R
 import io.silv.movie.data.content.credits.Credit
 
 fun LazyListScope.creditsPagingList(
-    creditsProvider: () -> LazyPagingItems<io.silv.movie.data.content.credits.Credit>,
-    onCreditClick: (credit: io.silv.movie.data.content.credits.Credit) -> Unit,
-    onCreditLongClick: (credit: io.silv.movie.data.content.credits.Credit) -> Unit,
+    creditsProvider: () -> LazyPagingItems<Credit>,
+    onCreditClick: (credit: Credit) -> Unit,
+    onCreditLongClick: (credit: Credit) -> Unit,
     onViewClick: () -> Unit,
 ) {
     item(

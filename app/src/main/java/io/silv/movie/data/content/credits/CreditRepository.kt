@@ -3,21 +3,21 @@ package io.silv.movie.data.content.credits
 import app.cash.paging.PagingSource
 
 interface CreditRepository {
-    suspend fun insertCredit(credit: io.silv.movie.data.content.credits.Credit, contentId: Long, isMovie: Boolean)
-    suspend fun updateCredit(update: io.silv.movie.data.content.credits.CreditUpdate): Boolean
-    suspend fun getById(id: String): io.silv.movie.data.content.credits.Credit?
-    suspend fun getByMovieId(movieId: Long): List<io.silv.movie.data.content.credits.Credit>
-    suspend fun getByShowId(showId: Long): List<io.silv.movie.data.content.credits.Credit>
-    fun showCreditsPagingSource(showId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit>
-    fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit>
-    fun personCreditsPagingSource(personId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit>
+    suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean)
+    suspend fun updateCredit(update: CreditUpdate): Boolean
+    suspend fun getById(id: String): Credit?
+    suspend fun getByMovieId(movieId: Long): List<Credit>
+    suspend fun getByShowId(showId: Long): List<Credit>
+    fun showCreditsPagingSource(showId: Long): PagingSource<Int, Credit>
+    fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, Credit>
+    fun personCreditsPagingSource(personId: Long): PagingSource<Int, Credit>
 }
 
 class CreditRepositoryImpl(
     private val handler: io.silv.movie.database.DatabaseHandler,
 ): CreditRepository {
 
-    override suspend fun insertCredit(credit: io.silv.movie.data.content.credits.Credit, contentId: Long, isMovie: Boolean) {
+    override suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean) {
         handler.await(inTransaction = true) {
             creditsQueries.insert(
                 id = credit.creditId,
@@ -40,7 +40,7 @@ class CreditRepositoryImpl(
         }
     }
 
-    override fun personCreditsPagingSource(personId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit> = handler.queryPagingSource(
+    override fun personCreditsPagingSource(personId: Long): PagingSource<Int, Credit> = handler.queryPagingSource(
         countQuery = { creditsQueries.countCreditsForPersonId(personId) },
         initialOffset = 0L,
         queryProvider = { limit, offset ->
@@ -49,7 +49,7 @@ class CreditRepositoryImpl(
         transacter = { creditsQueries }
     )
 
-    override fun showCreditsPagingSource(showId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit> = handler.queryPagingSource(
+    override fun showCreditsPagingSource(showId: Long): PagingSource<Int, Credit> = handler.queryPagingSource(
         countQuery = { creditsQueries.countCreditsForShowId(showId) },
         initialOffset = 0L,
         queryProvider = { limit, offset ->
@@ -59,7 +59,7 @@ class CreditRepositoryImpl(
     )
 
 
-    override fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, io.silv.movie.data.content.credits.Credit> = handler.queryPagingSource(
+    override fun movieCreditsPagingSource(movieId: Long): PagingSource<Int, Credit> = handler.queryPagingSource(
         countQuery = { creditsQueries.countCreditsForMovieId(movieId) },
         initialOffset = 0L,
         queryProvider = { limit, offset ->
@@ -68,28 +68,28 @@ class CreditRepositoryImpl(
         transacter = { creditsQueries }
     )
 
-    override suspend fun getByMovieId(movieId: Long): List<io.silv.movie.data.content.credits.Credit> {
+    override suspend fun getByMovieId(movieId: Long): List<Credit> {
         return handler.awaitList { creditsQueries.selectByMovieId(movieId, Long.MAX_VALUE, 0, CreditsMapper.mapCredit)}
     }
 
-    override suspend fun getByShowId(showId: Long): List<io.silv.movie.data.content.credits.Credit> {
+    override suspend fun getByShowId(showId: Long): List<Credit> {
         return handler.awaitList { creditsQueries.selectByShowId(showId,Long.MAX_VALUE, 0, CreditsMapper.mapCredit) }
     }
 
 
 
-    override suspend fun updateCredit(update: io.silv.movie.data.content.credits.CreditUpdate): Boolean {
+    override suspend fun updateCredit(update: CreditUpdate): Boolean {
         return runCatching {
             partialUpdateCredit(update)
         }
             .isSuccess
     }
 
-    override suspend fun getById(id: String): io.silv.movie.data.content.credits.Credit? {
+    override suspend fun getById(id: String): Credit? {
         return handler.awaitOneOrNull { creditsQueries.selectById(id, CreditsMapper.mapCredit) }
     }
 
-    private suspend fun partialUpdateCredit(vararg updates: io.silv.movie.data.content.credits.CreditUpdate) {
+    private suspend fun partialUpdateCredit(vararg updates: CreditUpdate) {
         return handler.await {
             updates.forEach { update ->
                 creditsQueries.update(

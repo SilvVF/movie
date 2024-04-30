@@ -20,7 +20,7 @@ object CreditsMapper {
             profile_path: String?,
             poster_path: String?,
             title: String->
-        io.silv.movie.data.content.credits.Credit(
+        Credit(
             adult = adult,
             gender = gender,
             knownForDepartment = known_for_department,

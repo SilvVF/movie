@@ -8,29 +8,29 @@ val Long.MB : MB get() = this
 
 fun MB.toBytes(): Long = this * 1000L
 
-public data class Quad<out A, out B, out C, out D>(
-    public val first: A,
-    public val second: B,
-    public val third: C,
-    public val fourth: D
+data class Quad<out A, out B, out C, out D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D
 ) : Serializable {
 
     /**
      * Returns string representation of the [Quad] including its [first], [second], [third] and [fourth] values.
      */
-    public override fun toString(): String = "($first, $second, $third, $fourth)"
+    override fun toString(): String = "($first, $second, $third, $fourth)"
 }
 
-public data class Penta<out A, out B, out C, out D, out E>(
-    public val first: A,
-    public val second: B,
-    public val third: C,
-    public val fourth: D,
-    public val fifth: E,
+data class Penta<out A, out B, out C, out D, out E>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+    val fifth: E,
 ) : Serializable {
 
     /**
      * Returns string representation of the [Quad] including its [first], [second], [third], [fourth] and [fifth] values.
      */
-    public override fun toString(): String = "($first, $second, $third, $fourth, $fifth)"
+    override fun toString(): String = "($first, $second, $third, $fourth, $fifth)"
 }

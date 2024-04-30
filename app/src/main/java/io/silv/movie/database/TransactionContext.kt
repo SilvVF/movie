@@ -2,7 +2,6 @@ package io.silv.movie.database
 
 import co.touchlab.stately.concurrency.AtomicInt
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -93,7 +92,6 @@ private suspend fun DatabaseHandlerImpl.createTransactionContext(): CoroutineCon
  * coroutines to the acquired thread. The [controlJob] is used to control the release of the
  * thread by cancelling the job.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun CoroutineDispatcher.acquireTransactionThread(
     controlJob: Job,
 ): ContinuationInterceptor {

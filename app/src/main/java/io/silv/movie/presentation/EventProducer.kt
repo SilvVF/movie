@@ -2,7 +2,6 @@ package io.silv.movie.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.Dispatchers
@@ -22,7 +21,7 @@ interface EventProducer <T> {
 
         fun <T> default(): EventProducer<T> = DefaultEventProducer()
 
-        private class DefaultEventProducer<T>(): EventProducer<T> {
+        private class DefaultEventProducer<T> : EventProducer<T> {
 
             private val eventChannel = Channel<T>(UNLIMITED)
 
@@ -44,7 +43,7 @@ interface EventProducer <T> {
 
 @Composable
 fun <T> CollectEventsWithLifecycle(producer: EventProducer<T>, collector: FlowCollector<T>) {
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             producer.collectFromUi(collector)

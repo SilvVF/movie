@@ -14,7 +14,6 @@ import io.silv.movie.coil.utils.CoilDiskUtils
 import io.silv.movie.coil.utils.CoilDiskUtils.toImageSource
 import okio.buffer
 import okio.source
-import timber.log.Timber
 import java.io.ByteArrayInputStream
 import java.io.File
 
@@ -42,22 +41,21 @@ class ByteArrayDiskBackedFetcher<T: Any>(
         try {
             // Fetch from network
             val response = fetch(options, data)
+            val bis = ByteArrayInputStream(response).source().buffer()
 
             // Read from cover cache after library manga cover updated
-            val responseCoverCache = writeResponseToCache(
-                response,
-                imageCacheFile,
-                options
-            )
+            if (imageCacheFile != null && options.diskCachePolicy.writeEnabled) {
+                CoilDiskUtils.writeSourceToCoverCache(bis, imageCacheFile)
+            }
 
-            if (responseCoverCache != null) {
+            if (imageCacheFile != null) {
                 CoilDiskUtils.writeToMemCache(
                     options,
-                    responseCoverCache.readBytes(),
+                    imageCacheFile.readBytes(),
                     memCacheKey,
                     memCache
                 )
-                return fileLoader(responseCoverCache, diskCacheKey, options)
+                return fileLoader(imageCacheFile, diskCacheKey, options)
             }
             // Read from disk cache
             snapshot = writeToDiskCache(response, diskCacheKey)
@@ -84,7 +82,7 @@ class ByteArrayDiskBackedFetcher<T: Any>(
             // Read from response if cache is unused or unusable
             return SourceResult(
                 source = ImageSource(
-                    source = ByteArrayInputStream(response).source().buffer(),
+                    source = bis    ,
                     context = options.context
                 ),
                 mimeType = "image/*",
@@ -93,23 +91,6 @@ class ByteArrayDiskBackedFetcher<T: Any>(
         } catch (e: Exception) {
             snapshot?.close()
             throw e
-        }
-    }
-
-    private fun writeResponseToCache(
-        response: ByteArray,
-        cacheFile: File?,
-        options: Options
-    ): File? {
-        if (cacheFile == null || !options.diskCachePolicy.writeEnabled) return null
-        return try {
-            ByteArrayInputStream(response).source().buffer().use { input ->
-                CoilDiskUtils.writeSourceToCoverCache(input, cacheFile)
-            }
-            cacheFile.takeIf { it.exists() }
-        } catch (e: Exception) {
-            Timber.e("DiskBackedFetcher", "Failed to write response data to cover cache ${cacheFile.name}")
-            null
         }
     }
 

@@ -3,7 +3,7 @@ package io.silv.movie.data.content.credits
 class NetworkToLocalCredit(
     private val creditRepository: CreditRepository,
 ) {
-    suspend fun await(credit: io.silv.movie.data.content.credits.Credit, contentId: Long, isMovie: Boolean): io.silv.movie.data.content.credits.Credit {
+    suspend fun await(credit: Credit, contentId: Long, isMovie: Boolean): Credit {
         return when (val localCredit = getCredit(credit.creditId)) {
             null -> {
                 insertCredit(credit, contentId, isMovie)
@@ -32,11 +32,11 @@ class NetworkToLocalCredit(
         }
     }
 
-    private suspend fun getCredit(id: String): io.silv.movie.data.content.credits.Credit? {
+    private suspend fun getCredit(id: String): Credit? {
         return creditRepository.getById(id)
     }
 
-    private suspend fun insertCredit(credit: io.silv.movie.data.content.credits.Credit, contentId: Long, isMovie: Boolean) {
+    private suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean) {
         return creditRepository.insertCredit(credit, contentId, isMovie)
     }
 }

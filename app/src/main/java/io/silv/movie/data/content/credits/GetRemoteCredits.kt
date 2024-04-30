@@ -37,7 +37,7 @@ class GetRemoteCredits(
 class GetTVShowCredits(
     private val creditRepository: CreditRepository
 ) {
-    suspend fun await(showId: Long): List<io.silv.movie.data.content.credits.Credit> {
+    suspend fun await(showId: Long): List<Credit> {
         return creditRepository.getByShowId(showId)
     }
 }
@@ -46,7 +46,7 @@ class GetMovieCredits(
     private val creditRepository: CreditRepository
 ) {
 
-    suspend fun await(movieId: Long): List<io.silv.movie.data.content.credits.Credit> {
+    suspend fun await(movieId: Long): List<Credit> {
         return creditRepository.getByMovieId(movieId)
     }
 }
