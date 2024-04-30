@@ -110,6 +110,9 @@ data object SettingsAppearanceScreen: SearchableSettings {
         val amoledPref   = remember { uiPreferences.themeDarkAmoled() }
         val amoled = appState.amoled
 
+        val sharedElementTransitionsPref   = remember { uiPreferences.sharedElementTransitions() }
+        val sharedElementTransitions = appState.sharedElementTransitions
+
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_theme),
             preferenceItems = persistentListOf(
@@ -144,6 +147,15 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     onValueChanged = {
                         amoledPref.set(it)
                         amoledPref.get()
+                    },
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = sharedElementTransitionsPref,
+                    title = stringResource(R.string.pref_shared_element_transitions),
+                    enabled = true,
+                    onValueChanged = {
+                        sharedElementTransitionsPref.set(it)
+                        sharedElementTransitionsPref.get()
                     },
                 ),
             ),

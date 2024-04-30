@@ -141,7 +141,8 @@ data class AppState(
     val amoled: Boolean,
     val dateFormat: DateFormat,
     val relativeTimestamp: Boolean,
-    val startScreen: Tab
+    val startScreen: Tab,
+    val sharedElementTransitions: Boolean
 ) {
 
     fun formatDate(i: Instant): String {
@@ -173,16 +174,17 @@ class AppStateProvider(
         uiPreferences.appTheme().changes(),
         uiPreferences.dateFormat().changes(),
         uiPreferences.themeDarkAmoled().changes(),
-        uiPreferences.relativeTime().changes(),
-    ) { themeMode, appTheme, dateFormat, amoled, relative ->
+        uiPreferences.relativeTime().changes().combine(uiPreferences.sharedElementTransitions().changes()) { a: Boolean, b: Boolean -> a to b },
+    ) { themeMode, appTheme, dateFormat, amoled, (relativeTime, transitions) ->
        AppState(
            appTheme,
            themeMode,
            amoled,
            UiPreferences.dateFormat(dateFormat),
-           relative,
+           relativeTime,
            (state as? State.Success)?.state?.startScreen
                ?: uiPreferences.startScreen().get().tab,
+           transitions
        )
     }
 
@@ -195,7 +197,8 @@ class AppStateProvider(
                     themeMode = uiPreferences.themeMode().get(),
                     dateFormat = UiPreferences.dateFormat(uiPreferences.dateFormat().get()),
                     startScreen = uiPreferences.startScreen().get().tab,
-                    relativeTimestamp = uiPreferences.relativeTime().get()
+                    relativeTimestamp = uiPreferences.relativeTime().get(),
+                    sharedElementTransitions = uiPreferences.sharedElementTransitions().get()
                 )
             )
 

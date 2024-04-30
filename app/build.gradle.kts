@@ -62,6 +62,7 @@ android {
         buildType.buildConfigField("String", "TMDB_ACCESS_TOKEN", properties.getProperty("TMDB_ACCESS_TOKEN"))
         buildType.buildConfigField("String", "SUPABASE_URL", properties.getProperty("SUPABASE_URL"))
         buildType.buildConfigField("String", "SUPABSE_ANON_KEY", properties.getProperty("SUPABSE_ANON_KEY"))
+        buildType.buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", properties.getProperty("GOOGLE_WEB_CLIENT_ID"))
     }
 
     compileOptions {

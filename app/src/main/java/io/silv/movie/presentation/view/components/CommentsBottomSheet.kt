@@ -226,10 +226,10 @@ fun ContentScreen.CommentsBottomSheet(
                                 items(
                                     items = items
                                 ) {reply ->
-                                    val profileImageData = remember(reply.users.profileImage, reply.userId) {
+                                    val profileImageData = remember(reply.users?.profileImage, reply.userId) {
                                         UserProfileImageData(
-                                            userId = reply.userId,
-                                            path = reply.users.profileImage,
+                                            userId = reply.userId.orEmpty(),
+                                            path = reply.users?.profileImage,
                                             isUserMe = reply.userId == user?.userId
                                         )
                                     }
@@ -252,7 +252,7 @@ fun ContentScreen.CommentsBottomSheet(
                                         ) {
                                             Row(verticalAlignment = Alignment.CenterVertically) {
                                                 Text(
-                                                    text = reply.users.username,
+                                                    text = reply.users?.username ?: "deleted user",
                                                     style = MaterialTheme.typography.titleSmall
                                                 )
                                                 DotSeparatorText()
@@ -372,7 +372,7 @@ private fun CommentTextField(
                     Text(
                         stringResource(
                             id = R.string.reply_hint,
-                            replyingTo.username
+                            replyingTo.username ?: "deleted user"
                         )
                     )
                 }
@@ -421,7 +421,7 @@ private fun CommentsPager(
 
             val profileImageData = remember(comment.profileImage, comment.userId) {
                 UserProfileImageData(
-                    userId = comment.userId,
+                    userId = comment.userId.orEmpty(),
                     path = comment.profileImage,
                     isUserMe = comment.userId == user?.userId
                 )
@@ -445,7 +445,7 @@ private fun CommentsPager(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = comment.username,
+                            text = comment.username ?: "deleted user",
                             style = MaterialTheme.typography.titleSmall
                         )
                         DotSeparatorText()

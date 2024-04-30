@@ -44,6 +44,8 @@ class UiPreferences(
 
     fun relativeTime() = preferenceStore.getBoolean("relative_time_v2", true)
 
+    fun sharedElementTransitions() = preferenceStore.getBoolean("shared_element_transitions", true)
+
     fun dateFormat() = preferenceStore.getString("app_date_format", "")
 
     fun tabletUiMode() = preferenceStore.getEnum("tablet_ui_mode", TabletUiMode.AUTOMATIC)

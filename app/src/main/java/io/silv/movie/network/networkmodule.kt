@@ -5,6 +5,7 @@ import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFact
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composeAuth
+import io.github.jan.supabase.compose.auth.googleNativeLogin
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.auth
@@ -74,7 +75,9 @@ val networkModule =
             ) {
                 install(Postgrest)
                 install(Auth)
-                install(ComposeAuth)
+                install(ComposeAuth) {
+                    googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                }
                 install(Storage)
                 install(Realtime)
             }

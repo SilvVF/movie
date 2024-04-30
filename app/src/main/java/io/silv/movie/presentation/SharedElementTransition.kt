@@ -25,14 +25,17 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import io.silv.core_ui.components.PosterData
+import io.silv.movie.LocalAppState
 import io.silv.movie.data.lists.ContentItem
 
 abstract class SharedTransitionTab : Tab {
 
+    @Transient
     open val transform: BoundsTransform = BoundsTransform { _, _ ->
         tween(450, easing = EaseOutCubic)
     }
 
+    @Transient
     val LocalSharedTransitionState: ProvidableCompositionLocal<SharedTransitionState?> =
         compositionLocalOf { null }
 }
@@ -58,6 +61,7 @@ fun AnimatedContentTransition(
     modifier: Modifier = Modifier,
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit = { it.Content() }
 ) {
+    val sharedElementTransitions = LocalAppState.current.sharedElementTransitions
     SharedTransitionScope {
         AnimatedContent(
             targetState = navigator.lastItem,
@@ -72,6 +76,7 @@ fun AnimatedContentTransition(
                         visibilityScope = this@AnimatedContent,
                         transform =  this@SharedTransitionTab.transform
                     )
+                        .takeIf { sharedElementTransitions }
                 )
             ) {
                 navigator.saveableState("transition", screen) {

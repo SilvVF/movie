@@ -43,6 +43,7 @@ import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.PosterData
@@ -80,6 +81,7 @@ class AddToListScreenModel(
     contentListRepository: ContentListRepository,
     getMovie: GetMovie,
     getShow: GetShow,
+    auth: Auth,
     contentId: Long,
     isMovie: Boolean,
 ): StateScreenModel<PosterData?>(null) {
@@ -102,7 +104,11 @@ class AddToListScreenModel(
 
     val lists = contentListRepository.observeLibraryItems("")
         .map { contentListItems ->
-            contentListItems.groupBy { it.list }
+            val seen = mutableSetOf<Long>()
+            contentListItems
+                .groupBy { it.list }
+                .filterKeys { seen.add(it.id) }
+                .filterKeys { it.createdBy == null || it.createdBy == auth.currentUserOrNull()?.id }
                 .mapValues { (_, items) ->
                     items.filterIsInstance<ContentListItem.Item>()
                         .map { item -> item.contentItem }
@@ -148,9 +154,7 @@ private fun LibraryLists(
             contentPadding = paddingValues,
         ) {
             lists.fastForEach { (list, items) ->
-                item(
-                    key = list.id
-                ) {
+                item {
                     ContentListPreview(
                         modifier = Modifier
                             .combinedClickable(

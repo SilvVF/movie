@@ -43,7 +43,7 @@ class LibraryPreferences(
 
     fun listViewSortMode() = preferenceStore.getObject(
         "pref_list_view_sort_mode",
-        ListSortMode.RecentlyAdded(false),
+        ListSortMode.RecentlyAdded(true),
         serializer = { mode: ListSortMode ->
             "${if (mode.ascending) '1' else '0'}" + when(mode) {
                 is ListSortMode.Title -> "T"

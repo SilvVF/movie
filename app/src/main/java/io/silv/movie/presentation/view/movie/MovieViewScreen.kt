@@ -314,9 +314,9 @@ fun MovieDetailsContent(
                             count = commentsState.messageCount?.toInt() ?: 0,
                             profileImageData =  commentsState.recentMessage?.let {
                                 UserProfileImageData(
-                                    userId = it.userId,
+                                    userId = it.userId.orEmpty(),
                                     isUserMe = it.userId == LocalUser.current?.userId,
-                                    path = it.users.profileImage
+                                    path = it.users?.profileImage
                                 )
                             },
                             username = commentsState.recentMessage?.users?.username,

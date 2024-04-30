@@ -10,16 +10,22 @@ import io.github.jan.supabase.gotrue.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.cache.ProfileImageCache
+import io.silv.movie.data.lists.ContentItem
+import io.silv.movie.data.lists.ContentList
 import io.silv.movie.data.lists.ContentListItem
 import io.silv.movie.data.lists.ContentListRepository
 import io.silv.movie.data.user.UserRepository
 import io.silv.movie.presentation.EventProducer
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -86,39 +92,72 @@ class ProfileScreenModel(
         }
     }
 
-    val publicLists = contentListRepository.observeLibraryItems("")
-        .map { contentListItems ->
-            val userid =  state.value.loggedIn?.info?.id
-            contentListItems.filter { item ->
-                val createdBy = item.list.createdBy
-                createdBy != null && createdBy == userid && item.list.public
-            }
-        }.map {
-            it.groupBy { it.list }
-                .mapValues { (k, v) ->
-                    v.mapNotNull { (it as? ContentListItem.Item)?.contentItem  }.toImmutableList()
+    val publicLists = state.map { it.loggedIn?.info?.id }
+        .filterNotNull()
+        .distinctUntilChanged()
+        .flatMapLatest { userId ->
+            contentListRepository.observeLibraryItems("")
+                .map { contentListItems ->
+                    contentListItems
+                        .groupBy { it.list }
+                        .filterKeys { list ->
+                            val createdBy = list.createdBy
+                            createdBy != null && createdBy == userId && list.public
+                        }
+                        .mapValues {
+                            it.value
+                                .filterIsInstance<ContentListItem.Item>()
+                                .map { it.contentItem }
+                                .toImmutableList()
+                        }
+                        .applySorting()
                 }
-                .toList()
-                .toImmutableList()
         }
-        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5_000), persistentListOf())
+        .stateIn(
+            screenModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            persistentListOf()
+        )
 
-    val subscribedLists = contentListRepository.observeLibraryItems("")
-        .map { contentListItems ->
-            val userid =  state.value.loggedIn?.info?.id
-            contentListItems.filter { item ->
-                val createdBy = item.list.createdBy
-                createdBy != null && createdBy != userid && userid != null
-            }
-        }.map {
-            it.groupBy { it.list }
-                .mapValues { (k, v) ->
-                    v.mapNotNull { (it as? ContentListItem.Item)?.contentItem  }.toImmutableList()
+    val subscribedLists = state.map { it.loggedIn?.info?.id }
+        .filterNotNull()
+        .distinctUntilChanged()
+        .flatMapLatest { userId ->
+            contentListRepository.observeLibraryItems("")
+                .map { contentListItems ->
+                    contentListItems
+                        .groupBy { it.list }
+                        .filterKeys { list ->
+                            val createdBy = list.createdBy
+                            createdBy != null && createdBy != userId
+                        }
+                        .mapValues {
+                            it.value
+                                .filterIsInstance<ContentListItem.Item>()
+                                .map { it.contentItem }
+                                .toImmutableList()
+                        }
+                        .applySorting()
                 }
-                .toList()
-                .toImmutableList()
+
         }
-        .stateIn(screenModelScope, SharingStarted.WhileSubscribed(5_000), persistentListOf())
+            .stateIn(
+                screenModelScope,
+                SharingStarted.WhileSubscribed(5_000),
+                persistentListOf()
+            )
+
+    private fun Map<ContentList, ImmutableList<ContentItem>>.applySorting(): ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>> {
+        return toSortedMap { a: ContentList, b: ContentList ->
+
+            val aVal = a.lastModified.takeIf { !a.pinned } ?: return@toSortedMap -1
+            val bVal = b.lastModified.takeIf { !b.pinned } ?: return@toSortedMap 1
+
+            bVal.compareTo(aVal).takeIf { it != 0 } ?: 1
+        }
+            .toList()
+            .toImmutableList()
+    }
 
     fun updateProfilePicture(path: String) {
         screenModelScope.launch {

@@ -88,15 +88,15 @@ data class PagedComment(
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("user_id")
-    val userId: String,
+    val userId: String? = null,
     val message: String,
     @SerialName("movie_id")
     val movieId: Long,
     @SerialName("show_id")
     val showId: Long,
     @SerialName("profile_image")
-    val profileImage: String,
-    val username: String,
+    val profileImage: String? = null,
+    val username: String? = null,
     val likes: Long,
     @SerialName("user_liked")
     val userLiked: Boolean,
@@ -110,17 +110,17 @@ data class ReplyWithUser(
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("user_id")
-    val userId: String,
+    val userId: String? = null,
     val message: String,
     val cid: Long,
-    val users: Users,
+    val users: Users? = null,
 ) {
 
     @Serializable
     data class Users(
-        val username: String,
+        val username: String? = null,
         @SerialName("profile_image")
-        val profileImage: String,
+        val profileImage: String? = null,
     )
 }
 
@@ -130,16 +130,16 @@ data class CommentWithUser(
     @SerialName("created_at")
     val createdAt: Instant,
     @SerialName("user_id")
-    val userId: String,
+    val userId: String? = null,
     val message: String,
-    val users: Users,
+    val users: Users? = null,
 ) {
 
     @Serializable
     data class Users(
-        val username: String,
+        val username: String? = null,
         @SerialName("profile_image")
-        val profileImage: String,
+        val profileImage: String? = null,
     )
 }
 
@@ -311,6 +311,7 @@ class CommentsScreenModel(
                     }
                     .decodeList<ReplyWithUser>()
             }
+                .onFailure { Timber.d(it) }
                 .getOrDefault(emptyList())
 
             result.toImmutableList()

@@ -225,7 +225,7 @@ fun SignedInScreen(
         }
 
         ListOptionsBottomSheet(
-            onDismissRequest = { selectedList = null},
+            onDismissRequest = { selectedList = null },
             onAddClick = { navigator.push(ListAddScreen(list.id)) },
             onEditClick = {
                 editResultLauncher.launch()
@@ -296,9 +296,7 @@ fun SubscribedListsView(
                     )
                 }
                 subscribed.fastForEach { (list, items) ->
-                    item(
-                        key = list.id.toString() + "subscribed"
-                    ) {
+                    item {
                         ContentListPreview(
                             modifier = Modifier
                                 .combinedClickable(
@@ -351,9 +349,7 @@ fun SubscribedListsView(
                     }
                 }
                 public.fastForEach { (list, items) ->
-                    item(
-                        key = list.id.toString() + "public"
-                    ) {
+                    item {
                         ContentListPreview(
                             modifier = Modifier
                                 .combinedClickable(
