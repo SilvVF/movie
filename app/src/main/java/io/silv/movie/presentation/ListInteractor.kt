@@ -1,39 +1,28 @@
 package io.silv.movie.presentation
 
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.staticCompositionLocalOf
 import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.TVShowCoverCache
-import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.lists.interactor.AddContentItemToList
-import io.silv.movie.data.lists.interactor.DeleteContentList
-import io.silv.movie.data.lists.interactor.EditContentList
-import io.silv.movie.data.lists.toUpdate
-import io.silv.movie.data.user.ListRepository
-import io.silv.movie.data.user.ListUpdater
-import io.silv.movie.presentation.ListEvent.Copied
-import io.silv.movie.presentation.ListEvent.Delete
-import io.silv.movie.presentation.ListEvent.Edited
-import io.silv.movie.presentation.ListEvent.Subscribe
-import io.silv.movie.presentation.ListEvent.Unsubscribe
-import io.silv.movie.presentation.ListEvent.VisibleChanged
+import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.content.lists.interactor.AddContentItemToList
+import io.silv.movie.data.content.lists.interactor.DeleteContentList
+import io.silv.movie.data.content.lists.interactor.EditContentList
+import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.toUpdate
+import io.silv.movie.data.user.repository.ListRepository
+import io.silv.movie.data.user.worker.ListUpdater
+import io.silv.movie.presentation.ListInteractor.ListEvent
+import io.silv.movie.presentation.ListInteractor.ListEvent.Copied
+import io.silv.movie.presentation.ListInteractor.ListEvent.Delete
+import io.silv.movie.presentation.ListInteractor.ListEvent.Edited
+import io.silv.movie.presentation.ListInteractor.ListEvent.Pinned
+import io.silv.movie.presentation.ListInteractor.ListEvent.Subscribe
+import io.silv.movie.presentation.ListInteractor.ListEvent.Unsubscribe
+import io.silv.movie.presentation.ListInteractor.ListEvent.VisibleChanged
+import io.silv.movie.presentation.covers.cache.MovieCoverCache
+import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
-val LocalListInteractor = staticCompositionLocalOf<ListInteractor> { error("ListInteractor not provided in current scope") }
-
-sealed interface ListEvent {
-    data class VisibleChanged(val list: ContentList, val success: Boolean): ListEvent
-    data class Copied(val list: ContentList, val success: Boolean): ListEvent
-    data class Delete(val list: ContentList, val success: Boolean): ListEvent
-    data class Edited(val new: ContentList, val original: ContentList, val success: Boolean): ListEvent
-    data class Subscribe(val list: ContentList, val success: Boolean): ListEvent
-    data class Unsubscribe(val list: ContentList, val success: Boolean): ListEvent
-    data class Pinned(val list: ContentList): ListEvent
-}
 
 interface ListInteractor: EventProducer<ListEvent> {
     fun deleteList(contentList: ContentList)
@@ -43,10 +32,48 @@ interface ListInteractor: EventProducer<ListEvent> {
     fun subscribeToList(contentList: ContentList)
     fun unsubscribeFromList(contentList: ContentList)
     fun togglePinned(contentList: ContentList)
+
+    companion object {
+        fun default(
+            local: ContentListRepository,
+            network: ListRepository,
+            updater: ListUpdater,
+            addContentItemToList: AddContentItemToList,
+            editContentList: EditContentList,
+            deleteContentList: DeleteContentList,
+            movieCoverCache: MovieCoverCache,
+            showCoverCache: TVShowCoverCache,
+            auth: Auth,
+            scope: CoroutineScope,
+        ): ListInteractor {
+            return DefaultListInteractor(
+               local,
+                network,
+                updater,
+                addContentItemToList,
+                editContentList,
+                deleteContentList,
+                movieCoverCache,
+                showCoverCache,
+                auth,
+                scope
+            )
+        }
+    }
+
+    sealed interface ListEvent {
+        data class VisibleChanged(val list: ContentList, val success: Boolean): ListEvent
+        data class Copied(val list: ContentList, val success: Boolean): ListEvent
+        data class Delete(val list: ContentList, val success: Boolean): ListEvent
+        data class Edited(val new: ContentList, val original: ContentList, val success: Boolean): ListEvent
+        data class Subscribe(val list: ContentList, val success: Boolean): ListEvent
+        data class Unsubscribe(val list: ContentList, val success: Boolean): ListEvent
+        data class Pinned(val list: ContentList): ListEvent
+    }
 }
 
 @Stable
-class DefaultListInteractor(
+private class DefaultListInteractor(
     private val local: ContentListRepository,
     private val network: ListRepository,
     private val updater: ListUpdater,
@@ -187,8 +214,8 @@ class DefaultListInteractor(
                 local.updateList(new.toUpdate())
                 new
             }
-                .onSuccess { emitEvent(ListEvent.Pinned(it)) }
-                .onFailure { emitEvent(ListEvent.Pinned(contentList)) }
+                .onSuccess { emitEvent(Pinned(it)) }
+                .onFailure { emitEvent(Pinned(contentList)) }
         }
     }
 }

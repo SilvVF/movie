@@ -9,12 +9,12 @@ import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.cache.ProfileImageCache
-import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.user.UserRepository
+import io.silv.movie.data.content.lists.ContentItem
+import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.user.repository.UserRepository
 import io.silv.movie.presentation.EventProducer
+import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -97,7 +97,11 @@ class ProfileScreenModel(
         .flatMapLatest { userId ->
             contentListRepository.observeLibraryItems("")
                 .map { contentListItems ->
-                    contentListItems.applySorting()
+                    contentListItems
+                        .filter { (list, _) ->
+                            list.createdBy == userId && list.public
+                        }
+                        .applySorting()
                 }
         }
         .stateIn(
@@ -112,7 +116,11 @@ class ProfileScreenModel(
         .flatMapLatest { userId ->
             contentListRepository.observeLibraryItems("")
                 .map { contentListItems ->
-                    contentListItems.applySorting()
+                    contentListItems
+                        .filter { (list, _) ->
+                            list.createdBy != userId && list.createdBy != null
+                        }
+                        .applySorting()
                 }
 
         }
@@ -123,7 +131,7 @@ class ProfileScreenModel(
             )
 
     private fun  List<Pair<ContentList, List<ContentItem>>>.applySorting(): ImmutableList<Pair<ContentList, ImmutableList<ContentItem>>> {
-        return sortedBy {it.first.lastModified }
+        return sortedBy { it.first.lastModified }
             .map { it.first to it.second.toImmutableList() }
             .toImmutableList()
     }

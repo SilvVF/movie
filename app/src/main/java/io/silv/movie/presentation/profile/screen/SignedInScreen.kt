@@ -58,24 +58,24 @@ import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
-import io.silv.movie.LocalUser
 import io.silv.movie.R
-import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.data.lists.ContentList
+import io.silv.movie.data.content.lists.ContentItem
+import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.user.User
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.browse.lists.TitleWithAction
-import io.silv.movie.presentation.library.components.ContentListPoster
-import io.silv.movie.presentation.library.components.ContentListPreview
-import io.silv.movie.presentation.library.components.ContentPreviewDefaults
-import io.silv.movie.presentation.library.components.dialog.ListOptionsBottomSheet
-import io.silv.movie.presentation.library.screens.FavoritesViewScreen
-import io.silv.movie.presentation.library.screens.ListAddScreen
-import io.silv.movie.presentation.library.screens.ListEditDescriptionScreen
-import io.silv.movie.presentation.library.screens.ListEditScreen
+import io.silv.movie.presentation.LocalUser
+import io.silv.movie.presentation.components.content.ContentListPoster
+import io.silv.movie.presentation.components.content.ContentListPreview
+import io.silv.movie.presentation.components.content.ContentPreviewDefaults
+import io.silv.movie.presentation.components.dialog.ListOptionsBottomSheet
+import io.silv.movie.presentation.list.screen.FavoritesViewScreen
+import io.silv.movie.presentation.list.screen.TitleWithAction
 import io.silv.movie.presentation.profile.ProfileState
 import io.silv.movie.presentation.profile.UserProfileImage
-import io.silv.movie.rememberProfileImageData
+import io.silv.movie.presentation.rememberProfileImageData
+import io.silv.movie.presentation.result.screen.ListAddScreen
+import io.silv.movie.presentation.result.screen.ListEditDescriptionScreen
+import io.silv.movie.presentation.result.screen.ListEditScreen
 import kotlinx.collections.immutable.ImmutableList
 
 @Composable
@@ -288,7 +288,7 @@ fun SubscribedListsView(
             contentPadding = paddingValues,
         ) {
             if (subscribed.isNotEmpty()) {
-                item {
+                item("subscribed_title") {
                     TitleWithAction(
                         title = stringResource(R.string.subscribed),
                         actionLabel = "",
@@ -296,7 +296,9 @@ fun SubscribedListsView(
                     )
                 }
                 subscribed.fastForEach { (list, items) ->
-                    item {
+                    item(
+                        key = "sub_${list.id}"
+                    ) {
                         ContentListPreview(
                             modifier = Modifier
                                 .combinedClickable(
@@ -327,7 +329,7 @@ fun SubscribedListsView(
                 }
             }
             if (public.isNotEmpty() || user?.favoritesPublic == true) {
-                item {
+                item("public_title") {
                     TitleWithAction(
                         title = stringResource(R.string.public_lists),
                         actionLabel = "",
@@ -349,7 +351,7 @@ fun SubscribedListsView(
                     }
                 }
                 public.fastForEach { (list, items) ->
-                    item {
+                    item("pub_${list.id}") {
                         ContentListPreview(
                             modifier = Modifier
                                 .combinedClickable(

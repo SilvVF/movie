@@ -18,10 +18,10 @@ import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.DefaultModelEqualityDelegate
 import coil.compose.EqualityDelegate
-import io.silv.movie.LocalUser
 import io.silv.movie.R
-import io.silv.movie.UserProfileImageData
+import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.user.User
+import io.silv.movie.presentation.LocalUser
 
 
 @Composable

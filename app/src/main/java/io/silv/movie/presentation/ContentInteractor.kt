@@ -1,32 +1,24 @@
 package io.silv.movie.presentation
 
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.staticCompositionLocalOf
 import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.TVShowCoverCache
-import io.silv.movie.data.lists.ContentItem
-import io.silv.movie.data.lists.ContentList
-import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.lists.interactor.AddContentItemToList
-import io.silv.movie.data.lists.interactor.RemoveContentItemFromList
-import io.silv.movie.data.lists.interactor.ToggleContentItemFavorite
-import io.silv.movie.presentation.ContentEvent.AddToAnotherList
-import io.silv.movie.presentation.ContentEvent.AddToList
-import io.silv.movie.presentation.ContentEvent.Favorite
-import io.silv.movie.presentation.ContentEvent.RemoveFromList
+import io.silv.movie.data.content.lists.ContentItem
+import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.content.lists.interactor.AddContentItemToList
+import io.silv.movie.data.content.lists.interactor.RemoveContentItemFromList
+import io.silv.movie.data.content.lists.interactor.ToggleContentItemFavorite
+import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.presentation.ContentInteractor.ContentEvent
+import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToAnotherList
+import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToList
+import io.silv.movie.presentation.ContentInteractor.ContentEvent.Favorite
+import io.silv.movie.presentation.ContentInteractor.ContentEvent.RemoveFromList
+import io.silv.movie.presentation.covers.cache.MovieCoverCache
+import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-val LocalContentInteractor = staticCompositionLocalOf<ContentInteractor> { error("ContentInteractor not provided in current scope") }
-
-sealed interface ContentEvent {
-    data class Favorite(val item: ContentItem, val success: Boolean): ContentEvent
-    data class AddToList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
-    data class AddToAnotherList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
-    data class RemoveFromList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
-}
 
 interface ContentInteractor: EventProducer<ContentEvent> {
     fun toggleFavorite(contentItem: ContentItem)
@@ -34,10 +26,41 @@ interface ContentInteractor: EventProducer<ContentEvent> {
     fun addToAnotherList(listId: Long, contentItem: ContentItem)
     fun addToList(listId: Long, contentItem: ContentItem)
     fun removeFromList(contentList: ContentList, contentItem: ContentItem)
+
+    companion object {
+        fun default(
+            toggleContentItemFavorite: ToggleContentItemFavorite,
+            removeContentItemFromList: RemoveContentItemFromList,
+            addContentItemToList: AddContentItemToList,
+            contentListRepository: ContentListRepository,
+            auth: Auth,
+            movieCoverCache: MovieCoverCache,
+            showCoverCache: TVShowCoverCache,
+            scope: CoroutineScope,
+        ): ContentInteractor {
+            return DefaultContentInteractor(
+                toggleContentItemFavorite,
+                removeContentItemFromList,
+                addContentItemToList,
+                contentListRepository,
+                auth,
+                movieCoverCache,
+                showCoverCache,
+                scope
+            )
+        }
+    }
+
+    sealed interface ContentEvent {
+        data class Favorite(val item: ContentItem, val success: Boolean): ContentEvent
+        data class AddToList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
+        data class AddToAnotherList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
+        data class RemoveFromList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
+    }
 }
 
 @Stable
-class DefaultContentInteractor(
+private class DefaultContentInteractor(
     private val toggleContentItemFavorite: ToggleContentItemFavorite,
     private val removeContentItemFromList: RemoveContentItemFromList,
     private val addContentItemToList: AddContentItemToList,

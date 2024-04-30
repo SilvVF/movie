@@ -8,9 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.navigator.Navigator
 import io.silv.movie.presentation.CollectEventsWithLifecycle
-import io.silv.movie.presentation.ContentEvent
 import io.silv.movie.presentation.ContentInteractor
-import io.silv.movie.presentation.library.screens.ListViewScreen
+import io.silv.movie.presentation.ContentInteractor.ContentEvent
+import io.silv.movie.presentation.list.screen.ListViewScreen
 
 
 @Composable

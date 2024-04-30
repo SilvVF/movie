@@ -3,6 +3,7 @@ package io.silv.movie.data.user
 import android.content.Context
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import io.silv.movie.data.user.worker.FavoritesUpdateWorker
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

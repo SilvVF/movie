@@ -10,13 +10,16 @@ import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
-import io.silv.movie.coil.CoilDiskCache
-import io.silv.movie.coil.CoilMemoryCache
-import io.silv.movie.coil.addByteArrayDiskFetcher
-import io.silv.movie.coil.addDiskFetcher
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.ProfileImageCache
-import io.silv.movie.data.cache.TVShowCoverCache
+import io.silv.movie.coil.core.addByteArrayDiskFetcher
+import io.silv.movie.coil.core.addDiskFetcher
+import io.silv.movie.coil.fetchers.BucketItemFetcher
+import io.silv.movie.coil.fetchers.ContentPosterFetcher
+import io.silv.movie.coil.fetchers.UserProfileImageFetcher
+import io.silv.movie.coil.utils.CoilDiskCache
+import io.silv.movie.coil.utils.CoilMemoryCache
+import io.silv.movie.presentation.covers.cache.MovieCoverCache
+import io.silv.movie.presentation.covers.cache.ProfileImageCache
+import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.OkHttpClient
@@ -48,8 +51,11 @@ class App: Application(), ImageLoaderFactory {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
 
-        val diskCacheInit = lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this) }
-        val memCacheInit= lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilMemoryCache.get(this) }
+        val diskCacheInit =
+            lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this) }
+
+        val memCacheInit=
+            lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilMemoryCache.get(this) }
 
         return ImageLoader.Builder(this)
             .diskCache(diskCacheInit.value)

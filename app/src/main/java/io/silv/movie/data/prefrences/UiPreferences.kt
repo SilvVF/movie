@@ -8,10 +8,10 @@ import io.silv.movie.R
 import io.silv.movie.data.prefrences.DeviceUtil.isDynamicColorAvailable
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.data.prefrences.core.getEnum
-import io.silv.movie.presentation.browse.BrowseTab
-import io.silv.movie.presentation.browse.DiscoverTab
-import io.silv.movie.presentation.library.LibraryTab
-import io.silv.movie.presentation.profile.ProfileTab
+import io.silv.movie.presentation.tabs.BrowseTab
+import io.silv.movie.presentation.tabs.DiscoverTab
+import io.silv.movie.presentation.tabs.LibraryTab
+import io.silv.movie.presentation.tabs.ProfileTab
 import io.silv.movie.presentation.settings.StringResource
 import java.text.DateFormat
 import java.text.SimpleDateFormat

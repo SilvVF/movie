@@ -47,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.ItemCover
-import io.silv.movie.LocalAppState
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.AppTheme
@@ -56,6 +55,7 @@ import io.silv.movie.data.prefrences.StartScreen
 import io.silv.movie.data.prefrences.TabletUiMode
 import io.silv.movie.data.prefrences.ThemeMode
 import io.silv.movie.data.prefrences.UiPreferences
+import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings
 import io.silv.movie.presentation.settings.widgets.BasePreferenceWidget
@@ -96,7 +96,6 @@ data object SettingsAppearanceScreen: SearchableSettings {
     private fun getThemeGroup(
         uiPreferences: UiPreferences,
     ): Preference.PreferenceGroup {
-        val context = LocalContext.current
         val appState = LocalAppState.current
 
         val scope = rememberCoroutineScope()

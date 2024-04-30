@@ -3,18 +3,18 @@ package io.silv.movie
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.cache.MovieCoverCache
-import io.silv.movie.data.cache.TVShowCoverCache
-import io.silv.movie.data.lists.ContentListRepository
-import io.silv.movie.data.lists.interactor.AddContentItemToList
-import io.silv.movie.data.lists.interactor.DeleteContentList
-import io.silv.movie.data.lists.interactor.EditContentList
-import io.silv.movie.data.lists.interactor.RemoveContentItemFromList
-import io.silv.movie.data.lists.interactor.ToggleContentItemFavorite
-import io.silv.movie.data.user.ListRepository
-import io.silv.movie.data.user.ListUpdater
-import io.silv.movie.presentation.DefaultContentInteractor
-import io.silv.movie.presentation.DefaultListInteractor
+import io.silv.movie.data.content.lists.interactor.AddContentItemToList
+import io.silv.movie.data.content.lists.interactor.DeleteContentList
+import io.silv.movie.data.content.lists.interactor.EditContentList
+import io.silv.movie.data.content.lists.interactor.RemoveContentItemFromList
+import io.silv.movie.data.content.lists.interactor.ToggleContentItemFavorite
+import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.user.repository.ListRepository
+import io.silv.movie.data.user.worker.ListUpdater
+import io.silv.movie.presentation.ContentInteractor
+import io.silv.movie.presentation.ListInteractor
+import io.silv.movie.presentation.covers.cache.MovieCoverCache
+import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 
 class MainScreenModel(
     toggleContentItemFavorite: ToggleContentItemFavorite,
@@ -30,7 +30,7 @@ class MainScreenModel(
     auth: Auth
 ): ViewModel() {
 
-    val contentInteractor = DefaultContentInteractor(
+    val contentInteractor = ContentInteractor.default(
         toggleContentItemFavorite,
         removeContentItemFromList,
         addContentItemToList,
@@ -41,7 +41,7 @@ class MainScreenModel(
         viewModelScope
     )
 
-    val listInteractor = DefaultListInteractor(
+    val listInteractor = ListInteractor.default(
         contentListRepository,
         listRepository,
         listUpdater,

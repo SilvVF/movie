@@ -14,7 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import io.silv.movie.presentation.library.components.BottomSheetItem
+import io.silv.movie.presentation.components.dialog.BottomSheetItem
 
 @Composable
 fun AccountOptionsBottomSheet(

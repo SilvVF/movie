@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".WatchContentActivity"
+            android:name=".presentation.media.WatchContentActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:screenOrientation="landscape"
         >

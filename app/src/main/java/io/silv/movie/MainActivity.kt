@@ -1,7 +1,6 @@
 package io.silv.movie
 
 import android.os.Bundle
-import android.text.format.DateUtils
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -38,16 +37,11 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -59,9 +53,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.CurrentTab
-import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.colorScheme.CloudflareColorScheme
 import io.silv.core_ui.theme.colorScheme.CottonCandyColorScheme
@@ -83,138 +75,40 @@ import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
 import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
+import io.silv.movie.data.content.trailers.Trailer
 import io.silv.movie.data.prefrences.AppTheme
-import io.silv.movie.data.prefrences.ThemeMode
 import io.silv.movie.data.prefrences.ThemeMode.DARK
 import io.silv.movie.data.prefrences.ThemeMode.LIGHT
 import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.prefrences.UiPreferences
-import io.silv.movie.data.trailers.Trailer
 import io.silv.movie.data.user.User
-import io.silv.movie.data.user.UserRepository
+import io.silv.movie.data.user.repository.UserRepository
 import io.silv.movie.presentation.ContentInteractor
 import io.silv.movie.presentation.ListInteractor
+import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.browse.BrowseTab
-import io.silv.movie.presentation.browse.DiscoverTab
-import io.silv.movie.presentation.library.LibraryTab
-import io.silv.movie.presentation.media.CollapsablePlayerMinHeight
-import io.silv.movie.presentation.media.CollapsablePlayerScreen
-import io.silv.movie.presentation.media.CollapsableVideoAnchors
-import io.silv.movie.presentation.media.rememberCollapsableVideoState
-import io.silv.movie.presentation.profile.ProfileTab
-import io.silv.movie.presentation.settings.SettingsTab
+import io.silv.movie.presentation.LocalMainViewModelStoreOwner
+import io.silv.movie.presentation.LocalUser
+import io.silv.movie.presentation.getActivityViewModel
+import io.silv.movie.presentation.media.PlayerViewModel
+import io.silv.movie.presentation.media.components.CollapsablePlayerMinHeight
+import io.silv.movie.presentation.media.components.CollapsablePlayerScreen
+import io.silv.movie.presentation.media.components.CollapsableVideoAnchors
+import io.silv.movie.presentation.media.components.rememberCollapsableVideoState
+import io.silv.movie.presentation.tabs.BrowseTab
+import io.silv.movie.presentation.tabs.DiscoverTab
+import io.silv.movie.presentation.tabs.LibraryTab
+import io.silv.movie.presentation.tabs.ProfileTab
+import io.silv.movie.presentation.tabs.SettingsTab
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.toJavaInstant
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.text.DateFormat
 import kotlin.math.roundToInt
 
-
-object Nav {
-
-    var current by mutableStateOf<Navigator?>(null)
-        private set
-
-    fun setNav(navigator: Navigator) {
-        current = navigator
-    }
-
-    fun clear() { current = null }
-}
-
-@Stable
-@Immutable
-data class AppState(
-    val appTheme: AppTheme,
-    val themeMode: ThemeMode,
-    val amoled: Boolean,
-    val dateFormat: DateFormat,
-    val relativeTimestamp: Boolean,
-    val startScreen: Tab,
-    val sharedElementTransitions: Boolean
-) {
-
-    fun formatDate(i: Instant): String {
-        return if (relativeTimestamp) {
-            DateUtils.getRelativeTimeSpanString(
-                i.toEpochMilliseconds(),
-                Clock.System.now().toEpochMilliseconds(),
-                DateUtils.MINUTE_IN_MILLIS
-            )
-                .toString()
-        } else {
-            dateFormat.format(i.toJavaInstant())
-        }
-    }
-}
-
-val LocalAppState = compositionLocalOf<AppState> { error("Not provided in scope") }
-
-@Stable
-class AppStateProvider(
-    private val uiPreferences: UiPreferences,
-    scope: CoroutineScope
-) {
-    var state by mutableStateOf<State>(State.Loading)
-        private set
-
-    private val appStateChanges = combine(
-        uiPreferences.themeMode().changes(),
-        uiPreferences.appTheme().changes(),
-        uiPreferences.dateFormat().changes(),
-        uiPreferences.themeDarkAmoled().changes(),
-        uiPreferences.relativeTime().changes().combine(uiPreferences.sharedElementTransitions().changes()) { a: Boolean, b: Boolean -> a to b },
-    ) { themeMode, appTheme, dateFormat, amoled, (relativeTime, transitions) ->
-       AppState(
-           appTheme,
-           themeMode,
-           amoled,
-           UiPreferences.dateFormat(dateFormat),
-           relativeTime,
-           (state as? State.Success)?.state?.startScreen
-               ?: uiPreferences.startScreen().get().tab,
-           transitions
-       )
-    }
-
-    init {
-        scope.launch {
-            state = State.Success(
-                AppState(
-                    appTheme = uiPreferences.appTheme().get(),
-                    amoled = uiPreferences.themeDarkAmoled().get(),
-                    themeMode = uiPreferences.themeMode().get(),
-                    dateFormat = UiPreferences.dateFormat(uiPreferences.dateFormat().get()),
-                    startScreen = uiPreferences.startScreen().get().tab,
-                    relativeTimestamp = uiPreferences.relativeTime().get(),
-                    sharedElementTransitions = uiPreferences.sharedElementTransitions().get()
-                )
-            )
-
-            appStateChanges.collect {
-                state = State.Success(it)
-            }
-        }
-    }
-    @Stable
-    sealed interface State {
-        @Stable
-        data object Loading: State
-        @Stable
-        data class Success(val state: AppState): State
-    }
-}
 
 class MainActivity : ComponentActivity() {
 
