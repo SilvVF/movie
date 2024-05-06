@@ -119,8 +119,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.util)
     implementation(libs.kotlinx.serialization.json.okio)
 
-    implementation("androidx.compose.ui:ui:1.7.0-alpha07")
-    implementation("androidx.compose.animation:animation:1.7.0-alpha07")
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.animation)
+
 
     // Paging3
     implementation(libs.androidx.paging.compose)

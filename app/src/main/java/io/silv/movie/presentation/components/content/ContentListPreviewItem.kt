@@ -1,6 +1,7 @@
 package io.silv.movie.presentation.components.content
 
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,26 +28,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import io.silv.core_ui.components.CoverPlaceholderColor
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
 import io.silv.movie.core.DiskUtil
@@ -61,29 +68,49 @@ import org.koin.compose.koinInject
 
 private val ListItemHeight = 72.dp
 
+@Stable
+data class ListUri(
+    val hash: String,
+    val uri: Uri
+)
+
+@Suppress("ComposableNaming")
 @Composable
-fun ContentListPosterStateFlowItems(
-    list: ContentList,
-    items: ImmutableList<StateFlow<ContentItem?>>,
-    modifier: Modifier = Modifier
-) {
-    val cache = koinInject<ListCoverCache>()
+fun rememberListUri(list: ContentList): ListUri? {
+
+    val cache= koinInject<ListCoverCache>()
     var semaphor by remember { mutableIntStateOf(0) }
-    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
-    val fileExists by remember(semaphor) {
-        derivedStateOf { file.exists() }
+
+    val fileUri = remember(semaphor) {
+        val uri = cache.getCustomCoverFile(list.id)
+            .takeIf { it.exists() }
+            ?.toUri()
+            ?: return@remember null
+
+        ListUri(DiskUtil.hashKeyForDisk(list.id.toString()), uri)
     }
 
     LaunchedEffect(list.posterLastModified) {
         semaphor++
     }
 
-    if (fileExists) {
+    return fileUri
+}
+
+
+@Composable
+fun ContentListPosterStateFlowItems(
+    list: ContentList,
+    items: ImmutableList<StateFlow<ContentItem?>>,
+    modifier: Modifier = Modifier
+) {
+    val listUri = rememberListUri(list = list)
+
+    if (listUri != null) {
         ContentPreviewDefaults.CustomListPoster(
             modifier = modifier,
-            uri = file.toUri(),
-            hash = hash,
+            uri = listUri.uri,
+            hash = listUri.hash,
             lastModified = list.posterLastModified
         )
     }else {
@@ -113,23 +140,13 @@ fun ContentListPoster(
     items: ImmutableList<ContentItem>,
     modifier: Modifier = Modifier
 ) {
-    val cache = koinInject<ListCoverCache>()
-    var semaphor by remember { mutableIntStateOf(0) }
-    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-    val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
-    val fileExists by remember(semaphor) {
-        derivedStateOf { file.exists() }
-    }
+    val listUri = rememberListUri(list = list)
 
-    LaunchedEffect(list.posterLastModified) {
-        semaphor++
-    }
-
-    if (fileExists) {
+    if (listUri != null) {
         ContentPreviewDefaults.CustomListPoster(
             modifier = modifier,
-            uri = file.toUri(),
-            hash = hash,
+            uri = listUri.uri,
+            hash = listUri.hash,
             lastModified = list.posterLastModified
         )
     }else {
@@ -263,14 +280,19 @@ object ContentPreviewDefaults {
         lastModified: Long = 0L,
     ) {
         val context = LocalContext.current
-        ItemCover.Square(
-            modifier = modifier,
-            shape = RectangleShape,
-            data = ImageRequest.Builder(context)
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
                 .data(uri)
+                .crossfade(true)
                 .diskCacheKey("$hash,$lastModified")
                 .memoryCacheKey("$hash,$lastModified")
-                .build()
+                .build(),
+            placeholder = remember { ColorPainter(CoverPlaceholderColor) },
+            contentDescription = null,
+            modifier = modifier
+                .aspectRatio(1f)
+                .clip(RectangleShape),
+            contentScale = ContentScale.Crop,
         )
     }
 

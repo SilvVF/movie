@@ -8,11 +8,11 @@ import io.silv.movie.R
 import io.silv.movie.data.prefrences.DeviceUtil.isDynamicColorAvailable
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.data.prefrences.core.getEnum
+import io.silv.movie.presentation.settings.StringResource
 import io.silv.movie.presentation.tabs.BrowseTab
 import io.silv.movie.presentation.tabs.DiscoverTab
 import io.silv.movie.presentation.tabs.LibraryTab
 import io.silv.movie.presentation.tabs.ProfileTab
-import io.silv.movie.presentation.settings.StringResource
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Locale

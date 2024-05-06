@@ -130,7 +130,7 @@ class MovieViewScreenModel(
     }
 
     val credits = Pager(
-        config = PagingConfig(pageSize = 20),
+        config = PagingConfig(pageSize = 30),
         pagingSourceFactory = { creditsRepository.movieCreditsPagingSource(movieId) },
     ).flow
         .cachedIn(screenModelScope)
@@ -211,9 +211,6 @@ class MovieViewScreenModel(
 
         @Stable
         data object FullCover: Dialog
-
-        @Stable
-        data object Comments: Dialog
     }
 }
 

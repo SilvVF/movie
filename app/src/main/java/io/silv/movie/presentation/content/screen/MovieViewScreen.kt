@@ -74,7 +74,6 @@ import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.components.content.CommentsBottomSheet
 import io.silv.movie.presentation.components.content.creditsPagingList
 import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox
@@ -117,57 +116,72 @@ data class MovieViewScreen(
         val commentsState by commentsScreenModel.state.collectAsStateWithLifecycle()
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
-            MovieDetailsState.Error ->  Box(modifier = Modifier.fillMaxSize()) {
+            MovieDetailsState.Error -> Box(modifier = Modifier.fillMaxSize()) {
                 Icon(
                     imageVector = Icons.Default.Error,
                     contentDescription = null,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
+
             MovieDetailsState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                 }
             }
+
             is MovieDetailsState.Success -> {
                 val credits = screenModel.credits.collectAsLazyPagingItems()
                 MovieDetailsContent(
-                    state = state,
-                    refresh = screenModel::refresh,
-                    creditsProvider = { credits },
-                    onPosterClick = {
-                        changeDialog(MovieViewScreenModel.Dialog.FullCover)
-                    },
-                    onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
-                    onViewCreditsClick = { navigator.push(CreditsViewScreen(state.movie.id, true)) },
-                    onCreditClick = { credit ->
-                        credit.personId?.let {
+                        state = state,
+                        refresh = screenModel::refresh,
+                        creditsProvider = { credits },
+                        onPosterClick = {
+                            changeDialog(MovieViewScreenModel.Dialog.FullCover)
+                        },
+                        onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
+                        onViewCreditsClick = {
                             navigator.push(
-                                PersonViewScreen(
-                                    it,
-                                    credit.name,
-                                    credit.profilePath
+                                CreditsViewScreen(
+                                    state.movie.id,
+                                    true
                                 )
                             )
-                        }
-                    },
-                    onWatchMovieClick = {
-                        context.startActivity(
-                            Intent(context, WatchContentActivity::class.java)
-                                .apply { putExtra("url", "https://vidsrc.to/embed/movie/${state.movie.id}") }
-                        )
-                    },
-                    onAddToList = { navigator.push(AddToListScreen(state.movie.id, true)) },
-                    onShowComments = {
-                        changeDialog(MovieViewScreenModel.Dialog.Comments)
-                    },
-                    commentsState = commentsState
-                )
-                val onDismissRequest =  { changeDialog(null) }
+                        },
+                        onCreditClick = { credit ->
+                            credit.personId?.let {
+                                navigator.push(
+                                    PersonViewScreen(
+                                        it,
+                                        credit.name,
+                                        credit.profilePath
+                                    )
+                                )
+                            }
+                        },
+                        onWatchMovieClick = {
+                            context.startActivity(
+                                Intent(context, WatchContentActivity::class.java)
+                                    .apply {
+                                        putExtra(
+                                            "url",
+                                            "https://vidsrc.to/embed/movie/${state.movie.id}"
+                                        )
+                                    }
+                            )
+                        },
+                        onAddToList = { navigator.push(AddToListScreen(state.movie.id, true)) },
+                        onShowComments = {
+
+                        },
+                        commentsState = commentsState
+                    )
+                val onDismissRequest = { changeDialog(null) }
                 when (state.dialog) {
                     null -> Unit
                     MovieViewScreenModel.Dialog.FullCover -> {
-                        val sm = getScreenModel<MovieCoverScreenModel> { parametersOf(state.movie.id) }
+                        val sm =
+                            getScreenModel<MovieCoverScreenModel> { parametersOf(state.movie.id) }
                         val movie by sm.state.collectAsStateWithLifecycle()
 
                         if (movie != null) {
@@ -195,12 +209,6 @@ data class MovieViewScreen(
                                 onDismissRequest = onDismissRequest,
                             )
                         }
-                    }
-                    MovieViewScreenModel.Dialog.Comments -> {
-                        CommentsBottomSheet(
-                            onDismissRequest = onDismissRequest,
-                            screenModel = commentsScreenModel
-                        )
                     }
                 }
             }

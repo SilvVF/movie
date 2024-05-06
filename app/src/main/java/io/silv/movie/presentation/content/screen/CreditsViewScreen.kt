@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,11 +31,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,11 +50,13 @@ import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import dev.chrisbanes.haze.HazeDefaults
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.silv.core_ui.components.CoverPlaceholderColor
 import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.components.topbar.PosterLargeTopBar
@@ -172,12 +179,18 @@ data class CreditsViewScreen(
                                 .fillMaxHeight()
                         ) {
                             val context = LocalContext.current
-                            ItemCover.Square(
-                                data = ImageRequest.Builder(context)
+                            AsyncImage(
+                                model = ImageRequest.Builder(context)
                                     .data(credit.profilePath)
                                     .fallback(R.drawable.user_default_proflie_icon)
                                     .crossfade(true)
                                     .build(),
+                                placeholder = remember { ColorPainter(CoverPlaceholderColor) },
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .aspectRatio(1f)
+                                    .clip(RectangleShape),
+                                contentScale = ContentScale.Crop,
                             )
                         }
                         Spacer(Modifier.width(12.dp))

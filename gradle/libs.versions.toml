@@ -1,6 +1,7 @@
 [versions]
 accompanistWebview = "0.35.0-alpha"
 activityCompose = "1.9.0"
+animation = "1.7.0-alpha08"
 composeShimmer = "1.3.0"
 fontAwesome = "1.1.0"
 haze = "0.5.0"
@@ -8,20 +9,20 @@ media3ExoplayerDash = "1.3.1"
 media3Exoplayer = "1.3.1"
 palette = "1.0.0"
 reorderable = "0.9.6"
-sqldelight = "2.0.1"
-androidxComposeBom = "2024.04.01"
-androidxCoreKtx = "1.13.0"
+sqldelight = "2.0.2"
+androidxComposeBom = "2024.05.00"
+androidxCoreKtx = "1.13.1"
 androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
 coilGif = "2.5.0"
-datastorePreferences = "1.1.0"
+datastorePreferences = "1.1.1"
 desugar_jdk_libs = "2.0.4"
 kotlinxSerializationJsonOkio = "1.6.2"
 lifecycleRuntimeCompose = "2.7.0"
-material = "1.11.0"
+material = "1.12.0"
 material3Android = "1.2.1"
 material3WindowSizeClass = "1.2.1"
-materialIconsExtended = "1.6.6"
+materialIconsExtended = "1.6.7"
 okhttp = "4.12.0"
 okhttpDnsoverhttps = "4.11.0"
 okio = "3.9.0"
@@ -35,6 +36,7 @@ koinVersion="3.5.3"
 koinCompose="3.5.3"
 coil = "2.6.0"
 timber = "5.0.1"
+ui = "1.7.0-alpha08"
 voyager="1.0.0"
 ktor="2.3.8"
 kotlinserialization="1.6.2"
@@ -49,7 +51,7 @@ org-jetbrains-kotlin-jvm = "1.9.23"
 kotlinCollectionsImmutable = "0.3.7"
 retrofit="2.9.0"
 retrofiteKotlinxSerializtionConverter="1.0.0"
-animationGraphicsAndroid = "1.6.6"
+animationGraphicsAndroid = "1.6.7"
 cronetApi = "119.6045.31"
 cronetOkhttp = "0.1.0"
 media3DatasourceCronet = "1.3.1"
@@ -60,11 +62,13 @@ constraintlayout = "2.1.4"
 
 [libraries]
 accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanistWebview" }
+androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
 androidx-media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "media3ExoplayerDash" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Exoplayer" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3ExoplayerDash" }
 
 androidx-palette = { module = "androidx.palette:palette", version.ref = "palette" }
+androidx-ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 compose-shimmer = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "composeShimmer" }
 reorderable = { module = "org.burnoutcrew.composereorderable:reorderable", version.ref = "reorderable" }
 font-awesome = { module = "br.com.devsrsouza.compose.icons:font-awesome", version.ref = "fontAwesome" }

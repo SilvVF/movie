@@ -53,7 +53,13 @@ SELECT
     m.overview  AS overview,
     m.popularity AS popularity,
     (
-       SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE movie_id = m.id
+       SELECT DISTINCT COUNT(contentItem.list_id)
+       FROM contentItem
+              WHERE movie_id = m.id AND (
+                   SELECT in_library
+                   FROM contentList
+                   WHERE contentList._id = contentItem.list_id
+              )
     ) AS inLists
 FROM contentItem AS clj
 LEFT JOIN movie AS m
@@ -77,7 +83,13 @@ SELECT
     s.overview  AS overview,
     s.popularity AS popularity,
     (
-        SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id
+        SELECT DISTINCT COUNT(contentItem.list_id)
+               FROM contentItem
+                      WHERE show_id = s.id AND (
+                           SELECT in_library
+                           FROM contentList
+                           WHERE contentList._id = contentItem.list_id
+                      )
     ) AS inLists
 FROM contentItem AS clj
 LEFT JOIN show AS s
@@ -100,7 +112,13 @@ SELECT
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
     (
-      SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id OR movie_id = m.id
+        SELECT DISTINCT COUNT(contentItem.list_id)
+               FROM contentItem
+               WHERE show_id = s.id OR movie_id = m.id AND (
+                    SELECT in_library
+                    FROM contentList
+                    WHERE contentList._id = contentItem.list_id
+               )
     ) AS inLists
 FROM contentItem AS clj
 LEFT JOIN movie AS m
@@ -137,7 +155,13 @@ SELECT
     COALESCE(m.overview, s.overview) AS overview,
     COALESCE(m.popularity, s.popularity) AS popularity,
     (
-      SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id OR movie_id = m.id
+      SELECT DISTINCT COUNT(contentItem.list_id)
+             FROM contentItem
+             WHERE show_id = s.id OR movie_id = m.id AND (
+                  SELECT in_library
+                  FROM contentList
+                  WHERE contentList._id = contentItem.list_id
+             )
     ) AS inLists
 FROM contentItem AS clj
 LEFT JOIN movie AS m

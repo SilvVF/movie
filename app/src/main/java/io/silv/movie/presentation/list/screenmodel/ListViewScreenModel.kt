@@ -15,9 +15,9 @@ import io.silv.movie.data.content.lists.RecommendationManager
 import io.silv.movie.data.content.lists.interactor.DeleteContentList
 import io.silv.movie.data.content.lists.repository.ContentListRepository
 import io.silv.movie.data.prefrences.BasePreferences
+import io.silv.movie.data.prefrences.BasePreferences.Companion.addToRecentlyViewed
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.prefrences.core.getAndSet
 import io.silv.movie.data.user.ListUpdateManager
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.repository.UserRepository
@@ -42,7 +42,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import timber.log.Timber
 
 class ListViewScreenModel(
@@ -71,38 +70,21 @@ class ListViewScreenModel(
         private set
 
     private val listIdFlow = state.map { it.success?.list?.id }.filterNotNull().distinctUntilChanged()
+    private val createdByFlow = state.map { it.success?.list?.createdBy }.filterNotNull().distinctUntilChanged()
+    private val listFlow = state.map { it.success?.list }.filterNotNull().distinctUntilChanged()
+    private val sortModeFlow = state.map { it.success?.sortMode }.filterNotNull().distinctUntilChanged()
+
     private var initializeJob: Job? = null
 
     init {
         initializeList()
 
-        state.map { it.success?.list?.createdBy }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .onEach { userId ->
-
-                val user = if (userId == auth.currentUserOrNull()?.id) {
-                    userRepository.currentUser.value ?: userRepository.getUser(userId)
-                } else {
-                    userRepository.getUser(userId)
-                }
-
-                mutableState.updateSuccess { state ->
-                    state.copy(user = user)
-                }
-
-                userRepository.currentUser.collect { u ->
-                    mutableState.updateSuccess { state ->
-
-                        val isOwnerMe =  u?.userId == state.list.createdBy || state.list.createdBy == null
-
-                        state.copy(
-                            user = if(isOwnerMe) u else state.user,
-                            isOwnerMe = isOwnerMe
-                        )
-                    }
-                }
+        createdByFlow.onEach { userId ->
+            val user = userRepository.getUser(userId) ?: return@onEach
+            mutableState.updateSuccess { state ->
+                state.copy(user = user)
             }
+        }
             .launchIn(screenModelScope)
 
         listIdFlow.flatMapLatest { id ->
@@ -110,7 +92,6 @@ class ListViewScreenModel(
                 recommendationManager.subscribe(id).map { it.take(6) },
                 recommendationManager.isRunning(id)
             ) {  recommendations, isRunning ->
-
                 mutableState.updateSuccess { state ->
                     state.copy(
                         refreshingRecommendations = isRunning,
@@ -121,40 +102,20 @@ class ListViewScreenModel(
         }
             .launchIn(screenModelScope)
 
-        state.map { it.success?.list }
-            .filterNotNull()
-            .distinctUntilChanged()
-            .onEach { list ->
-                basePreferences.recentlyViewedLists().getAndSet { recent ->
-                    val lst = recent.toMutableList()
-                    lst.apply {
-                        val idx = indexOfFirst { it.second == list.supabaseId }
-                        if (idx != -1) {
-                            lst.removeAt(idx)
-                        }
-                        sortBy { it.first }
-                        if (list.supabaseId != null) {
-                            add(Clock.System.now().epochSeconds to list.supabaseId)
-                        }
-                        if (size > 20) {
-                            removeAt(0)
-                        }
-                    }
-                }
-            }
+        listFlow.onEach { list ->
+            basePreferences.addToRecentlyViewed(list)
+        }
             .launchIn(screenModelScope)
 
        listIdFlow.flatMapLatest { id ->
-            state.map { it.success?.sortMode }
-                .filterNotNull()
-                .distinctUntilChanged()
-                .combine(
-                    snapshotFlow { query },
-                ) { a, b -> a to b }
+           sortModeFlow.combine(
+               snapshotFlow { query }
+           ) { a, b -> a to b }
                 .mapLatest { (sortMode, search) ->
                     contentListRepository
                         .observeListItemsByListId(id, search, sortMode)
                         .collect { content ->
+
                             mutableState.updateSuccess { state ->
                                 state.copy(items = content.toImmutableList())
                             }
@@ -166,9 +127,7 @@ class ListViewScreenModel(
         listIdFlow.flatMapLatest { id ->
             combine(
                 contentListRepository.observeListById(id),
-                contentListRepository.observeListItemsByListId(id, "",
-                    ListSortMode.RecentlyAdded(true)
-                ),
+                contentListRepository.observeListItemsByListId(id, "", ListSortMode.RecentlyAdded(true)),
             ) { list, items ->
 
                 if (list == null) {
@@ -188,15 +147,12 @@ class ListViewScreenModel(
 
         listSortMode.changes()
             .onEach { mode ->
-                Timber.d(mode.toString())
-                mutableState.updateSuccess {state -> state.copy(sortMode = mode) }
+                mutableState.updateSuccess { state -> state.copy(sortMode = mode) }
             }
             .launchIn(screenModelScope)
     }
 
-    val refreshingList = state.map { it.success?.list?.supabaseId }
-        .filterNotNull()
-        .distinctUntilChanged()
+    val refreshingList = createdByFlow
         .flatMapLatest {
             listUpdateManager.isRunning(it)
         }
@@ -225,7 +181,6 @@ class ListViewScreenModel(
                     }
                 }
             }
-
             mutableState.value = if (list == null) {
                 ListViewState.Error("No list found")
             } else {
@@ -236,10 +191,8 @@ class ListViewScreenModel(
                     list.createdBy != auth.currentUserOrNull()?.id) {
                     listUpdateManager.refreshList(list.supabaseId.orEmpty())
                 }
-
                 ListViewState.Success(
                     list = list,
-                    isOwnerMe = list.createdBy == auth.currentUserOrNull()?.id || list.createdBy == null,
                     allItems = items.toImmutableList(),
                     sortMode = listSortMode.get()
                 )
@@ -351,11 +304,10 @@ sealed interface ListViewState {
     data class Error(val message: String): ListViewState
 
     data class Success(
-        val isOwnerMe: Boolean,
+        val user: User? = null,
         val list: ContentList,
         val allItems: ImmutableList<ContentItem>,
         val sortMode: ListSortMode,
-        val user: User? = null,
         val dialog: ListViewScreenModel.Dialog? = null,
         val items: ImmutableList<ContentItem> = persistentListOf(),
         val recommendations: ImmutableList<ContentItem> = persistentListOf(),

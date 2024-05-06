@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.CardDefaults
@@ -24,14 +25,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
 import io.silv.movie.data.content.credits.Credit
 
@@ -92,13 +94,18 @@ fun LazyListScope.creditsPagingList(
                         )
                 ) {
                     val context = LocalContext.current
-                    ItemCover.Square(
-                        data = ImageRequest.Builder(context)
+                   AsyncImage(
+                        model = ImageRequest.Builder(context)
                             .data(credit.profilePath)
                             .fallback(R.drawable.user_default_proflie_icon)
                             .crossfade(true)
                             .build(),
+                       contentScale = ContentScale.Crop,
                         modifier = Modifier
+                            .padding(8.dp)
+                            .clip(CircleShape)
+                            .aspectRatio(1f),
+                        contentDescription = null
                     )
                     Column(
                         Modifier

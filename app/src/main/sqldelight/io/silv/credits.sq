@@ -26,7 +26,7 @@ SELECT * FROM credits WHERE :id = credit_id LIMIT 1;
 selectByMovieId:
 SELECT * FROM credits
 WHERE credits.movie_id = :movieId
-ORDER BY COALESCE(credits.ordering, 999)
+ORDER BY credits.ordering
 LIMIT :limit OFFSET :offset;
 
 countCreditsForMovieId:
@@ -43,7 +43,7 @@ WHERE credits.show_id = :showId;
 selectByShowId:
 SELECT * FROM credits
 WHERE credits.show_id = :showId
-ORDER BY COALESCE(credits.ordering, 999)
+ORDER BY credits.ordering
 LIMIT :limit OFFSET :offset;
 
 
@@ -60,7 +60,7 @@ WHERE credits.person_id = :personId
 LIMIT :limit OFFSET :offset;
 
 insert:
-INSERT OR REPLACE INTO credits(credit_id, show_id, movie_id, adult, gender, known_for_department, name, original_name, popularity, character, crew, ordering, person_id, profile_path, poster_path, title)
+INSERT OR IGNORE INTO credits(credit_id, show_id, movie_id, adult, gender, known_for_department, name, original_name, popularity, character, crew, ordering, person_id, profile_path, poster_path, title)
 VALUES (:id,:showId,:movieId, :adult, :gender, :knownForDepartment, :name,
 :originalName, :popularity,:character, :crew, :ordering,:personId, :profilePath, :posterPath, :title);
 

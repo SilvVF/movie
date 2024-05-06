@@ -54,7 +54,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -73,7 +72,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
@@ -97,15 +95,16 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.data.prefrences.ThemeMode.DARK
 import io.silv.movie.data.prefrences.ThemeMode.LIGHT
 import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
-import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.user.User
 import io.silv.movie.presentation.CollectEventsWithLifecycle
+import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.collectAsState
+import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentListPoster
 import io.silv.movie.presentation.components.content.ContentListPosterGrid
 import io.silv.movie.presentation.components.content.ContentListPosterList
+import io.silv.movie.presentation.components.content.rememberListUri
 import io.silv.movie.presentation.components.dialog.ContentOptionsBottomSheet
 import io.silv.movie.presentation.components.dialog.ListOptionsBottomSheet
 import io.silv.movie.presentation.components.dialog.RemoveEntryDialog
@@ -118,7 +117,6 @@ import io.silv.movie.presentation.content.screen.MovieViewScreen
 import io.silv.movie.presentation.content.screen.TVViewScreen
 import io.silv.movie.presentation.covers.EditCoverAction
 import io.silv.movie.presentation.covers.ListViewCoverDialog
-import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.list.screenmodel.ListViewEvent
 import io.silv.movie.presentation.list.screenmodel.ListViewScreenModel
@@ -132,7 +130,6 @@ import io.silv.movie.presentation.tabs.listNameSharedElement
 import io.silv.movie.presentation.tabs.posterSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.persistentListOf
-import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 data class ListViewScreen(
@@ -244,18 +241,11 @@ data class ListViewScreen(
                     { contentItem: ContentItem -> contentInteractor.toggleFavorite(contentItem) }
                 }
 
-
-                val cache= koinInject<ListCoverCache>()
-                var semaphor by remember { mutableIntStateOf(0) }
-                val file = remember(semaphor) { cache.getCustomCoverFile(s.list.id) }
-
-                LaunchedEffect(s.list.posterLastModified) {
-                    semaphor++
-                }
+                val listUri = rememberListUri(list = s.list)
 
                 val primary by rememberDominantColor(
                     data = when  {
-                        file.exists() -> file.toUri()
+                        listUri != null -> listUri.uri
                         s.allItems.isEmpty() -> null
                         else -> s.allItems.first().toPoster()
                     }
@@ -264,12 +254,18 @@ data class ListViewScreen(
                 SeededMaterialTheme(
                     fallback = MaterialTheme.colorScheme,
                     seedColor = primary.takeIf { it != Color.Transparent },
-                    darkTheme = when (koinInject<UiPreferences>().themeMode().collectAsState().value) {
+                    darkTheme = when (LocalAppState.current.themeMode) {
                         LIGHT -> false
                         DARK -> true
                         SYSTEM -> isSystemInDarkTheme()
                     }
                 ) {
+
+                    val user = LocalUser.current
+                    val isOwnerMe by remember(user, s.list.createdBy) {
+                        derivedStateOf { s.list.createdBy == user?.userId || s.list.createdBy == null }
+                    }
+
                     SuccessScreenContent(
                         query = screenModel.query,
                         onBackPressed = {navigator.pop()},
@@ -318,6 +314,7 @@ data class ListViewScreen(
                         },
                         onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                         snackbarHostState = snackBarState,
+                        isOwnerMe = isOwnerMe,
                         state = s
                     )
                     when (val dialog = s.dialog) {
@@ -353,7 +350,7 @@ data class ListViewScreen(
                                 onRemoveFromListClicked = {
                                     contentInteractor.removeFromList(s.list, dialog.item)
                                 },
-                                isOwnerMe = s.isOwnerMe,
+                                isOwnerMe = isOwnerMe,
                                 item = dialog.item
                             )
                         }
@@ -374,7 +371,7 @@ data class ListViewScreen(
                                 list = s.list,
                                 onChangeDescription = { descriptionResultLauncher.launch() },
                                 onCopyClick = { listInteractor.copyList(s.list) },
-                                isUserMe = s.isOwnerMe,
+                                isUserMe = isOwnerMe,
                                 content = s.allItems,
                                 onSubscribeClicked = { listInteractor.subscribeToList(s.list) },
                                 onUnsubscribeClicked = { listInteractor.unsubscribeFromList(s.list) },
@@ -461,7 +458,8 @@ private fun SuccessScreenContent(
     refreshingList: Boolean,
     onBackPressed: () -> Unit,
     snackbarHostState: SnackbarHostState,
-    state: ListViewState.Success
+    isOwnerMe: Boolean,
+    state: ListViewState.Success,
 ) {
     PullRefresh(
         refreshing = refreshingList,
@@ -487,8 +485,7 @@ private fun SuccessScreenContent(
         val inOverlay by remember {
             derivedStateOf { topBarState.fraction > 0.1f && !topBarState.scrollableState.isScrollInProgress }
         }
-
-
+        
         SpotifyTopBarLayout(
             modifier = Modifier
                 .fillMaxSize()
@@ -620,8 +617,7 @@ private fun SuccessScreenContent(
                         onRefreshClick = refreshRecommendations,
                         refreshingRecommendations = state.refreshingRecommendations,
                         startAddingClick = startAddingClick,
-                        isOwnerMe = state.isOwnerMe,
-                        modifier = Modifier,
+                        isOwnerMe = isOwnerMe,
                     )
                 }
                 PosterDisplayMode.List -> {
@@ -639,8 +635,7 @@ private fun SuccessScreenContent(
                         onRecommendationClick = onRecommendationClick,
                         onRecommendationLongClick = onRecommendationLongClick,
                         startAddingClick = startAddingClick,
-                        isOwnerMe = state.isOwnerMe,
-                        modifier = Modifier,
+                        isOwnerMe = isOwnerMe,
                     )
                 }
             }

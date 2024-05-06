@@ -33,7 +33,7 @@ internal object CoilDiskUtils {
                 }
                 memCache[memCacheKey] = MemoryCache.Value(bitmap = bmp)
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) { Timber.e(e) }
     }
 
     fun writeSourceToCoverCache(

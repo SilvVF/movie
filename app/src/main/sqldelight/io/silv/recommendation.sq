@@ -30,7 +30,13 @@ SELECT
      COALESCE(m.popularity, s.popularity) AS popularity,
      COALESCE(m.last_modified_at, s.last_modified_at) AS lastModified,
      (
-        SELECT DISTINCT COUNT(contentItem.list_id) FROM contentItem WHERE show_id = s.id OR movie_id = m.id
+        SELECT DISTINCT COUNT(contentItem.list_id)
+               FROM contentItem
+               WHERE show_id = s.id OR movie_id = m.id AND (
+                    SELECT in_library
+                    FROM contentList
+                    WHERE contentList._id = contentItem.list_id
+               )
      ) AS inLists
 FROM recommendation
 LEFT JOIN movie AS m ON recommendation.movie_id = m.id

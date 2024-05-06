@@ -12,7 +12,7 @@ CREATE TABLE trailer (
     type TEXT NOT NULL,
     published_at TEXT NOT NULL,
     FOREIGN KEY (show_id) REFERENCES show(id) ON DELETE CASCADE,
-     FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE
+    FOREIGN KEY (movie_id) REFERENCES movie(id) ON DELETE CASCADE
 );
 
 

@@ -18,7 +18,7 @@ class CreditRepositoryImpl(
 ): CreditRepository {
 
     override suspend fun insertCredit(credit: Credit, contentId: Long, isMovie: Boolean) {
-        handler.await(inTransaction = true) {
+        handler.await(true) {
             creditsQueries.insert(
                 id = credit.creditId,
                 adult = credit.adult,
@@ -53,7 +53,7 @@ class CreditRepositoryImpl(
         countQuery = { creditsQueries.countCreditsForShowId(showId) },
         initialOffset = 0L,
         queryProvider = { limit, offset ->
-            creditsQueries.selectByShowId(showId,limit, offset, CreditsMapper.mapCredit)
+            creditsQueries.selectByShowId(showId, limit, offset, CreditsMapper.mapCredit)
         },
         transacter = { creditsQueries }
     )

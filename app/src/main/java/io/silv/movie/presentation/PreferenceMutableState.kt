@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import io.silv.movie.data.prefrences.core.Preference
 import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
@@ -12,6 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+
 
 class PreferenceMutableState<T>(
     private val preference: Preference<T>,
@@ -38,6 +40,15 @@ class PreferenceMutableState<T>(
 
     override fun component2(): (T) -> Unit {
         return { scope.launch { preference.set(it) } }
+    }
+}
+
+@Composable
+fun <T> Preference<T>.collectAsStateOrNull(): State<T?> {
+
+    return produceState<T?>(initialValue = null) {
+        value = get()
+        changes().onEach { value = it }
     }
 }
 

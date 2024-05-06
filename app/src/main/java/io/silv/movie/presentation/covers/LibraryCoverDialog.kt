@@ -51,6 +51,7 @@ import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.components.content.ContentPreviewDefaults
+import io.silv.movie.presentation.components.content.rememberListUri
 import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.toPoster
 import kotlinx.collections.immutable.ImmutableList
@@ -156,25 +157,17 @@ fun LibraryCoverDialog(
                         .fillMaxSize()
                         .clickableNoIndication(onClick = onDismissRequest),
                 ) {
-                    val cache = koinInject<ListCoverCache>()
-                    var semaphor by remember { mutableIntStateOf(0) }
-                    val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
+                    val listUri = rememberListUri(list = list)
 
-                    val fileExists by remember(semaphor) {
-                        derivedStateOf { file.exists() }
-                    }
-
-                    LaunchedEffect(list.posterLastModified, list.id) {
-                        semaphor++
-                    }
-
-
-                    if (fileExists) {
+                    if (listUri != null) {
                         val state = rememberZoomableState()
                         AsyncImage(
                             imageLoader = LocalContext.current.imageLoader,
                             model = ImageRequest.Builder(context)
-                                .data(file.toUri())
+                                .data(listUri.uri)
+                                .diskCacheKey("${listUri.hash},${list.lastModified}")
+                                .memoryCacheKey("${listUri.hash},${list.lastModified}")
+                                .crossfade(true)
                                 .build(),
                             contentDescription = null,
                             modifier = Modifier
@@ -202,6 +195,7 @@ fun LibraryCoverDialog(
                                                 items.first().toPoster()
                                             }
                                         )
+                                        .crossfade(true)
                                         .build(),
                                     contentDescription = null,
                                     modifier = Modifier
@@ -321,27 +315,17 @@ fun ListViewCoverDialog(
                 },
             ) { contentPadding ->
                 val context = LocalContext.current
-                val cache = koinInject<ListCoverCache>()
-                var semaphor by remember { mutableIntStateOf(0) }
-                val file = remember(semaphor) { cache.getCustomCoverFile(list.id) }
-                val hash = remember(semaphor) { DiskUtil.hashKeyForDisk(list.id.toString()) }
-                val fileExists by remember(semaphor) {
-                    derivedStateOf { file.exists() }
-                }
+                val listUri = rememberListUri(list = list)
 
-                LaunchedEffect(list.posterLastModified) {
-                    semaphor++
-                }
-
-                if (fileExists) {
+                if (listUri != null) {
                     val state = rememberZoomableState()
                     AsyncImage(
                         imageLoader = LocalContext.current.imageLoader,
                         model = ImageRequest.Builder(context)
-                            .data(file.toUri())
-                            .diskCacheKey("$hash,${list.posterLastModified}")
-                            .memoryCacheKey("$hash,${list.posterLastModified}")
-                            .crossfade(1_000)
+                            .data(listUri.uri)
+                            .diskCacheKey("${listUri.hash},${list.posterLastModified}")
+                            .memoryCacheKey("${listUri.hash},${list.posterLastModified}")
+                            .crossfade(true)
                             .build(),
                         contentDescription = null,
                         modifier = Modifier

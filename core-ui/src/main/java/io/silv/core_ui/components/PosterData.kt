@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,12 +39,14 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import io.silv.core_ui.util.selectedBackground
 
 enum class ItemCover(val ratio: Float) {
@@ -60,8 +63,11 @@ enum class ItemCover(val ratio: Float) {
         onClick: (() -> Unit)? = null,
     ) {
         AsyncImage(
-            model = data,
-            placeholder = ColorPainter(CoverPlaceholderColor),
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(data)
+                .crossfade(true)
+                .build(),
+            placeholder = remember { ColorPainter(CoverPlaceholderColor) },
             contentDescription = contentDescription,
             modifier = modifier
                 .aspectRatio(ratio)
@@ -81,7 +87,7 @@ enum class ItemCover(val ratio: Float) {
     }
 }
 
-private val CoverPlaceholderColor = Color(0x1F888888)
+val CoverPlaceholderColor = Color(0x1F888888)
 
 data class PosterData(
     val id: Long,
