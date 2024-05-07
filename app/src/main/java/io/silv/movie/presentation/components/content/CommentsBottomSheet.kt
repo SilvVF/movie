@@ -38,15 +38,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,7 +64,6 @@ import io.silv.core_ui.components.bottomsheet.NewModalBottomSheet
 import io.silv.core_ui.components.bottomsheet.rememberModalBottomSheetState
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
-import io.silv.movie.AppState
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.User
@@ -130,6 +133,9 @@ fun ContentScreen.CommentsBottomSheet(
             sheetState.anchoredDraggableState.settle(lastVelocity)
         }
     }
+
+    var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
+
     NewModalBottomSheet(
         sheetState = sheetState,
         modifier = Modifier.fillMaxSize(),
@@ -140,6 +146,7 @@ fun ContentScreen.CommentsBottomSheet(
                 message = screenModel.comment,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
+                    .onSizeChanged { textFieldSize = it }
                     .imePadding()
             )
         },
@@ -158,12 +165,14 @@ fun ContentScreen.CommentsBottomSheet(
         CommentsPager(
             screenModel = screenModel,
             comments = comments,
-            appState = appState,
             user = user,
             reply = {},
             onViewReplies = {},
             listState = listState,
-            paddingValues = PaddingValues(bottom = 0.dp)
+            paddingValues = PaddingValues(
+                // gets ime padding and system bars bc these are already applied to the text field
+                bottom = with(density) { textFieldSize.height.toDp() }
+            )
         )
     }
 }
@@ -174,7 +183,6 @@ private fun CommentsPager(
     screenModel: CommentsScreenModel,
     listState: LazyListState,
     comments: LazyPagingItems<PagedComment>,
-    appState: AppState,
     user: User?,
     reply: (PagedComment) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
@@ -201,123 +209,144 @@ private fun CommentsPager(
                 )
             }
 
+            CommentItem(
+                profileImageData = profileImageData,
+                comment = comment,
+                likedComments = screenModel.likedComments,
+                onReply = reply,
+                onViewReplies = onViewReplies,
+                likeComment = screenModel::likeComment,
+                unlikeComment = screenModel::unlikeComment
+            )
+        }
+    }
+}
 
-            repeat(3) {
-                Row(
+@Composable
+fun CommentItem(
+    profileImageData: UserProfileImageData,
+    comment: PagedComment,
+    likedComments: Map<Long, Boolean>,
+    onReply: (PagedComment) -> Unit,
+    onViewReplies: (PagedComment) -> Unit,
+    likeComment: (id: Long) -> Unit,
+    unlikeComment: (id: Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val appState = LocalAppState.current
+    val user = LocalUser.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(12.dp)
+    ) {
+        UserProfileImage(
+            data = profileImageData,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp)
+        )
+        Column(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .weight(1f, true)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = comment.username ?: "deleted user",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                DotSeparatorText()
+                Text(
+                    text = remember(comment.createdAt) {
+                        appState.formatDate(comment.createdAt)
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier = Modifier.alpha(0.78f)
+                )
+            }
+            Text(
+                text = comment.message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    remember(comment.replies) {
+                        when (comment.replies) {
+                            0L -> "Reply"
+                            1L -> "1 Reply"
+                            else -> "${comment.replies} Replies"
+                        }
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                ) {
-                    UserProfileImage(
-                        data = profileImageData,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp)
+                        .combinedClickable(
+                            onLongClick = { onReply(comment) }
+                        ) {
+                            onViewReplies(comment)
+                        }
+                )
+                IconButton(onClick = {
+                    onReply(comment)
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Message,
+                        modifier = Modifier.size(16.dp),
+                        contentDescription = null
                     )
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .weight(1f, true)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = comment.username ?: "deleted user",
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            DotSeparatorText()
-                            Text(
-                                text = remember(comment.createdAt) {
-                                    appState.formatDate(comment.createdAt)
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.alpha(0.78f)
-                            )
-                        }
-                        Text(
-                            text = comment.message,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                remember(comment.replies) {
-                                    when(comment.replies) {
-                                        0L -> "Reply"
-                                        1L -> "1 Reply"
-                                        else ->  "${comment.replies} Replies"
-                                    }
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onLongClick = { reply(comment) }
-                                    ) {
-                                        onViewReplies(comment)
-                                    }
-                            )
-                            IconButton(onClick = {
-                                reply(comment)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.Message,
-                                    modifier = Modifier.size(16.dp),
-                                    contentDescription = null
-                                )
-                            }
-                        }
-                    }
-                    Column(
-                        verticalArrangement = Arrangement.Top,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                }
+            }
+        }
+        Column(
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-                        val liked by remember(screenModel.likedComments, comment.userLiked) {
-                            derivedStateOf {
-                                screenModel.likedComments[comment.id] ?: comment.userLiked
-                            }
-                        }
+            val liked by remember(likedComments, comment.userLiked) {
+                derivedStateOf {
+                    likedComments[comment.id] ?: comment.userLiked
+                }
+            }
 
-                        val toggleLike = remember(liked) {
-                            {
-                                when {
-                                    comment.userId == user?.userId -> Unit
-                                    !liked ->  screenModel.likeComment(comment.id)
-                                    else ->   screenModel.unlikeComment(comment.id)
-                                }
-                            }
-                        }
-
-                        IconButton(
-                            onClick = toggleLike,
-                            modifier = Modifier.size(20.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (liked || comment.userId == user?.userId)
-                                    Icons.Filled.Favorite
-                                else
-                                    Icons.Filled.FavoriteBorder,
-                                contentDescription = null
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = remember(liked) {
-                                val likes = comment.likes + when(
-                                    screenModel.likedComments[comment.id]
-                                ) {
-                                    null -> 0
-                                    false -> -1
-                                    !comment.userLiked -> 1
-                                    else -> 0
-                                } + 1
-                                likes.toString()
-                            },
-                            style = MaterialTheme.typography.labelSmall
-                        )
+            val toggleLike = remember(liked) {
+                {
+                    when {
+                        comment.userId == user?.userId -> Unit
+                        !liked -> likeComment(comment.id)
+                        else -> unlikeComment(comment.id)
                     }
                 }
             }
+
+            IconButton(
+                onClick = toggleLike,
+                modifier = Modifier.size(20.dp)
+            ) {
+                Icon(
+                    imageVector = if (liked || comment.userId == user?.userId)
+                        Icons.Filled.Favorite
+                    else
+                        Icons.Filled.FavoriteBorder,
+                    contentDescription = null
+                )
+            }
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = remember(liked) {
+                    val likes = comment.likes + when (
+                        likedComments[comment.id]
+                    ) {
+                        null -> 0
+                        false -> -1
+                        !comment.userLiked -> 1
+                        else -> 0
+                    } + 1
+                    likes.toString()
+                },
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }

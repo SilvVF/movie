@@ -485,6 +485,7 @@ fun NewModalBottomSheet(
     sheetContentColor: Color = contentColorFor(sheetBackgroundColor),
     scrimColor: Color = ModalBottomSheetDefaults.scrimColor,
     pinnedContent: @Composable BoxScope.() -> Unit,
+    dragHandle: @Composable () -> Unit = { BottomSheetDefaults.DragHandle() },
     sheetContent: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -574,7 +575,9 @@ fun NewModalBottomSheet(
                     pinnedContent()
                     Column(
                         content = {
-                            BottomSheetDefaults.DragHandle(modifier = Modifier.align(Alignment.CenterHorizontally))
+                            Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                                dragHandle()
+                            }
                             sheetContent()
                         }
                     )
