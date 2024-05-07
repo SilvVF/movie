@@ -28,7 +28,7 @@ data class AppState(
     val dateFormat: DateFormat,
     val relativeTimestamp: Boolean,
     val startScreen: Tab,
-    val sharedElementTransitions: Boolean
+    val sharedElementTransitions: Boolean,
 ) {
 
     fun formatDate(i: Instant): String {

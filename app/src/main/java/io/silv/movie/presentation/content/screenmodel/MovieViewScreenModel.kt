@@ -210,6 +210,9 @@ class MovieViewScreenModel(
     sealed interface Dialog {
 
         @Stable
+        data object Comments: Dialog
+
+        @Stable
         data object FullCover: Dialog
     }
 }

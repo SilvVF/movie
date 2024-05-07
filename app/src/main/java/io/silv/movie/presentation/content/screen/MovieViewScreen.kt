@@ -74,6 +74,7 @@ import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
+import io.silv.movie.presentation.components.content.CommentsBottomSheet
 import io.silv.movie.presentation.components.content.creditsPagingList
 import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox
@@ -172,7 +173,7 @@ data class MovieViewScreen(
                         },
                         onAddToList = { navigator.push(AddToListScreen(state.movie.id, true)) },
                         onShowComments = {
-
+                            changeDialog(MovieViewScreenModel.Dialog.Comments)
                         },
                         commentsState = commentsState
                     )
@@ -210,6 +211,12 @@ data class MovieViewScreen(
                             )
                         }
                     }
+
+                    MovieViewScreenModel.Dialog.Comments -> CommentsBottomSheet(
+                        onDismissRequest = onDismissRequest,
+                        paddingValues = PaddingValues(),
+                        screenModel = commentsScreenModel
+                    )
                 }
             }
         }
