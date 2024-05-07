@@ -1,4 +1,4 @@
-package io.silv.core_ui.components.modal
+package io.silv.core_ui.components.bottomsheet.modal
 
 /*
  * Copyright 2023 The Android Open Source Project
@@ -52,8 +52,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.bottomsheet.animateTo
+import io.silv.core_ui.components.bottomsheet.modal.SheetValue.*
 import io.silv.core_ui.components.bottomsheet.snapTo
-import io.silv.core_ui.components.modal.SheetValue.*
 import kotlinx.coroutines.CancellationException
 
 /**

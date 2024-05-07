@@ -343,7 +343,7 @@ fun rememberModalBottomSheetState(
 }
 
 @Composable
-fun NewModalBottomSheet(
+fun StandardBottomSheet(
     modifier: Modifier,
     sheetState: ModalBottomSheetState = rememberModalBottomSheetState(Hidden),
     sheetGesturesEnabled: Boolean = true,

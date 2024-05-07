@@ -1,4 +1,4 @@
-package io.silv.core_ui.components.modal
+package io.silv.core_ui.components.bottomsheet.modal
 
 /*
  * Copyright 2023 The Android Open Source Project
@@ -113,7 +113,7 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import io.silv.core_ui.components.bottomsheet.DraggableAnchors
 import io.silv.core_ui.components.bottomsheet.draggableAnchors
-import io.silv.core_ui.components.modal.SheetValue.*
+import io.silv.core_ui.components.bottomsheet.modal.SheetValue.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -162,7 +162,7 @@ import kotlin.math.roundToInt
 fun ModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: io.silv.core_ui.components.modal.SheetState = rememberModalBottomSheetState(),
+    sheetState: io.silv.core_ui.components.bottomsheet.modal.SheetState = rememberModalBottomSheetState(),
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     shape: Shape = BottomSheetDefaults.ExpandedShape,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
@@ -251,7 +251,7 @@ internal fun BoxScope.ModalBottomSheetContent(
     animateToDismiss: () -> Unit,
     settleToDismiss: (velocity: Float) -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: io.silv.core_ui.components.modal.SheetState = rememberModalBottomSheetState(),
+    sheetState: io.silv.core_ui.components.bottomsheet.modal.SheetState = rememberModalBottomSheetState(),
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     shape: Shape = BottomSheetDefaults.ExpandedShape,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
@@ -380,7 +380,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                             }
                         }
                 ) {
-                    Column {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         dragHandle()
                         HorizontalDivider()
                     }

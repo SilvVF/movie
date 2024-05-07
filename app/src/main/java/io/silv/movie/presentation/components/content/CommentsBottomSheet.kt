@@ -1,6 +1,8 @@
 package io.silv.movie.presentation.components.content
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,12 +19,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -39,13 +42,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -54,10 +61,14 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.DotSeparatorText
-import io.silv.core_ui.components.modal.ModalBottomSheet
-import io.silv.core_ui.components.modal.SheetValue
+import io.silv.core_ui.components.bottomsheet.modal.ModalBottomSheet
+import io.silv.core_ui.components.bottomsheet.modal.SheetValue
+import io.silv.core_ui.components.bottomsheet.modal.rememberModalBottomSheetState
+import io.silv.core_ui.components.shimmer.ShimmerHost
+import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
+import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.User
@@ -65,11 +76,12 @@ import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.collectAsStateOrNull
+import io.silv.movie.presentation.components.dialog.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
+import io.silv.movie.presentation.content.screenmodel.RepliesState
 import io.silv.movie.presentation.profile.UserProfileImage
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import org.koin.compose.koinInject
 
 @Composable
@@ -85,7 +97,7 @@ fun ContentScreen.CommentsBottomSheet(
     val appState = LocalAppState.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
-    val sheetState =  io.silv.core_ui.components.modal.rememberModalBottomSheetState()
+    val sheetState =  rememberModalBottomSheetState()
     val listState = rememberLazyListState()
 
     BackHandler {
@@ -93,16 +105,6 @@ fun ContentScreen.CommentsBottomSheet(
             scope.launch {  sheetState.hide() }
         }
     }
-
-    LaunchedEffect(sheetState) {
-        snapshotFlow { sheetState.currentValue }
-            .drop(1)
-            .collectLatest {
-                if (it  == SheetValue.Hidden)
-                    onDismissRequest()
-            }
-    }
-
 
     LaunchedEffect(keyboardVisible) {
         if (keyboardVisible) {
@@ -114,6 +116,16 @@ fun ContentScreen.CommentsBottomSheet(
         sheetState = sheetState,
         contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
         onDismissRequest = onDismissRequest,
+        dragHandle = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                BottomSheetDragHandlerNoPadding()
+                Text(
+                    text = stringResource(id = R.string.comments),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        },
         pinnedContent = {
             UserTextField(
                 onMessageChange = screenModel::updateComment,
@@ -121,18 +133,15 @@ fun ContentScreen.CommentsBottomSheet(
                 message = screenModel.comment,
             )
         },
-        //sheetShape = RoundedCornerShape(cornerRadius)
     ) {
         CommentsPager(
             screenModel = screenModel,
             comments = comments,
             user = user,
             reply = {},
-            onViewReplies = {},
+            onViewReplies = screenModel::fetchReplies,
             listState = listState,
-            paddingValues = PaddingValues(
-                bottom = 0.dp
-            )
+            paddingValues = PaddingValues()
         )
     }
 }
@@ -172,7 +181,8 @@ private fun CommentsPager(
             CommentItem(
                 profileImageData = profileImageData,
                 comment = comment,
-                likedComments = screenModel.likedCommentsImmutable,
+                repliesState = screenModel.repliesForComment.getOrDefault(comment.id, RepliesState.Idle),
+                commentLiked = screenModel.likedComments[comment.id],
                 onReply = reply,
                 onViewReplies = onViewReplies,
                 likeComment = screenModel::likeComment,
@@ -186,129 +196,269 @@ private fun CommentsPager(
 fun CommentItem(
     profileImageData: UserProfileImageData,
     comment: PagedComment,
-    likedComments: kotlinx.collections.immutable.ImmutableMap<Long, Boolean>,
+    repliesState: RepliesState,
+    commentLiked: Boolean?,
     onReply: (PagedComment) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
     likeComment: (id: Long) -> Unit,
     unlikeComment: (id: Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val appState = LocalAppState.current
-    val user = LocalUser.current
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(12.dp)
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.Start
     ) {
         UserProfileImage(
             data = profileImageData,
             contentDescription = null,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(38.dp)
         )
-        Column(
-            modifier = Modifier
-                .padding(start = 8.dp)
-                .weight(1f, true)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = comment.username ?: "deleted user",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                DotSeparatorText()
-                Text(
-                    text = remember(comment.createdAt) {
-                        appState.formatDate(comment.createdAt)
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.alpha(0.78f)
-                )
-            }
-            Text(
-                text = comment.message,
-                style = MaterialTheme.typography.bodyMedium
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(Modifier.weight(1f, true)) {
+            CommentContent(
+                message = comment.message,
+                createdAt = comment.createdAt,
+                username = comment.username,
+                modifier = Modifier.padding(start = 8.dp)
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    remember(comment.replies) {
-                        when (comment.replies) {
-                            0L -> "Reply"
-                            1L -> "1 Reply"
-                            else -> "${comment.replies} Replies"
-                        }
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .combinedClickable(
-                            onLongClick = { onReply(comment) }
-                        ) {
-                            onViewReplies(comment)
-                        }
-                )
-                IconButton(onClick = {
-                    onReply(comment)
-                }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.Message,
-                        modifier = Modifier.size(16.dp),
-                        contentDescription = null
-                    )
+            Text(
+                text = stringResource(id = R.string.reply),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .padding(vertical = 2.dp)
+                    .combinedClickable(
+                        onLongClick = { onViewReplies(comment) }
+                    ) {
+                        onReply(comment)
+                    }
+            )
+            ReplyContent(
+                repliesState = repliesState,
+                onViewReplies = onViewReplies,
+                comment = comment
+            )
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        LikeCount(
+            comment = comment,
+            liked = commentLiked,
+            likeComment = likeComment,
+            unlikeComment =  unlikeComment
+        )
+    }
+}
+
+@Composable
+private fun LikeCount(
+    comment: PagedComment,
+    liked: Boolean?,
+    likeComment: (id: Long) -> Unit,
+    unlikeComment: (id: Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        val user = LocalUser.current
+
+        val isLiked = liked ?: comment.userLiked
+
+        val toggleLike =
+            {
+                when {
+                    comment.userId == user?.userId -> Unit
+                    !isLiked -> likeComment(comment.id)
+                    else -> unlikeComment(comment.id)
                 }
+            }
+
+        val likeCount by remember(isLiked, comment.likes) {
+            derivedStateOf {
+                val count = comment.likes + when (liked) {
+                    null -> 0
+                    false -> -1
+                    !comment.userLiked -> 1
+                    else -> 0
+                } + 1
+                count.toString()
             }
         }
-        Column(
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+
+        IconButton(
+            onClick = toggleLike,
+            modifier = Modifier.size(20.dp)
         ) {
+            Icon(
+                imageVector = if (isLiked || comment.userId == user?.userId)
+                    Icons.Filled.Favorite
+                else
+                    Icons.Filled.FavoriteBorder,
+                contentDescription = null
+            )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = likeCount,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
 
-            val liked by remember(likedComments, comment.userLiked) {
-                derivedStateOf {
-                    likedComments[comment.id] ?: comment.userLiked
+@Composable
+private fun CommentContent(
+    createdAt: Instant,
+    username: String?,
+    message: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val appState = LocalAppState.current
+            Text(
+                text = username ?: "deleted user",
+                style = MaterialTheme.typography.titleSmall
+            )
+            DotSeparatorText()
+            Text(
+                text = remember(createdAt) {
+                    appState.formatDate(createdAt)
+                },
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.alpha(0.78f)
+            )
+        }
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+
+
+@Composable
+private fun ReplyContent(
+    repliesState: RepliesState,
+    onViewReplies: (PagedComment) -> Unit,
+    comment: PagedComment,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+    ) {
+        AnimatedContent(
+            targetState = repliesState,
+            label = ""
+        ) { state ->
+            when(state) {
+                is RepliesState.Error -> Text(text = stringResource(R.string.error))
+                RepliesState.Idle -> if (comment.replies == 0L) Unit else TextButton(
+                    enabled = comment.replies >= 0,
+                    onClick =  { onViewReplies(comment) }
+                ) {
+                    Text(
+                        text = when (comment.replies) {
+                            1L -> stringResource(id = R.string.view_reply)
+                            else -> stringResource(id = R.string.view_more_replies, comment.replies)
+                        },
+                        color = MaterialTheme.colorScheme.secondary,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
-            }
-
-            val toggleLike =
-                {
-                    when {
-                        comment.userId == user?.userId -> Unit
-                        !liked -> likeComment(comment.id)
-                        else -> unlikeComment(comment.id)
+                RepliesState.Loading -> {
+                    ShimmerHost {
+                        repeat(comment.replies.toInt()) {
+                            Row(Modifier.padding(8.dp)) {
+                                Spacer(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.onSurface)
+                                )
+                                Column(Modifier.padding(horizontal = 8.dp)) {
+                                    TextPlaceholder()
+                                    TextPlaceholder()
+                                }
+                            }
+                        }
                     }
                 }
+                is RepliesState.Success -> {
 
-            IconButton(
-                onClick = toggleLike,
-                modifier = Modifier.size(20.dp)
-            ) {
-                Icon(
-                    imageVector = if (liked || comment.userId == user?.userId)
-                        Icons.Filled.Favorite
-                    else
-                        Icons.Filled.FavoriteBorder,
-                    contentDescription = null
-                )
+                    var visible by rememberSaveable { mutableStateOf(true) }
+
+                    Column {
+                        AnimatedVisibility(visible = visible) {
+                            Column {
+                                val localUser = LocalUser.current
+                                state.data.fastForEach {
+                                    Row(
+                                        horizontalArrangement = Arrangement.Start,
+                                        modifier = Modifier.padding(8.dp)
+                                    ) {
+                                        UserProfileImage(
+                                            data = remember(it) {
+                                                UserProfileImageData(
+                                                    it.userId.orEmpty(),
+                                                    it.userId != null && it.userId == localUser?.userId,
+                                                    path = it.users?.profileImage
+                                                )
+                                            },
+                                            contentDescription = null,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        CommentContent(
+                                            it.createdAt,
+                                            it.users?.username,
+                                            message = it.message,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        if (!visible) {
+                            TextButton(
+                                onClick = { visible = !visible }
+                            ) {
+                                Text(
+                                    text = when (comment.replies) {
+                                        0L -> ""
+                                        1L -> stringResource(id = R.string.view_reply)
+                                        else -> stringResource(id = R.string.view_more_replies, comment.replies)
+                                    },
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        } else {
+                            TextButton(
+                                onClick = { visible = !visible }
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.hide),
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = (comment.likes + when (
-                        likedComments[comment.id]
-                    ) {
-                        null -> 0
-                        false -> -1
-                        !comment.userLiked -> 1
-                        else -> 0
-                    } + 1).toString(),
-                style = MaterialTheme.typography.labelSmall
-            )
         }
     }
 }
 
 @Composable
-fun UserTextField(
+private fun UserTextField(
     modifier: Modifier = Modifier,
     onMessageChange: (String) -> Unit,
     onSendClick: (String) -> Unit,

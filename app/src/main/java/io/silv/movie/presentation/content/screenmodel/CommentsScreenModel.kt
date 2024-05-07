@@ -1,6 +1,7 @@
 package io.silv.movie.presentation.content.screenmodel
 
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -21,21 +22,14 @@ import io.silv.movie.data.user.model.comment.ReplyWithUser
 import io.silv.movie.data.user.repository.CommentPagingSource
 import io.silv.movie.data.user.repository.CommentsRepository
 import io.silv.movie.presentation.list.screenmodel.uniqueBy
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.TickerMode
 import kotlinx.coroutines.channels.ticker
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -49,7 +43,8 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import kotlin.time.Duration.Companion.minutes
 
-
+@Immutable
+@Stable
 data class CommentsState(
     val messageCount: Long? = null,
     val recentMessage: CommentWithUser? = null,
@@ -58,6 +53,13 @@ data class CommentsState(
     val replyingTo: PagedComment? = null,
     val viewingReplies: PagedComment? = null
 )
+
+sealed interface RepliesState {
+    data object Idle: RepliesState
+    data object Loading: RepliesState
+    data class Error(val reason: String): RepliesState
+    data class Success(val data: List<ReplyWithUser>): RepliesState
+}
 
 enum class CommentsPagedType { Newest, Top }
 
@@ -82,9 +84,9 @@ class CommentsScreenModel(
     var comment by mutableStateOf("")
         private set
 
-    private val likedComments = mutableStateMapOf<Long, Boolean>()
+    val likedComments = mutableStateMapOf<Long, Boolean>()
 
-    val likedCommentsImmutable by derivedStateOf { likedComments.toImmutableMap() }
+    val repliesForComment = mutableStateMapOf<Long, RepliesState>()
 
     @OptIn(ObsoleteCoroutinesApi::class)
     private val refreshInterval = ticker(
@@ -107,23 +109,6 @@ class CommentsScreenModel(
             }
             .launchIn(screenModelScope)
     }
-
-    val replies: StateFlow<ImmutableList<ReplyWithUser>> = state.map { it.viewingReplies }
-        .filterNotNull()
-        .distinctUntilChanged()
-        .map { comment ->
-            val result = commentsRepository.getRepliesForComment(comment.id)
-                .onFailure { Timber.d(it) }
-                .getOrDefault(emptyList())
-
-            result.toImmutableList()
-        }
-        .stateIn(
-            ioCoroutineScope,
-            SharingStarted.WhileSubscribed(5_000),
-            persistentListOf()
-        )
-
 
     val pagingData = snapshotFlow { sortMode }
         .combine(
@@ -174,6 +159,22 @@ class CommentsScreenModel(
             } else {
                 likedComments[result.cid] = false
             }
+        }
+    }
+
+    fun fetchReplies(comment: PagedComment) {
+        val commentId = comment.id
+        repliesForComment[commentId] = RepliesState.Loading
+        screenModelScope.launch {
+            repliesForComment[commentId] = commentsRepository.getRepliesForComment(commentId)
+                .fold(
+                    onFailure = {
+                        RepliesState.Error(it.localizedMessage ?: "error")
+                    },
+                    onSuccess = {
+                        RepliesState.Success(it)
+                    }
+                )
         }
     }
 
