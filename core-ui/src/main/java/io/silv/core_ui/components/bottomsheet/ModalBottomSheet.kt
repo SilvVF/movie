@@ -33,8 +33,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -342,138 +342,6 @@ fun rememberModalBottomSheetState(
     }
 }
 
-/**
- * <a href="https://material.io/components/sheets-bottom#modal-bottom-sheet" class="external" target="_blank">Material Design modal bottom sheet</a>.
- *
- * Modal bottom sheets present a set of choices while blocking interaction with the rest of the
- * screen. They are an alternative to inline menus and simple dialogs, providing
- * additional room for content, iconography, and actions.
- *
- * ![Modal bottom sheet image](https://developer.android.com/images/reference/androidx/compose/material/modal-bottom-sheet.png)
- *
- * A simple example of a modal bottom sheet looks like this:
- *
- * @sample androidx.compose.material.samples.ModalBottomSheetSample
- *
- * @param sheetContent The content of the bottom sheet.
- * @param modifier Optional [Modifier] for the entire component.
- * @param sheetState The state of the bottom sheet.
- * @param sheetGesturesEnabled Whether the bottom sheet can be interacted with by gestures.
- * @param sheetShape The shape of the bottom sheet.
- * @param sheetElevation The elevation of the bottom sheet.
- * @param sheetBackgroundColor The background color of the bottom sheet.
- * @param sheetContentColor The preferred content color provided by the bottom sheet to its
- * children. Defaults to the matching content color for [sheetBackgroundColor], or if that is not
- * a color from the theme, this will keep the same content color set above the bottom sheet.
- * @param scrimColor The color of the scrim that is applied to the rest of the screen when the
- * bottom sheet is visible. If the color passed is [Color.Unspecified], then a scrim will no
- * longer be applied and the bottom sheet will not block interaction with the rest of the screen
- * when visible.
- * @param content The content of rest of the screen.
- */
-@Composable
-fun ModalBottomSheetLayout(
-    sheetContent: @Composable ColumnScope.() -> Unit,
-    modifier: Modifier = Modifier,
-    sheetState: ModalBottomSheetState = rememberModalBottomSheetState(Hidden),
-    sheetGesturesEnabled: Boolean = true,
-    sheetShape: Shape = MaterialTheme.shapes.large.copy(
-        bottomEnd = CornerSize(0), bottomStart = CornerSize(0)
-    ),
-    sheetElevation: Dp = ModalBottomSheetDefaults.Elevation,
-    sheetBackgroundColor: Color = MaterialTheme.colorScheme.surface,
-    sheetContentColor: Color = contentColorFor(sheetBackgroundColor),
-    scrimColor: Color = ModalBottomSheetDefaults.scrimColor,
-    content: @Composable () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    val orientation = Orientation.Vertical
-    Box(modifier) {
-        Box(Modifier.fillMaxSize()) {
-            content()
-            Scrim(
-                color = scrimColor,
-                onDismiss = {
-                    if (sheetState.anchoredDraggableState.confirmValueChange(Hidden)) {
-                        scope.launch { sheetState.hide() }
-                    }
-                },
-                visible = sheetState.anchoredDraggableState.targetValue != Hidden
-            )
-        }
-        Surface(
-            modifier = Modifier
-                .align(Alignment.TopCenter) // We offset from the top so we'll center from there
-                .widthIn(max = MaxModalBottomSheetWidth)
-                .fillMaxWidth()
-                .then(
-                    if (sheetGesturesEnabled) {
-                        Modifier.nestedScroll(
-                            remember(sheetState.anchoredDraggableState, orientation) {
-                                ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
-                                    state = sheetState.anchoredDraggableState,
-                                    orientation = orientation
-                                )
-                            }
-                        )
-                    } else Modifier
-                )
-                .modalBottomSheetAnchors(sheetState)
-                .anchoredDraggable(
-                    state = sheetState.anchoredDraggableState,
-                    orientation = orientation,
-                    enabled = sheetGesturesEnabled &&
-                            sheetState.anchoredDraggableState.currentValue != Hidden,
-                )
-                .then(
-                    if (sheetGesturesEnabled) {
-                        Modifier.semantics {
-                            if (sheetState.isVisible) {
-                                dismiss {
-                                    if (
-                                        sheetState.anchoredDraggableState.confirmValueChange(Hidden)
-                                    ) {
-                                        scope.launch { sheetState.hide() }
-                                    }
-                                    true
-                                }
-                                if (sheetState.anchoredDraggableState.currentValue
-                                    == HalfExpanded
-                                ) {
-                                    expand {
-                                        if (sheetState.anchoredDraggableState.confirmValueChange(
-                                                Expanded
-                                            )
-                                        ) {
-                                            scope.launch { sheetState.expand() }
-                                        }
-                                        true
-                                    }
-                                } else if (sheetState.hasHalfExpandedState) {
-                                    collapse {
-                                        if (sheetState.anchoredDraggableState.confirmValueChange(
-                                                HalfExpanded
-                                            )
-                                        ) {
-                                            scope.launch { sheetState.halfExpand() }
-                                        }
-                                        true
-                                    }
-                                }
-                            }
-                        }
-                    } else Modifier
-                ),
-            shape = sheetShape,
-            shadowElevation = sheetElevation,
-            color = sheetBackgroundColor,
-            contentColor = sheetContentColor
-        ) {
-            Column(content = sheetContent)
-        }
-    }
-}
-
 @Composable
 fun NewModalBottomSheet(
     modifier: Modifier,
@@ -582,25 +450,34 @@ fun NewModalBottomSheet(
                         }
                     )
                 },
+                Modifier.imePadding()
             ) { measurables, constraints ->
 
-                val sheet = measurables[1].measure(constraints)
+                val sheet = measurables[1]
                 val offset = sheetState.anchoredDraggableState.offset.takeIf { !it.isNaN() }?.roundToInt() ?: 0
 
 
                 val pinned = measurables[0]
 
-                val mh = pinned.minIntrinsicHeight(constraints.maxWidth)
+                val minHeight =  pinned.minIntrinsicHeight(constraints.maxWidth)
 
                 val pinnedPlaceabled = pinned.measure(
                     constraints.copy(
-                        minHeight = mh,
-                        maxHeight = maxOf(mh, constraints.maxHeight.coerceAtMost((constraints.maxHeight - offset)))
+                        minHeight =  minHeight,
+                        maxHeight = maxOf(
+                            minHeight,
+                            constraints.maxHeight.coerceAtMost(constraints.maxHeight - offset)
+                        )
                     )
                 )
 
+                val sheetPlaceable = sheet.measure(constraints.copy(
+                    minHeight = 0,
+                    maxHeight = (constraints.maxHeight - pinnedPlaceabled.height).coerceAtLeast(0)
+                ))
+
                 layout(constraints.maxWidth, constraints.maxHeight) {
-                    sheet.place(0, 0)
+                    sheetPlaceable.place(0, constraints.maxHeight - pinnedPlaceabled.height - sheetPlaceable.height)
                     pinnedPlaceabled.place(
                         0,
                         (constraints.maxHeight - pinnedPlaceabled.height - offset)
@@ -707,7 +584,6 @@ fun Modifier.modalBottomSheetAnchors(sheetState: ModalBottomSheetState) = this.d
     val fullHeight = constraints.maxHeight.toFloat()
     val newAnchors = DraggableAnchors {
         Hidden at fullHeight
-        // Adjust the peek height so comments bottom sheet is about the pinned search min size
         val halfHeight = fullHeight / 2.5f
         if (!sheetState.isSkipHalfExpanded && sheetSize.height > halfHeight) {
             HalfExpanded at halfHeight
@@ -777,6 +653,7 @@ private fun Scrim(
  * Contains useful Defaults for [ModalBottomSheetLayout].
  */
 object ModalBottomSheetDefaults {
+
 
     /**
      * The default elevation used by [ModalBottomSheetLayout].

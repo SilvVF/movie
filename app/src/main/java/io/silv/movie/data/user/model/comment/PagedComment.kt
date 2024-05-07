@@ -1,11 +1,13 @@
 package io.silv.movie.data.user.model.comment
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 
 @kotlinx.serialization.Serializable
 @Stable
+@Immutable
 data class PagedComment(
     val id: Long,
     @SerialName("created_at")

@@ -1,7 +1,6 @@
 package io.silv.movie.presentation.components.content
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,17 +8,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Message
 import androidx.compose.material.icons.filled.ArrowUpward
@@ -38,19 +39,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,9 +54,8 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.DotSeparatorText
-import io.silv.core_ui.components.bottomsheet.ModalBottomSheetValue
-import io.silv.core_ui.components.bottomsheet.NewModalBottomSheet
-import io.silv.core_ui.components.bottomsheet.rememberModalBottomSheetState
+import io.silv.core_ui.components.modal.ModalBottomSheet
+import io.silv.core_ui.components.modal.SheetValue
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
@@ -73,7 +67,6 @@ import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.collectAsStateOrNull
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.profile.UserProfileImage
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -92,11 +85,11 @@ fun ContentScreen.CommentsBottomSheet(
     val appState = LocalAppState.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
-    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.HalfExpanded)
+    val sheetState =  io.silv.core_ui.components.modal.rememberModalBottomSheetState()
     val listState = rememberLazyListState()
 
     BackHandler {
-        if (sheetState.currentValue != ModalBottomSheetValue.Hidden) {
+        if (sheetState.currentValue != SheetValue.Hidden) {
             scope.launch {  sheetState.hide() }
         }
     }
@@ -105,62 +98,30 @@ fun ContentScreen.CommentsBottomSheet(
         snapshotFlow { sheetState.currentValue }
             .drop(1)
             .collectLatest {
-                if (it  == ModalBottomSheetValue.Hidden )
+                if (it  == SheetValue.Hidden)
                     onDismissRequest()
             }
     }
 
-    val screenHeight = LocalConfiguration.current.screenHeightDp
-    val density = LocalDensity.current
 
     LaunchedEffect(keyboardVisible) {
         if (keyboardVisible) {
             sheetState.expand()
-
-            var lastVelocity = 0f
-
-            animate(
-                0f,
-                with(density) { screenHeight.dp.toPx() },
-                sheetState.anchoredDraggableState.lastVelocity,
-            ) { value, velocity ->
-                lastVelocity = velocity
-                sheetState.anchoredDraggableState.dispatchRawDelta(-value)
-                if(sheetState.anchoredDraggableState.offset >= with(density) { screenHeight.dp.toPx() }) {
-                    cancel()
-                }
-            }
-            sheetState.anchoredDraggableState.settle(lastVelocity)
         }
     }
 
-    var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
-
-    NewModalBottomSheet(
+    ModalBottomSheet(
         sheetState = sheetState,
-        modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
+        onDismissRequest = onDismissRequest,
         pinnedContent = {
             UserTextField(
                 onMessageChange = screenModel::updateComment,
                 onSendClick = {},
                 message = screenModel.comment,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .onSizeChanged { textFieldSize = it }
-                    .imePadding()
             )
         },
-        sheetShape = RoundedCornerShape(
-            remember {
-                derivedStateOf {
-                    if (sheetState.anchoredDraggableState.offset.isNaN())
-                        return@derivedStateOf 16.dp
-                    (16.dp * (1f - (sheetState.progress(ModalBottomSheetValue.HalfExpanded, ModalBottomSheetValue.Expanded).takeIf { !it.isNaN() } ?: 1f)))
-                        .coerceAtMost(16.0.dp)
-                }
-            }
-                .value
-        )
+        //sheetShape = RoundedCornerShape(cornerRadius)
     ) {
         CommentsPager(
             screenModel = screenModel,
@@ -170,8 +131,7 @@ fun ContentScreen.CommentsBottomSheet(
             onViewReplies = {},
             listState = listState,
             paddingValues = PaddingValues(
-                // gets ime padding and system bars bc these are already applied to the text field
-                bottom = with(density) { textFieldSize.height.toDp() }
+                bottom = 0.dp
             )
         )
     }
@@ -212,7 +172,7 @@ private fun CommentsPager(
             CommentItem(
                 profileImageData = profileImageData,
                 comment = comment,
-                likedComments = screenModel.likedComments,
+                likedComments = screenModel.likedCommentsImmutable,
                 onReply = reply,
                 onViewReplies = onViewReplies,
                 likeComment = screenModel::likeComment,
@@ -226,7 +186,7 @@ private fun CommentsPager(
 fun CommentItem(
     profileImageData: UserProfileImageData,
     comment: PagedComment,
-    likedComments: Map<Long, Boolean>,
+    likedComments: kotlinx.collections.immutable.ImmutableMap<Long, Boolean>,
     onReply: (PagedComment) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
     likeComment: (id: Long) -> Unit,
@@ -310,7 +270,7 @@ fun CommentItem(
                 }
             }
 
-            val toggleLike = remember(liked) {
+            val toggleLike =
                 {
                     when {
                         comment.userId == user?.userId -> Unit
@@ -318,7 +278,6 @@ fun CommentItem(
                         else -> unlikeComment(comment.id)
                     }
                 }
-            }
 
             IconButton(
                 onClick = toggleLike,
@@ -334,17 +293,14 @@ fun CommentItem(
             }
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = remember(liked) {
-                    val likes = comment.likes + when (
+                text = (comment.likes + when (
                         likedComments[comment.id]
                     ) {
                         null -> 0
                         false -> -1
                         !comment.userLiked -> 1
                         else -> 0
-                    } + 1
-                    likes.toString()
-                },
+                    } + 1).toString(),
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -389,7 +345,8 @@ fun UserTextField(
             Row(
                 modifier = modifier
                     .padding(bottom = 12.dp)
-                    .padding(horizontal = 12.dp),
+                    .padding(horizontal = 12.dp)
+                    .systemBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {

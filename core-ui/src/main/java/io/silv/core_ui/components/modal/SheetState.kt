@@ -1,51 +1,84 @@
-package io.silv.core_ui.components.bottomsheet
+package io.silv.core_ui.components.modal
 
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.snapTo
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import io.silv.core_ui.components.bottomsheet.SheetVal.Expanded
-import io.silv.core_ui.components.bottomsheet.SheetVal.Hidden
-import io.silv.core_ui.components.bottomsheet.SheetVal.PartiallyExpanded
+import io.silv.core_ui.components.bottomsheet.animateTo
+import io.silv.core_ui.components.bottomsheet.snapTo
+import io.silv.core_ui.components.modal.SheetValue.*
 import kotlinx.coroutines.CancellationException
 
 /**
  * State of a sheet composable, such as [ModalBottomSheet]
  *
- * Contains states relating to it's swipe position as well as animations between state values.
+ * Contains states relating to its swipe position as well as animations between state values.
  *
  * @param skipPartiallyExpanded Whether the partially expanded state, if the sheet is large
  * enough, should be skipped. If true, the sheet will always expand to the [Expanded] state and move
  * to the [Hidden] state if available when hiding the sheet, either programmatically or by user
  * interaction.
  * @param initialValue The initial value of the state.
+ * @param density The density that this state can use to convert values to and from dp.
  * @param confirmValueChange Optional callback invoked to confirm or veto a pending state change.
  * @param skipHiddenState Whether the hidden state should be skipped. If true, the sheet will always
  * expand to the [Expanded] state and move to the [PartiallyExpanded] if available, either
  * programmatically or by user interaction.
  */
 @Stable
+@ExperimentalMaterial3Api
 class SheetState(
     internal val skipPartiallyExpanded: Boolean,
-    initialValue: SheetVal = Hidden,
-    confirmValueChange: (SheetVal) -> Boolean = { true },
+    density: Density,
+    initialValue: SheetValue = Hidden,
+    confirmValueChange: (SheetValue) -> Boolean = { true },
     internal val skipHiddenState: Boolean = false,
 ) {
     init {
@@ -70,7 +103,7 @@ class SheetState(
      * was in before the swipe or animation started.
      */
 
-    val currentValue: SheetVal get() = swipeableState.currentValue
+    val currentValue: SheetValue get() = anchoredDraggableState.currentValue
 
     /**
      * The target value of the bottom sheet state.
@@ -79,13 +112,13 @@ class SheetState(
      * swipe finishes. If an animation is running, this is the target value of that animation.
      * Finally, if no swipe or animation is in progress, this is the same as the [currentValue].
      */
-    val targetValue: SheetVal get() = swipeableState.targetValue
+    val targetValue: SheetValue get() = anchoredDraggableState.targetValue
 
     /**
      * Whether the modal bottom sheet is visible.
      */
     val isVisible: Boolean
-        get() = swipeableState.currentValue != Hidden
+        get() = anchoredDraggableState.currentValue != Hidden
 
     /**
      * Require the current offset (in pixels) of the bottom sheet.
@@ -103,20 +136,20 @@ class SheetState(
      *
      * @throws IllegalStateException If the offset has not been initialized yet
      */
-    fun requireOffset(): Float = swipeableState.requireOffset()
+    fun requireOffset(): Float = anchoredDraggableState.requireOffset()
 
     /**
      * Whether the sheet has an expanded state defined.
      */
 
     val hasExpandedState: Boolean
-        get() = swipeableState.hasAnchorForValue(Expanded)
+        get() = anchoredDraggableState.anchors.hasAnchorFor(Expanded)
 
     /**
      * Whether the modal bottom sheet has a partially expanded state defined.
      */
     val hasPartiallyExpandedState: Boolean
-        get() = swipeableState.hasAnchorForValue(PartiallyExpanded)
+        get() = anchoredDraggableState.anchors.hasAnchorFor(PartiallyExpanded)
 
     /**
      * Fully expand the bottom sheet with animation and suspend until it is fully expanded or
@@ -125,7 +158,7 @@ class SheetState(
      * @throws [CancellationException] if the animation is interrupted
      */
     suspend fun expand() {
-        swipeableState.animateTo(Expanded)
+        anchoredDraggableState.animateTo(Expanded)
     }
 
     /**
@@ -179,10 +212,10 @@ class SheetState(
      * @param targetValue The target value of the animation
      */
     internal suspend fun animateTo(
-        targetValue: SheetVal,
-        velocity: Float = swipeableState.lastVelocity
+        targetValue: SheetValue,
+        velocity: Float = anchoredDraggableState.lastVelocity
     ) {
-        swipeableState.animateTo(targetValue, velocity)
+        anchoredDraggableState.animateTo(targetValue, velocity)
     }
 
     /**
@@ -193,33 +226,26 @@ class SheetState(
      *
      * @param targetValue The target value of the animation
      */
-    internal suspend fun snapTo(targetValue: SheetVal) {
-        swipeableState.snapTo(targetValue)
+    internal suspend fun snapTo(targetValue: SheetValue) {
+        anchoredDraggableState.snapTo(targetValue)
     }
-
-    /**
-     * Attempt to snap synchronously. Snapping can happen synchronously when there is no other swipe
-     * transaction like a drag or an animation is progress. If there is another interaction in
-     * progress, the suspending [snapTo] overload needs to be used.
-     *
-     * @return true if the synchronous snap was successful, or false if we couldn't snap synchronous
-     */
-    internal fun trySnapTo(targetValue: SheetVal) = swipeableState.trySnapTo(targetValue)
 
     /**
      * Find the closest anchor taking into account the velocity and settle at it with an animation.
      */
     internal suspend fun settle(velocity: Float) {
-        swipeableState.settle(velocity)
+        anchoredDraggableState.settle(velocity)
     }
 
-    internal var swipeableState = SwipeableV2State(
+    internal var anchoredDraggableState = io.silv.core_ui.components.bottomsheet.AnchoredDraggableState(
         initialValue = initialValue,
-        animationSpec = SwipeableV2Defaults.AnimationSpec,
+        animationSpec = BottomSheetAnimationSpec,
         confirmValueChange = confirmValueChange,
+        positionalThreshold = { with(density) { 56.dp.toPx() } },
+        velocityThreshold = { with(density) { 125.dp.toPx() } },
     )
 
-    internal val offset: Float? get() = swipeableState.offset
+    internal val offset: Float? get() = anchoredDraggableState.offset
 
     companion object {
         /**
@@ -227,11 +253,19 @@ class SheetState(
          */
         fun Saver(
             skipPartiallyExpanded: Boolean,
-            confirmValueChange: (SheetVal) -> Boolean
-        ) = Saver<SheetState, SheetVal>(
+            confirmValueChange: (SheetValue) -> Boolean,
+            density: Density,
+            skipHiddenState: Boolean,
+        ) = Saver<SheetState, SheetValue>(
             save = { it.currentValue },
             restore = { savedValue ->
-                SheetState(skipPartiallyExpanded, savedValue, confirmValueChange)
+                SheetState(
+                    skipPartiallyExpanded,
+                    density,
+                    savedValue,
+                    confirmValueChange,
+                    skipHiddenState,
+                )
             }
         )
     }
@@ -240,7 +274,8 @@ class SheetState(
 /**
  * Possible values of [SheetState].
  */
-enum class SheetVal {
+@ExperimentalMaterial3Api
+enum class SheetValue {
     /**
      * The sheet is not visible.
      */
@@ -257,28 +292,34 @@ enum class SheetVal {
     PartiallyExpanded,
 }
 
-
+/**
+ * Contains the default values used by [ModalBottomSheet] and [BottomSheetScaffold].
+ */
 @Stable
-object BottomSheetCopyDefaults {
+@ExperimentalMaterial3Api
+object BottomSheetDefaults {
     /** The default shape for bottom sheets in a [Hidden] state. */
     val HiddenShape: Shape
-        @Composable get() = RectangleShape
+        @Composable get() =
+            RectangleShape
 
     /** The default shape for a bottom sheets in [PartiallyExpanded] and [Expanded] states. */
     val ExpandedShape: Shape
-        @Composable get() = RectangleShape
+        @Composable get() =
+            MaterialTheme.shapes.large
 
     /** The default container color for a bottom sheet. */
     val ContainerColor: Color
-        @Composable get() = MaterialTheme.colorScheme.onSurfaceVariant
+        @Composable get() =
+            MaterialTheme.colorScheme.surfaceColorAtElevation(Elevation)
 
     /** The default elevation for a bottom sheet. */
-    val Elevation = 3.dp
+    val Elevation = 8.dp
 
     /** The default color of the scrim overlay for background content. */
     val ScrimColor: Color
         @Composable get() =
-            MaterialTheme.colorScheme.primaryContainer.copy(0.4f)
+            MaterialTheme.colorScheme.background.copy(0.38f)
 
     /**
      * The default peek height used by [BottomSheetScaffold].
@@ -286,21 +327,47 @@ object BottomSheetCopyDefaults {
     val SheetPeekHeight = 56.dp
 
     /**
-     * Default insets to be used and consumed by the [ModalBottomSheet] window.
+     * The default max width used by [ModalBottomSheet] and [BottomSheetScaffold]
+     */
+    val SheetMaxWidth = 640.dp
+
+    /**
+     * Default insets to be used and consumed by the [ModalBottomSheet]'s content.
      */
     val windowInsets: WindowInsets
         @Composable
-        get() = WindowInsets.systemBars.only(WindowInsetsSides.Vertical)
+        get() = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
 
     /**
      * The optional visual marker placed on top of a bottom sheet to indicate it may be dragged.
      */
     @Composable
-    fun DragHandle() {
-       BottomSheetDefaults.DragHandle()
+    fun DragHandle(
+        modifier: Modifier = Modifier,
+        width: Dp = 48.dp,
+        height: Dp = 8.dp,
+        shape: Shape = MaterialTheme.shapes.extraLarge,
+        color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    ) {
+        Surface(
+            modifier = modifier
+                .padding(vertical = DragHandleVerticalPadding)
+                .semantics { contentDescription = "dragHandleDescription" },
+            color = color,
+            shape = shape
+        ) {
+            Box(
+                Modifier
+                    .size(
+                        width = width,
+                        height = height
+                    )
+            )
+        }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
     sheetState: SheetState,
     orientation: Orientation,
@@ -309,7 +376,7 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
     override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
         val delta = available.toFloat()
         return if (delta < 0 && source == NestedScrollSource.Drag) {
-            sheetState.swipeableState.dispatchRawDelta(delta).toOffset()
+            sheetState.anchoredDraggableState.dispatchRawDelta(delta).toOffset()
         } else {
             Offset.Zero
         }
@@ -321,7 +388,7 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
         source: NestedScrollSource
     ): Offset {
         return if (source == NestedScrollSource.Drag) {
-            sheetState.swipeableState.dispatchRawDelta(available.toFloat()).toOffset()
+            sheetState.anchoredDraggableState.dispatchRawDelta(available.toFloat()).toOffset()
         } else {
             Offset.Zero
         }
@@ -330,7 +397,8 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
     override suspend fun onPreFling(available: Velocity): Velocity {
         val toFling = available.toFloat()
         val currentOffset = sheetState.requireOffset()
-        return if (toFling < 0 && currentOffset > sheetState.swipeableState.minOffset) {
+        val minAnchor = sheetState.anchoredDraggableState.anchors.minAnchor()
+        return if (toFling < 0 && currentOffset > minAnchor) {
             onFling(toFling)
             // since we go to the anchor with tween settling, consume all for the best UX
             available
@@ -357,22 +425,38 @@ internal fun ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
 }
 
 @Composable
+@ExperimentalMaterial3Api
 internal fun rememberSheetState(
     skipPartiallyExpanded: Boolean = false,
-    confirmValueChange: (SheetVal) -> Boolean = { true },
-    initialValue: SheetVal = Hidden,
+    confirmValueChange: (SheetValue) -> Boolean = { true },
+    initialValue: SheetValue = Hidden,
     skipHiddenState: Boolean = false,
 ): SheetState {
+    val density = LocalDensity.current
     return rememberSaveable(
-        skipPartiallyExpanded, confirmValueChange,
+        skipPartiallyExpanded, confirmValueChange, skipHiddenState,
         saver = SheetState.Saver(
             skipPartiallyExpanded = skipPartiallyExpanded,
-            confirmValueChange = confirmValueChange
+            confirmValueChange = confirmValueChange,
+            density = density,
+            skipHiddenState = skipHiddenState,
         )
     ) {
-        SheetState(skipPartiallyExpanded, initialValue, confirmValueChange, skipHiddenState)
+        SheetState(
+            skipPartiallyExpanded,
+            density,
+            initialValue,
+            confirmValueChange,
+            skipHiddenState,
+        )
     }
 }
 
 private val DragHandleVerticalPadding = 22.dp
-internal val BottomSheetMaxWidth = 640.dp
+/**
+ * The default animation spec used by [SheetState].
+ */
+private val BottomSheetAnimationSpec: AnimationSpec<Float> = tween(
+    durationMillis = 300,
+    easing = FastOutSlowInEasing
+)

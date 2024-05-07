@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.content.screenmodel
 
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +24,7 @@ import io.silv.movie.presentation.list.screenmodel.uniqueBy
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -80,7 +82,9 @@ class CommentsScreenModel(
     var comment by mutableStateOf("")
         private set
 
-    val likedComments = mutableStateMapOf<Long, Boolean>()
+    private val likedComments = mutableStateMapOf<Long, Boolean>()
+
+    val likedCommentsImmutable by derivedStateOf { likedComments.toImmutableMap() }
 
     @OptIn(ObsoleteCoroutinesApi::class)
     private val refreshInterval = ticker(
