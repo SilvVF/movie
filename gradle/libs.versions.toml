@@ -20,6 +20,7 @@ desugar_jdk_libs = "2.0.4"
 kotlinxSerializationJsonOkio = "1.6.2"
 lifecycleRuntimeCompose = "2.7.0"
 material = "1.12.0"
+androidxComposeCompiler = "1.5.12"
 material3Android = "1.2.1"
 material3WindowSizeClass = "1.2.1"
 materialIconsExtended = "1.6.7"
@@ -46,6 +47,7 @@ workMultiprocess = "2.9.0"
 workRuntimeKtx = "2.9.0"
 workTesting = "2.9.0"
 agp = "8.3.2"
+androidTools = "31.4.0"
 org-jetbrains-kotlin-android = "1.9.23"
 org-jetbrains-kotlin-jvm = "1.9.23"
 kotlinCollectionsImmutable = "0.3.7"
@@ -96,7 +98,8 @@ androidx-compose-ui-util = { module="androidx.compose.ui:ui-util" }
 androidx-compose-ui-graphics= { module="androidx.compose.ui:ui-graphics" }
 androidx-compose-ui-animation= { module="androidx.compose.animation:animation" }
 androidx-compose-ui-animation-core= { module="androidx.compose.animation:animation-core" }
-androidx-compose-ui-tooling= { module ="androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-tooling-preview= { module ="androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-ui-tooling= { module ="androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-manifest={module="androidx.compose.ui:ui-test-manifest"}
 androidx-compose-ui-test-junit={module="androidx.compose.ui:ui-test-junit4"}
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
@@ -159,9 +162,16 @@ androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exop
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 
+#build-logic
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
+android-tools-common = { group = "com.android.tools", name = "common", version.ref = "androidTools" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "org-jetbrains-kotlin-android" }
+
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "org-jetbrains-kotlin-jvm" }
 com-android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-serializtion = { id = "org.jetbrains.kotlin.plugin.serialization", version="org-jetbrains-kotlin-android" }
+movie-android-application-compose = { id = "movie.android.application.compose", version = "unspecified" }
+movie-android-library-compose = { id = "movie.android.library.compose", version = "unspecified" }

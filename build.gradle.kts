@@ -4,4 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.serializtion).version(libs.versions.org.jetbrains.kotlin.android) apply false
     alias(libs.plugins.com.android.library) apply false
     alias(libs.plugins.org.jetbrains.kotlin.android) apply false
+    alias(libs.plugins.movie.android.library.compose) apply false
+    alias(libs.plugins.movie.android.application.compose) apply false
 }
