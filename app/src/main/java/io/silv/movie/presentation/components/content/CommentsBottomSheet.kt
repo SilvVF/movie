@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -70,19 +71,16 @@ import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
-import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.collectAsStateOrNull
 import io.silv.movie.presentation.components.dialog.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.content.screenmodel.RepliesState
 import io.silv.movie.presentation.profile.UserProfileImage
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
-import org.koin.compose.koinInject
 
 @Composable
 fun ContentScreen.CommentsBottomSheet(
@@ -94,7 +92,6 @@ fun ContentScreen.CommentsBottomSheet(
     val keyboardVisible by keyboardAsState()
     val scope = rememberCoroutineScope()
     val user = LocalUser.current
-    val appState = LocalAppState.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
     val sheetState =  rememberModalBottomSheetState()
@@ -114,6 +111,7 @@ fun ContentScreen.CommentsBottomSheet(
 
     ModalBottomSheet(
         sheetState = sheetState,
+        canDrag = false,
         contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
         onDismissRequest = onDismissRequest,
         dragHandle = {
@@ -470,25 +468,38 @@ private fun UserTextField(
             .wrapContentHeight()
     ) {
         Column {
-
-            val emojiPref = koinInject<BasePreferences>().recentEmojis()
-            val recentlyUsed by  emojiPref.collectAsStateOrNull()
-
-            Row(
+            val emojis = remember {
+                listOf(
+                    "\uD83E\uDD23",
+                    "\uD83D\uDE43",
+                    "\uD83D\uDE07",
+                    "\uD83D\uDE00",
+                    "\uD83E\uDD72",
+                    "\uD83E\uDD13",
+                    "\uD83D\uDE28",
+                    "\uD83D\uDE21"
+                )
+            }
+            LazyRow(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(38.dp)
                     .background(MaterialTheme.colorScheme.secondaryContainer)
             ) {
-                recentlyUsed.orEmpty().toList().fastForEach { emoji ->
-                    TextButton(
-                        onClick = {
-                            onMessageChange(message + emoji)
+                emojis.fastForEach { emoji ->
+                        item {
+                            TextButton(
+                                contentPadding = PaddingValues(0.dp),
+                                onClick = {
+                                    onMessageChange(message + emoji)
+                                },
+                                shape = CircleShape
+                            ) {
+                                Text(emoji, style = MaterialTheme.typography.labelLarge)
+                            }
                         }
-                    ) {
-                        Text(emoji)
-                    }
                 }
             }
 

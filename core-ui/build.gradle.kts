@@ -105,6 +105,8 @@ tasks {
             "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
             "-opt-in=coil.annotation.ExperimentalCoilApi",
             "-opt-in=kotlinx.coroutines.FlowPreview",
+            "-P",
+            "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${rootProject.projectDir}/compose_compiler_config.conf"
         )
     }
 }

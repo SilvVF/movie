@@ -162,6 +162,7 @@ import kotlin.math.roundToInt
 fun ModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
+    canDrag: Boolean = true,
     sheetState: io.silv.core_ui.components.bottomsheet.modal.SheetState = rememberModalBottomSheetState(),
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     shape: Shape = BottomSheetDefaults.ExpandedShape,
@@ -221,6 +222,7 @@ fun ModalBottomSheet(
             ModalBottomSheetContent(
                 predictiveBackProgress,
                 scope,
+                canDrag,
                 animateToDismiss,
                 settleToDismiss,
                 modifier,
@@ -248,10 +250,11 @@ fun ModalBottomSheet(
 internal fun BoxScope.ModalBottomSheetContent(
     predictiveBackProgress: Animatable<Float, AnimationVector1D>,
     scope: CoroutineScope,
+    canDrag: Boolean,
     animateToDismiss: () -> Unit,
     settleToDismiss: (velocity: Float) -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: io.silv.core_ui.components.bottomsheet.modal.SheetState = rememberModalBottomSheetState(),
+    sheetState: io.silv.core_ui.components.bottomsheet.modal.SheetState,
     sheetMaxWidth: Dp = BottomSheetDefaults.SheetMaxWidth,
     shape: Shape = BottomSheetDefaults.ExpandedShape,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
@@ -284,6 +287,7 @@ internal fun BoxScope.ModalBottomSheetContent(
                     ConsumeSwipeWithinBottomSheetBoundsNestedScrollConnection(
                         sheetState = sheetState,
                         orientation = Orientation.Vertical,
+                        canConsume = true,
                         onFling = settleToDismiss
                     )
                 }
@@ -295,10 +299,10 @@ internal fun BoxScope.ModalBottomSheetContent(
                 val fullHeight = constraints.maxHeight.toFloat()
                 val newAnchors = DraggableAnchors {
                     Hidden at fullHeight
-                    if (sheetSize.height > (fullHeight / 3) &&
+                    if (sheetSize.height > (fullHeight / 3.5) &&
                         !sheetState.skipPartiallyExpanded
                     ) {
-                        PartiallyExpanded at fullHeight / 3f
+                        PartiallyExpanded at fullHeight / 3.5f
                     }
                     if (sheetSize.height != 0) {
                         Expanded at max(0f, fullHeight - sheetSize.height)
@@ -316,12 +320,16 @@ internal fun BoxScope.ModalBottomSheetContent(
                 }
                 return@draggableAnchors newAnchors to newTarget
             }
-            .draggable(
-                state = sheetState.anchoredDraggableState.draggableState,
-                orientation = Orientation.Vertical,
-                enabled = sheetState.isVisible,
-                startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
-                onDragStopped = { settleToDismiss(it) }
+            .then(
+                if (canDrag) {
+                    Modifier.draggable(
+                        state = sheetState.anchoredDraggableState.draggableState,
+                        orientation = Orientation.Vertical,
+                        enabled = sheetState.isVisible,
+                        startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
+                        onDragStopped = { settleToDismiss(it) }
+                    )
+                } else Modifier
             ),
         shape = shape,
         color = containerColor,
@@ -378,7 +386,13 @@ internal fun BoxScope.ModalBottomSheetContent(
                                     }
                                 }
                             }
-                        }
+                        }.draggable(
+                            state = sheetState.anchoredDraggableState.draggableState,
+                            orientation = Orientation.Vertical,
+                            enabled = sheetState.isVisible,
+                            startDragImmediately = sheetState.anchoredDraggableState.isAnimationRunning,
+                            onDragStopped = { settleToDismiss(it) }
+                        )
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         dragHandle()
