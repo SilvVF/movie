@@ -1,10 +1,11 @@
 # Movie tracker
-Movie tracker is a movie and tvshow list creator and trailer player.
+Movie tracker is a movie and tvshow list creator and player.
 
 ## Features
 Features include:
 * Watch trailers through piped api.
 * Watch movies and tv-shows through vidsrc.
+* leave comments on movies and tv-shows.
 * View images
 * Local creating of watch lists.
 * Recommendations from: [TMDB](https://www.themoviedb.org/),
