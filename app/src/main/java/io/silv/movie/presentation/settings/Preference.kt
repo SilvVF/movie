@@ -47,15 +47,32 @@ sealed class Preference {
          * A [PreferenceItem] that provides a slider to select an integer number.
          */
         data class SliderPreference(
-            val value: Int,
+            val pref: PreferenceData<Int>,
             val min: Int = 0,
             val max: Int,
+            val subtitleProvider: @Composable (value: Int) -> String,
             override val title: String = "",
             override val subtitle: String? = null,
             override val icon: ImageVector? = null,
             override val enabled: Boolean = true,
             override val onValueChanged: suspend (newValue: Int) -> Boolean = { true },
         ) : PreferenceItem<Int>()
+
+        /**
+         * A [PreferenceItem] that provides a slider to select an integer number.
+         */
+        data class FloatSliderPreference(
+            val pref: PreferenceData<Float>,
+            val min: Float,
+            val max: Float,
+            val steps: Int,
+            val subtitleProvider: @Composable (value: Float) -> String,
+            override val title: String = "",
+            override val subtitle: String? = null,
+            override val icon: ImageVector? = null,
+            override val enabled: Boolean = true,
+            override val onValueChanged: suspend (newValue: Float) -> Boolean = { true },
+        ) : PreferenceItem<Float>()
 
         /**
          * A [PreferenceItem] that displays a list of entries as a dialog.

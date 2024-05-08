@@ -19,13 +19,16 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.topbar.AppBar
-import io.silv.movie.presentation.collectAsState
+import io.silv.movie.presentation.collectAsStateOrNull
 import io.silv.movie.presentation.settings.widgets.EditTextPreferenceWidget
+import io.silv.movie.presentation.settings.widgets.FloatSliderItem
 import io.silv.movie.presentation.settings.widgets.InfoWidget
 import io.silv.movie.presentation.settings.widgets.ListPreferenceWidget
 import io.silv.movie.presentation.settings.widgets.MultiSelectListPreferenceWidget
 import io.silv.movie.presentation.settings.widgets.SliderItem
 import io.silv.movie.presentation.settings.widgets.SwitchPreferenceWidget
+import io.silv.movie.presentation.settings.widgets.SwitchPreferenceWidgetPlaceholder
+import io.silv.movie.presentation.settings.widgets.TextPreferencePlaceHolder
 import io.silv.movie.presentation.settings.widgets.TextPreferenceWidget
 import kotlinx.coroutines.launch
 
@@ -93,51 +96,61 @@ internal fun PreferenceItem(
     ) {
         when (item) {
             is Preference.PreferenceItem.SwitchPreference -> {
-                val value by item.pref.collectAsState()
-                SwitchPreferenceWidget(
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    icon = item.icon,
-                    checked = value,
-                    onCheckedChanged = { newValue ->
-                        scope.launch {
-                            if (item.onValueChanged(newValue)) {
-                                item.pref.set(newValue)
+                val value by item.pref.collectAsStateOrNull()
+                value?.let {
+                    SwitchPreferenceWidget(
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        icon = item.icon,
+                        checked = it,
+                        onCheckedChanged = { newValue ->
+                            scope.launch {
+                                if (item.onValueChanged(newValue)) {
+                                    item.pref.set(newValue)
+                                }
                             }
-                        }
-                    },
-                )
+                        },
+                    )
+                } ?: SwitchPreferenceWidgetPlaceholder()
             }
             is Preference.PreferenceItem.SliderPreference -> {
-                // TODO: use different composable?
-                SliderItem(
-                    label = item.title,
-                    min = item.min,
-                    max = item.max,
-                    value = item.value,
-                    valueText = item.subtitle.takeUnless { it.isNullOrEmpty() } ?: item.value.toString(),
-                    onChange = {
-                        scope.launch {
-                            item.onValueChanged(it)
-                        }
-                    },
-                )
+                val pref by item.pref.collectAsStateOrNull()
+                pref?.let {
+                    SliderItem(
+                        label = item.title,
+                        min = item.min,
+                        max = item.max,
+                        value = it,
+                        valueText = { item.subtitleProvider(it) },
+                        onChange = {
+                            scope.launch {
+                                item.onValueChanged(it)
+                            }
+                        },
+                    )
+                }
             }
             is Preference.PreferenceItem.ListPreference<*> -> {
-                val value by item.pref.collectAsState()
-                ListPreferenceWidget(
-                    value = value,
-                    title = item.title,
-                    subtitle = item.internalSubtitleProvider(value, item.entries),
-                    icon = item.icon,
-                    entries = item.entries,
-                    onValueChange = { newValue ->
-                        scope.launch {
-                            if (item.internalOnValueChanged(newValue!!)) {
-                                item.internalSet(newValue)
+                val value by item.pref.collectAsStateOrNull()
+                value?.let {
+                    ListPreferenceWidget(
+                        value = it,
+                        title = item.title,
+                        subtitle = item.internalSubtitleProvider(value, item.entries),
+                        icon = item.icon,
+                        entries = item.entries,
+                        onValueChange = { newValue ->
+                            scope.launch {
+                                if (item.internalOnValueChanged(newValue!!)) {
+                                    item.internalSet(newValue)
+                                }
                             }
-                        }
-                    },
+                        },
+                    )
+                } ?: TextPreferencePlaceHolder(
+                    item.title,
+                    null,
+                    item.icon
                 )
             }
             is Preference.PreferenceItem.BasicListPreference -> {
@@ -151,17 +164,23 @@ internal fun PreferenceItem(
                 )
             }
             is Preference.PreferenceItem.MultiSelectListPreference -> {
-                val values by item.pref.collectAsState()
-                MultiSelectListPreferenceWidget(
-                    preference = item,
-                    values = values,
-                    onValuesChange = { newValues ->
-                        scope.launch {
-                            if (item.onValueChanged(newValues)) {
-                                item.pref.set(newValues.toMutableSet())
+                val values by item.pref.collectAsStateOrNull()
+                values?.let {
+                    MultiSelectListPreferenceWidget(
+                        preference = item,
+                        values = it,
+                        onValuesChange = { newValues ->
+                            scope.launch {
+                                if (item.onValueChanged(newValues)) {
+                                    item.pref.set(newValues.toMutableSet())
+                                }
                             }
-                        }
-                    },
+                        },
+                    )
+                }  ?: TextPreferencePlaceHolder(
+                    item.title,
+                    null,
+                    item.icon
                 )
             }
             is Preference.PreferenceItem.TextPreference -> {
@@ -173,32 +192,44 @@ internal fun PreferenceItem(
                 )
             }
             is Preference.PreferenceItem.EditTextPreference -> {
-                val values by item.pref.collectAsState()
-                EditTextPreferenceWidget(
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    icon = item.icon,
-                    value = values,
-                    onConfirm = {
-                        val accepted = item.onValueChanged(it)
-                        if (accepted) item.pref.set(it)
-                        accepted
-                    },
+                val values by item.pref.collectAsStateOrNull()
+                values?.let { value ->
+                    EditTextPreferenceWidget(
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        icon = item.icon,
+                        value = value,
+                        onConfirm = {
+                            val accepted = item.onValueChanged(it)
+                            if (accepted) item.pref.set(it)
+                            accepted
+                        },
+                    )
+                } ?: TextPreferencePlaceHolder(
+                    item.title,
+                    item.subtitle,
+                    item.icon
                 )
             }
             is Preference.PreferenceItem.MultiLineEditTextPreference -> {
-                val values by item.pref.collectAsState()
-                EditTextPreferenceWidget(
-                    title = item.title,
-                    subtitle = item.subtitle,
-                    icon = item.icon,
-                    value = values,
-                    onConfirm = {
-                        val accepted = item.onValueChanged(it)
-                        if (accepted) item.pref.set(it)
-                        accepted
-                    },
-                    singleLine = false,
+                val values by item.pref.collectAsStateOrNull()
+                values?.let { value ->
+                    EditTextPreferenceWidget(
+                        title = item.title,
+                        subtitle = item.subtitle,
+                        icon = item.icon,
+                        value = value,
+                        onConfirm = {
+                            val accepted = item.onValueChanged(it)
+                            if (accepted) item.pref.set(it)
+                            accepted
+                        },
+                        singleLine = false,
+                    )
+                } ?: TextPreferencePlaceHolder(
+                    item.title,
+                    item.subtitle,
+                    item.icon
                 )
             }
             is Preference.PreferenceItem.InfoPreference -> {
@@ -206,6 +237,25 @@ internal fun PreferenceItem(
             }
             is Preference.PreferenceItem.CustomPreference -> {
                 item.content(item)
+            }
+
+            is Preference.PreferenceItem.FloatSliderPreference -> {
+                val pref by item.pref.collectAsStateOrNull()
+                pref?.let { p ->
+                    FloatSliderItem(
+                        label = item.title,
+                        min = item.min,
+                        max = item.max,
+                        value = p,
+                        valueText = item.subtitleProvider,
+                        steps = item.steps,
+                        onChange = {
+                            scope.launch {
+                                item.onValueChanged(it)
+                            }
+                        },
+                    )
+                }
             }
         }
     }

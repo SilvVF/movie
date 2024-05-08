@@ -204,7 +204,7 @@ private fun MainContent(
             }
         ) {
             TabNavigator(appState.startScreen) { tabNavigator ->
-                Surface(Modifier.fillMaxSize(),) {
+                Surface(Modifier.fillMaxSize()) {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -297,34 +297,36 @@ private fun MainContent(
 
 @Composable
 @ReadOnlyComposable
-private fun rememberColorScheme(
+private fun getThemeColorScheme(
     appTheme: AppTheme,
     amoled: Boolean,
     dark: Boolean,
 ): ColorScheme {
-    val colorScheme =
-        when (appTheme) {
-            AppTheme.DEFAULT -> TachiyomiColorScheme
-            AppTheme.MONET -> MonetColorScheme(LocalContext.current)
-            AppTheme.CLOUDFLARE -> CloudflareColorScheme
-            AppTheme.COTTONCANDY -> CottonCandyColorScheme
-            AppTheme.DOOM -> DoomColorScheme
-            AppTheme.GREEN_APPLE -> GreenAppleColorScheme
-            AppTheme.LAVENDER -> LavenderColorScheme
-            AppTheme.MATRIX -> MatrixColorScheme
-            AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
-            AppTheme.MOCHA -> MochaColorScheme
-            AppTheme.SAPPHIRE -> SapphireColorScheme
-            AppTheme.NORD -> NordColorScheme
-            AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
-            AppTheme.TAKO -> TakoColorScheme
-            AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
-            AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
-            AppTheme.YINYANG -> YinYangColorScheme
-            AppTheme.YOTSUBA -> YotsubaColorScheme
-            else -> TachiyomiColorScheme
-        }
-    return colorScheme.getColorScheme(dark, amoled)
+    val colorScheme = when (appTheme) {
+        AppTheme.DEFAULT -> TachiyomiColorScheme
+        AppTheme.MONET -> MonetColorScheme(LocalContext.current)
+        AppTheme.CLOUDFLARE -> CloudflareColorScheme
+        AppTheme.COTTONCANDY -> CottonCandyColorScheme
+        AppTheme.DOOM -> DoomColorScheme
+        AppTheme.GREEN_APPLE -> GreenAppleColorScheme
+        AppTheme.LAVENDER -> LavenderColorScheme
+        AppTheme.MATRIX -> MatrixColorScheme
+        AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
+        AppTheme.MOCHA -> MochaColorScheme
+        AppTheme.SAPPHIRE -> SapphireColorScheme
+        AppTheme.NORD -> NordColorScheme
+        AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
+        AppTheme.TAKO -> TakoColorScheme
+        AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
+        AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
+        AppTheme.YINYANG -> YinYangColorScheme
+        AppTheme.YOTSUBA -> YotsubaColorScheme
+        else -> TachiyomiColorScheme
+    }
+    return colorScheme.getColorScheme(
+        dark,
+        amoled,
+    )
 }
 
 @Composable
@@ -335,7 +337,7 @@ fun MovieTheme(
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = rememberColorScheme(appTheme, amoled, dark),
+        colorScheme =  getThemeColorScheme(appTheme, amoled, dark),
         content = content,
     )
 }

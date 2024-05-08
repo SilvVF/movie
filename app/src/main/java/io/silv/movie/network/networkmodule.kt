@@ -11,7 +11,6 @@ import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.storage
 import io.ktor.client.HttpClient
@@ -79,7 +78,6 @@ val networkModule =
                     googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID)
                 }
                 install(Storage)
-                install(Realtime)
             }
         }
 

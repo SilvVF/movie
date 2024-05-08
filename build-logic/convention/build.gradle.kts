@@ -42,5 +42,9 @@ gradlePlugin {
             id = "movie.android.library.compose"
             implementationClass = "AndroidLibraryComposeConventionPlugin"
         }
+        register("androidApplication") {
+            id = "movie.android.application"
+            implementationClass = "AndroidApplicationConventionPlugin"
+        }
     }
 }

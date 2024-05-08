@@ -9,7 +9,6 @@ import io.github.jan.supabase.postgrest.query.Order
 import io.github.jan.supabase.postgrest.rpc
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.prefrences.BasePreferences
-import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.user.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import timber.log.Timber
@@ -52,17 +52,18 @@ class UserRepositoryImpl(
             val uid = auth.currentUserOrNull()?.id
 
             if (user == null) {
-                val saved = savedUser.getOrDefaultBlocking()
+                val saved = savedUser.get()
 
                 return@map saved.takeIf { uid != null && savedUser.get()?.userId == uid }
             }
 
             user.takeIf { uid != null }
         }
+        .onStart { emit(savedUser.get()) }
         .stateIn(
             scope,
             SharingStarted.Lazily,
-            savedUser.getOrDefaultBlocking()
+            null
         )
 
 

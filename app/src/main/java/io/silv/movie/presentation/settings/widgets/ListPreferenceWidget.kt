@@ -29,6 +29,8 @@ import io.silv.core_ui.util.isScrolledToEnd
 import io.silv.core_ui.util.isScrolledToStart
 import io.silv.movie.R
 
+
+
 @Composable
 fun <T> ListPreferenceWidget(
     value: T,

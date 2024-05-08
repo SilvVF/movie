@@ -16,7 +16,7 @@ androidxTestEspressoCore = "3.5.1"
 appcompat = "1.6.1"
 coilGif = "2.5.0"
 datastorePreferences = "1.1.1"
-desugar_jdk_libs = "2.0.4"
+androidDesugarJdkLibs = "2.0.4"
 kotlinxSerializationJsonOkio = "1.6.2"
 lifecycleRuntimeCompose = "2.7.0"
 material = "1.12.0"
@@ -60,11 +60,12 @@ media3DatasourceCronet = "1.3.1"
 media3ExoplayerHls = "1.3.1"
 zoomableImageCoil = "0.8.0"
 activity = "1.9.0"
-constraintlayout = "2.1.4"
+supabase = "2.2.2"
 
 [libraries]
 accompanist-webview = { module = "com.google.accompanist:accompanist-webview", version.ref = "accompanistWebview" }
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
+
 androidx-media3-exoplayer-dash = { module = "androidx.media3:media3-exoplayer-dash", version.ref = "media3ExoplayerDash" }
 androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Exoplayer" }
 androidx-media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3ExoplayerDash" }
@@ -83,7 +84,7 @@ sqldelight-coroutines = {module = "app.cash.sqldelight:coroutines-extensions", v
 sqldelight-paging = {module = "app.cash.sqldelight:androidx-paging3-extensions", version.ref ="sqldelight" }
 
 androidx-material3-android = { module = "androidx.compose.material3:material3-android", version.ref = "material3Android" }
-desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
+android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
 
 retrofit-kotlinx-serializtion-converter={ module = "com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter", version.ref ="retrofiteKotlinxSerializtionConverter" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
@@ -130,11 +131,14 @@ koin-workmanager={module="io.insert-koin:koin-androidx-workmanager", version.ref
 kotlin-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinCollectionsImmutable" }
 
 kotlinx-serialization-json-okio = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-okio", version.ref = "kotlinxSerializationJsonOkio" }
+
 ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
-material = { module = "com.google.android.material:material", version.ref = "material" }
+
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okhttp-dnsoverhttps = { module = "com.squareup.okhttp3:okhttp-dnsoverhttps", version.ref = "okhttpDnsoverhttps" }
+
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+
 androidx-test-espresso-core= { module="androidx.test.espresso:espresso-core", version.ref="androidxTestEspressoCore"}
 androidx-test-junit = {module = "androidx.test.ext:junit", version.ref="testJunit"}
 junit={module = "junit:junit", version.ref ="junit"}
@@ -162,16 +166,33 @@ androidx-media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exop
 zoomable-image-coil = { module = "me.saket.telephoto:zoomable-image-coil", version.ref = "zoomableImageCoil" }
 androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 
+supabase-bom = { module = "io.github.jan-tennert.supabase:bom", version.ref = "supabase" }
+supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt" }
+supabase-gotrue = { module = "io.github.jan-tennert.supabase:gotrue-kt" }
+supabase-compose-auth = { module = "io.github.jan-tennert.supabase:compose-auth" }
+supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt" }
+supabase-compose-auth-ui = { module = "io.github.jan-tennert.supabase:compose-auth-ui" }
+
 #build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "agp" }
 android-tools-common = { group = "com.android.tools", name = "common", version.ref = "androidTools" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "org-jetbrains-kotlin-android" }
+
+[bundles]
+voyager = ["voyager-koin", "voyager-navigator", "voyager-screenModel", "voyager-transitions", "voyager-tabNavigator" ]
+koin = ["koin-android", "koin-compose", "koin-core"]
+workmanager = ["androidx-work-gcm", "androidx-work-multiprocess", "androidx-work-runtime-ktx", "androidx-work-testing"]
+paging = ["androidx-paging-common", "androidx-paging-runtime", "androidx-paging-compose"]
+sqldelight = ["sqldelight-android-driver", "sqldelight-coroutines", "sqldelight-paging", "sqldelight-primitive-adapters"]
+supabase = ["supabase-postgrest", "supabase-gotrue", "supabase-storage", "supabase-compose-auth", "supabase-compose-auth-ui"]
 
 [plugins]
 com-android-test = { id = "com.android.test", version.ref = "agp" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "org-jetbrains-kotlin-android" }
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "org-jetbrains-kotlin-jvm" }
 com-android-library = { id = "com.android.library", version.ref = "agp" }
+com-android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-serializtion = { id = "org.jetbrains.kotlin.plugin.serialization", version="org-jetbrains-kotlin-android" }
 movie-android-application-compose = { id = "movie.android.application.compose", version = "unspecified" }
 movie-android-library-compose = { id = "movie.android.library.compose", version = "unspecified" }
+movie-android-application = { id = "movie.android.application", version = "unspecified" }

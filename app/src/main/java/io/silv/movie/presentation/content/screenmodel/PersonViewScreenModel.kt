@@ -122,7 +122,6 @@ class PersonViewScreenModel(
         contentId: Long,
         isMovie: Boolean,
     ): io.silv.movie.data.content.credits.Credit? {
-        Timber.d("inserting $credit, $contentId, $isMovie")
         return runCatching {
             networkToLocalCredit.await(
                 credit,

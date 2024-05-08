@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,6 +37,7 @@ import io.silv.core_ui.components.topbar.AppBarActions
 import io.silv.movie.R
 import io.silv.movie.presentation.settings.screens.SettingsAppearanceScreen
 import io.silv.movie.presentation.settings.screens.SettingsSearchScreen
+import io.silv.movie.presentation.settings.screens.SettingsStorageeScreen
 import io.silv.movie.presentation.settings.widgets.TextPreferenceWidget
 import kotlinx.collections.immutable.persistentListOf
 
@@ -169,12 +171,12 @@ data object SettingsMainScreen : Screen {
             icon = Icons.Outlined.Palette,
             screen = SettingsAppearanceScreen,
         ),
-//        Item(
-//            titleRes = MR.strings.pref_category_library,
-//            subtitleRes = MR.strings.pref_library_summary,
-//            icon = Icons.Outlined.CollectionsBookmark,
-//            screen = SettingsLibraryScreen,
-//        ),
+        Item(
+            titleRes = R.string.storage,
+            subtitleRes = R.string.storage_summary,
+            icon = Icons.Outlined.Storage,
+            screen = SettingsStorageeScreen,
+        ),
 //        Item(
 //            titleRes = MR.strings.pref_category_player,
 //            subtitleRes = MR.strings.pref_player_summary,

@@ -2,7 +2,6 @@ package io.silv.movie.presentation.settings.screens
 
 import android.os.Build
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,7 +49,7 @@ import io.silv.core_ui.components.ItemCover
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.AppTheme
-import io.silv.movie.data.prefrences.DeviceUtil.isDynamicColorAvailable
+import io.silv.movie.data.prefrences.DeviceUtil
 import io.silv.movie.data.prefrences.StartScreen
 import io.silv.movie.data.prefrences.TabletUiMode
 import io.silv.movie.data.prefrences.ThemeMode
@@ -66,15 +65,6 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.time.Instant
 
-fun setAppCompatDelegateThemeMode(themeMode: ThemeMode) {
-    AppCompatDelegate.setDefaultNightMode(
-        when (themeMode) {
-            ThemeMode.LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
-            ThemeMode.DARK -> AppCompatDelegate.MODE_NIGHT_YES
-            ThemeMode.SYSTEM -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
-        },
-    )
-}
 
 data object SettingsAppearanceScreen: SearchableSettings {
 
@@ -124,7 +114,6 @@ data object SettingsAppearanceScreen: SearchableSettings {
                             onItemClick = {
                                 scope.launch {
                                     themeModePref.set(it)
-                                    setAppCompatDelegateThemeMode(it)
                                 }
                             },
                         )
@@ -289,7 +278,7 @@ private fun AppThemesList(
 ) {
     val appThemes = remember {
         AppTheme.entries
-            .filterNot { it.titleRes == null || (it == AppTheme.MONET && !isDynamicColorAvailable) }
+            .filterNot { it.titleRes == null || (it == AppTheme.MONET && !DeviceUtil.isDynamicColorAvailable) }
     }
     LazyRow(
         contentPadding = PaddingValues(horizontal = PrefsHorizontalPadding),

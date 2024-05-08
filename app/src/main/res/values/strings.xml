@@ -207,4 +207,15 @@
     <string name="hide">Hide</string>
     <string name="view_more_replies">View %1d more replies</string>
     <string name="view_reply">View 1 more reply</string>
+    <string name="failed_to_send">Failed to send message</string>
+    <string name="sign_in_to_send_messages">Sign in to send a message</string>
+    <string name="cache_all_library_posters">Cache all library list content posters in files for offline viewing.</string>
+    <string name="cache_list_posters">Cache library posters</string>
+    <string name="disk_cache_pct">Disk cache pct</string>
+    <string name="disk_cache_pct_sub">%.2f%%</string>
+    <string name="disk_cache_max_size_mb">Disk cache max size</string>
+    <string name="disk_cache_max_size_mb_sub">%1d MB</string>
+    <string name="storage"><![CDATA[Data & Storage]]></string>
+    <string name="storage_summary">Storage space and caching</string>
+    <string name="cache">Cache</string>
 </resources>

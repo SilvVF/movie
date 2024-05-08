@@ -26,7 +26,7 @@ val LocalContentInteractor = staticCompositionLocalOf<ContentInteractor> { error
 
 val LocalListInteractor = staticCompositionLocalOf<ListInteractor> { error("ListInteractor not provided in current scope") }
 
-val LocalUser = compositionLocalOf<User?> { error("no user provided") }
+val LocalUser = compositionLocalOf<User?> { null }
 
 val LocalAppState = compositionLocalOf<AppState> { error("Not provided in scope") }
 

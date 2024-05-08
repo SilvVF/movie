@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,10 +28,15 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,8 +44,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -53,8 +57,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,12 +73,15 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.bottomsheet.modal.ModalBottomSheet
 import io.silv.core_ui.components.bottomsheet.modal.SheetValue
 import io.silv.core_ui.components.bottomsheet.modal.rememberModalBottomSheetState
 import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.components.shimmer.TextPlaceholder
+import io.silv.core_ui.components.topbar.runOnEnterKeyPressed
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
@@ -79,7 +93,9 @@ import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.dialog.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.content.screenmodel.RepliesState
+import io.silv.movie.presentation.content.screenmodel.SendError
 import io.silv.movie.presentation.profile.UserProfileImage
+import io.silv.movie.presentation.profile.screen.ProfileScreen
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
@@ -96,6 +112,7 @@ fun ContentScreen.CommentsBottomSheet(
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
     val sheetState =  rememberModalBottomSheetState()
+    val navigator = LocalNavigator.currentOrThrow
     val listState = rememberLazyListState()
 
     BackHandler {
@@ -128,8 +145,11 @@ fun ContentScreen.CommentsBottomSheet(
         pinnedContent = {
             UserTextField(
                 onMessageChange = screenModel::updateComment,
-                onSendClick = {},
+                onSendClick = screenModel::sendMessage,
                 message = screenModel.comment,
+                sending = state.sending,
+                onSignInClicked = { navigator.push(ProfileScreen) },
+                sendError = state.sendError.takeIf { user != null } ?: SendError.NotSignedIn
             )
         },
     ) {
@@ -456,13 +476,57 @@ private fun ReplyContent(
     }
 }
 
+
+
+@Preview(apiLevel = 34,
+    device = "spec:parent=pixel_8"
+)
+@Composable
+fun PreviewUserTextField() {
+    MaterialTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column {
+                UserTextField(
+                    onMessageChange = {},
+                    onSendClick = {},
+                    message = TextFieldValue("Test Messate"),
+                    sendError = SendError.None,
+                    sending = true
+                )
+                Spacer(modifier = Modifier.height(22.dp))
+                UserTextField(
+                    onMessageChange = {},
+                    onSendClick = {},
+                    message = TextFieldValue("Test Messate"),
+                    sendError = SendError.NotSignedIn,
+                )
+                Spacer(modifier = Modifier.height(22.dp))
+                UserTextField(
+                    onMessageChange = {},
+                    onSendClick = {},
+                    message = TextFieldValue("Test Messate"),
+                    sendError = SendError.Failed("Failed to send")
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun UserTextField(
     modifier: Modifier = Modifier,
-    onMessageChange: (String) -> Unit,
+    onMessageChange: (TextFieldValue) -> Unit,
     onSendClick: (String) -> Unit,
-    message: String,
+    message: TextFieldValue,
+    sendError: SendError,
+    replyingTo: PagedComment? = null,
+    onSignInClicked: () -> Unit = {},
+    sending: Boolean = false,
 ) {
+    val navigator = LocalNavigator.current
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+
     Surface(
         modifier
             .fillMaxWidth()
@@ -494,7 +558,8 @@ private fun UserTextField(
                             TextButton(
                                 contentPadding = PaddingValues(0.dp),
                                 onClick = {
-                                    onMessageChange(message + emoji)
+                                    val msg = message.text + emoji
+                                    onMessageChange(message.copy(text = msg, selection = TextRange(msg.length)))
                                 },
                                 shape = CircleShape
                             ) {
@@ -506,37 +571,95 @@ private fun UserTextField(
 
             Row(
                 modifier = modifier
-                    .padding(bottom = 12.dp)
-                    .padding(horizontal = 12.dp)
+                    .padding(12.dp)
                     .systemBarsPadding(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.Bottom
             ) {
                 UserProfileImage(
                     contentDescription = null,
-                    modifier = Modifier.size(40.0.dp)
+                    modifier = Modifier.size(40.dp)
                 )
-                TextField(
-                    modifier = Modifier.weight(1f),
+                BasicTextField(
                     value = message,
-                    onValueChange = onMessageChange,
+                    onValueChange = { onMessageChange(it) },
+                    modifier = Modifier
+                        .padding(horizontal = 6.dp)
+                        .weight(1f)
+                        .focusRequester(focusRequester)
+                        .runOnEnterKeyPressed(action = focusManager::clearFocus)
+                        .align(Alignment.CenterVertically),
+                    textStyle = MaterialTheme.typography.bodyLarge
+                        .copy(color = MaterialTheme.colorScheme.onSurface),
                     maxLines = 5,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        errorContainerColor = Color.Transparent,
-
-                    )
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = { focusManager.clearFocus() },
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    decorationBox = {
+                        when(sendError) {
+                            is SendError.Failed -> {
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.failed_to_send),
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.labelSmall,
+                                    )
+                                    if (message.text.isEmpty()) {
+                                        Text(
+                                            text = stringResource(R.string.comment_hint),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                        )
+                                    }
+                                    it()
+                                }
+                            }
+                            SendError.None -> {
+                                if (message.text.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.comment_hint),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                }
+                                it()
+                            }
+                            SendError.NotSignedIn -> {
+                               TextButton(onClick = onSignInClicked) {
+                                   Text(
+                                       text = stringResource(id = R.string.sign_in_to_send_messages),
+                                       color = MaterialTheme.colorScheme.primary,
+                                       style = MaterialTheme.typography.bodyLarge,
+                                   )
+                                   Icon(
+                                       imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                       contentDescription = null
+                                   )
+                               }
+                            }
+                        }
+                    },
                 )
-
-                FilledIconButton(
-                    onClick = { onSendClick(message) },
-                    enabled = message.isNotBlank()
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowUpward,
-                        contentDescription = null
-                    )
+                AnimatedContent(targetState = sending, label = "") { send ->
+                    if (send) {
+                        CircularProgressIndicator(
+                            trackColor = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.padding(4.dp)
+                        )
+                    } else {
+                        FilledIconButton(
+                            onClick = { onSendClick(message.text) },
+                            enabled = message.text.isNotBlank(),
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowUpward,
+                                contentDescription = null
+                            )
+                        }
+                    }
                 }
             }
         }

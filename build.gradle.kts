@@ -6,4 +6,5 @@ plugins {
     alias(libs.plugins.org.jetbrains.kotlin.android) apply false
     alias(libs.plugins.movie.android.library.compose) apply false
     alias(libs.plugins.movie.android.application.compose) apply false
+    alias(libs.plugins.movie.android.application) apply false
 }

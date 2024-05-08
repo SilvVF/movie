@@ -53,6 +53,18 @@ internal fun Project.configureAndroidCompose(
             freeCompilerArgs += buildComposeMetricsParameters()
             freeCompilerArgs += stabilityConfiguration()
             freeCompilerArgs += strongSkippingConfiguration()
+            freeCompilerArgs += listOf(
+                "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
+                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+                "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
+                "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
+                "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
+                "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
+                "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
+                "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
+            )
         }
     }
 }

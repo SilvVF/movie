@@ -17,6 +17,7 @@ import io.silv.movie.coil.fetchers.ContentPosterFetcher
 import io.silv.movie.coil.fetchers.UserProfileImageFetcher
 import io.silv.movie.coil.utils.CoilDiskCache
 import io.silv.movie.coil.utils.CoilMemoryCache
+import io.silv.movie.data.prefrences.StoragePreferences
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
@@ -51,8 +52,10 @@ class App: Application(), ImageLoaderFactory {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
 
+        val storagePreferences by inject<StoragePreferences>()
+
         val diskCacheInit =
-            lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this) }
+            lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this, storagePreferences) }
 
         val memCacheInit=
             lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilMemoryCache.get(this) }
@@ -68,7 +71,8 @@ class App: Application(), ImageLoaderFactory {
                         this@App,
                         inject<OkHttpClient>(),
                         inject<MovieCoverCache>(),
-                        inject<TVShowCoverCache>()
+                        inject<TVShowCoverCache>(),
+                        storagePreferences
                     ),
                 )
                 addByteArrayDiskFetcher(

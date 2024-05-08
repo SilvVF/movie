@@ -9,24 +9,19 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material.icons.outlined.RemoveCircle
 import androidx.compose.material.icons.rounded.CheckBox
 import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.DisabledByDefault
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -34,32 +29,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import io.silv.movie.data.prefrences.core.Preference
-import io.silv.movie.data.prefrences.core.toggle
-import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.settings.StringResource
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 object SettingsItemsPaddings {
     val Horizontal = 24.dp
@@ -90,113 +80,18 @@ fun HeadingItem(
 }
 
 @Composable
-fun IconItem(
-    label: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-) {
-    BaseSettingsItem(
-        label = label,
-        widget = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        },
-        onClick = onClick,
-    )
-}
-
-@Composable
-fun SortItem(
-    label: String,
-    sortDescending: Boolean?,
-    onClick: () -> Unit,
-) {
-    val arrowIcon = when (sortDescending) {
-        true -> Icons.Default.ArrowDownward
-        false -> Icons.Default.ArrowUpward
-        null -> null
-    }
-
-    BaseSettingsItem(
-        label = label,
-        widget = {
-            if (arrowIcon != null) {
-                Icon(
-                    imageVector = arrowIcon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            } else {
-                Spacer(modifier = Modifier.size(24.dp))
-            }
-        },
-        onClick = onClick,
-    )
-}
-
-@Composable
-fun CheckboxItem(
-    label: String,
-    pref: Preference<Boolean>,
-) {
-    val checked by pref.collectAsState()
-    val scope = rememberCoroutineScope()
-    CheckboxItem(
-        label = label,
-        checked = checked,
-        onClick = { scope.launch { pref.toggle() } },
-    )
-}
-
-@Composable
-fun CheckboxItem(
-    label: String,
-    checked: Boolean,
-    onClick: () -> Unit,
-) {
-    BaseSettingsItem(
-        label = label,
-        widget = {
-            Checkbox(
-                checked = checked,
-                onCheckedChange = null,
-            )
-        },
-        onClick = onClick,
-    )
-}
-
-@Composable
-fun RadioItem(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    BaseSettingsItem(
-        label = label,
-        widget = {
-            RadioButton(
-                selected = selected,
-                onClick = null,
-            )
-        },
-        onClick = onClick,
-    )
-}
-
-@Composable
-fun SliderItem(
-    label: String,
-    value: Int,
-    valueText: String,
-    onChange: (Int) -> Unit,
-    max: Int,
-    min: Int = 0,
+fun FloatSliderItem(
+    label:String,
+    value: Float,
+    valueText:  @Composable (Float) ->  String,
+    onChange: (Float) -> Unit,
+    max: Float,
+    min: Float = 0f,
+    steps: Int,
 ) {
     val haptic = LocalHapticFeedback.current
+
+    var vcopy by remember{ mutableFloatStateOf(value) }
 
     Row(
         modifier = Modifier
@@ -213,17 +108,68 @@ fun SliderItem(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Text(valueText)
+            Text(
+                text = valueText(vcopy),
+            )
         }
 
         Slider(
-            value = value.toFloat(),
+            value = vcopy,
+            onValueChangeFinished = {
+                onChange(vcopy)
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            },
+            onValueChange = {
+                vcopy = it
+            },
+            modifier = Modifier.weight(1f),
+            valueRange = min..max,
+            steps = steps,
+        )
+    }
+}
+
+@Composable
+fun SliderItem(
+    label: String,
+    value: Int,
+    valueText: @Composable (Int) -> String,
+    onChange: (Int) -> Unit,
+    max: Int,
+    min: Int = 0,
+) {
+    val haptic = LocalHapticFeedback.current
+    var vcopy by remember{ mutableIntStateOf(value) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                horizontal = SettingsItemsPaddings.Horizontal,
+                vertical = SettingsItemsPaddings.Vertical,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Column(modifier = Modifier.weight(0.5f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(valueText(vcopy))
+        }
+
+        Slider(
+            value = vcopy.toFloat(),
             onValueChange = {
                 val newValue = it.toInt()
                 if (newValue != value) {
-                    onChange(newValue)
+                    vcopy = newValue
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 }
+            },
+            onValueChangeFinished = {
+                onChange(vcopy)
             },
             modifier = Modifier.weight(1.5f),
             valueRange = min.toFloat()..max.toFloat(),

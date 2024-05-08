@@ -3,6 +3,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.movie.android.application.compose)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.movie.android.application)
     kotlin("plugin.serialization")
     id("com.google.devtools.ksp") version "1.9.23-1.0.20"
     id("kotlin-parcelize")
@@ -19,12 +20,9 @@ sqldelight {
 
 android {
     namespace = "io.silv.movie"
-    compileSdk = 34
 
     defaultConfig {
         applicationId = "io.silv.movie"
-        minSdk = 24
-        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -56,7 +54,6 @@ android {
         it.load(project.rootProject.file("local.properties").inputStream())
     }
 
-
     buildTypes.onEach { buildType ->
         buildType.buildConfigField("String", "TMDB_API_KEY", properties.getProperty("TMDB_API_KEY"))
         buildType.buildConfigField("String", "TMDB_ACCESS_TOKEN", properties.getProperty("TMDB_ACCESS_TOKEN"))
@@ -65,20 +62,8 @@ android {
         buildType.buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", properties.getProperty("GOOGLE_WEB_CLIENT_ID"))
     }
 
-    compileOptions {
-        isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
     buildFeatures {
         buildConfig = true
-        compose = true
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.12"
     }
     packaging {
         resources {
@@ -91,45 +76,31 @@ android {
 dependencies {
 
     implementation(project(":core-ui"))
-    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
-    implementation(libs.material)
 
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
     // COMPOSE
-    val composeBom = platform(libs.androidx.compose.bom)
-    implementation(composeBom)
     implementation(libs.androidx.animation.graphics.android)
-    implementation(libs.voyager.screenModel)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.util)
     implementation(libs.androidx.material3.window.size)
-    implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.foundation)
     androidTestImplementation(libs.androidx.compose.ui.test.junit)
-    androidTestImplementation(composeBom)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui.graphics)
-    debugImplementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.material3.android)
     implementation(libs.androidx.compose.ui.animation.core)
     implementation(libs.androidx.compose.ui.animation)
     implementation(libs.androidx.compose.ui.util)
-    implementation(libs.kotlinx.serialization.json.okio)
-
     implementation(libs.androidx.ui)
     implementation(libs.androidx.animation)
 
-
     // Paging3
-    implementation(libs.androidx.paging.compose)
-    implementation(libs.androidx.paging.runtime)
-    implementation(libs.androidx.paging.common)
+    implementation(libs.bundles.paging)
 
-    // Compose
+    // Compose Libs
     implementation(libs.reorderable)
     implementation(libs.haze)
     implementation(libs.font.awesome)
@@ -162,42 +133,29 @@ dependencies {
     implementation(libs.cronet.okhttp)
 
     // VOYAGER
-    implementation(libs.voyager.koin)
-    implementation(libs.voyager.navigator)
-    implementation(libs.voyager.transitions)
-    implementation(libs.voyager.tabNavigator)
+    implementation(libs.bundles.voyager)
 
     // KOIN
-    implementation(libs.koin.compose)
-    implementation(libs.koin.android)
-    implementation(libs.koin.core)
-    implementation(libs.koin.navigation)
+    implementation(libs.bundles.koin)
     implementation(libs.koin.workmanager)
 
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlin.collections.immutable)
+    implementation(libs.kotlinx.serialization.json.okio)
 
     // Database
     implementation(libs.stately.concurrency)
-    implementation(libs.sqldelight.android.driver)
-    implementation(libs.sqldelight.coroutines)
-    implementation(libs.sqldelight.primitive.adapters)
-    implementation(libs.sqldelight.paging)
+    implementation(libs.bundles.sqldelight)
 
     // Work Manager
     implementation(libs.androidx.work.runtime.ktx)
 
     // Supabase
-    implementation(platform("io.github.jan-tennert.supabase:bom:2.2.2"))
-    implementation("io.github.jan-tennert.supabase:postgrest-kt")
-    implementation("io.ktor:ktor-client-okhttp:2.3.8")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt")
-    implementation("io.github.jan-tennert.supabase:compose-auth")
-    implementation("io.github.jan-tennert.supabase:compose-auth-ui")
-    implementation("io.github.jan-tennert.supabase:storage-kt")
-    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.bundles.supabase)
 }
 
 
@@ -206,21 +164,9 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         kotlinOptions.freeCompilerArgs += listOf(
             "-Xcontext-receivers",
-            "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-            "-opt-in=androidx.compose.material.ExperimentalMaterialApi",
-            "-opt-in=androidx.compose.ui.ExperimentalComposeUiApi",
-            "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-            "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
-            "-opt-in=androidx.compose.animation.ExperimentalAnimationApi",
-            "-opt-in=androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi",
             "-opt-in=coil.annotation.ExperimentalCoilApi",
             "-opt-in=kotlinx.coroutines.FlowPreview",
             "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-            "-P",
-            "plugin:androidx.compose.compiler.plugins.kotlin:stabilityConfigurationPath=${rootProject.projectDir}/compose_compiler_config.conf"
         )
     }
 }

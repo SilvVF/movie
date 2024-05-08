@@ -42,7 +42,7 @@ object SupabaseConstants {
                     Top -> "select_top_comments_for_content_with_info"
                 },
                 SelectCommentsRpcParams(
-                    uid = userId,
+                    uid = userId.ifBlank { null },
                     movieId = movieId,
                     showId = showId,
                     lim = limit,
@@ -68,7 +68,7 @@ object SupabaseConstants {
 
     @Serializable
     private data class SelectCommentsRpcParams(
-        val uid: String,
+        val uid: String?,
         @SerialName("mid")
         private val movieId: Long,
         @SerialName("sid")

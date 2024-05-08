@@ -8,6 +8,7 @@ import io.silv.movie.data.content.lists.interactor.DeleteContentList
 import io.silv.movie.data.content.lists.interactor.EditContentList
 import io.silv.movie.data.content.lists.interactor.RemoveContentItemFromList
 import io.silv.movie.data.content.lists.interactor.ToggleContentItemFavorite
+import io.silv.movie.data.prefrences.StoragePreferences
 import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.prefrences.preferenceModule
 import io.silv.movie.data.user.FavoritesUpdateManager
@@ -67,6 +68,8 @@ val dataModule =
         factoryOf(::ToggleContentItemFavorite)
 
         singleOf(::RecommendationManager)
+
+        singleOf(::StoragePreferences)
 
         includes(databaseModule)
 

@@ -1,11 +1,13 @@
 package io.silv.movie.data.prefrences
 
+import android.app.ActivityManager
+import android.content.Context
 import android.os.Build
 import androidx.annotation.StringRes
+import androidx.core.content.getSystemService
 import cafe.adriel.voyager.navigator.tab.Tab
 import com.google.android.material.color.DynamicColors
 import io.silv.movie.R
-import io.silv.movie.data.prefrences.DeviceUtil.isDynamicColorAvailable
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.data.prefrences.core.getEnum
 import io.silv.movie.presentation.settings.StringResource
@@ -18,14 +20,17 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 object DeviceUtil {
-    private val isSamsung: Boolean by lazy {
-        Build.MANUFACTURER.equals("samsung", ignoreCase = true)
-    }
 
-    val isDynamicColorAvailable by lazy {
-        (isSamsung && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) || DynamicColors.isDynamicColorAvailable()
+    val isDynamicColorAvailable  by lazy { DynamicColors.isDynamicColorAvailable() }
+
+    fun isLowRamDevice(context: Context): Boolean {
+        val memInfo = ActivityManager.MemoryInfo()
+        context.getSystemService<ActivityManager>()!!.getMemoryInfo(memInfo)
+        val totalMemBytes = memInfo.totalMem
+        return totalMemBytes < 3L * 1024 * 1024 * 1024
     }
 }
+
 
 class UiPreferences(
     private val preferenceStore: PreferenceStore,
@@ -37,7 +42,7 @@ class UiPreferences(
 
     fun appTheme() = preferenceStore.getEnum(
         "pref_app_theme",
-        if (isDynamicColorAvailable) { AppTheme.MONET } else { AppTheme.DEFAULT },
+        if (DeviceUtil.isDynamicColorAvailable) { AppTheme.MONET } else { AppTheme.DEFAULT },
     )
 
     fun themeDarkAmoled() = preferenceStore.getBoolean("pref_theme_dark_amoled_key", false)

@@ -13,8 +13,11 @@ import io.silv.movie.coil.core.FetcherDiskStore
 import io.silv.movie.coil.core.FetcherDiskStoreImageFile
 import io.silv.movie.coil.core.OkHttpFetcherConfig
 import io.silv.movie.core.await
+import io.silv.movie.data.prefrences.StoragePreferences
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,8 +28,15 @@ class ContentPosterFetcher(
     override val context: Context,
     private val clientLazy: Lazy<OkHttpClient>,
     private val movieCoverCacheLazy: Lazy<MovieCoverCache>,
-    private val tvShowCoverCacheLazy: Lazy<TVShowCoverCache>
+    private val tvShowCoverCacheLazy: Lazy<TVShowCoverCache>,
+    private val storagePreferences: StoragePreferences,
 ): OkHttpFetcherConfig<PosterData> {
+
+    private val cacheListItems by lazy {
+        runBlocking(Dispatchers.IO) {
+            storagePreferences.cacheAllLibraryListPosters.get()
+        }
+    }
 
     private val client
         get() = clientLazy.value
@@ -53,7 +63,7 @@ class ContentPosterFetcher(
 
     override val diskStore: FetcherDiskStore<PosterData> =
         FetcherDiskStoreImageFile { data, _ ->
-            if (data.favorite || data.inList) {
+            if (data.favorite || (data.inList && cacheListItems)) {
                 if (data.isMovie) {
                     movieCoverCache.getCoverFile(data.url)
                 } else {
