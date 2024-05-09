@@ -1,7 +1,6 @@
 package io.silv.movie.presentation.components.content
 
 import android.net.Uri
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,7 +44,6 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
@@ -204,11 +202,13 @@ object ContentPreviewDefaults {
         ) {
             trimmed.fastForEach {
                 val item by it.collectAsStateWithLifecycle()
-                ItemCover.Square(
-                    modifier = Modifier.weight(1f),
-                    shape = RectangleShape,
-                    data = remember(item) { item?.toPoster() }
-                )
+                item?.let {
+                    ItemCover.Square(
+                        modifier = Modifier.weight(1f),
+                        shape = RectangleShape,
+                        data = remember(it) { it.toPoster() }
+                    )
+                }
             }
         }
     }

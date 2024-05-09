@@ -13,11 +13,13 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.DefaultModelEqualityDelegate
 import coil.compose.EqualityDelegate
+import coil.request.ImageRequest
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.user.User
@@ -43,19 +45,25 @@ fun UserProfileImage(
     clipToBounds: Boolean = true,
     modelEqualityDelegate: EqualityDelegate = DefaultModelEqualityDelegate,
 ) {
+
+    val imageData= remember(user?.profileImage) {
+        user?.userId?.let {
+            UserProfileImageData(
+                userId = it,
+                isUserMe = true,
+                path = user.profileImage
+            )
+        }
+    }
+
     AsyncImage(
         modifier = modifier
             .clip(CircleShape)
             .aspectRatio(1f),
-        model = remember(user?.profileImage) {
-            user?.userId?.let {
-                UserProfileImageData(
-                    userId = it,
-                    isUserMe = true,
-                    path = user.profileImage
-                )
-            }
-        },
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageData)
+            .crossfade(true)
+            .build(),
         error = error,
         fallback = fallback,
         onLoading = onLoading,
@@ -96,7 +104,10 @@ fun UserProfileImage(
         modifier = modifier
             .clip(CircleShape)
             .aspectRatio(1f),
-        model = data,
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(data)
+            .crossfade(true)
+            .build(),
         error = error,
         fallback = fallback,
         onLoading = onLoading,

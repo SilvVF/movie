@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
-import androidx.core.graphics.drawable.toDrawable
 import coil.ImageLoader
 import coil.decode.DataSource
 import coil.decode.ImageSource
@@ -16,13 +15,9 @@ import coil.fetch.SourceResult
 import coil.key.Keyer
 import coil.memory.MemoryCache
 import coil.request.Options
-import coil.size.pxOrElse
 import io.silv.movie.coil.utils.CoilDiskUtils
 import io.silv.movie.coil.utils.CoilDiskUtils.toImageSource
 import okio.Path.Companion.toOkioPath
-import okio.buffer
-import okio.source
-import timber.log.Timber
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -49,27 +44,6 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
             val memCacheKey = MemoryCache.Key(keyer.key(data, options)
                 ?: error("null mem cache key provided"))
 
-
-            if (options.memoryCachePolicy.readEnabled && options.allowRgb565) {
-                memCache[memCacheKey]?.let { cachedValue ->
-                    try {
-                        val drawable =
-                            cachedValue.bitmap.toDrawable(context.resources)
-
-                        if (
-                            drawable.bitmap.height == options.size.height.pxOrElse { -1 } &&
-                            drawable.bitmap.width == options.size.width.pxOrElse { -1 }
-                        ) {
-                            return@Fetcher DrawableResult(
-                                drawable = drawable,
-                                isSampled = false,
-                                dataSource = DataSource.MEMORY_CACHE
-                            )
-                        }
-                    } catch (ignored: Exception) { Timber.d(ignored) }
-                }
-            }
-
             val overrideData = overrideCall(options, data)
 
             if (overrideData != null) {
@@ -86,19 +60,7 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
 
             val imageCacheFile = diskStore.getImageFile(data, options)
 
-            // Check if the file path already has an existing file meaning the image exists
-            if (imageCacheFile?.exists() == true && options.diskCachePolicy.readEnabled) {
-                CoilDiskUtils.writeToMemCache(
-                    options,
-                    imageCacheFile.source().buffer().readByteArray(),
-                    memCacheKey,
-                    memCache
-                )
-                return@Fetcher fileLoader(imageCacheFile, diskCacheKey, options)
-            }
-
-            val snapshot =
-                CoilDiskUtils.readFromDiskCache(options, diskCache, diskCacheKey)
+            val snapshot = CoilDiskUtils.readFromDiskCache(options, diskCache, diskCacheKey)
 
             try {
                 if (snapshot != null) {
@@ -172,21 +134,9 @@ abstract class DefaultDiskBackedFetcher<T: Any>(
             imageCacheFile
         )
         if (snapshotCoverCache != null) {
-            CoilDiskUtils.writeToMemCache(
-                options,
-                snapshotCoverCache.source().buffer().readByteArray(),
-                memCacheKey,
-                memCache
-            )
             // Read from cover cache after added to library
             return fileLoader(snapshotCoverCache, diskCacheKey, options)
         }
-        CoilDiskUtils.writeToMemCache(
-            options,
-            snapshot.data.toFile().readBytes(),
-            memCacheKey,
-            memCache
-        )
         // Read from snapshot
         return SourceResult(
             source = snapshot.toImageSource(diskCacheKey),

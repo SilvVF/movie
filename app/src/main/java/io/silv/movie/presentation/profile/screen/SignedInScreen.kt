@@ -30,6 +30,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -128,13 +129,23 @@ fun SignedInScreen(
                         }
                     },
                     navigationIcon = {
+                        val collapsed by remember {
+                            derivedStateOf { scrollBehavior.state.collapsedFraction == 1f }
+                        }
                        UserProfileImage(
                            modifier = Modifier
                                .padding(horizontal = 12.dp)
                                .size(40.dp)
-                               .colorClickable {
-                                   onProfileImageClicked()
-                               }
+                               .clip(CircleShape)
+                               .then (
+                                   if (collapsed) {
+                                       Modifier.colorClickable {
+                                           onProfileImageClicked()
+                                       }
+                                   } else {
+                                        Modifier
+                                   }
+                               )
                                .graphicsLayer {
                                    alpha = lerp(
                                        0f,

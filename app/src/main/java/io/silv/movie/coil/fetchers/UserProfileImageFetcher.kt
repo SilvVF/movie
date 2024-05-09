@@ -99,8 +99,11 @@ class UserProfileImageFetcher(
         val bucket = storage["profile_pictures"]
         return bucket.downloadPublic(
             data.path
-                ?: getUserProfilePath(data.userId)
-                ?: error("failed to fetch user profile image")
+                ?: run {
+                    if (!data.fetchPath)
+                        error("no path and set to not fetch")
+                    getUserProfilePath(data.userId) ?: error("failed to fetch user profile image")
+                }
         )
     }
 }

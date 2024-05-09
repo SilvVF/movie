@@ -32,6 +32,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
+import timber.log.Timber
 
 
 class ProfileScreenModel(
@@ -55,10 +57,18 @@ class ProfileScreenModel(
         )
 
     init {
+        screenModelScope.launch {
+            val expiration = auth.currentSessionOrNull()?.expiresAt?.epochSeconds ?: 0L
+            if (expiration < Clock.System.now().epochSeconds) {
+                auth.refreshCurrentSession()
+            }
+        }
+
         auth.sessionStatus
             .combine(isOnline) { a, b ->  a to b}
             .onEach { (status, online) ->
 
+                Timber.d(status.toString())
                 if (!online && state.value.loggedIn == null) {
                     mutableState.value = ProfileState.Offline
                     return@onEach
@@ -66,13 +76,13 @@ class ProfileScreenModel(
 
                 mutableState.value = when(status) {
                     SessionStatus.LoadingFromStorage -> ProfileState.Loading
-                    SessionStatus.NetworkError ->
-                        ProfileState.LoggedOut("Network Error")
+                    SessionStatus.NetworkError -> ProfileState.LoggedOut("Network Error")
                     is SessionStatus.Authenticated -> {
-                        if(state.value.loggedIn != null) {
+                        val info =  status.session.user ?: run {
+                            Timber.d("clearing session no user")
+                            auth.clearSession()
                             return@onEach
                         }
-                        val info =  status.session.user ?: return@onEach
                         ProfileState.LoggedIn(info = info)
                     }
                     is SessionStatus.NotAuthenticated -> ProfileState.LoggedOut()

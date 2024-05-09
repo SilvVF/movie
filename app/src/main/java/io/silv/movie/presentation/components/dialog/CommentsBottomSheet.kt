@@ -1,4 +1,4 @@
-package io.silv.movie.presentation.components.content
+package io.silv.movie.presentation.components.dialog
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -90,7 +90,6 @@ import io.silv.movie.data.user.User
 import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.components.dialog.BottomSheetDragHandlerNoPadding
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.content.screenmodel.RepliesState
 import io.silv.movie.presentation.content.screenmodel.SendError
@@ -193,7 +192,8 @@ private fun CommentsPager(
                 UserProfileImageData(
                     userId = comment.userId.orEmpty(),
                     path = comment.profileImage,
-                    isUserMe = comment.userId == user?.userId
+                    isUserMe = comment.userId == user?.userId,
+                    fetchPath = false
                 )
             }
 
@@ -428,7 +428,8 @@ private fun ReplyContent(
                                                 UserProfileImageData(
                                                     it.userId.orEmpty(),
                                                     it.userId != null && it.userId == localUser?.userId,
-                                                    path = it.users?.profileImage
+                                                    path = it.users?.profileImage,
+                                                    fetchPath = false
                                                 )
                                             },
                                             contentDescription = null,

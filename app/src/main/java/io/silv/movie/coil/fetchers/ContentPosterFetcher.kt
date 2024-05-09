@@ -84,6 +84,7 @@ class ContentPosterFetcher(
                 tvShowCoverCache.getCustomCoverFile(data.id)
             }
             if (customCoverFile.exists()) {
+
                 return SourceResult(
                     source = ImageSource(
                         file = customCoverFile.toOkioPath(),

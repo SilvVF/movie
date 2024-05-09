@@ -53,6 +53,7 @@ data object ProfileScreen: Screen {
 
     @Composable
     override fun Content() {
+
         val screenModel = getScreenModel<ProfileScreenModel>()
         val navigator = LocalNavigator.currentOrThrow
         val state by screenModel.state.collectAsStateWithLifecycle()
@@ -82,7 +83,7 @@ data object ProfileScreen: Screen {
             }
         }
 
-        when (val state = state) {
+        when (val s = state) {
             ProfileState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize()) {
                     CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -118,9 +119,9 @@ data object ProfileScreen: Screen {
                     onListClick = {
                         navigator.push(ListViewScreen(it.id))
                     },
-                    state = state
+                    state = s
                 )
-                when (state.dialog) {
+                when (s.dialog) {
                     null -> Unit
                     ProfileState.LoggedIn.Dialog.UserOptions -> {
                         UserOptionsBottomSheet(
@@ -138,7 +139,7 @@ data object ProfileScreen: Screen {
                     ProfileState.LoggedIn.Dialog.ConfirmDeleteAccount -> RemoveEntryDialog(
                         onDismissRequest = { screenModel.changeLoggedInDialog(null) },
                         onConfirm = { screenModel.deleteAccount() },
-                        entryToRemove = state.info.email.orEmpty()
+                        entryToRemove = s.info.email.orEmpty()
                     )
                 }
             }
@@ -206,15 +207,15 @@ data object ProfileScreen: Screen {
                     signInWithGoogle = {
                         signInWithGoogle.startFlow()
                     },
-                    error = state.error,
-                    inProgress = state.jobInProgress,
+                    error = s.error,
+                    inProgress = s.jobInProgress,
                     signInWithEmailAndPassword = { signIn(email, password) },
                     registerWithEmailAndPassword = { register(email, password) },
                     optionsButtonClick = { screenModel.changeLoggedOutDialog(ProfileState.LoggedOut.Dialog.AccountOptions) },
                     snackbarHostState = snackbarHostState
                 )
 
-                when (state.dialog) {
+                when (s.dialog) {
                     null -> Unit
                     ProfileState.LoggedOut.Dialog.AccountOptions -> {
                         AccountOptionsBottomSheet(

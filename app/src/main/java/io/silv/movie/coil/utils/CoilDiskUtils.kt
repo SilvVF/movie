@@ -1,6 +1,5 @@
 package io.silv.movie.coil.utils
 
-import android.graphics.BitmapFactory
 import coil.annotation.ExperimentalCoilApi
 import coil.decode.ImageSource
 import coil.disk.DiskCache
@@ -21,18 +20,18 @@ internal object CoilDiskUtils {
         memCache: MemoryCache
     ) {
         try {
-            if (options.memoryCachePolicy.writeEnabled && bytes != null) {
-                val bmp = with(
-                    BitmapFactory.Options().apply { inMutable = true }
-                ) {
-                    BitmapFactory.decodeByteArray(
-                        bytes, 0,
-                        bytes.size,
-                        this
-                    )
-                }
-                memCache[memCacheKey] = MemoryCache.Value(bitmap = bmp)
-            }
+//            if (options.memoryCachePolicy.writeEnabled && bytes != null) {
+//                val bmp = with(
+//                    BitmapFactory.Options().apply { inMutable = true }
+//                ) {
+//                    BitmapFactory.decodeByteArray(
+//                        bytes, 0,
+//                        bytes.size,
+//                        this
+//                    )
+//                }!!
+//                memCache[memCacheKey] = MemoryCache.Value(bitmap = bmp)
+//            }
         } catch (e: Exception) { Timber.e(e) }
     }
 

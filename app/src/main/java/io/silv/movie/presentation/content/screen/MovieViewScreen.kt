@@ -74,7 +74,7 @@ import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.components.content.CommentsBottomSheet
+import io.silv.movie.presentation.components.dialog.CommentsBottomSheet
 import io.silv.movie.presentation.components.content.creditsPagingList
 import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox

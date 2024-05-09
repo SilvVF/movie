@@ -434,8 +434,6 @@ fun LazyListScope.listCategoryPreview(
                                 )
                                 .padding(4.dp),
                             cover = {
-                                val items =
-
                                 ContentListPosterStateFlowItems(
                                     list = it.list,
                                     items = it.items,
