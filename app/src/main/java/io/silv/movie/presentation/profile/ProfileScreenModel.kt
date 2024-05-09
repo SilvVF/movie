@@ -58,7 +58,7 @@ class ProfileScreenModel(
 
     init {
         screenModelScope.launch {
-            val expiration = auth.currentSessionOrNull()?.expiresAt?.epochSeconds ?: 0L
+            val expiration = auth.currentSessionOrNull()?.expiresAt?.epochSeconds ?: return@launch
             if (expiration < Clock.System.now().epochSeconds) {
                 auth.refreshCurrentSession()
             }
