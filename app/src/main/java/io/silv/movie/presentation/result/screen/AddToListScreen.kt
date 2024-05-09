@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -73,7 +74,7 @@ data class AddToListScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<AddToListScreenModel> { parametersOf(contentId, isMovie) }
+        val screenModel = koinScreenModel<AddToListScreenModel> { parametersOf(contentId, isMovie) }
 
         val poster by screenModel.state.collectAsStateWithLifecycle()
         val lists by screenModel.lists.collectAsStateWithLifecycle()

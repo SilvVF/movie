@@ -76,6 +76,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.Action
@@ -144,7 +145,7 @@ data class ListViewScreen(
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<ListViewScreenModel> { parametersOf(listId, supabaseId) }
+        val screenModel = koinScreenModel<ListViewScreenModel> { parametersOf(listId, supabaseId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val refreshingList by screenModel.refreshingList.collectAsStateWithLifecycle()

@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.compose.auth.ComposeAuth
@@ -54,7 +55,7 @@ data object ProfileScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<ProfileScreenModel>()
+        val screenModel = koinScreenModel<ProfileScreenModel>()
         val navigator = LocalNavigator.currentOrThrow
         val state by screenModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }

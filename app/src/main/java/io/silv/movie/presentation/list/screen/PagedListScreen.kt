@@ -34,6 +34,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -70,7 +71,7 @@ data class PagedListScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<ListPagedScreenModel> { parametersOf(pagedType) }
+        val screenModel = koinScreenModel<ListPagedScreenModel> { parametersOf(pagedType) }
         val pagingItems = screenModel.pagingData.collectAsLazyPagingItems()
         val listInteractor = LocalListInteractor.current
         val navigator = LocalNavigator.currentOrThrow

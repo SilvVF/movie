@@ -63,6 +63,7 @@ import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PageLoadingIndicator
@@ -91,7 +92,7 @@ data class ListAddScreen(
     @Composable
     override fun Content() {
         val contentInteractor = LocalContentInteractor.current
-        val screenModel = getScreenModel<ListAddScreenModel> { parametersOf(listId) }
+        val screenModel = koinScreenModel<ListAddScreenModel> { parametersOf(listId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val contentPagingItems = screenModel.contentPagingFlow.collectAsLazyPagingItems()
         val navigator = LocalNavigator.currentOrThrow

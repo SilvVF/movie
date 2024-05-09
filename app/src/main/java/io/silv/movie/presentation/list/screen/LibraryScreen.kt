@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -59,7 +60,7 @@ data object LibraryScreen: Screen {
 
     @Composable
     override fun Content() {
-        val screenModel = getScreenModel<LibraryScreenModel>()
+        val screenModel = koinScreenModel<LibraryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val listCount by screenModel.listCount.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
@@ -115,7 +116,7 @@ data object LibraryScreen: Screen {
         when (val dialog = state.dialog) {
             null -> Unit
             is LibraryScreenModel.Dialog.FullCover -> {
-                val sm = getScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
+                val sm = koinScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
 
                 LaunchedEffect(dialog.contentList.id) {
                     sm.refresh(dialog.contentList.id)

@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
@@ -68,7 +69,7 @@ data object FavoritesViewScreen : Screen {
     override fun Content() {
 
         val contentInteractor = LocalContentInteractor.current
-        val screenModel = getScreenModel<FavoritesScreenModel>()
+        val screenModel = koinScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val changeDialog =

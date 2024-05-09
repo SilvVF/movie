@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -76,7 +77,7 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<SelectProfileImageScreenModel>()
+        val screenModel = koinScreenModel<SelectProfileImageScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val hazeState = remember { HazeState() }
         val navigator = LocalNavigator.currentOrThrow
