@@ -213,6 +213,9 @@ class TVViewScreenModel(
 
         @Stable
         data object FullCover: Dialog
+
+        @Stable
+        data object Comments: Dialog
     }
 }
 

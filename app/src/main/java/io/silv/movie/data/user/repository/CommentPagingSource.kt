@@ -44,7 +44,7 @@ class CommentPagingSource(
                 data = data,
                 prevKey = params.key?.minus(1),
                 nextKey = (params.key ?: 0).plus(1).takeIf {
-                    (offset + limit) <= (data.first().total) && data.size >= params.loadSize
+                    (offset + limit) <= (data.firstOrNull()?.total ?: 0) && data.size >= params.loadSize
                 }
             )
         } catch (e: Exception) {

@@ -56,6 +56,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.contentColorFor
@@ -462,49 +463,6 @@ private fun GraphicsLayerScope.calculatePredictiveBackScaleY(progress: Float): F
     }
 }
 
-// Logic forked from androidx.compose.ui.window.DialogProperties. Removed dismissOnClickOutside
-// and usePlatformDefaultWidth as they are not relevant for fullscreen experience.
-/**
- * Properties used to customize the behavior of a [ModalBottomSheet].
- *
- * @param securePolicy Policy for setting [WindowManager.LayoutParams.FLAG_SECURE] on the bottom
- * sheet's window.
- * @param shouldDismissOnBackPress Whether the modal bottom sheet can be dismissed by pressing
- * the back button. If true, pressing the back button will call onDismissRequest.
- */
-@Immutable
-class ModalBottomSheetProperties(
-    val securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-    val shouldDismissOnBackPress: Boolean = true,
-) {
-    @Deprecated(
-        message = "'isFocusable' param is no longer used. Use constructor without this parameter.",
-        level = DeprecationLevel.WARNING,
-        replaceWith = ReplaceWith(
-            "ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)"
-        )
-    )
-    @Suppress("UNUSED_PARAMETER")
-    constructor(
-        securePolicy: SecureFlagPolicy,
-        isFocusable: Boolean,
-        shouldDismissOnBackPress: Boolean,
-    ) : this(securePolicy, shouldDismissOnBackPress)
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is ModalBottomSheetProperties) return false
-        if (securePolicy != other.securePolicy) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = securePolicy.hashCode()
-        result = 31 * result + shouldDismissOnBackPress.hashCode()
-        return result
-    }
-}
 
 /**
  * Default values for [ModalBottomSheet]
@@ -514,32 +472,11 @@ object ModalBottomSheetDefaults {
 
     /**
      * Properties used to customize the behavior of a [ModalBottomSheet]. */
-    val properties = ModalBottomSheetProperties()
-
-    /**
-     * Properties used to customize the behavior of a [ModalBottomSheet].
-     *
-     * @param securePolicy Policy for setting [WindowManager.LayoutParams.FLAG_SECURE] on the bottom
-     * sheet's window.
-     * @param isFocusable Whether the modal bottom sheet is focusable. When true,
-     * the modal bottom sheet will receive IME events and key presses, such as when
-     * the back button is pressed.
-     * @param shouldDismissOnBackPress Whether the modal bottom sheet can be dismissed by pressing
-     * the back button. If true, pressing the back button will call onDismissRequest.
-     * Note that [isFocusable] must be set to true in order to receive key events such as
-     * the back button - if the modal bottom sheet is not focusable then this property does nothing.
-     */
-    @Deprecated(
-        level = DeprecationLevel.WARNING,
-        message = "'isFocusable' param is no longer used. Use value without this parameter.",
-        replaceWith = ReplaceWith("properties")
+    val properties = ModalBottomSheetProperties(
+        securePolicy = SecureFlagPolicy.Inherit,
+        isFocusable = true,
+        shouldDismissOnBackPress = true
     )
-    @Suppress("UNUSED_PARAMETER")
-    fun properties(
-        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-        isFocusable: Boolean = true,
-        shouldDismissOnBackPress: Boolean = true
-    ) = ModalBottomSheetProperties(securePolicy, shouldDismissOnBackPress)
 }
 
 /**
@@ -701,6 +638,7 @@ private class ModalBottomSheetDialogLayout(
         if (backCallback == null) {
             backCallback = if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.createBackCallback(onDismissRequest, predictiveBackProgress, scope)
+
             } else {
                 Api33Impl.createBackCallback(onDismissRequest)
             }
@@ -738,7 +676,7 @@ private class ModalBottomSheetDialogLayout(
                 }
 
                 override fun onBackInvoked() {
-                    onDismissRequest()
+                   onDismissRequest()
                 }
 
                 override fun onBackCancelled() {
@@ -751,7 +689,9 @@ private class ModalBottomSheetDialogLayout(
     private object Api33Impl {
         @JvmStatic
         @DoNotInline
-        fun createBackCallback(onDismissRequest: () -> Unit) =
+        fun createBackCallback(
+            onDismissRequest: () -> Unit
+        ) =
             OnBackInvokedCallback(onDismissRequest)
 
         @JvmStatic
@@ -897,7 +837,7 @@ private class ModalBottomSheetDialogWrapper(
     fun updateParameters(
         onDismissRequest: () -> Unit,
         properties: ModalBottomSheetProperties,
-        layoutDirection: LayoutDirection
+        layoutDirection: LayoutDirection,
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties

@@ -74,14 +74,14 @@ import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.components.dialog.CommentsBottomSheet
 import io.silv.movie.presentation.components.content.creditsPagingList
 import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox
-import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
+import io.silv.movie.presentation.components.dialog.CommentsBottomSheet
 import io.silv.movie.presentation.content.screenmodel.CommentsState
 import io.silv.movie.presentation.content.screenmodel.MovieDetailsState
 import io.silv.movie.presentation.content.screenmodel.MovieViewScreenModel
+import io.silv.movie.presentation.content.screenmodel.getCommentsScreenModel
 import io.silv.movie.presentation.covers.EditCoverAction
 import io.silv.movie.presentation.covers.PosterCoverDialog
 import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
@@ -113,7 +113,7 @@ data class MovieViewScreen(
         val changeDialog = remember {
             { dialog: MovieViewScreenModel.Dialog? -> screenModel.updateDialog(dialog) }
         }
-        val commentsScreenModel = getScreenModel<CommentsScreenModel> { parametersOf(id, isMovie) }
+        val commentsScreenModel = getCommentsScreenModel()
         val commentsState by commentsScreenModel.state.collectAsStateWithLifecycle()
 
         when (val state = screenModel.state.collectAsStateWithLifecycle().value) {
@@ -340,21 +340,21 @@ private fun MovieDetailsContent(
                                 .clickable {
                                     onShowComments()
                                 }
-                            )
-                        }
-                        creditsPagingList(
-                            creditsProvider = creditsProvider,
-                            onCreditClick = onCreditClick,
-                            onCreditLongClick = {},
-                            onViewClick = onViewCreditsClick,
                         )
-                        trailersList(
-                            trailers = state.trailers,
-                            onClick = {
-                                onVideoThumbnailClick(state.movie.id, true, it.id)
-                            },
-                            onYoutubeClick = {}
-                        )
+                    }
+                    creditsPagingList(
+                        creditsProvider = creditsProvider,
+                        onCreditClick = onCreditClick,
+                        onCreditLongClick = {},
+                        onViewClick = onViewCreditsClick,
+                    )
+                    trailersList(
+                        trailers = state.trailers,
+                        onClick = {
+                            onVideoThumbnailClick(state.movie.id, true, it.id)
+                        },
+                        onYoutubeClick = {}
+                    )
                 }
             }
         }
@@ -362,7 +362,7 @@ private fun MovieDetailsContent(
 }
 
 @Composable
-private fun CommentsPreview(
+fun CommentsPreview(
     count: Int,
     username: String?,
     profileImageData: UserProfileImageData?,

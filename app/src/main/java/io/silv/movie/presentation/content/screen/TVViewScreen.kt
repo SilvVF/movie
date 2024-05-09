@@ -3,6 +3,7 @@ package io.silv.movie.presentation.content.screen
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -43,14 +44,20 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
+import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
+import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
+import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.creditsPagingList
 import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox
+import io.silv.movie.presentation.components.dialog.CommentsBottomSheet
+import io.silv.movie.presentation.content.screenmodel.CommentsState
 import io.silv.movie.presentation.content.screenmodel.ShowDetailsState
 import io.silv.movie.presentation.content.screenmodel.TVViewScreenModel
+import io.silv.movie.presentation.content.screenmodel.getCommentsScreenModel
 import io.silv.movie.presentation.covers.EditCoverAction
 import io.silv.movie.presentation.covers.PosterCoverDialog
 import io.silv.movie.presentation.covers.screenmodel.TVCoverScreenModel
@@ -63,8 +70,9 @@ import io.silv.movie.presentation.toPoster
 import org.koin.core.parameter.parametersOf
 
 data class TVViewScreen(
-    val id: Long,
-): Screen {
+    override val id: Long,
+    override val isMovie: Boolean = false,
+): ContentScreen {
 
     override val key: ScreenKey
         get() = super.key + id
@@ -93,8 +101,13 @@ data class TVViewScreen(
             }
             is ShowDetailsState.Success -> {
                 val credits = screenModel.credits.collectAsLazyPagingItems()
+                val commentsScreenModel = getCommentsScreenModel()
+
+                val commentsState by commentsScreenModel.state.collectAsStateWithLifecycle()
+
                 TVDetailsContent(
                     state = state,
+                    commentsState = commentsState,
                     refresh = screenModel::refresh,
                     creditsProvider = { credits },
                     onPosterClick = { changeDialog(TVViewScreenModel.Dialog.FullCover) },
@@ -117,7 +130,8 @@ data class TVViewScreen(
                                 .apply { putExtra("url", "https://vidsrc.to/embed/tv/${state.show.id}") }
                         )
                     },
-                    onAddToList = { navigator.push(AddToListScreen(state.show.id, false)) }
+                    onAddToList = { navigator.push(AddToListScreen(state.show.id, false)) },
+                    onShowComments = { changeDialog(TVViewScreenModel.Dialog.Comments) }
                 )
                 val onDismissRequest =  { changeDialog(null) }
                 when (state.dialog) {
@@ -152,6 +166,13 @@ data class TVViewScreen(
                             )
                         }
                     }
+                    TVViewScreenModel.Dialog.Comments -> {
+                        CommentsBottomSheet(
+                            onDismissRequest = onDismissRequest,
+                            paddingValues = PaddingValues(),
+                            screenModel = commentsScreenModel
+                        )
+                    }
                 }
             }
         }
@@ -161,6 +182,7 @@ data class TVViewScreen(
 @Composable
 fun TVDetailsContent(
     state: ShowDetailsState.Success,
+    commentsState: CommentsState,
     refresh: () -> Unit,
     creditsProvider: () -> LazyPagingItems<io.silv.movie.data.content.credits.Credit>,
     onPosterClick: () -> Unit,
@@ -169,6 +191,7 @@ fun TVDetailsContent(
     onCreditClick: (credit: io.silv.movie.data.content.credits.Credit) -> Unit,
     onWatchShowClick: () -> Unit,
     onAddToList: () -> Unit,
+    onShowComments: () -> Unit,
 ) {
     Scaffold(
         floatingActionButton = {
@@ -247,6 +270,25 @@ fun TVDetailsContent(
                             onCopyTagToClipboard = {
                                 context.copyToClipboard("tag", it)
                             }
+                        )
+                    }
+                    item {
+                        CommentsPreview(
+                            count = commentsState.messageCount?.toInt() ?: 0,
+                            profileImageData =  commentsState.recentMessage?.let {
+                                UserProfileImageData(
+                                    userId = it.userId.orEmpty(),
+                                    isUserMe = it.userId == LocalUser.current?.userId,
+                                    path = it.users?.profileImage
+                                )
+                            },
+                            username = commentsState.recentMessage?.users?.username,
+                            lastMessage = commentsState.recentMessage?.message,
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .clickable {
+                                    onShowComments()
+                                }
                         )
                     }
                     creditsPagingList(

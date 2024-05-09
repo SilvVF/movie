@@ -3,6 +3,7 @@ package io.silv.movie.presentation.components.dialog
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,8 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,6 +47,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -59,6 +63,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -69,6 +74,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
@@ -76,20 +82,26 @@ import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.DotSeparatorText
+import io.silv.core_ui.components.NoResultsEmptyScreen
+import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.components.bottomsheet.modal.ModalBottomSheet
-import io.silv.core_ui.components.bottomsheet.modal.SheetValue
 import io.silv.core_ui.components.bottomsheet.modal.rememberModalBottomSheetState
 import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.components.topbar.runOnEnterKeyPressed
+import io.silv.core_ui.util.isScrolledToStart
+import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.model.comment.PagedComment
+import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
+import io.silv.movie.presentation.content.screenmodel.CommentEvent
+import io.silv.movie.presentation.content.screenmodel.CommentsPagedType
 import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.content.screenmodel.RepliesState
 import io.silv.movie.presentation.content.screenmodel.SendError
@@ -106,23 +118,23 @@ fun ContentScreen.CommentsBottomSheet(
     screenModel: CommentsScreenModel,
 ) {
     val keyboardVisible by keyboardAsState()
-    val scope = rememberCoroutineScope()
     val user = LocalUser.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
     val sheetState =  rememberModalBottomSheetState()
     val navigator = LocalNavigator.currentOrThrow
-    val listState = rememberLazyListState()
-
-    BackHandler {
-        if (sheetState.currentValue != SheetValue.Hidden) {
-            scope.launch {  sheetState.hide() }
-        }
-    }
+    val lazyListState = rememberLazyListState()
 
     LaunchedEffect(keyboardVisible) {
         if (keyboardVisible) {
             sheetState.expand()
+        }
+    }
+
+    CollectEventsWithLifecycle(screenModel) {
+        when (it) {
+            CommentEvent.SentMessage -> lazyListState.animateScrollToItem(0)
+            CommentEvent.SortChanged -> lazyListState.animateScrollToItem(0)
         }
     }
 
@@ -139,28 +151,75 @@ fun ContentScreen.CommentsBottomSheet(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(8.dp)
                 )
+                AnimatedVisibility(visible = (lazyListState.isScrollingUp() || lazyListState.isScrolledToStart()) && !keyboardVisible) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ElevatedFilterChip(
+                            selected = screenModel.sortMode == CommentsPagedType.Newest,
+                            onClick = { screenModel.updateSortMode(CommentsPagedType.Newest) },
+                            label = { Text(stringResource(id = R.string.newest))}
+                        )
+                        ElevatedFilterChip(
+                            selected = screenModel.sortMode == CommentsPagedType.Top,
+                            onClick = { screenModel.updateSortMode(CommentsPagedType.Top) },
+                            label = { Text(stringResource(id = R.string.top))}
+                        )
+                    }
+                }
             }
         },
         pinnedContent = {
+
+            BackHandler(
+                enabled = state.replyingTo != null
+            ) {
+                screenModel.updateReplyingTo(null)
+            }
+
             UserTextField(
                 onMessageChange = screenModel::updateComment,
                 onSendClick = screenModel::sendMessage,
                 message = screenModel.comment,
                 sending = state.sending,
+                replyingTo = state.replyingTo,
                 onSignInClicked = { navigator.push(ProfileScreen) },
                 sendError = state.sendError.takeIf { user != null } ?: SendError.NotSignedIn
             )
         },
     ) {
-        CommentsPager(
-            screenModel = screenModel,
-            comments = comments,
-            user = user,
-            reply = {},
-            onViewReplies = screenModel::fetchReplies,
-            listState = listState,
-            paddingValues = PaddingValues()
-        )
+        Box {
+            CommentsPager(
+                screenModel = screenModel,
+                comments = comments,
+                user = user,
+                reply = screenModel::updateReplyingTo,
+                onViewReplies = screenModel::fetchReplies,
+                listState = lazyListState,
+                replyingTo = state.replyingTo,
+                paddingValues = PaddingValues()
+            )
+            if (state.replyingTo != null) {
+                val scope = rememberCoroutineScope()
+                ElevatedButton(
+                    onClick = {
+                        scope.launch {
+                            for (i in 0..comments.itemCount) {
+                                if (comments.peek(i) == state.replyingTo) {
+                                    lazyListState.animateScrollToItem(i)
+                                    break
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ){
+                    Text(text = "jump to replying comment")
+                }
+            }
+        }
     }
 }
 
@@ -171,6 +230,7 @@ private fun CommentsPager(
     listState: LazyListState,
     comments: LazyPagingItems<PagedComment>,
     user: User?,
+    replyingTo: PagedComment?,
     reply: (PagedComment) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
     modifier: Modifier = Modifier,
@@ -181,6 +241,32 @@ private fun CommentsPager(
         modifier = modifier.fillMaxSize(),
         contentPadding =  paddingValues,
     ) {
+        val notLoadingAndEmpty =  
+            comments.loadState.append is LoadState.NotLoading
+                && comments.loadState.append is LoadState.NotLoading
+                && comments.itemCount == 0
+        if (notLoadingAndEmpty) {
+           item("empty_item") {
+               Box(modifier = Modifier
+                   .height(300.dp)
+                   .fillMaxWidth(), contentAlignment = Alignment.Center) {
+                   NoResultsEmptyScreen(contentPaddingValues = PaddingValues())
+               }
+           } 
+        }
+        item("refreshing_items") {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                when(comments.loadState.refresh) {
+                    is LoadState.Error -> {
+                        TextButton(onClick = { comments.retry() }) {
+                            Text(text = "Retry Loading comments")
+                        }
+                    }
+                    LoadState.Loading -> CircularProgressIndicator()
+                    is LoadState.NotLoading -> Unit
+                }
+            }
+        }
         items(
             count = comments.itemCount,
             key = comments.itemKey(),
@@ -197,16 +283,37 @@ private fun CommentsPager(
                 )
             }
 
-            CommentItem(
-                profileImageData = profileImageData,
-                comment = comment,
-                repliesState = screenModel.repliesForComment.getOrDefault(comment.id, RepliesState.Idle),
-                commentLiked = screenModel.likedComments[comment.id],
-                onReply = reply,
-                onViewReplies = onViewReplies,
-                likeComment = screenModel::likeComment,
-                unlikeComment = screenModel::unlikeComment
+            val background by animateColorAsState(
+                targetValue = if (comment == replyingTo) {
+                    MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp)
+                } else Color.Transparent
             )
+
+            Surface(color = background) {
+                CommentItem(
+                    profileImageData = profileImageData,
+                    comment = comment,
+                    repliesState = screenModel.repliesForComment.getOrDefault(comment.id, RepliesState.Idle),
+                    commentLiked = screenModel.likedComments[comment.id],
+                    onReply = reply,
+                    onViewReplies = onViewReplies,
+                    likeComment = screenModel::likeComment,
+                    unlikeComment = screenModel::unlikeComment
+                )
+            }
+        }
+        item("loading_items") {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                when(comments.loadState.append) {
+                    is LoadState.Error -> {
+                        TextButton(onClick = { comments.retry() }) {
+                            Text(text = "Retry Loading comments")
+                        }
+                    }
+                    LoadState.Loading -> PageLoadingIndicator()
+                    is LoadState.NotLoading -> Unit
+                }
+            }
         }
     }
 }
@@ -450,7 +557,7 @@ private fun ReplyContent(
                                 onClick = { visible = !visible }
                             ) {
                                 Text(
-                                    text = when (comment.replies) {
+                                    text = when (state.data.size.toLong()) {
                                         0L -> ""
                                         1L -> stringResource(id = R.string.view_reply)
                                         else -> stringResource(id = R.string.view_more_replies, comment.replies)
@@ -599,6 +706,19 @@ private fun UserTextField(
                     ),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     decorationBox = {
+
+                        val textHint = @Composable {
+                            if (message.text.isEmpty()) {
+                                Text(
+                                    text = if (replyingTo != null) {
+                                      stringResource(R.string.reply_hint, replyingTo.username.orEmpty())
+                                    } else stringResource(R.string.comment_hint),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                            }
+                        }
+
                         when(sendError) {
                             is SendError.Failed -> {
                                 Column {
@@ -607,24 +727,12 @@ private fun UserTextField(
                                         color = MaterialTheme.colorScheme.error,
                                         style = MaterialTheme.typography.labelSmall,
                                     )
-                                    if (message.text.isEmpty()) {
-                                        Text(
-                                            text = stringResource(R.string.comment_hint),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                        )
-                                    }
+                                    textHint()
                                     it()
                                 }
                             }
                             SendError.None -> {
-                                if (message.text.isEmpty()) {
-                                    Text(
-                                        text = stringResource(R.string.comment_hint),
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                    )
-                                }
+                                textHint()
                                 it()
                             }
                             SendError.NotSignedIn -> {

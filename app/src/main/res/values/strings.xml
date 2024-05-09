@@ -218,4 +218,6 @@
     <string name="storage"><![CDATA[Data & Storage]]></string>
     <string name="storage_summary">Storage space and caching</string>
     <string name="cache">Cache</string>
+    <string name="newest">Newest</string>
+    <string name="top">Top</string>
 </resources>

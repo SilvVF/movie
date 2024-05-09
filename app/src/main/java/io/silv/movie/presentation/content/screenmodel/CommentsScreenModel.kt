@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.content.screenmodel
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
@@ -12,17 +13,21 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import cafe.adriel.voyager.koin.getScreenModel
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
+import io.silv.core_ui.voyager.ContentScreen
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.user.model.comment.CommentWithUser
 import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.data.user.model.comment.ReplyWithUser
 import io.silv.movie.data.user.repository.CommentPagingSource
 import io.silv.movie.data.user.repository.CommentsRepository
+import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.list.screenmodel.uniqueBy
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -40,6 +45,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import kotlin.time.Duration.Companion.minutes
 
@@ -68,6 +74,15 @@ sealed interface SendError {
     data object None: SendError
 }
 
+sealed interface CommentEvent {
+    data object SentMessage: CommentEvent
+    data object SortChanged: CommentEvent
+}
+
+
+@Composable
+fun ContentScreen.getCommentsScreenModel() = getScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
+
 class CommentsScreenModel(
     private val postgrest: Postgrest,
     private val auth: Auth,
@@ -75,14 +90,13 @@ class CommentsScreenModel(
     val contentId: Long,
     val isMovie: Boolean,
 ):
-    StateScreenModel<CommentsState>(CommentsState()) {
+    StateScreenModel<CommentsState>(CommentsState()),
+    EventProducer<CommentEvent> by EventProducer.default() {
 
     private val movieId: Long
         get() = contentId.takeIf { isMovie } ?: -1L
     private val showId: Long
         get() = contentId.takeIf { !isMovie } ?: -1L
-
-    private val commentRefreshTrigger = Channel<Unit>()
 
     var sortMode by mutableStateOf(CommentsPagedType.Newest)
         private set
@@ -119,10 +133,9 @@ class CommentsScreenModel(
             .launchIn(screenModelScope)
     }
 
+    private var pagingSource:  PagingSource<Int, PagedComment>? = null
+
     val pagingData = snapshotFlow { sortMode }
-        .combine(
-            commentRefreshTrigger.receiveAsFlow().onStart { emit(Unit) }
-        ) { a, b -> a }
         .flatMapLatest { pagedType ->
             Pager(
                 config = PagingConfig(30)
@@ -135,6 +148,7 @@ class CommentsScreenModel(
                     showId,
                     auth.currentUserOrNull()?.id ?: ""
                 )
+                    .also { pagingSource = it }
             }
                 .flow.map { data ->
                     data.uniqueBy { it.id }
@@ -196,22 +210,24 @@ class CommentsScreenModel(
     }
 
     fun sendMessage(text: String) {
+
+        state.value.replyingTo?.let {
+            return sendReply(text, it)
+        }
+
         screenModelScope.launch {
-
-
             if (auth.currentUserOrNull() == null) {
                 mutableState.update { state -> state.copy(sendError = SendError.NotSignedIn) }
                 return@launch
             }
-
             mutableState.update { state -> state.copy(sending = true) }
 
             commentsRepository.sendComment(text, movieId, showId)
                 .onSuccess {
                     comment = comment.copy("", selection = TextRange(1))
-                    commentRefreshTrigger.trySend(Unit)
-
+                    pagingSource?.invalidate()
                     mutableState.update { state -> state.copy(sendError = SendError.None) }
+                    emitEvent(CommentEvent.SentMessage)
                 }
                 .onFailure {
                     mutableState.update { state ->
@@ -222,21 +238,23 @@ class CommentsScreenModel(
         }
     }
 
-    fun sendReply(text: String, pagedComment: PagedComment) {
+    private fun sendReply(text: String, pagedComment: PagedComment) {
         screenModelScope.launch {
-
             if (auth.currentUserOrNull() == null) {
                 mutableState.update { state -> state.copy(sendError = SendError.NotSignedIn) }
                 return@launch
             }
-
-
             commentsRepository.sendReply(pagedComment.id, text)
                 .onSuccess {
                     comment = comment.copy("", selection = TextRange(1))
-                    commentRefreshTrigger.trySend(Unit)
+                    fetchReplies(pagedComment)
 
-                    mutableState.update { state -> state.copy(sendError = SendError.None) }
+                    mutableState.update { state ->
+                        state.copy(
+                            sendError = SendError.None,
+                            replyingTo = null
+                        )
+                    }
                 }
                 .onFailure {
                     mutableState.update { state ->
@@ -248,9 +266,9 @@ class CommentsScreenModel(
         }
     }
 
-
     fun updateReplyingTo(comment: PagedComment?) {
         screenModelScope.launch {
+            Timber.d(comment.toString())
             mutableState.update { it.copy(replyingTo = comment) }
         }
     }
@@ -261,5 +279,6 @@ class CommentsScreenModel(
 
     fun updateSortMode(type: CommentsPagedType) {
         sortMode = type
+        tryEmitEvent(CommentEvent.SortChanged)
     }
 }

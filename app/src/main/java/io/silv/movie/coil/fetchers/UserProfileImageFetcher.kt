@@ -97,13 +97,14 @@ class UserProfileImageFetcher(
 
     override suspend fun fetch(options: Options, data: UserProfileImageData): ByteArray {
         val bucket = storage["profile_pictures"]
+
+        if (data.path.isNullOrBlank() && !data.fetchPath)
+            error("Path is blank and set to not fetch")
+
         return bucket.downloadPublic(
             data.path
-                ?: run {
-                    if (!data.fetchPath)
-                        error("no path and set to not fetch")
-                    getUserProfilePath(data.userId) ?: error("failed to fetch user profile image")
-                }
+                ?: getUserProfilePath(data.userId)
+                ?: error("failed to fetch user profile image")
         )
     }
 }
