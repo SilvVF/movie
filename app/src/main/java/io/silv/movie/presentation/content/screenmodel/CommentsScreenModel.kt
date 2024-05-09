@@ -17,7 +17,7 @@ import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.silv.core_ui.voyager.ContentScreen
@@ -81,7 +81,7 @@ sealed interface CommentEvent {
 
 
 @Composable
-fun ContentScreen.getCommentsScreenModel() = getScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
+fun ContentScreen.getCommentsScreenModel() = koinScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
 
 class CommentsScreenModel(
     private val postgrest: Postgrest,
