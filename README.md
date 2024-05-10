@@ -29,3 +29,5 @@ https://github.com/SilvVF/movie/assets/98186105/734baae5-c2d7-43ef-94d6-2f930dc2
 <img src="https://github.com/SilvVF/movie/assets/98186105/b6c75c9e-49af-4157-9fb6-b58c9368157b" width="360" height="780">
 <img src="https://github.com/SilvVF/movie/assets/98186105/0e090f95-2238-4595-b0fc-63f5d19ee0c6" width="360" height="780">
 <img src="https://github.com/SilvVF/movie/assets/98186105/28a6daa1-8f90-4481-a865-97a5e1b2a03c" width="360" height="780">
+<img src="https://github.com/SilvVF/movie/assets/98186105/810e63d5-b9b7-4a00-9c28-706399a334f3" width="360" height="780">
+<img src="https://github.com/SilvVF/movie/assets/98186105/59668dde-e0aa-47f5-9eb8-416cd668a81e" width="360" height="780">
