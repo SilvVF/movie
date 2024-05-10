@@ -60,7 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -103,7 +103,7 @@ data object BrowseListsScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = getScreenModel<BrowseListsScreenModel>()
+        val screenModel = koinScreenModel<BrowseListsScreenModel>()
         val popularUserLists by screenModel.popularLists.collectAsStateWithLifecycle()
         val subscribedRecommended by screenModel.subscribedRecommended.collectAsStateWithLifecycle()
         val recentlyCreated by screenModel.recentlyCreated.collectAsStateWithLifecycle()
@@ -113,6 +113,7 @@ data object BrowseListsScreen: Screen {
         val tabNavigator = LocalTabNavigator.current
         val listInteractor = LocalListInteractor.current
         val user = LocalUser.current
+
         val profileImageData = user.rememberProfileImageData()
         val hazeState = remember { HazeState() }
         val dominantColor by rememberDominantColor(data = profileImageData)

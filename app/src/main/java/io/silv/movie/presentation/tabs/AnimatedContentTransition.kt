@@ -35,8 +35,8 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import io.silv.core_ui.components.PosterData
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.presentation.LocalAppState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlin.coroutines.cancellation.CancellationException
 
 private val PredictiveBackEasing: Easing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
 
@@ -78,36 +78,77 @@ fun AnimatedContentTransition(
     modifier: Modifier = Modifier,
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit = { it.Content() }
 ) {
-    var transitionProgress by remember { mutableFloatStateOf(0f) }
     val sharedElementTransitions = LocalAppState.current.sharedElementTransitions
 
     SharedTransitionScope {
-        PredictiveBackHandler(
-            enabled = navigator.items.size >= 2
-        ) { progress: Flow<BackEventCompat> ->
-            try {
-                progress.collect { backevent ->
-                    transitionProgress = PredictiveBack.transform(backevent.progress)
+        AnimatedContent(
+            targetState = navigator.lastItem,
+            transitionSpec = transform,
+            modifier = modifier.then(it),
+            label = label,
+        ) { screen ->
+            CompositionLocalProvider(
+                LocalSharedTransitionState.provides(
+                    SharedTransitionState(
+                        transitionScope = this@SharedTransitionScope,
+                        visibilityScope = this@AnimatedContent,
+                        transform =  this@SharedTransitionTab.transform
+                    )
+                        .takeIf { sharedElementTransitions }
+                )
+            ) {
+                navigator.saveableState("transition", screen) {
+                    this@AnimatedContent.content(screen)
                 }
-                transitionProgress = 0f
-                navigator.pop()
-            } catch (e: CancellationException) {
-                animate(
-                    transitionProgress,
-                    targetValue = 0f,
-                    initialVelocity = 0f,
-                ) { value, _ ->
-                    transitionProgress = value
-                }
-                transitionProgress = 0f
             }
         }
+    }
+}
 
-        Box {
-            if (transitionProgress > 0) {
-                navigator.items.getOrNull(navigator.items.lastIndex - 1)?.Content()
+context(SharedTransitionTab)
+@Composable
+fun PredictiveBackAnimatedContentTransition(
+    navigator: Navigator,
+    transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform = {
+        (fadeIn(animationSpec = tween(220, delayMillis = 90)) +
+                scaleIn(initialScale = 0.92f, animationSpec = tween(220, delayMillis = 90)))
+            .togetherWith(fadeOut(animationSpec = tween(90)))
+    },
+    label: String = "Crossfade",
+    modifier: Modifier = Modifier,
+    content: @Composable AnimatedVisibilityScope.(Screen) -> Unit = { it.Content() }
+) {
+    var transitionProgress by remember { mutableFloatStateOf(0f) }
+    val sharedElementTransitions = LocalAppState.current.sharedElementTransitions
+
+    PredictiveBackHandler(
+        enabled = navigator.items.size >= 2
+    ) { progress: Flow<BackEventCompat> ->
+        try {
+            progress.collect { backevent ->
+                transitionProgress = PredictiveBack.transform(backevent.progress)
             }
+            transitionProgress = 0f
+            navigator.pop()
+        } catch (e: CancellationException) {
+            animate(
+                transitionProgress,
+                targetValue = 0f,
+                initialVelocity = 0f,
+            ) { value, _ ->
+                transitionProgress = value
+            }
+            transitionProgress = 0f
+        }
+    }
 
+    Box {
+
+        if (transitionProgress > 0) {
+            navigator.items.getOrNull(navigator.items.lastIndex - 1)?.Content()
+        }
+
+        SharedTransitionScope {
             AnimatedContent(
                 targetState = navigator.lastItem,
                 transitionSpec = transform,
@@ -117,6 +158,8 @@ fun AnimatedContentTransition(
                         val progress = transitionProgress
                         scaleX = calculatePredictiveBackScaleX(progress)
                         scaleY = calculatePredictiveBackScaleY(progress)
+
+                        
                         translationX = lerp(0f, (size.width / 20).coerceAtLeast(8.dp.toPx()), progress)
                         translationY = lerp(0f, (size.height / 20), progress)
                         clip = true
@@ -142,6 +185,7 @@ fun AnimatedContentTransition(
         }
     }
 }
+
 
 
 fun Modifier.listNameSharedElement(listId: Long, inOverlay: Boolean = true): Modifier = this.composed {

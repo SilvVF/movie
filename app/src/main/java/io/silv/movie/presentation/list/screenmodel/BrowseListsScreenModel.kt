@@ -17,8 +17,6 @@ import io.silv.movie.data.content.lists.repository.ContentListRepository
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.data.content.lists.toListPreviewItem
 import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.tv.interactor.GetRemoteTVShows
 import io.silv.movie.data.content.tv.interactor.GetShow
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.model.list.ListWithItems
@@ -80,8 +78,6 @@ class BrowseListsScreenModel(
     private val contentListRepository: ContentListRepository,
     private val getMovie: GetMovie,
     private val getShow: GetShow,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val getRemoteTVShows: GetRemoteTVShows,
     private val listRepository: ListRepository,
     basePreferences: BasePreferences,
     auth: Auth,

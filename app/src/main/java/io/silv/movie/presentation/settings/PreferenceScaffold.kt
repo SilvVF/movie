@@ -131,12 +131,12 @@ internal fun PreferenceItem(
                 }
             }
             is Preference.PreferenceItem.ListPreference<*> -> {
-                val value by item.pref.collectAsStateOrNull()
-                value?.let {
+                val itemValue by item.pref.collectAsStateOrNull()
+                itemValue?.let {
                     ListPreferenceWidget(
-                        value = it,
+                        value = itemValue,
                         title = item.title,
-                        subtitle = item.internalSubtitleProvider(value, item.entries),
+                        subtitle = item.internalSubtitleProvider(itemValue, item.entries),
                         icon = item.icon,
                         entries = item.entries,
                         onValueChange = { newValue ->

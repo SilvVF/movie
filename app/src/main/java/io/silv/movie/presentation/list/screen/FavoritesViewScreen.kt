@@ -36,7 +36,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -193,6 +192,7 @@ private fun FavoritesScreenContent(
                     if (user != null) {
                         TitleWithProfilePicture(
                             user = user,
+                            onUserClicked = {},
                             name = stringResource(id = R.string.favorites_top_bar_title),
                             description = "Your favorite movies and tv-shows",
                             textModifier = Modifier.listNameSharedElement(-1, inOverlay)

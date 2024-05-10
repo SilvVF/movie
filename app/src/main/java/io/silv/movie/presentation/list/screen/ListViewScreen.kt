@@ -123,6 +123,7 @@ import io.silv.movie.presentation.list.screenmodel.ListViewEvent
 import io.silv.movie.presentation.list.screenmodel.ListViewScreenModel
 import io.silv.movie.presentation.list.screenmodel.ListViewState
 import io.silv.movie.presentation.profile.UserProfileImage
+import io.silv.movie.presentation.profile.screen.ProfileViewScreen
 import io.silv.movie.presentation.result.screen.AddToListScreen
 import io.silv.movie.presentation.result.screen.ListAddScreen
 import io.silv.movie.presentation.result.screen.ListEditDescriptionScreen
@@ -178,43 +179,7 @@ data class ListViewScreen(
                     )
                 )
             }
-            ListViewState.Loading -> {
-                Scaffold { paddingValues ->
-                    ShimmerHost(
-                        Modifier.padding(paddingValues)
-                    ) {
-                        Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Spacer(
-                                    modifier = Modifier
-                                        .size(244.dp)
-                                        .clip(RoundedCornerShape(6.dp))
-                                        .background(MaterialTheme.colorScheme.onSurface)
-                                )
-                            }
-
-                            Spacer(Modifier.padding(8.dp))
-
-
-                            Row {
-                                ButtonPlaceholder(
-                                    Modifier.weight(0.8f)
-                                )
-                                Spacer(Modifier.padding(8.dp))
-                                ButtonPlaceholder(
-                                    Modifier
-                                        .weight(0.2f)
-                                        .clip(CircleShape)
-                                )
-                            }
-                        }
-
-                        repeat(6) {
-                            ListItemPlaceHolder()
-                        }
-                    }
-                }
-            }
+            ListViewState.Loading -> ListLoadingScreen(Modifier.fillMaxSize())
             is ListViewState.Success -> {
 
                 val onDismissRequest = remember { { screenModel.changeDialog(null) } }
@@ -245,7 +210,8 @@ data class ListViewScreen(
                 val listUri = rememberListUri(list = s.list)
 
                 val primary by rememberDominantColor(
-                    data = when  {
+                    fallback = Color.Transparent,
+                    data = when {
                         listUri != null -> listUri.uri
                         s.allItems.isEmpty() -> null
                         else -> s.allItems.first().toPoster()
@@ -261,7 +227,6 @@ data class ListViewScreen(
                         SYSTEM -> isSystemInDarkTheme()
                     }
                 ) {
-
                     val user = LocalUser.current
                     val isOwnerMe by remember(user, s.list.createdBy) {
                         derivedStateOf { s.list.createdBy == user?.userId || s.list.createdBy == null }
@@ -316,6 +281,9 @@ data class ListViewScreen(
                         onPosterClick = { changeDialog(ListViewScreenModel.Dialog.FullCover) },
                         snackbarHostState = snackBarState,
                         isOwnerMe = isOwnerMe,
+                        onUserClick = {
+                            navigator.push(ProfileViewScreen(it))
+                        },
                         state = s
                     )
                     when (val dialog = s.dialog) {
@@ -439,6 +407,45 @@ data class ListViewScreen(
 
 
 @Composable
+private fun ListLoadingScreen(modifier: Modifier = Modifier) {
+    Scaffold(modifier) { paddingValues ->
+        ShimmerHost(
+            Modifier.padding(paddingValues)
+        ) {
+            Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(
+                        modifier = Modifier
+                            .size(244.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(MaterialTheme.colorScheme.onSurface)
+                    )
+                }
+
+                Spacer(Modifier.padding(8.dp))
+
+
+                Row {
+                    ButtonPlaceholder(
+                        Modifier.weight(0.8f)
+                    )
+                    Spacer(Modifier.padding(8.dp))
+                    ButtonPlaceholder(
+                        Modifier
+                            .weight(0.2f)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+
+            repeat(6) {
+                ListItemPlaceHolder()
+            }
+        }
+    }
+}
+
+@Composable
 private fun SuccessScreenContent(
     updateQuery: (String) -> Unit,
     onListOptionClick:() -> Unit,
@@ -457,6 +464,7 @@ private fun SuccessScreenContent(
     onPosterClick: () -> Unit,
     refreshList: () -> Unit,
     refreshingList: Boolean,
+    onUserClick: (id: String) -> Unit,
     onBackPressed: () -> Unit,
     snackbarHostState: SnackbarHostState,
     isOwnerMe: Boolean,
@@ -519,15 +527,27 @@ private fun SuccessScreenContent(
                             user = state.user,
                             name = state.list.name,
                             description = state.list.description,
-                            textModifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
+                            onUserClicked = {
+                                state.list.createdBy?.let { onUserClick(it) }
+                            },
+                            textModifier = Modifier
+                                .listNameSharedElement(state.list.id, inOverlay)
                         )
                     } else {
-                        Text(
-                            text = state.list.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.large)
+                                .colorClickable {
+                                    state.list.createdBy?.let { onUserClick(it) }
+                                }
+                        ) {
+                            Text(
+                                text = state.list.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
+                            )
+                        }
                     }
                     ListViewDisplayMode(
                         displayMode = listViewDisplayMode,

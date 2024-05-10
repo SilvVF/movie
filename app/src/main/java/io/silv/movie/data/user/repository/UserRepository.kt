@@ -10,6 +10,7 @@ import io.github.jan.supabase.postgrest.rpc
 import io.silv.movie.core.NetworkMonitor
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.User
+import io.silv.movie.data.user.UserListUpdateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,6 +40,7 @@ interface UserRepository {
 class UserRepositoryImpl(
     private val postgrest: Postgrest,
     private val auth: Auth,
+    private val userListUpdateManager: UserListUpdateManager,
     networkMonitor: NetworkMonitor,
     basePreferences: BasePreferences
 ): UserRepository {
@@ -60,14 +62,16 @@ class UserRepositoryImpl(
             user.takeIf { uid != null }
         }
         .onStart { emit(savedUser.get()) }
+        .onEach { user ->
+            if (user != null) {
+                userListUpdateManager.refreshUserLists()
+            }
+        }
         .stateIn(
             scope,
             SharingStarted.Lazily,
             null
         )
-
-
-
 
     init {
         auth.sessionStatus

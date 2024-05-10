@@ -21,6 +21,7 @@ import io.silv.movie.presentation.list.screenmodel.ListViewScreenModel
 import io.silv.movie.presentation.list.screenmodel.SearchForListScreenModel
 import io.silv.movie.presentation.media.PlayerViewModel
 import io.silv.movie.presentation.profile.ProfileScreenModel
+import io.silv.movie.presentation.profile.screen.ProfileViewScreenModel
 import io.silv.movie.presentation.result.screenmodel.AddToListScreenModel
 import io.silv.movie.presentation.result.screenmodel.SelectProfileImageScreenModel
 import org.koin.androidx.viewmodel.dsl.viewModelOf
@@ -74,4 +75,6 @@ val screenModelModule = module {
     factoryOf(::ListPagedScreenModel)
 
     factoryOf(::SelectProfileImageScreenModel)
+
+    factoryOf(::ProfileViewScreenModel)
 }

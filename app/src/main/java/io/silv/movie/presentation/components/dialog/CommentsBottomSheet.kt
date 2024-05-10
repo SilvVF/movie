@@ -4,7 +4,13 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +30,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -37,6 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ElevatedFilterChip
@@ -44,9 +52,13 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -81,6 +93,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import io.silv.core_ui.components.DotSeparatorText
 import io.silv.core_ui.components.NoResultsEmptyScreen
 import io.silv.core_ui.components.PageLoadingIndicator
@@ -107,6 +120,7 @@ import io.silv.movie.presentation.content.screenmodel.RepliesState
 import io.silv.movie.presentation.content.screenmodel.SendError
 import io.silv.movie.presentation.profile.UserProfileImage
 import io.silv.movie.presentation.profile.screen.ProfileScreen
+import io.silv.movie.presentation.profile.screen.ProfileViewScreen
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
@@ -144,29 +158,56 @@ fun ContentScreen.CommentsBottomSheet(
         contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
         onDismissRequest = onDismissRequest,
         dragHandle = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                BottomSheetDragHandlerNoPadding()
-                Text(
-                    text = stringResource(id = R.string.comments),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(8.dp)
-                )
-                AnimatedVisibility(visible = (lazyListState.isScrollingUp() || lazyListState.isScrolledToStart()) && !keyboardVisible) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            val tooltipState = rememberTooltipState(isPersistent = true)
+            val scope = rememberCoroutineScope()
+
+            Box(Modifier.wrapContentSize(), contentAlignment = Alignment.TopEnd) {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    BottomSheetDragHandlerNoPadding()
+                    Text(
+                        text = stringResource(id = R.string.comments),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    AnimatedVisibility(
+                        visible = (lazyListState.isScrollingUp() ||
+                                lazyListState.isScrolledToStart()) &&
+                                !keyboardVisible,
+                        enter = fadeIn() + expandVertically(tween(500)),
+                        exit = fadeOut() + shrinkVertically(tween(500))
                     ) {
-                        ElevatedFilterChip(
-                            selected = screenModel.sortMode == CommentsPagedType.Newest,
-                            onClick = { screenModel.updateSortMode(CommentsPagedType.Newest) },
-                            label = { Text(stringResource(id = R.string.newest))}
-                        )
-                        ElevatedFilterChip(
-                            selected = screenModel.sortMode == CommentsPagedType.Top,
-                            onClick = { screenModel.updateSortMode(CommentsPagedType.Top) },
-                            label = { Text(stringResource(id = R.string.top))}
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            ElevatedFilterChip(
+                                selected = screenModel.sortMode == CommentsPagedType.Newest,
+                                onClick = { screenModel.updateSortMode(CommentsPagedType.Newest) },
+                                label = { Text(stringResource(id = R.string.newest)) }
+                            )
+                            ElevatedFilterChip(
+                                selected = screenModel.sortMode == CommentsPagedType.Top,
+                                onClick = { screenModel.updateSortMode(CommentsPagedType.Top) },
+                                label = { Text(stringResource(id = R.string.top)) }
+                            )
+                        }
+                    }
+                }
+
+                TooltipBox(
+                    state = tooltipState,
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = {
+                        PlainTooltip {
+                            Text(stringResource(id = R.string.markdown_supported))
+                        }
+                    },
+                ) {
+                    IconButton(
+                        onClick = { scope.launch { tooltipState.show() } },
+                    ) {
+                        Icon(imageVector = Icons.Filled.Info, contentDescription = null)
                     }
                 }
             }
@@ -174,7 +215,7 @@ fun ContentScreen.CommentsBottomSheet(
         pinnedContent = {
 
             BackHandler(
-                enabled = state.replyingTo != null
+                enabled = state.replyingTo != null,
             ) {
                 screenModel.updateReplyingTo(null)
             }
@@ -199,6 +240,7 @@ fun ContentScreen.CommentsBottomSheet(
                 onViewReplies = screenModel::fetchReplies,
                 listState = lazyListState,
                 replyingTo = state.replyingTo,
+                onUserClicked = { navigator.push(ProfileViewScreen(it)) },
                 paddingValues = PaddingValues()
             )
             if (state.replyingTo != null) {
@@ -208,7 +250,8 @@ fun ContentScreen.CommentsBottomSheet(
                         scope.launch {
                             for (i in 0..comments.itemCount) {
                                 if (comments.peek(i) == state.replyingTo) {
-                                    lazyListState.animateScrollToItem(i)
+                                    // -1 bc refresh states
+                                    lazyListState.animateScrollToItem(i - 1)
                                     break
                                 }
                             }
@@ -233,6 +276,7 @@ private fun CommentsPager(
     replyingTo: PagedComment?,
     reply: (PagedComment) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
+    onUserClicked: (id: String) -> Unit,
     modifier: Modifier = Modifier,
     paddingValues: PaddingValues,
 ) {
@@ -298,7 +342,8 @@ private fun CommentsPager(
                     onReply = reply,
                     onViewReplies = onViewReplies,
                     likeComment = screenModel::likeComment,
-                    unlikeComment = screenModel::unlikeComment
+                    unlikeComment = screenModel::unlikeComment,
+                    onUserClicked = onUserClicked
                 )
             }
         }
@@ -325,6 +370,7 @@ fun CommentItem(
     repliesState: RepliesState,
     commentLiked: Boolean?,
     onReply: (PagedComment) -> Unit,
+    onUserClicked: (id: String) -> Unit,
     onViewReplies: (PagedComment) -> Unit,
     likeComment: (id: Long) -> Unit,
     unlikeComment: (id: Long) -> Unit,
@@ -339,7 +385,9 @@ fun CommentItem(
         UserProfileImage(
             data = profileImageData,
             contentDescription = null,
-            modifier = Modifier.size(38.dp)
+            modifier = Modifier
+                .size(38.dp)
+                .clickable { comment.userId?.let(onUserClicked) }
         )
         Spacer(modifier = Modifier.width(8.dp))
         Column(Modifier.weight(1f, true)) {
@@ -347,6 +395,7 @@ fun CommentItem(
                 message = comment.message,
                 createdAt = comment.createdAt,
                 username = comment.username,
+                onUserClicked = { comment.userId?.let(onUserClicked) },
                 modifier = Modifier.padding(start = 8.dp)
             )
             Text(
@@ -365,7 +414,8 @@ fun CommentItem(
             ReplyContent(
                 repliesState = repliesState,
                 onViewReplies = onViewReplies,
-                comment = comment
+                comment = comment,
+                onUserClicked = onUserClicked
             )
         }
         Spacer(modifier = Modifier.width(16.dp))
@@ -441,6 +491,7 @@ private fun CommentContent(
     createdAt: Instant,
     username: String?,
     message: String,
+    onUserClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -450,7 +501,8 @@ private fun CommentContent(
             val appState = LocalAppState.current
             Text(
                 text = username ?: "deleted user",
-                style = MaterialTheme.typography.titleSmall
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.clickable { onUserClicked() }
             )
             DotSeparatorText()
             Text(
@@ -461,8 +513,9 @@ private fun CommentContent(
                 modifier = Modifier.alpha(0.78f)
             )
         }
-        Text(
-            text = message,
+        MarkdownText(
+            isTextSelectable = true,
+            markdown = message,
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -475,6 +528,7 @@ private fun ReplyContent(
     repliesState: RepliesState,
     onViewReplies: (PagedComment) -> Unit,
     comment: PagedComment,
+    onUserClicked: (id: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -540,12 +594,15 @@ private fun ReplyContent(
                                                 )
                                             },
                                             contentDescription = null,
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier
+                                                .size(32.dp)
+                                                .clickable { it.userId?.let(onUserClicked) }
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         CommentContent(
                                             it.createdAt,
                                             it.users?.username,
+                                            onUserClicked = { it.userId?.let(onUserClicked) },
                                             message = it.message,
                                         )
                                     }

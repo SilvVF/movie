@@ -638,7 +638,6 @@ private class ModalBottomSheetDialogLayout(
         if (backCallback == null) {
             backCallback = if (Build.VERSION.SDK_INT >= 34) {
                 Api34Impl.createBackCallback(onDismissRequest, predictiveBackProgress, scope)
-
             } else {
                 Api33Impl.createBackCallback(onDismissRequest)
             }

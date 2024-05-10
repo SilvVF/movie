@@ -161,12 +161,15 @@ data object SettingsAppearanceScreen: SearchableSettings {
         val formattedNow = remember(fmt) {
             fmt.format(now)
         }
+        val dateFormat = remember(uiPreferences) { uiPreferences.dateFormat() }
+        val startScreen = remember(uiPreferences) { uiPreferences.startScreen() }
+        val tabletUiMode = remember(uiPreferences) { uiPreferences.tabletUiMode() }
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_display),
             preferenceItems = persistentListOf(
                 Preference.PreferenceItem.ListPreference(
-                    pref = uiPreferences.tabletUiMode(),
+                    pref = tabletUiMode,
                     title = stringResource(R.string.pref_tablet_ui_mode),
                     entries = TabletUiMode.entries
                         .associateWith { stringResource(it.titleRes) }
@@ -177,7 +180,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.ListPreference(
-                    pref = uiPreferences.startScreen(),
+                    pref = startScreen,
                     title = stringResource(R.string.pref_start_screen),
                     entries = StartScreen.entries
                         .associateWith { stringResource(it.titleRes) }
@@ -188,7 +191,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     },
                 ),
                 Preference.PreferenceItem.ListPreference(
-                    pref = uiPreferences.dateFormat(),
+                    pref = dateFormat,
                     title = stringResource(R.string.pref_date_format),
                     entries = DateFormats
                         .associateWith {
@@ -196,6 +199,10 @@ data object SettingsAppearanceScreen: SearchableSettings {
                             "${it.ifEmpty { stringResource(R.string.label_default) }} ($formattedDate)"
                         }
                         .toImmutableMap(),
+                    onValueChanged = {
+                        dateFormat.set(it)
+                        true
+                    }
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     pref = uiPreferences.relativeTime(),

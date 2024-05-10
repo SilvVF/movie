@@ -24,6 +24,17 @@ object SupabaseConstants {
 
     object RPC {
 
+        suspend fun selectListsWithPosterItems(postgrest: Postgrest, limit: Int, offset: Int, userId: String): PostgrestResult {
+            return postgrest.rpc(
+                "select_lists_with_poster_items_for_user_id",
+                SelectListsWithPosterItemsParams(
+                    userId,
+                    offset,
+                    limit
+                )
+            )
+        }
+
         suspend fun Postgrest.deleteUser(): PostgrestResult {
             return rpc("deleteUser")
         }
@@ -75,6 +86,13 @@ object SupabaseConstants {
         private val showId: Long,
         val lim: Int,
         val off: Int
+    )
+
+    @Serializable
+    private data class SelectListsWithPosterItemsParams(
+        val uid: String,
+        val off: Int,
+        val lim: Int
     )
 
     @Serializable

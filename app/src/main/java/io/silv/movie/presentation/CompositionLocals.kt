@@ -53,7 +53,7 @@ val LocalAppState = compositionLocalOf<AppState> { defaultAppState }
 
 
 @Composable
-fun ProviderLocalsForPreviews(
+fun ProvideLocalsForPreviews(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {

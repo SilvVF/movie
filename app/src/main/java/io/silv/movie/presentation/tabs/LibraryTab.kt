@@ -1,5 +1,6 @@
 package io.silv.movie.presentation.tabs
 
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -36,7 +37,7 @@ data object LibraryTab: SharedTransitionTab() {
             AnimatedContentTransition(
                 navigator,
                 transform = {
-                    fadeIn() togetherWith fadeOut()
+                    fadeIn(tween(400)) togetherWith fadeOut(tween(400))
                 }
             )
         }

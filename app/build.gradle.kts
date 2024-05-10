@@ -104,6 +104,7 @@ dependencies {
     implementation(libs.reorderable)
     implementation(libs.haze)
     implementation(libs.font.awesome)
+    implementation("com.github.jeziellago:compose-markdown:0.5.0")
 
     // COIL
     implementation(libs.coil.compose)

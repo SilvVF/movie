@@ -45,10 +45,9 @@ class PreferenceMutableState<T>(
 
 @Composable
 fun <T> Preference<T>.collectAsStateOrNull(): State<T?> {
-
     return produceState<T?>(initialValue = null) {
         value = get()
-        changes().onEach { value = it }
+        changes().collect { value = it }
     }
 }
 
