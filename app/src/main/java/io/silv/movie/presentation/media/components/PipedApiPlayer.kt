@@ -17,7 +17,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.datasource.cronet.CronetDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
@@ -30,9 +30,7 @@ import io.silv.movie.presentation.media.util.PlayerHelper
 import io.silv.movie.presentation.media.util.YoutubeHlsPlaylistParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.chromium.net.CronetEngine
-import org.koin.compose.getKoin
-import java.util.concurrent.Executors
+import okhttp3.OkHttpClient
 
 private fun createExoPlayer(
     context: Context,
@@ -54,13 +52,9 @@ fun PipedApiPlayer(
 ) {
 
     val context = LocalContext.current
-    val koin = getKoin()
 
-    val cronetDataSourceFactory = remember {
-        CronetDataSource.Factory(
-            koin.get<CronetEngine>(),
-            Executors.newCachedThreadPool()
-        )
+    val dataSourceFactory = remember {
+        OkHttpDataSource.Factory(OkHttpClient.Builder().build())
     }
 
     val exoPlayer= remember {
@@ -95,7 +89,7 @@ fun PipedApiPlayer(
 
          when {
             streams.hls != null -> {
-                val hlsMediaSourceFactory = HlsMediaSource.Factory(cronetDataSourceFactory)
+                val hlsMediaSourceFactory = HlsMediaSource.Factory(dataSourceFactory)
                     .setPlaylistParserFactory(YoutubeHlsPlaylistParser.Factory())
 
                 val mediaSource = hlsMediaSourceFactory.createMediaSource(

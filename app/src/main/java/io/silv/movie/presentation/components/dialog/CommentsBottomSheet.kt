@@ -4,11 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.EaseInQuint
+import androidx.compose.animation.core.animate
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -23,6 +20,7 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,6 +62,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,18 +72,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.compose.ui.util.lerp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
@@ -102,8 +111,6 @@ import io.silv.core_ui.components.bottomsheet.modal.rememberModalBottomSheetStat
 import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.components.topbar.runOnEnterKeyPressed
-import io.silv.core_ui.util.isScrolledToStart
-import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
@@ -152,45 +159,99 @@ fun ContentScreen.CommentsBottomSheet(
         }
     }
 
+    val toolbarHeight = 48.dp
+    val toolbarHeightPx = with(LocalDensity.current) { toolbarHeight.roundToPx().toFloat() }
+    var toolbarOffsetHeightPx by remember { mutableFloatStateOf(toolbarHeightPx) }
+    val nestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                val old = toolbarOffsetHeightPx
+                val newOffset = toolbarOffsetHeightPx + delta
+                toolbarOffsetHeightPx = newOffset.coerceIn(0f, toolbarHeightPx)
+                val consumed = toolbarOffsetHeightPx - old
+                return available.copy(y = consumed)
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                animate(
+                    toolbarOffsetHeightPx,
+                    if (toolbarOffsetHeightPx > toolbarHeightPx / 2) toolbarHeightPx else 0f
+                ) { value, velocity ->
+                    toolbarOffsetHeightPx = value
+                }
+                return super.onPostFling(consumed, available)
+            }
+        }
+    }
+
     ModalBottomSheet(
         sheetState = sheetState,
         canDrag = false,
+        modifier = Modifier.nestedScroll(nestedScrollConnection),
         contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
         onDismissRequest = onDismissRequest,
         dragHandle = {
+            val density = LocalDensity.current
             val tooltipState = rememberTooltipState(isPersistent = true)
             val scope = rememberCoroutineScope()
 
+
             Box(Modifier.wrapContentSize(), contentAlignment = Alignment.TopEnd) {
-                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     BottomSheetDragHandlerNoPadding()
                     Text(
                         text = stringResource(id = R.string.comments),
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(8.dp)
                     )
-                    AnimatedVisibility(
-                        visible = (lazyListState.isScrollingUp() ||
-                                lazyListState.isScrolledToStart()) &&
-                                !keyboardVisible,
-                        enter = fadeIn() + expandVertically(tween(500)),
-                        exit = fadeOut() + shrinkVertically(tween(500))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            ElevatedFilterChip(
-                                selected = screenModel.sortMode == CommentsPagedType.Newest,
-                                onClick = { screenModel.updateSortMode(CommentsPagedType.Newest) },
-                                label = { Text(stringResource(id = R.string.newest)) }
+                    Layout(
+                        {
+                            Row(
+                                modifier = Modifier
+                                    .heightIn(toolbarHeight)
+                                    .padding(horizontal = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                ElevatedFilterChip(
+                                    selected = screenModel.sortMode == CommentsPagedType.Newest,
+                                    onClick = { screenModel.updateSortMode(CommentsPagedType.Newest) },
+                                    label = { Text(stringResource(id = R.string.newest)) }
+                                )
+                                ElevatedFilterChip(
+                                    selected = screenModel.sortMode == CommentsPagedType.Top,
+                                    onClick = { screenModel.updateSortMode(CommentsPagedType.Top) },
+                                    label = { Text(stringResource(id = R.string.top)) }
+                                )
+                            }
+                        },
+                        Modifier
+                            .height(with(density) { toolbarOffsetHeightPx.toDp() })
+                            .clipToBounds()
+                            .graphicsLayer {
+                                alpha = lerp(
+                                    0f,
+                                    1f,
+                                    EaseInQuint.transform(toolbarOffsetHeightPx / toolbarHeightPx)
+                                )
+                            },
+                    ) { measurables, constraints ->
+                        val measurable = measurables[0]
+                        val height = measurable.minIntrinsicHeight(constraints.maxWidth)
+                        val placeable = measurable.measure(
+                            constraints.copy(
+                                minWidth = 0,
+                                maxWidth = constraints.maxWidth,
+                                minHeight = height,
+                                maxHeight = height
                             )
-                            ElevatedFilterChip(
-                                selected = screenModel.sortMode == CommentsPagedType.Top,
-                                onClick = { screenModel.updateSortMode(CommentsPagedType.Top) },
-                                label = { Text(stringResource(id = R.string.top)) }
-                            )
+                        )
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeable.place((constraints.maxWidth - placeable.width) / 2, constraints.maxHeight - placeable.height)
                         }
                     }
                 }
@@ -285,18 +346,18 @@ private fun CommentsPager(
         modifier = modifier.fillMaxSize(),
         contentPadding =  paddingValues,
     ) {
-        val notLoadingAndEmpty =  
+        val notLoadingAndEmpty =
             comments.loadState.append is LoadState.NotLoading
-                && comments.loadState.append is LoadState.NotLoading
-                && comments.itemCount == 0
+                    && comments.loadState.append is LoadState.NotLoading
+                    && comments.itemCount == 0
         if (notLoadingAndEmpty) {
-           item("empty_item") {
-               Box(modifier = Modifier
-                   .height(300.dp)
-                   .fillMaxWidth(), contentAlignment = Alignment.Center) {
-                   NoResultsEmptyScreen(contentPaddingValues = PaddingValues())
-               }
-           } 
+            item("empty_item") {
+                Box(modifier = Modifier
+                    .height(300.dp)
+                    .fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    NoResultsEmptyScreen(contentPaddingValues = PaddingValues())
+                }
+            }
         }
         item("refreshing_items") {
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -719,18 +780,18 @@ private fun UserTextField(
                     .background(MaterialTheme.colorScheme.secondaryContainer)
             ) {
                 emojis.fastForEach { emoji ->
-                        item {
-                            TextButton(
-                                contentPadding = PaddingValues(0.dp),
-                                onClick = {
-                                    val msg = message.text + emoji
-                                    onMessageChange(message.copy(text = msg, selection = TextRange(msg.length)))
-                                },
-                                shape = CircleShape
-                            ) {
-                                Text(emoji, style = MaterialTheme.typography.labelLarge)
-                            }
+                    item {
+                        TextButton(
+                            contentPadding = PaddingValues(0.dp),
+                            onClick = {
+                                val msg = message.text + emoji
+                                onMessageChange(message.copy(text = msg, selection = TextRange(msg.length)))
+                            },
+                            shape = CircleShape
+                        ) {
+                            Text(emoji, style = MaterialTheme.typography.labelLarge)
                         }
+                    }
                 }
             }
 
@@ -768,7 +829,7 @@ private fun UserTextField(
                             if (message.text.isEmpty()) {
                                 Text(
                                     text = if (replyingTo != null) {
-                                      stringResource(R.string.reply_hint, replyingTo.username.orEmpty())
+                                        stringResource(R.string.reply_hint, replyingTo.username.orEmpty())
                                     } else stringResource(R.string.comment_hint),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.bodyLarge,
@@ -793,17 +854,17 @@ private fun UserTextField(
                                 it()
                             }
                             SendError.NotSignedIn -> {
-                               TextButton(onClick = onSignInClicked) {
-                                   Text(
-                                       text = stringResource(id = R.string.sign_in_to_send_messages),
-                                       color = MaterialTheme.colorScheme.primary,
-                                       style = MaterialTheme.typography.bodyLarge,
-                                   )
-                                   Icon(
-                                       imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                       contentDescription = null
-                                   )
-                               }
+                                TextButton(onClick = onSignInClicked) {
+                                    Text(
+                                        text = stringResource(id = R.string.sign_in_to_send_messages),
+                                        color = MaterialTheme.colorScheme.primary,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                        contentDescription = null
+                                    )
+                                }
                             }
                         }
                     },

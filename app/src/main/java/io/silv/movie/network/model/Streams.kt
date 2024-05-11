@@ -1,46 +1,8 @@
 package io.silv.movie.network.model
 
-import android.graphics.drawable.Drawable
 import io.silv.movie.core.StreamItem
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDate
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import timber.log.Timber
 
-object SafeInstantSerializer : KSerializer<Instant> {
-    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
-
-    override fun deserialize(decoder: Decoder): Instant {
-        val string = decoder.decodeString()
-        return try {
-            string.toInstant()
-        } catch (e: IllegalArgumentException) {
-            Timber.e(this::class.java.name, "Error parsing date '$string'", e)
-            string.toLocalDate().atStartOfDayIn(TimeZone.currentSystemDefault())
-        }
-    }
-
-    override fun serialize(encoder: Encoder, value: Instant) {
-        encoder.encodeString(value.toString())
-    }
-}
-
-enum class FileType {
-    AUDIO,
-    VIDEO,
-    SUBTITLE
-}
 
 @Serializable
 data class Subtitle(
@@ -81,28 +43,14 @@ data class PipedStream(
     val contentLength: Long = -1,
     val audioTrackType: String? = null,
     val audioTrackLocale: String? = null
-) {
-    private fun getQualityString(fileName: String): String {
-        return "${fileName}_${quality?.replace(" ", "_")}_$format." +
-                mimeType?.split("/")?.last()
-    }
-}
+)
 
 @Serializable
 data class ChapterSegment(
     val title: String,
     val image: String = "",
     val start: Long,
-    // Used only for video highlights
-    @Transient var highlightDrawable: Drawable? = null
-) {
-    companion object {
-        /**
-         * Length to show for a highlight in seconds
-         */
-        const val HIGHLIGHT_LENGTH = 10L
-    }
-}
+)
 
 @Serializable
 data class PreviewFrames(
@@ -119,10 +67,6 @@ data class PreviewFrames(
 data class Streams(
     val title: String,
     val description: String,
-
-    @Serializable(SafeInstantSerializer::class)
-    @SerialName("uploadDate")
-    val uploadTimestamp: Instant,
 
     val uploader: String,
     val uploaderUrl: String,
@@ -150,27 +94,5 @@ data class Streams(
     val chapters: List<ChapterSegment> = emptyList(),
     val uploaderSubscriberCount: Long = 0,
     val previewFrames: List<PreviewFrames> = emptyList()
-) {
+)
 
-    companion object {
-        const val categoryMusic = "Music"
-    }
-}
-
-fun Streams.toStreamItem(videoId: String): StreamItem {
-    return StreamItem(
-        url = videoId,
-        title = title,
-        thumbnail = thumbnailUrl,
-        uploaderName = uploader,
-        uploaderUrl = uploaderUrl,
-        uploaderAvatar = uploaderAvatar,
-        uploadedDate = uploadTimestamp.toLocalDateTime(TimeZone.currentSystemDefault()).date
-            .toString(),
-        uploaded = uploadTimestamp.epochSeconds,
-        duration = duration,
-        views = views,
-        uploaderVerified = uploaderVerified,
-        shortDescription = description
-    )
-}

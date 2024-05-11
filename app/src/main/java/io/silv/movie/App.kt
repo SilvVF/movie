@@ -22,7 +22,6 @@ import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import okhttp3.OkHttpClient
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
@@ -49,7 +48,6 @@ class App: Application(), ImageLoaderFactory {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun newImageLoader(): ImageLoader {
 
         val storagePreferences by inject<StoragePreferences>()

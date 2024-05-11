@@ -14,6 +14,7 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,8 +22,9 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import io.silv.movie.presentation.media.PlayerViewModel
 import io.silv.movie.R
+import io.silv.movie.presentation.media.PlayerViewModel
+import io.silv.movie.presentation.media.StreamState
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
@@ -56,19 +58,33 @@ fun CollapsablePlayerScreen(
         },
         collapsableVideoState = collapsableVideoState,
         player = {
-            playerViewModel.streams?.let {
-                PipedApiPlayer(
-                    playerViewModel,
-                    modifier = Modifier
-                        .aspectRatio(16f / 9f)
-                        .fillMaxWidth()
-                )
-            } ?: Box(
-                modifier = Modifier
-                    .aspectRatio(16f / 9f)
-                    .fillMaxWidth()
-            ) {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
+            when(val state = playerViewModel.streamState) {
+                is StreamState.Failure -> {
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(16f / 9f)
+                            .fillMaxWidth()
+                    ) {
+                        Text("Error Loading Video ${state.message}", Modifier.align(Alignment.Center))
+                    }
+                }
+                null, StreamState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .aspectRatio(16f / 9f)
+                            .fillMaxWidth()
+                    ) {
+                        CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    }
+                }
+                is StreamState.Success -> {
+                    PipedApiPlayer(
+                        playerViewModel,
+                        modifier = Modifier
+                            .aspectRatio(16f / 9f)
+                            .fillMaxWidth()
+                    )
+                }
             }
         },
         pinnedContent = {

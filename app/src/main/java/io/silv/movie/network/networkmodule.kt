@@ -1,6 +1,5 @@
 package io.silv.movie.network
 
-import com.google.net.cronet.okhttptransport.CronetCallFactory
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.compose.auth.ComposeAuth
@@ -29,7 +28,6 @@ import kotlinx.serialization.json.Json
 import okhttp3.Cache
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import org.chromium.net.CronetEngine
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 import retrofit2.Retrofit
@@ -98,26 +96,22 @@ val networkModule =
                 .build()
         }
 
-        single {
-           CronetEngine.Builder(androidContext())
-                .enableHttp2(true)
-                .enableQuic(true)
-                .enableBrotli(true)
-                .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 1024L * 1024L) // 1MiB
-                .build()
-        }
+//        single {
+//           CronetEngine.Builder(androidContext())
+//                .enableHttp2(true)
+//                .enableQuic(true)
+//                .enableBrotli(true)
+//                .enableHttpCache(CronetEngine.Builder.HTTP_CACHE_IN_MEMORY, 1024L * 1024L) // 1MiB
+//                .build()
+//        }
 
         single {
-            Retrofit.Builder()
-                .baseUrl("https://pipedapi.adminforge.de/")
-                .callFactory(
-                    CronetCallFactory.newBuilder(get()).build()
-                )
-                .addConverterFactory(
-                    get<Json>().asConverterFactory("application/json".toMediaType())
-                )
-                .build()
-                .create<PipedApi>()
+           PipedApi(
+               OkHttpClient.Builder()
+                   .cache(get())
+                   .build(),
+               get()
+           )
         }
 
         single {

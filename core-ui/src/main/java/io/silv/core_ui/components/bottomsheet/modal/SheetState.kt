@@ -237,7 +237,7 @@ class SheetState(
         anchoredDraggableState.settle(velocity)
     }
 
-    internal var anchoredDraggableState = io.silv.core_ui.components.bottomsheet.AnchoredDraggableState(
+    var anchoredDraggableState = io.silv.core_ui.components.bottomsheet.AnchoredDraggableState(
         initialValue = initialValue,
         animationSpec = BottomSheetAnimationSpec,
         confirmValueChange = confirmValueChange,

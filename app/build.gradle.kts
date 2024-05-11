@@ -70,7 +70,6 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-
 }
 
 dependencies {
@@ -97,6 +96,8 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation(libs.androidx.animation)
 
+    implementation(libs.androidx.core.splashscreen)
+
     // Paging3
     implementation(libs.bundles.paging)
 
@@ -116,8 +117,8 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.media3.datasource.cronet)
     implementation(libs.androidx.media3.exoplayer.hls)
+    implementation(libs.androidx.media3.datasource.okhttp)
 
     // Datastore
     implementation(libs.androidx.datastore.preferences)
@@ -130,8 +131,6 @@ dependencies {
     implementation(libs.retrofit.kotlinx.serializtion.converter)
     implementation(libs.retrofit)
     implementation(libs.okhttp)
-    implementation(libs.cronet.api)
-    implementation(libs.cronet.okhttp)
 
     // VOYAGER
     implementation(libs.bundles.voyager)

@@ -10,11 +10,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import io.silv.core_ui.components.NoResultsEmptyScreen
 import io.silv.movie.MainActivity
+import io.silv.movie.MovieTheme
+import io.silv.movie.data.prefrences.AppTheme
 
 
 class WatchContentActivity : ComponentActivity() {
@@ -37,7 +38,11 @@ class WatchContentActivity : ComponentActivity() {
                 )
             }
 
-            MaterialTheme {
+            MovieTheme(
+                appTheme = AppTheme.DEFAULT,
+                amoled = false,
+                dark = true
+            ) {
                 Scaffold { paddingValues ->
                     if (url.isNullOrEmpty()) {
                         NoResultsEmptyScreen(contentPaddingValues = paddingValues)

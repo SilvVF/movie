@@ -1,11 +1,8 @@
 package io.silv.movie.core
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Parcelize
 data class StreamItem(
     val url: String? = null,
     val type: String? = null,
@@ -21,13 +18,4 @@ data class StreamItem(
     val uploaded: Long = 0,
     val shortDescription: String? = null,
     val isShort: Boolean = false
-) : Parcelable {
-
-    val isLive get() = (duration != null) && (duration <= 0L)
-
-    companion object {
-        const val TYPE_STREAM = "stream"
-        const val TYPE_CHANNEL = "channel"
-        const val TYPE_PLAYLIST = "playlist"
-    }
-}
+)

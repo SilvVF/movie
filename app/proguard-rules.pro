@@ -39,3 +39,40 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+-keep class androidx.media3.session.** { *; }
+# Keeps for class level annotations.
+
+-keepclasseswithmembers,includedescriptorclasses class * {
+  native <methods>;
+}
+
+# Keep ExoPlayer classes and methods
+-keep class com.google.android.exoplayer2.** { *; }
+
+# Keep classes and methods related to Media 3
+-keep class com.google.android.exoplayer2.mediacodec.** { *; }
+-keep class com.google.android.exoplayer2.mediacodec.surface.** { *; }
+
+# Keep ExoPlayer-specific annotations
+-keep @interface com.google.android.exoplayer2.** { *; }
+
+# Retrofit
+-dontwarn retrofit2.**
+-keep class retrofit2.** { *; }
+-keepattributes Signature
+-keepattributes Exceptions
+
+# OkHttp
+-dontwarn okhttp3.**
+-keep class okhttp3.** { *; }
+-dontwarn okio.**
+-keep class okio.** { *; }
+
+# Converter
+-keepclassmembers class * {
+    @retrofit2.http.* <methods>;
+}
+
+# Retrofit interfaces should be kept for Reflection
+-keep,allowobfuscation interface retrofit2.Callback

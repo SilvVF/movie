@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -117,11 +118,19 @@ class MainActivity : ComponentActivity() {
     private val uiPreferences by inject<UiPreferences>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         enableEdgeToEdge()
 
         val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope)
+
+        splashScreen.setKeepOnScreenCondition {
+            when (appStateProvider.state) {
+                AppStateProvider.State.Loading -> true
+                is AppStateProvider.State.Success -> false
+            }
+        }
 
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
@@ -136,7 +145,7 @@ class MainActivity : ComponentActivity() {
                 LocalMainViewModelStoreOwner provides this,
             ) {
                 when(val s = appStateProvider.state) {
-                    AppStateProvider.State.Loading -> {}
+                    AppStateProvider.State.Loading -> Unit
                     is AppStateProvider.State.Success -> {
                         MainContent(
                             appState = s.state,

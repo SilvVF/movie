@@ -32,7 +32,13 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.ItemPosition
+import timber.log.Timber
 
+sealed interface StreamState {
+    data object Loading: StreamState
+    data class Success(val streams: Streams): StreamState
+    data class Failure(val message: String): StreamState
+}
 
 class PlayerViewModel(
     private val trailerRepository: TrailerRepository,
@@ -42,14 +48,15 @@ class PlayerViewModel(
     private val getShow: GetShow,
 ): ViewModel(), EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
 
-    private var trailerToStreams by mutableStateOf<Pair<Trailer, Streams>?>(null)
+    private var trailerToStreams by mutableStateOf<Pair<Trailer, StreamState>?>(null)
 
     var playerState by mutableIntStateOf(Player.STATE_IDLE)
 
     val trailerQueue = mutableStateListOf<Trailer>()
 
     val trailer by derivedStateOf { trailerToStreams?.first }
-    val streams by derivedStateOf { trailerToStreams?.second }
+    val streamState by derivedStateOf { trailerToStreams?.second }
+    val streams by derivedStateOf { (streamState as? StreamState.Success)?.streams }
     val currentTrailer by  derivedStateOf { trailerQueue.firstOrNull() }
     var playing by mutableStateOf(false)
 
@@ -73,11 +80,16 @@ class PlayerViewModel(
                         return@collectLatest
 
                     trailerToStreams = null
-                    val streams = runCatching { pipedApi.getStreams(trailer.key) }
-                        .getOrNull()
-                        ?: return@collectLatest
-
-                    trailerToStreams = trailer to streams
+                    trailerToStreams = trailer to runCatching { pipedApi.getStreams(trailer.key) }
+                        .fold(
+                            onFailure = {
+                                Timber.e(it)
+                                StreamState.Failure("Error loading video piped may be down")
+                            },
+                            onSuccess = {
+                                StreamState.Success(it)
+                            }
+                        )
                 }
         }
     }
