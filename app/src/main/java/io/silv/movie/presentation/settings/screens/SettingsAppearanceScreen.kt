@@ -97,6 +97,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
         val amoled = appState.amoled
 
         val sharedElementTransitionsPref   = remember { uiPreferences.sharedElementTransitions() }
+        val predictiveBackPref   = remember { uiPreferences.predictiveBack() }
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_theme),
@@ -140,6 +141,15 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     onValueChanged = {
                         sharedElementTransitionsPref.set(it)
                         sharedElementTransitionsPref.get()
+                    },
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = predictiveBackPref,
+                    title = stringResource(R.string.pref_predictive_back),
+                    enabled = true,
+                    onValueChanged = {
+                        predictiveBackPref.set(it)
+                        predictiveBackPref.get()
                     },
                 ),
             ),

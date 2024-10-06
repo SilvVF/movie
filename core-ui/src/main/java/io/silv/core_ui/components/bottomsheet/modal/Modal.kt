@@ -25,16 +25,8 @@ import android.view.View
 import android.view.ViewOutlineProvider
 import android.view.Window
 import android.view.WindowManager
-import android.window.BackEvent
-import android.window.OnBackAnimationCallback
-import android.window.OnBackInvokedCallback
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.ComponentDialog
 import androidx.activity.addCallback
-import androidx.annotation.DoNotInline
-import androidx.annotation.RequiresApi
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.TweenSpec
@@ -43,6 +35,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -55,6 +48,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
@@ -78,7 +72,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.R
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -91,18 +84,17 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewRootForInspector
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.expand
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.window.SecureFlagPolicy
 import androidx.core.view.WindowCompat
@@ -119,7 +111,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -193,8 +184,6 @@ fun ModalBottomSheet(
         }
     }
 
-    val predictiveBackProgress = remember { Animatable(initialValue = 0f) }
-
     ModalBottomSheetDialog(
         properties = properties,
         onDismissRequest = {
@@ -202,26 +191,22 @@ fun ModalBottomSheet(
                 // Smoothly animate away predictive back transformations since we are not fully
                 // dismissing. We don't need to do this in the else below because we want to
                 // preserve the predictive back transformations (scale) during the hide animation.
-                scope.launch { predictiveBackProgress.animateTo(0f) }
                 scope.launch { sheetState.partialExpand() }
             } else { // Is expanded without collapsed state or is collapsed.
                 scope.launch { sheetState.hide() }.invokeOnCompletion { onDismissRequest() }
             }
         },
-        predictiveBackProgress = predictiveBackProgress,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             propagateMinConstraints = false
         ) {
             Scrim(
                 color = scrimColor,
-                onDismissRequest = animateToDismiss,
+                onDismiss = animateToDismiss,
                 visible = sheetState.targetValue != Hidden
             )
             ModalBottomSheetContent(
-                predictiveBackProgress,
                 scope,
                 canDrag,
                 animateToDismiss,
@@ -249,7 +234,6 @@ fun ModalBottomSheet(
 
 @Composable
 internal fun BoxScope.ModalBottomSheetContent(
-    predictiveBackProgress: Animatable<Float, AnimationVector1D>,
     scope: CoroutineScope,
     canDrag: Boolean,
     animateToDismiss: () -> Unit,
@@ -274,9 +258,6 @@ internal fun BoxScope.ModalBottomSheetContent(
                 val sheetOffset = sheetState.anchoredDraggableState.offset
                 val sheetHeight = size.height
                 if (!sheetOffset.isNaN() && !sheetHeight.isNaN() && sheetHeight != 0f) {
-                    val progress = predictiveBackProgress.value
-                    scaleX = calculatePredictiveBackScaleX(progress)
-                    scaleY = calculatePredictiveBackScaleY(progress)
                     transformOrigin =
                         TransformOrigin(0.5f, (sheetOffset + sheetHeight) / sheetHeight)
                 }
@@ -341,17 +322,6 @@ internal fun BoxScope.ModalBottomSheetContent(
             Modifier
                 .fillMaxWidth()
                 .windowInsetsPadding(contentWindowInsets())
-                .graphicsLayer {
-                    val progress = predictiveBackProgress.value
-                    val predictiveBackScaleX = calculatePredictiveBackScaleX(progress)
-                    val predictiveBackScaleY = calculatePredictiveBackScaleY(progress)
-
-                    // Preserve the original aspect ratio and alignment of the child content.
-                    scaleY =
-                        if (predictiveBackScaleY != 0f) predictiveBackScaleX / predictiveBackScaleY
-                        else 1f
-                    transformOrigin = PredictiveBackChildTransformOrigin
-                }
         ) {
             if (dragHandle != null) {
                 Box(
@@ -445,25 +415,6 @@ internal fun BoxScope.ModalBottomSheetContent(
     }
 }
 
-private fun GraphicsLayerScope.calculatePredictiveBackScaleX(progress: Float): Float {
-    val width = size.width
-    return if (width.isNaN() || width == 0f) {
-        1f
-    } else {
-        1f - lerp(0f, min(PredictiveBackMaxScaleXDistance.toPx(), width), progress) / width
-    }
-}
-
-private fun GraphicsLayerScope.calculatePredictiveBackScaleY(progress: Float): Float {
-    val height = size.height
-    return if (height.isNaN() || height == 0f) {
-        1f
-    } else {
-        1f - lerp(0f, min(PredictiveBackMaxScaleYDistance.toPx(), height), progress) / height
-    }
-}
-
-
 /**
  * Default values for [ModalBottomSheet]
  */
@@ -498,44 +449,35 @@ fun rememberModalBottomSheetState(
 
 
 @Composable
-private fun Scrim(
-    color: Color,
-    onDismissRequest: () -> Unit,
-    visible: Boolean
-) {
+private fun Scrim(color: Color, onDismiss: () -> Unit, visible: Boolean) {
     if (color.isSpecified) {
-        val alpha by animateFloatAsState(
-            targetValue = if (visible) 1f else 0f,
-            animationSpec = TweenSpec()
-        )
-        val dismissSheet = if (visible) {
-            Modifier
-                .pointerInput(onDismissRequest) {
-                    detectTapGestures {
-                        onDismissRequest()
+        val alpha by animateFloatAsState(targetValue = if (visible) 1f else 0f, animationSpec = TweenSpec())
+        val dismissModifier =
+            if (visible) {
+                Modifier.pointerInput(onDismiss) { detectTapGestures { onDismiss() } }
+                    .semantics(mergeDescendants = true) {
+                        onClick {
+                            onDismiss()
+                            true
+                        }
                     }
-                }
-                .clearAndSetSemantics {}
-        } else {
-            Modifier
-        }
-        Canvas(
-            Modifier
-                .fillMaxSize()
-                .then(dismissSheet)
-        ) {
-            drawRect(color = color, alpha = alpha)
+            } else {
+                Modifier
+            }
+
+        Canvas(Modifier.fillMaxSize().then(dismissModifier)) {
+            drawRect(color = color, alpha = alpha.coerceIn(0f, 1f))
         }
     }
 }
 
 // Fork of androidx.compose.ui.window.AndroidDialog_androidKt.Dialog
 // Added predictiveBackProgress param to pass into BottomSheetDialogWrapper.
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModalBottomSheetDialog(
+internal fun ModalBottomSheetDialog(
     onDismissRequest: () -> Unit,
     properties: ModalBottomSheetProperties,
-    predictiveBackProgress: Animatable<Float, AnimationVector1D>,
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
@@ -544,27 +486,29 @@ private fun ModalBottomSheetDialog(
     val composition = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     val dialogId = rememberSaveable { UUID.randomUUID() }
-    val scope = rememberCoroutineScope()
-    val dialog = remember(view, density) {
-        ModalBottomSheetDialogWrapper(
-            onDismissRequest,
-            properties,
-            view,
-            layoutDirection,
-            density,
-            dialogId,
-            predictiveBackProgress,
-            scope,
-        ).apply {
-            setContent(composition) {
-                Box(
-                    Modifier.semantics { dialog() },
-                ) {
-                    currentContent()
+    val darkThemeEnabled = isSystemInDarkTheme()
+
+    val dialog =
+        remember(view, density) {
+            ModalBottomSheetDialogWrapper(
+                onDismissRequest,
+                properties,
+                view,
+                layoutDirection,
+                density,
+                dialogId,
+                darkThemeEnabled,
+            )
+                .apply {
+                    setContent(composition) {
+                        Box(
+                            Modifier.semantics { dialog() },
+                        ) {
+                            currentContent()
+                        }
+                    }
                 }
-            }
         }
-    }
 
     DisposableEffect(dialog) {
         dialog.show()
@@ -590,15 +534,9 @@ private fun ModalBottomSheetDialog(
 private class ModalBottomSheetDialogLayout(
     context: Context,
     override val window: Window,
-    val shouldDismissOnBackPress: Boolean,
-    private val onDismissRequest: () -> Unit,
-    private val predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    private val scope: CoroutineScope,
 ) : AbstractComposeView(context), DialogWindowProvider {
 
     private var content: @Composable () -> Unit by mutableStateOf({})
-
-    private var backCallback: Any? = null
 
     override var shouldCreateCompositionOnAttachedToWindow: Boolean = false
         private set
@@ -616,112 +554,17 @@ private class ModalBottomSheetDialogLayout(
     override fun Content() {
         content()
     }
-
-    // Existing predictive back behavior below.
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-
-        maybeRegisterBackCallback()
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-
-        maybeUnregisterBackCallback()
-    }
-
-    private fun maybeRegisterBackCallback() {
-        if (!shouldDismissOnBackPress || Build.VERSION.SDK_INT < 33) {
-            return
-        }
-        if (backCallback == null) {
-            backCallback = if (Build.VERSION.SDK_INT >= 34) {
-                Api34Impl.createBackCallback(onDismissRequest, predictiveBackProgress, scope)
-            } else {
-                Api33Impl.createBackCallback(onDismissRequest)
-            }
-        }
-        Api33Impl.maybeRegisterBackCallback(this, backCallback)
-    }
-
-    private fun maybeUnregisterBackCallback() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            Api33Impl.maybeUnregisterBackCallback(this, backCallback)
-        }
-        backCallback = null
-    }
-
-    @RequiresApi(34)
-    private object Api34Impl {
-        @JvmStatic
-        @DoNotInline
-        fun createBackCallback(
-            onDismissRequest: () -> Unit,
-            predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-            scope: CoroutineScope
-        ) =
-            object : OnBackAnimationCallback {
-                override fun onBackStarted(backEvent: BackEvent) {
-                    scope.launch {
-                        predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
-                    }
-                }
-
-                override fun onBackProgressed(backEvent: BackEvent) {
-                    scope.launch {
-                        predictiveBackProgress.snapTo(PredictiveBack.transform(backEvent.progress))
-                    }
-                }
-
-                override fun onBackInvoked() {
-                   onDismissRequest()
-                }
-
-                override fun onBackCancelled() {
-                    scope.launch { predictiveBackProgress.animateTo(0f) }
-                }
-            }
-    }
-
-    @RequiresApi(33)
-    private object Api33Impl {
-        @JvmStatic
-        @DoNotInline
-        fun createBackCallback(
-            onDismissRequest: () -> Unit
-        ) =
-            OnBackInvokedCallback(onDismissRequest)
-
-        @JvmStatic
-        @DoNotInline
-        fun maybeRegisterBackCallback(view: View, backCallback: Any?) {
-            if (backCallback is OnBackInvokedCallback) {
-                view.findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(
-                    OnBackInvokedDispatcher.PRIORITY_OVERLAY,
-                    backCallback
-                )
-            }
-        }
-
-        @JvmStatic
-        @DoNotInline
-        fun maybeUnregisterBackCallback(view: View, backCallback: Any?) {
-            if (backCallback is OnBackInvokedCallback) {
-                view.findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(backCallback)
-            }
-        }
-    }
 }
-
 private val PredictiveBackEasing: Easing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
 
-internal object PredictiveBack {
-    internal fun transform(progress: Float) = PredictiveBackEasing.transform(progress)
+object PredictiveBack {
+    fun transform(progress: Float) = PredictiveBackEasing.transform(progress)
 }
 
 // Fork of androidx.compose.ui.window.DialogWrapper.
 // predictiveBackProgress and scope params added for predictive back implementation.
 // EdgeToEdgeFloatingDialogWindowTheme provided to allow theme to extend into status bar.
+@ExperimentalMaterial3Api
 private class ModalBottomSheetDialogWrapper(
     private var onDismissRequest: () -> Unit,
     private var properties: ModalBottomSheetProperties,
@@ -729,14 +572,15 @@ private class ModalBottomSheetDialogWrapper(
     layoutDirection: LayoutDirection,
     density: Density,
     dialogId: UUID,
-    predictiveBackProgress: Animatable<Float, AnimationVector1D>,
-    scope: CoroutineScope,
-) : ComponentDialog(
-    ContextThemeWrapper(
-        composeView.context,
-        R.style.FloatingDialogWindowTheme
-    )
-), ViewRootForInspector {
+    darkThemeEnabled: Boolean,
+) :
+    ComponentDialog(
+        ContextThemeWrapper(
+            composeView.context,
+            androidx.compose.material3.R.style.EdgeToEdgeFloatingDialogWindowTheme
+        )
+    ),
+    ViewRootForInspector {
 
     private val dialogLayout: ModalBottomSheetDialogLayout
 
@@ -744,42 +588,47 @@ private class ModalBottomSheetDialogWrapper(
     // elevation, so high values of maxSupportedElevation break accessibility services: b/232788477.
     private val maxSupportedElevation = 8.dp
 
-    override val subCompositionView: AbstractComposeView get() = dialogLayout
+    override val subCompositionView: AbstractComposeView
+        get() = dialogLayout
 
     init {
         val window = window ?: error("Dialog has no window")
         window.requestFeature(Window.FEATURE_NO_TITLE)
         window.setBackgroundDrawableResource(android.R.color.transparent)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        dialogLayout = ModalBottomSheetDialogLayout(
-            context,
-            window,
-            properties.shouldDismissOnBackPress,
-            onDismissRequest,
-            predictiveBackProgress,
-            scope,
-        ).apply {
-            // Set unique id for AbstractComposeView. This allows state restoration for the state
-            // defined inside the Dialog via rememberSaveable()
-            setTag(R.id.compose_view_saveable_id_tag, "Dialog:$dialogId")
-            // Enable children to draw their shadow by not clipping them
-            clipChildren = false
-            // Allocate space for elevation
-            with(density) { elevation = maxSupportedElevation.toPx() }
-            // Simple outline to force window manager to allocate space for shadow.
-            // Note that the outline affects clickable area for the dismiss listener. In case of
-            // shapes like circle the area for dismiss might be to small (rectangular outline
-            // consuming clicks outside of the circle).
-            outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, result: Outline) {
-                    result.setRect(0, 0, view.width, view.height)
-                    // We set alpha to 0 to hide the view's shadow and let the composable to draw
-                    // its own shadow. This still enables us to get the extra space needed in the
-                    // surface.
-                    result.alpha = 0f
+        dialogLayout =
+            ModalBottomSheetDialogLayout(
+                context,
+                window
+            )
+                .apply {
+                    // Set unique id for AbstractComposeView. This allows state restoration for the
+                    // state
+                    // defined inside the Dialog via rememberSaveable()
+                    setTag(R.id.compose_view_saveable_id_tag, "Dialog:$dialogId")
+                    // Enable children to draw their shadow by not clipping them
+                    clipChildren = false
+                    // Allocate space for elevation
+                    with(density) { elevation = maxSupportedElevation.toPx() }
+                    // Simple outline to force window manager to allocate space for shadow.
+                    // Note that the outline affects clickable area for the dismiss listener. In
+                    // case of
+                    // shapes like circle the area for dismiss might be to small (rectangular
+                    // outline
+                    // consuming clicks outside of the circle).
+                    outlineProvider =
+                        object : ViewOutlineProvider() {
+                            override fun getOutline(view: View, result: Outline) {
+                                result.setRect(0, 0, view.width, view.height)
+                                // We set alpha to 0 to hide the view's shadow and let the
+                                // composable to draw
+                                // its own shadow. This still enables us to get the extra space
+                                // needed in the
+                                // surface.
+                                result.alpha = 0f
+                            }
+                        }
                 }
-            }
-        }
         // Clipping logic removed because we are spanning edge to edge.
 
         setContentView(dialogLayout)
@@ -793,8 +642,8 @@ private class ModalBottomSheetDialogWrapper(
         updateParameters(onDismissRequest, properties, layoutDirection)
 
         WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
+            isAppearanceLightStatusBars = !darkThemeEnabled
+            isAppearanceLightNavigationBars = !darkThemeEnabled
         }
         // Due to how the onDismissRequest callback works
         // (it enforces a just-in-time decision on whether to update the state to hide the dialog)
@@ -809,10 +658,11 @@ private class ModalBottomSheetDialogWrapper(
     }
 
     private fun setLayoutDirection(layoutDirection: LayoutDirection) {
-        dialogLayout.layoutDirection = when (layoutDirection) {
-            LayoutDirection.Ltr -> android.util.LayoutDirection.LTR
-            LayoutDirection.Rtl -> android.util.LayoutDirection.RTL
-        }
+        dialogLayout.layoutDirection =
+            when (layoutDirection) {
+                LayoutDirection.Ltr -> android.util.LayoutDirection.LTR
+                LayoutDirection.Rtl -> android.util.LayoutDirection.RTL
+            }
     }
 
     fun setContent(parentComposition: CompositionContext, children: @Composable () -> Unit) {
@@ -835,7 +685,7 @@ private class ModalBottomSheetDialogWrapper(
     fun updateParameters(
         onDismissRequest: () -> Unit,
         properties: ModalBottomSheetProperties,
-        layoutDirection: LayoutDirection,
+        layoutDirection: LayoutDirection
     ) {
         this.onDismissRequest = onDismissRequest
         this.properties = properties
@@ -851,8 +701,7 @@ private class ModalBottomSheetDialogWrapper(
             if (Build.VERSION.SDK_INT >= 30) {
                 WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING
             } else {
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                @Suppress("DEPRECATION") WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             },
         )
     }
@@ -884,15 +733,30 @@ internal fun View.isFlagSecureEnabled(): Boolean {
     return false
 }
 
-// Taken from AndroidPopup.android.kt
-private fun SecureFlagPolicy.shouldApplySecureFlag(isSecureFlagSetOnParent: Boolean): Boolean {
+/** Policy on setting [WindowManager.LayoutParams.FLAG_SECURE] on a window. */
+enum class SecureFlagPolicy {
+    /**
+     * Inherit [WindowManager.LayoutParams.FLAG_SECURE] from the parent window and pass it on the
+     * window that is using this policy.
+     */
+    Inherit,
+
+    /**
+     * Forces [WindowManager.LayoutParams.FLAG_SECURE] to be set on the window that is using this
+     * policy.
+     */
+    SecureOn,
+    /**
+     * No [WindowManager.LayoutParams.FLAG_SECURE] will be set on the window that is using this
+     * policy.
+     */
+    SecureOff
+}
+
+internal fun SecureFlagPolicy.shouldApplySecureFlag(isSecureFlagSetOnParent: Boolean): Boolean {
     return when (this) {
         SecureFlagPolicy.SecureOff -> false
         SecureFlagPolicy.SecureOn -> true
         SecureFlagPolicy.Inherit -> isSecureFlagSetOnParent
     }
 }
-
-private val PredictiveBackMaxScaleXDistance = 48.dp
-private val PredictiveBackMaxScaleYDistance = 24.dp
-private val PredictiveBackChildTransformOrigin = TransformOrigin(0.5f, 0f)

@@ -105,6 +105,9 @@ dependencies {
 
     implementation(libs.androidx.core.splashscreen)
 
+    implementation("org.jsoup:jsoup:1.18.1")
+    implementation(libs.okhttp.dnsoverhttps)
+
     // Paging3
     implementation(libs.bundles.paging)
 

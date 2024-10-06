@@ -82,8 +82,7 @@ data class ListAddScreen(
     val listId: Long
 ): Screen {
 
-    override val key: ScreenKey
-        get() = super.key + listId
+    override val key: ScreenKey = "add_$listId"
 
     @Composable
     override fun Content() {

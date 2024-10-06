@@ -9,9 +9,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
-import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.movie.MainScreenModel
 import io.silv.movie.R
 import io.silv.movie.presentation.getActivityViewModel
@@ -19,7 +17,7 @@ import io.silv.movie.presentation.settings.LocalBackPress
 import io.silv.movie.presentation.settings.SettingsMainScreen
 import kotlinx.coroutines.flow.receiveAsFlow
 
-data object SettingsTab: Tab {
+data object SettingsTab: SharedTransitionTab() {
 
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -49,7 +47,7 @@ data object SettingsTab: Tab {
             }
 
             CompositionLocalProvider(LocalBackPress provides pop) {
-                FadeTransition(navigator)
+                AnimatedContentTransition(navigator)
             }
         }
     }

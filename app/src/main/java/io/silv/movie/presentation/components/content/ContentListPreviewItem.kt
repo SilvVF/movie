@@ -58,7 +58,8 @@ import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.covers.cache.ListCoverCache
-import io.silv.movie.presentation.tabs.listNameSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.compose.koinInject
@@ -396,7 +397,7 @@ fun LazyGridItemScope.ContentGridPreviewItem(
                 }
                 Text(
                     text = name,
-                    modifier = Modifier.listNameSharedElement(listId),
+                    modifier = Modifier.registerSharedElement(SharedElement.From(SharedElement.PREFIX_LIST_NAME + name)),
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
                     style = MaterialTheme.typography.titleSmall

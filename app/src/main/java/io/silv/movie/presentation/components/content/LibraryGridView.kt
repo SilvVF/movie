@@ -19,7 +19,8 @@ import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.screenmodel.LibraryState
-import io.silv.movie.presentation.tabs.posterSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 
 @Composable
 fun LibraryGridView(
@@ -55,7 +56,7 @@ fun LibraryGridView(
                         ContentPreviewDefaults.LibraryContentPoster(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .posterSharedElement(-1)
+                                .registerSharedElement(SharedElement.From(SharedElement.KEY_LIBRARY_POSTER))
                         )
                     },
                     pinned = true,
@@ -74,7 +75,7 @@ fun LibraryGridView(
                                 onLongClick = { onListLongClick(list, items) },
                                 onClick = { onListClick(list) }
                             )
-                            .animateItemPlacement()
+                            .animateItem()
                             .padding(8.dp),
                         pinned = list.pinned,
                         cover = {
@@ -84,7 +85,7 @@ fun LibraryGridView(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .clickable { onPosterClick(list) }
-                                    .posterSharedElement(list.id)
+                                    .registerSharedElement(SharedElement.List(list.id))
                             )
                         },
                         name = list.name,

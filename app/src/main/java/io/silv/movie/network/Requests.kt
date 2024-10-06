@@ -95,6 +95,9 @@ fun <T> Json.decodeFromJsonResponse(
     }
 }
 
+inline fun <reified T> Response.parseAs(): T {
+    return Json.decodeFromJsonResponse(serializer(), this)
+}
 
 inline fun <reified T> Response.parseAs(json: Json): T {
     return json.decodeFromJsonResponse(serializer(), this)

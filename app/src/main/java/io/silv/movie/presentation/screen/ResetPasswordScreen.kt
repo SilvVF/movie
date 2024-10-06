@@ -27,6 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.annotations.SupabaseExperimental
@@ -42,6 +43,8 @@ import kotlinx.parcelize.Parcelize
 class ResetPasswordScreen(
     private val email: String,
 ): ScreenWithResult<ResetPasswordScreen.Result> {
+
+    override val key: ScreenKey = "password_reset"
 
     @Parcelize
     data class Result(

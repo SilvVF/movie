@@ -35,7 +35,8 @@ import io.silv.movie.data.content.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.screenmodel.MovieActions
-import io.silv.movie.presentation.tabs.movieSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -143,7 +144,7 @@ fun MovieSourcePosterGrid(
 
             val movie by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
 
-            Box(Modifier.movieSharedElement(movie.id)) {
+            Box(Modifier.registerSharedElement(SharedElement.Movie(movie.id))) {
                 when(mode) {
                     PosterDisplayMode.Grid.ComfortableGrid -> {
                         BrowseMovieSourceComfortableGridItem(

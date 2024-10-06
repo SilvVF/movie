@@ -18,6 +18,7 @@ import io.silv.movie.coil.fetchers.UserProfileImageFetcher
 import io.silv.movie.coil.utils.CoilDiskCache
 import io.silv.movie.coil.utils.CoilMemoryCache
 import io.silv.movie.data.prefrences.StoragePreferences
+import io.silv.movie.extract.TmdbExtractor
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
@@ -46,6 +47,8 @@ class App: Application(), ImageLoaderFactory {
             workManagerFactory()
             modules(appModule)
         }
+
+        TmdbExtractor.extractVideo()
     }
 
     override fun newImageLoader(): ImageLoader {

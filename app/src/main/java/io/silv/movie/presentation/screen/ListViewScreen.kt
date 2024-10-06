@@ -120,8 +120,8 @@ import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.screenmodel.ListViewEvent
 import io.silv.movie.presentation.screenmodel.ListViewScreenModel
 import io.silv.movie.presentation.screenmodel.ListViewState
-import io.silv.movie.presentation.tabs.listNameSharedElement
-import io.silv.movie.presentation.tabs.posterSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import io.silv.movie.presentation.toPoster
 import org.koin.core.parameter.parametersOf
 
@@ -513,6 +513,11 @@ private fun SuccessScreenContent(
                         .fillMaxWidth()
                         .padding(16.dp),
                 ) {
+                    val sharedModifier =  Modifier
+                        .registerSharedElement(
+                            SharedElement.From("${SharedElement.PREFIX_LIST_NAME}${state.list.id}"),
+                            inOverlay
+                        )
                     if (state.user != null) {
                         TitleWithProfilePicture(
                             user = state.user,
@@ -521,8 +526,7 @@ private fun SuccessScreenContent(
                             onUserClicked = {
                                 state.list.createdBy?.let { onUserClick(it) }
                             },
-                            textModifier = Modifier
-                                .listNameSharedElement(state.list.id, inOverlay)
+                            textModifier = sharedModifier
                         )
                     } else {
                         Box(
@@ -536,7 +540,7 @@ private fun SuccessScreenContent(
                                 text = state.list.name,
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.listNameSharedElement(state.list.id, inOverlay)
+                                modifier = sharedModifier
                             )
                         }
                     }
@@ -600,7 +604,7 @@ private fun SuccessScreenContent(
                                 Modifier
                             }
                         )
-                        .posterSharedElement(state.list.id, inOverlay)
+                        .registerSharedElement(SharedElement.List(state.list.id), inOverlay)
                 )
             },
             topAppBar = {

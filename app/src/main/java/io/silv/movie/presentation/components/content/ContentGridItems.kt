@@ -40,7 +40,8 @@ import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
-import io.silv.movie.presentation.tabs.coverDataSharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
+import io.silv.movie.presentation.tabs.toSharedElement
 import io.silv.movie.presentation.toPoster
 
 @Composable
@@ -188,7 +189,7 @@ fun ContentListPosterGrid(
                 val poster = remember(it) { it.toPoster() }
                 val favorite = showFavorite && it.favorite
 
-                Box(Modifier.coverDataSharedElement(poster)) {
+                Box(Modifier.registerSharedElement(poster.toSharedElement())) {
                     when (mode) {
                         PosterDisplayMode.Grid.ComfortableGrid -> {
                             ContentItemComfortableGridItem(
@@ -262,7 +263,7 @@ fun ContentListPosterGrid(
                     val poster = remember(it) { it.toPoster() }
                     val favorite = showFavorite && it.favorite
 
-                    Box(Modifier.coverDataSharedElement(poster)) {
+                    Box(Modifier.registerSharedElement(poster.toSharedElement())) {
                         when (mode) {
                             PosterDisplayMode.Grid.ComfortableGrid -> {
                                 ContentItemComfortableGridItem(

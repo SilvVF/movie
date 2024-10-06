@@ -48,6 +48,8 @@ class UiPreferences(
 
     fun sharedElementTransitions() = preferenceStore.getBoolean("shared_element_transitions", true)
 
+    fun predictiveBack() = preferenceStore.getBoolean("predictive_back", true)
+
     fun dateFormat() = preferenceStore.getString("app_date_format", "")
 
     fun tabletUiMode() = preferenceStore.getEnum("tablet_ui_mode", TabletUiMode.AUTOMATIC)

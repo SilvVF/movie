@@ -24,7 +24,8 @@ import io.silv.movie.data.content.tv.model.TVShowPoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
-import io.silv.movie.presentation.tabs.showSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
@@ -88,7 +89,7 @@ private fun BrowseTVSourceListItem(
         badge = {
             InLibraryBadge(enabled = show.favorite)
         },
-        coverModifier = Modifier.showSharedElement(show.id),
+        coverModifier = Modifier.registerSharedElement(SharedElement.Show(show.id)),
         onLongClick = onLongClick,
         onClick = onClick,
     )

@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -64,6 +65,9 @@ data class AddToListScreen(
     val contentId: Long,
     val isMovie: Boolean
 ): ScreenWithResult<AddToListScreen.ListResult> {
+
+    override val key: ScreenKey
+        get() = "$contentId$isMovie"
 
     @Parcelize
     data class ListResult(

@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -63,6 +64,9 @@ import org.koin.core.parameter.parametersOf
 data class BrowseMovieScreen(
     var contentPagedType: ContentPagedType
 ): Screen {
+
+    override val key: ScreenKey
+        get() = "browse_movie_$contentPagedType"
 
     @Composable
     override fun Content() {

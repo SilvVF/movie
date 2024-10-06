@@ -32,7 +32,8 @@ import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
-import io.silv.movie.presentation.tabs.coverDataSharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
+import io.silv.movie.presentation.tabs.toSharedElement
 import io.silv.movie.presentation.toPoster
 
 @Composable
@@ -184,7 +185,7 @@ fun ContentListItem(
         badge = {
             InLibraryBadge(enabled = favorite)
         },
-        coverModifier = Modifier.coverDataSharedElement(poster),
+        coverModifier = Modifier.registerSharedElement(poster.toSharedElement()),
         onLongClick = onLongClick,
         onClick = onClick,
         endButton = content,

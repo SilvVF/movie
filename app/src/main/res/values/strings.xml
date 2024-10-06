@@ -202,6 +202,7 @@
     <string name="reply_hint">Replying to %1s</string>
     <string name="replies_for">Replies</string>
     <string name="pref_shared_element_transitions">Shared element screen transitions</string>
+    <string name="pref_predictive_back">Predictive back navigation</string>
     <string name="reply">Reply</string>
     <string name="loading">Loading</string>
     <string name="hide">Hide</string>

@@ -35,6 +35,7 @@ data class AppState(
     val relativeTimestamp: Boolean,
     val startScreen: Tab,
     val sharedElementTransitions: Boolean,
+    val predictiveBackNavigation: Boolean,
 ) {
 
     fun formatDate(i: Instant): String {
@@ -64,17 +65,19 @@ class AppStateProvider(
         uiPreferences.appTheme().changes(),
         uiPreferences.dateFormat().changes(),
         uiPreferences.themeDarkAmoled().changes(),
-        uiPreferences.relativeTime().changes().combine(uiPreferences.sharedElementTransitions().changes()) { a: Boolean, b: Boolean -> a to b },
-    ) { themeMode, appTheme, dateFormat, amoled, (relativeTime, transitions) ->
+        uiPreferences.relativeTime().changes(),
+        uiPreferences.sharedElementTransitions().changes(),
+        uiPreferences.predictiveBack().changes(),
+    ) { arr ->
         AppState(
-            appTheme,
-            themeMode,
-            amoled,
-            UiPreferences.dateFormat(dateFormat),
-            relativeTime,
-            (state as? State.Success)?.state?.startScreen
-                ?: uiPreferences.startScreen().get().tab,
-            transitions
+            themeMode = arr[0] as ThemeMode,
+            appTheme = arr[1] as AppTheme,
+            dateFormat = UiPreferences.dateFormat(arr[2] as String),
+            amoled = arr[3] as Boolean,
+            relativeTimestamp = arr[4] as Boolean,
+            sharedElementTransitions = arr[5] as Boolean,
+            predictiveBackNavigation = arr[6] as Boolean,
+            startScreen = uiPreferences.startScreen().get().tab
         )
     }
 
@@ -88,7 +91,8 @@ class AppStateProvider(
                     dateFormat = UiPreferences.dateFormat(uiPreferences.dateFormat().get()),
                     startScreen = uiPreferences.startScreen().get().tab,
                     relativeTimestamp = uiPreferences.relativeTime().get(),
-                    sharedElementTransitions = uiPreferences.sharedElementTransitions().get()
+                    sharedElementTransitions = uiPreferences.sharedElementTransitions().get(),
+                    predictiveBackNavigation = uiPreferences.predictiveBack().get()
                 )
             )
 

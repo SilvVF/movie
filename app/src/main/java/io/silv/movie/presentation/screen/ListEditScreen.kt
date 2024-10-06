@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.voyager.ScreenResult
@@ -37,6 +38,8 @@ import kotlinx.parcelize.Parcelize
 class ListEditScreen(
     private val name: String,
 ): ScreenWithResult<ListEditScreen.ListEditResult> {
+
+    override val key: ScreenKey = "edit"
 
     @Parcelize
     data class ListEditResult(

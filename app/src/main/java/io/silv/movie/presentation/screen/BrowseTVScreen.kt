@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.PagingData
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -64,6 +65,7 @@ data class BrowseTVScreen(
     var contentPagedType: ContentPagedType
 ): Screen {
 
+    override val key: ScreenKey = "browse_tv_$contentPagedType"
 
     @Composable
     override fun Content() {

@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.gotrue.Auth
@@ -42,6 +43,8 @@ import org.koin.compose.koinInject
 class ListCreateScreen(
     private val listCount: Long?
 ): ScreenWithResult<ListCreateScreen.ListCreateResult> {
+
+    override val key: ScreenKey = "create"
 
     @Parcelize
     data class ListCreateResult(

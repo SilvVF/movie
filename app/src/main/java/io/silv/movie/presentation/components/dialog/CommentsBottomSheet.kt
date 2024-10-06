@@ -68,6 +68,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -75,6 +76,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -85,6 +87,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -112,7 +115,6 @@ import io.silv.core_ui.components.shimmer.ShimmerHost
 import io.silv.core_ui.components.shimmer.TextPlaceholder
 import io.silv.core_ui.components.topbar.runOnEnterKeyPressed
 import io.silv.core_ui.util.keyboardAsState
-import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.user.User
@@ -120,37 +122,57 @@ import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
+import io.silv.movie.presentation.components.profile.UserProfileImage
+import io.silv.movie.presentation.screen.ProfileScreen
+import io.silv.movie.presentation.screen.ProfileViewScreen
 import io.silv.movie.presentation.screenmodel.CommentEvent
 import io.silv.movie.presentation.screenmodel.CommentsPagedType
 import io.silv.movie.presentation.screenmodel.CommentsScreenModel
 import io.silv.movie.presentation.screenmodel.RepliesState
 import io.silv.movie.presentation.screenmodel.SendError
-import io.silv.movie.presentation.components.profile.UserProfileImage
-import io.silv.movie.presentation.screen.ProfileScreen
-import io.silv.movie.presentation.screen.ProfileViewScreen
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 
 @Composable
-fun ContentScreen.CommentsBottomSheet(
+fun CommentsBottomSheet(
     onDismissRequest: () -> Unit,
-    modifier: Modifier = Modifier,
-    paddingValues: PaddingValues,
     screenModel: CommentsScreenModel,
 ) {
-    val keyboardVisible by keyboardAsState()
     val user = LocalUser.current
     val comments = screenModel.pagingData.collectAsLazyPagingItems()
     val state by screenModel.state.collectAsStateWithLifecycle()
     val sheetState =  rememberModalBottomSheetState()
     val navigator = LocalNavigator.currentOrThrow
     val lazyListState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val keyboardVisible by keyboardAsState()
+
+    BackHandler {
+        if (state.replyingTo != null) {
+            screenModel.updateReplyingTo(null)
+        } else {
+            if (sheetState.isVisible) {
+                scope.launch {
+                    sheetState.hide()
+                    onDismissRequest()
+                }
+            } else {
+                navigator.pop()
+            }
+        }
+    }
 
     LaunchedEffect(keyboardVisible) {
         if (keyboardVisible) {
+            delay(100)
+            ensureActive()
             sheetState.expand()
         }
     }
+
 
     CollectEventsWithLifecycle(screenModel) {
         when (it) {
@@ -188,14 +210,13 @@ fun ContentScreen.CommentsBottomSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         canDrag = false,
-        modifier = Modifier.nestedScroll(nestedScrollConnection),
+        modifier = Modifier
+            .nestedScroll(nestedScrollConnection),
         contentWindowInsets = { WindowInsets.systemBars.only(WindowInsetsSides.Top) },
         onDismissRequest = onDismissRequest,
         dragHandle = {
             val density = LocalDensity.current
             val tooltipState = rememberTooltipState(isPersistent = true)
-            val scope = rememberCoroutineScope()
-
 
             Box(Modifier.wrapContentSize(), contentAlignment = Alignment.TopEnd) {
                 Column(
@@ -302,10 +323,9 @@ fun ContentScreen.CommentsBottomSheet(
                 listState = lazyListState,
                 replyingTo = state.replyingTo,
                 onUserClicked = { navigator.push(ProfileViewScreen(it)) },
-                paddingValues = PaddingValues()
+                paddingValues = PaddingValues(),
             )
             if (state.replyingTo != null) {
-                val scope = rememberCoroutineScope()
                 ElevatedButton(
                     onClick = {
                         scope.launch {
@@ -749,9 +769,16 @@ private fun UserTextField(
     onSignInClicked: () -> Unit = {},
     sending: Boolean = false,
 ) {
-    val navigator = LocalNavigator.current
     val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    var focused by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { focused }.collectLatest {
+            if (it) keyboardController?.show() else keyboardController?.hide()
+        }
+    }
 
     Surface(
         modifier
@@ -813,6 +840,9 @@ private fun UserTextField(
                         .padding(horizontal = 6.dp)
                         .weight(1f)
                         .focusRequester(focusRequester)
+                        .onFocusChanged {
+                            focused = it.isFocused
+                        }
                         .runOnEnterKeyPressed(action = focusManager::clearFocus)
                         .align(Alignment.CenterVertically),
                     textStyle = MaterialTheme.typography.bodyLarge

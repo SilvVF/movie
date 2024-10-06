@@ -23,7 +23,8 @@ import io.silv.core_ui.util.plus
 import io.silv.movie.data.content.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
-import io.silv.movie.presentation.tabs.movieSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
@@ -87,7 +88,7 @@ private fun BrowseMovieSourceListItem(
         badge = {
             InLibraryBadge(enabled = movie.favorite)
         },
-        coverModifier = Modifier.movieSharedElement(movie.id),
+        coverModifier = Modifier.registerSharedElement(SharedElement.Movie(movie.id)),
         onLongClick = onLongClick,
         onClick = onClick,
     )

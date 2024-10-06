@@ -64,9 +64,9 @@ import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.util.rememberDominantColor
 import io.silv.movie.koin4ScreenModel
+import io.silv.movie.presentation.components.content.movie.ExpandableSummary
 import io.silv.movie.presentation.screenmodel.PersonViewScreenModel
 import io.silv.movie.presentation.screenmodel.PersonViewState
-import io.silv.movie.presentation.components.content.movie.ExpandableSummary
 import org.koin.core.parameter.parametersOf
 
 
@@ -105,8 +105,7 @@ data class PersonViewScreen(
     val posterPath: String? = null,
 ): Screen {
 
-    override val key: ScreenKey
-        get() = personId.toString()
+    override val key: ScreenKey = personId.toString()
 
     @Composable
     override fun Content() {

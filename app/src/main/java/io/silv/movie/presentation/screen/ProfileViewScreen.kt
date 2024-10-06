@@ -58,6 +58,7 @@ import app.cash.paging.PagingConfig
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.postgrest.Postgrest
@@ -89,9 +90,9 @@ import io.silv.movie.presentation.ProvideLocalsForPreviews
 import io.silv.movie.presentation.components.content.ContentListPosterStateFlowItems
 import io.silv.movie.presentation.components.content.ContentListPreview
 import io.silv.movie.presentation.components.dialog.ListOptionsBottomSheet
-import io.silv.movie.presentation.screenmodel.ListPreviewItem
 import io.silv.movie.presentation.components.profile.ProfileTopBar
 import io.silv.movie.presentation.screen.ProfileViewState.Loading
+import io.silv.movie.presentation.screenmodel.ListPreviewItem
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -202,6 +203,7 @@ data class ProfileViewScreen(
     val userId: String
 ): Screen {
 
+    override val key: ScreenKey = "profile_$userId"
 
     @Composable
     override fun Content() {

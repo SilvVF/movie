@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import io.silv.movie.AppState
+import io.silv.movie.BuildConfig
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
@@ -46,11 +47,18 @@ private val defaultAppState by lazy {
         dateFormat = UiPreferences.dateFormat(""),
         relativeTimestamp = true,
         startScreen = LibraryTab,
-        sharedElementTransitions = true
+        sharedElementTransitions = true,
+        predictiveBackNavigation = true
     )
 }
 
-val LocalAppState = compositionLocalOf<AppState> { defaultAppState }
+val LocalAppState = compositionLocalOf {
+    if (BuildConfig.DEBUG) {
+        error("app state was not set in production default state will be used")
+    } else {
+        defaultAppState
+    }
+}
 
 
 @Composable

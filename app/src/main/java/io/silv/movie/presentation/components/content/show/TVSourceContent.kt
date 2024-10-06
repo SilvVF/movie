@@ -35,7 +35,8 @@ import io.silv.movie.data.content.tv.model.TVShowPoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.screenmodel.TVActions
-import io.silv.movie.presentation.tabs.showSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 
@@ -139,7 +140,7 @@ fun TVSourcePosterGrid(
             contentType = pagingItems.itemContentType { mode.hashCode() }
         ) {
             val tvShow by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
-            Box(Modifier.showSharedElement(tvShow.id)) {
+            Box(Modifier.registerSharedElement(SharedElement.Show(tvShow.id))) {
                 when (mode) {
                     PosterDisplayMode.Grid.ComfortableGrid -> {
                         BrowseShowSourceComfortableGridItem(

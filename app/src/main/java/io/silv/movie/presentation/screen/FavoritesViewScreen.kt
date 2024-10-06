@@ -57,8 +57,8 @@ import io.silv.movie.presentation.components.list.rememberTopBarState
 import io.silv.movie.presentation.screenmodel.FavoritesListState
 import io.silv.movie.presentation.screenmodel.FavoritesScreenModel
 import io.silv.movie.presentation.screenmodel.FavoritesSortMode
-import io.silv.movie.presentation.tabs.listNameSharedElement
-import io.silv.movie.presentation.tabs.posterSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
 
 data object FavoritesViewScreen : Screen {
 
@@ -187,20 +187,27 @@ private fun FavoritesScreenContent(
                         .fillMaxWidth()
                         .padding(16.dp),
                 ) {
+                    val sharedModifier = Modifier
+                        .registerSharedElement(
+                            SharedElement.From(
+                                id = "${SharedElement.PREFIX_LIST_NAME}-1"),
+                            inOverlay = inOverlay
+                        )
+
                     if (user != null) {
                         TitleWithProfilePicture(
                             user = user,
                             onUserClicked = {},
                             name = stringResource(id = R.string.favorites_top_bar_title),
                             description = "Your favorite movies and tv-shows",
-                            textModifier = Modifier.listNameSharedElement(-1, inOverlay)
+                            textModifier = sharedModifier
                         )
                     } else {
                         Text(
                             text = stringResource(id = R.string.favorites_top_bar_title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.listNameSharedElement(-1, inOverlay)
+                            modifier = sharedModifier
                         )
                     }
                     Row(
@@ -259,7 +266,7 @@ private fun FavoritesScreenContent(
                 ContentPreviewDefaults.LibraryContentPoster(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .posterSharedElement(-1, inOverlay)
+                        .registerSharedElement(SharedElement.List(-1), inOverlay)
                 )
             },
             topAppBar = {

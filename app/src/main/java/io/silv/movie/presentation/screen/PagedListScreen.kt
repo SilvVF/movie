@@ -33,6 +33,7 @@ import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -61,6 +62,8 @@ import org.koin.core.parameter.parametersOf
 data class PagedListScreen(
     val pagedType: ListPagedType
 ): Screen {
+
+    override val key: ScreenKey = "paged_list"
 
     @Composable
     override fun Content() {

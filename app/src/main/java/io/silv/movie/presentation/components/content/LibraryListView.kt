@@ -21,8 +21,9 @@ import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.screenmodel.LibraryState
-import io.silv.movie.presentation.tabs.listNameSharedElement
-import io.silv.movie.presentation.tabs.posterSharedElement
+import io.silv.movie.presentation.tabs.SharedElement
+import io.silv.movie.presentation.tabs.registerSharedElement
+
 @Composable
 fun LibraryListView(
     paddingValues: PaddingValues,
@@ -57,12 +58,12 @@ fun LibraryListView(
                         .padding(8.dp),
                     textModifier = Modifier
                         .fillMaxWidth()
-                        .listNameSharedElement(-1),
+                        .registerSharedElement(SharedElement.From("${SharedElement.PREFIX_LIST_NAME}-1")),
                     cover = {
                         ContentPreviewDefaults.LibraryContentPoster(
                             Modifier
                                 .aspectRatio(1f)
-                                .posterSharedElement(-1)
+                                .registerSharedElement(SharedElement.List(-1))
                         )
                     },
                     pinned = true,
@@ -80,7 +81,7 @@ fun LibraryListView(
                                 onLongClick = { onListLongClick(list, items) },
                                 onClick = { onListClick(list) }
                             )
-                            .animateItemPlacement()
+                            .animateItem()
                             .padding(8.dp),
                         pinned = list.pinned,
                         cover = {
@@ -90,12 +91,12 @@ fun LibraryListView(
                                 modifier = Modifier
                                     .aspectRatio(1f)
                                     .clickable { onPosterClick(list) }
-                                    .posterSharedElement(list.id)
+                                    .registerSharedElement(SharedElement.List(list.id))
                             )
                         },
                         textModifier = Modifier
                             .fillMaxWidth()
-                            .listNameSharedElement(list.id),
+                            .registerSharedElement(SharedElement.From("${SharedElement.PREFIX_LIST_NAME}${list.id}")),
                         name = list.name,
                         description = list.description.ifEmpty {
                             when {

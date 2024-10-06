@@ -9,16 +9,19 @@ import cafe.adriel.voyager.navigator.tab.Tab
 
 abstract class SharedTransitionTab : Tab {
 
-    @Transient
-    open val transform: BoundsTransform = BoundsTransform { _, _ ->
-        tween(450, easing = EaseOutCubic)
+    val transform = defaultTransform
+
+    val LocalSharedTransitionState = LocalTransitionState
+
+    companion object {
+        @Transient
+        private val defaultTransform: BoundsTransform = BoundsTransform { _, _ ->
+            tween(450, easing = EaseOutCubic)
+        }
+
+        @Transient
+        private val LocalTransitionState: ProvidableCompositionLocal<SharedTransitionState?> = compositionLocalOf { null }
     }
-
-    @Transient
-    val LocalSharedTransitionState: ProvidableCompositionLocal<SharedTransitionState?> =
-        compositionLocalOf { null }
-
-
 }
 
 

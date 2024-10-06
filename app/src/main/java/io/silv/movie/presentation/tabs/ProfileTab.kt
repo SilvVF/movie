@@ -7,9 +7,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
-import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cafe.adriel.voyager.transitions.FadeTransition
 import io.silv.movie.MainScreenModel
 import io.silv.movie.R
 import io.silv.movie.presentation.getActivityViewModel
@@ -17,7 +15,7 @@ import io.silv.movie.presentation.screen.ProfileScreen
 import kotlinx.coroutines.flow.receiveAsFlow
 
 
-data object ProfileTab: Tab {
+data object ProfileTab: SharedTransitionTab() {
 
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -38,7 +36,7 @@ data object ProfileTab: Tab {
                 }
             }
 
-            FadeTransition(navigator)
+            AnimatedContentTransition(navigator)
         }
     }
 }
