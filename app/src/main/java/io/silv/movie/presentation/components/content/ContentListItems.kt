@@ -34,12 +34,10 @@ import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
 import io.silv.movie.presentation.tabs.coverDataSharedElement
 import io.silv.movie.presentation.toPoster
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun ContentListPosterList(
-    items: ImmutableList<ContentItem>,
+    items: List<ContentItem>,
     paddingValues: PaddingValues,
     onLongClick: (item: ContentItem) -> Unit,
     onClick: (item: ContentItem) -> Unit,
@@ -49,7 +47,7 @@ fun ContentListPosterList(
     onRecommendationClick: (item: ContentItem) -> Unit = {},
     onRecommendationLongClick: (item: ContentItem) -> Unit = {},
     onAddRecommendation: (item: ContentItem) -> Unit = {},
-    recommendations: ImmutableList<ContentItem> = persistentListOf(),
+    recommendations: List<ContentItem> = emptyList(),
     refreshingRecommendations: Boolean = false,
     onRefreshClick: () -> Unit = {},
     startAddingClick: () -> Unit = {},
@@ -131,7 +129,7 @@ fun ContentListPosterList(
                 }
             }
             items(recommendations, { "recommendation" + it.itemKey }) {
-                Box(Modifier.animateItemPlacement()) {
+                Box(Modifier.animateItem()) {
                     ContentListItem(
                         title = it.title,
                         favorite = showFavorite && it.favorite,

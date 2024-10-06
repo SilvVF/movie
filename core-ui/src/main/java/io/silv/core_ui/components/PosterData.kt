@@ -61,13 +61,19 @@ enum class ItemCover(val ratio: Float) {
         contentDescription: String = "",
         shape: Shape = MaterialTheme.shapes.extraSmall,
         onClick: (() -> Unit)? = null,
+        onError: (() -> Unit)? = null
     ) {
-        AsyncImage(
+            val ph =  remember { ColorPainter(CoverPlaceholderColor) }
+            AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(data)
                 .crossfade(true)
                 .build(),
-            placeholder = remember { ColorPainter(CoverPlaceholderColor) },
+            onError = {
+                onError?.invoke()
+            },
+            error = ph,
+            placeholder = ph,
             contentDescription = contentDescription,
             modifier = modifier
                 .aspectRatio(ratio)
@@ -378,7 +384,7 @@ private fun GridItemSelectable(
 private fun Modifier.selectedOutline(
     isSelected: Boolean,
     color: Color,
-) = this then drawBehind { if (isSelected) drawRect(color = color) }
+) = this then Modifier.drawBehind { if (isSelected) drawRect(color = color) }
 
 /**
  * Layout of list item.

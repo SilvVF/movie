@@ -34,7 +34,7 @@ import io.silv.movie.R
 import io.silv.movie.data.content.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
-import io.silv.movie.presentation.content.screenmodel.MovieActions
+import io.silv.movie.presentation.screenmodel.MovieActions
 import io.silv.movie.presentation.tabs.movieSharedElement
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest

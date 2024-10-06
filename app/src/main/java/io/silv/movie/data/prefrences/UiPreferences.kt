@@ -6,7 +6,6 @@ import android.os.Build
 import androidx.annotation.StringRes
 import androidx.core.content.getSystemService
 import cafe.adriel.voyager.navigator.tab.Tab
-import com.google.android.material.color.DynamicColors
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.core.PreferenceStore
 import io.silv.movie.data.prefrences.core.getEnum
@@ -20,8 +19,6 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 object DeviceUtil {
-
-    val isDynamicColorAvailable  by lazy { DynamicColors.isDynamicColorAvailable() }
 
     fun isLowRamDevice(context: Context): Boolean {
         val memInfo = ActivityManager.MemoryInfo()
@@ -42,7 +39,7 @@ class UiPreferences(
 
     fun appTheme() = preferenceStore.getEnum(
         "pref_app_theme",
-        if (DeviceUtil.isDynamicColorAvailable) { AppTheme.MONET } else { AppTheme.DEFAULT },
+         AppTheme.MONET
     )
 
     fun themeDarkAmoled() = preferenceStore.getBoolean("pref_theme_dark_amoled_key", false)

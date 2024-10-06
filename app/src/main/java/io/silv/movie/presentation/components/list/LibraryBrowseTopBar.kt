@@ -47,7 +47,7 @@ import io.silv.core_ui.components.topbar.PosterTopBarState
 import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
-import io.silv.movie.presentation.list.screenmodel.LibrarySortMode
+import io.silv.movie.presentation.screenmodel.LibrarySortMode
 
 @Composable
 fun LibraryBrowseTopBar(

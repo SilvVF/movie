@@ -40,8 +40,7 @@ import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.components.content.ContentListPoster
-import io.silv.movie.presentation.list.screenmodel.ListSortMode
-import kotlinx.collections.immutable.ImmutableList
+import io.silv.movie.presentation.screenmodel.ListSortMode
 
 @Composable
 fun SortOptionsBottomSheet(
@@ -49,11 +48,11 @@ fun SortOptionsBottomSheet(
     selected: ListSortMode,
     onSortChange: (ListSortMode) -> Unit,
     list: ContentList,
-    content: ImmutableList<ContentItem>
+    content: List<ContentItem>
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        windowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         dragHandle = {
             BottomSheetDragHandlerNoPadding(Modifier.padding(top = 16.dp))
         }
@@ -147,11 +146,11 @@ fun ListOptionsBottomSheet(
     onTogglePinned: () -> Unit,
     isUserMe: Boolean,
     list: ContentList,
-    content: ImmutableList<ContentItem>
+    content: List<ContentItem>
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        windowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         dragHandle = {
             BottomSheetDragHandlerNoPadding(Modifier.padding(top = 16.dp))
         }

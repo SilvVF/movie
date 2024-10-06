@@ -49,7 +49,6 @@ import io.silv.core_ui.components.ItemCover
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.data.prefrences.AppTheme
-import io.silv.movie.data.prefrences.DeviceUtil
 import io.silv.movie.data.prefrences.StartScreen
 import io.silv.movie.data.prefrences.TabletUiMode
 import io.silv.movie.data.prefrences.ThemeMode
@@ -59,8 +58,6 @@ import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings
 import io.silv.movie.presentation.settings.widgets.BasePreferenceWidget
 import io.silv.movie.presentation.settings.widgets.PrefsHorizontalPadding
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.time.Instant
@@ -100,11 +97,10 @@ data object SettingsAppearanceScreen: SearchableSettings {
         val amoled = appState.amoled
 
         val sharedElementTransitionsPref   = remember { uiPreferences.sharedElementTransitions() }
-        val sharedElementTransitions = appState.sharedElementTransitions
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_theme),
-            preferenceItems = persistentListOf(
+            preferenceItems = listOf(
                 Preference.PreferenceItem.CustomPreference(
                     title = stringResource(R.string.pref_app_theme),
                 ) {
@@ -167,13 +163,12 @@ data object SettingsAppearanceScreen: SearchableSettings {
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.pref_category_display),
-            preferenceItems = persistentListOf(
+            preferenceItems = listOf(
                 Preference.PreferenceItem.ListPreference(
                     pref = tabletUiMode,
                     title = stringResource(R.string.pref_tablet_ui_mode),
                     entries = TabletUiMode.entries
-                        .associateWith { stringResource(it.titleRes) }
-                        .toImmutableMap(),
+                        .associateWith { stringResource(it.titleRes) },
                     onValueChanged = {
                         Toast.makeText(context, R.string.requires_app_restart, Toast.LENGTH_SHORT).show()
                         true
@@ -183,8 +178,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                     pref = startScreen,
                     title = stringResource(R.string.pref_start_screen),
                     entries = StartScreen.entries
-                        .associateWith { stringResource(it.titleRes) }
-                        .toImmutableMap(),
+                        .associateWith { stringResource(it.titleRes) },
                     onValueChanged = {
                         Toast.makeText(context, R.string.requires_app_restart, Toast.LENGTH_SHORT).show()
                         true
@@ -197,8 +191,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                         .associateWith {
                             val formattedDate = UiPreferences.dateFormat(it).format(now)
                             "${it.ifEmpty { stringResource(R.string.label_default) }} ($formattedDate)"
-                        }
-                        .toImmutableMap(),
+                        },
                     onValueChanged = {
                         dateFormat.set(it)
                         true
@@ -285,7 +278,7 @@ private fun AppThemesList(
 ) {
     val appThemes = remember {
         AppTheme.entries
-            .filterNot { it.titleRes == null || (it == AppTheme.MONET && !DeviceUtil.isDynamicColorAvailable) }
+            .filterNot { it.titleRes == null }
     }
     LazyRow(
         contentPadding = PaddingValues(horizontal = PrefsHorizontalPadding),

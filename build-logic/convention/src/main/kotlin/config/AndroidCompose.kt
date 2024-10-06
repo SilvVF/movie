@@ -35,10 +35,6 @@ internal fun Project.configureAndroidCompose(
             compose = true
         }
 
-        composeOptions {
-            kotlinCompilerExtensionVersion = libs.findVersion("androidxComposeCompiler").get().toString()
-        }
-
         dependencies {
             val bom = libs.findLibrary("androidx-compose-bom").get()
             add("implementation", platform(bom))
@@ -50,9 +46,9 @@ internal fun Project.configureAndroidCompose(
 
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
-            freeCompilerArgs += buildComposeMetricsParameters()
-            freeCompilerArgs += stabilityConfiguration()
-            freeCompilerArgs += strongSkippingConfiguration()
+//            freeCompilerArgs += buildComposeMetricsParameters()
+//            freeCompilerArgs += stabilityConfiguration()
+//            freeCompilerArgs += strongSkippingConfiguration()
             freeCompilerArgs += listOf(
                 "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
                 "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",

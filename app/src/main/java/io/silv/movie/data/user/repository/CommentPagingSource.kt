@@ -6,7 +6,7 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.silv.movie.data.user.SupabaseConstants
 import io.silv.movie.data.user.SupabaseConstants.RPC.selectCommentsForContent
 import io.silv.movie.data.user.model.comment.PagedComment
-import io.silv.movie.presentation.content.screenmodel.CommentsPagedType
+import io.silv.movie.presentation.screenmodel.CommentsPagedType
 import timber.log.Timber
 
 class CommentPagingSource(

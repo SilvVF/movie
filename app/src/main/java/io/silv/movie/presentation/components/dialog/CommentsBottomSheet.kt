@@ -120,14 +120,14 @@ import io.silv.movie.data.user.model.comment.PagedComment
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.content.screenmodel.CommentEvent
-import io.silv.movie.presentation.content.screenmodel.CommentsPagedType
-import io.silv.movie.presentation.content.screenmodel.CommentsScreenModel
-import io.silv.movie.presentation.content.screenmodel.RepliesState
-import io.silv.movie.presentation.content.screenmodel.SendError
-import io.silv.movie.presentation.profile.UserProfileImage
-import io.silv.movie.presentation.profile.screen.ProfileScreen
-import io.silv.movie.presentation.profile.screen.ProfileViewScreen
+import io.silv.movie.presentation.screenmodel.CommentEvent
+import io.silv.movie.presentation.screenmodel.CommentsPagedType
+import io.silv.movie.presentation.screenmodel.CommentsScreenModel
+import io.silv.movie.presentation.screenmodel.RepliesState
+import io.silv.movie.presentation.screenmodel.SendError
+import io.silv.movie.presentation.components.profile.UserProfileImage
+import io.silv.movie.presentation.screen.ProfileScreen
+import io.silv.movie.presentation.screen.ProfileViewScreen
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 

@@ -151,8 +151,10 @@ class ListRepository(
 
     suspend fun selectRecommendedFromSubscriptions(): List<ListWithPostersRpcResponse>? {
         return runCatching {
+            val set = mutableSetOf<String>()
             postgrest.moreFromSubscribed(auth.currentUserOrNull()!!.id, limit = 10, offset = 0)
                 .decodeList<ListWithPostersRpcResponse>()
+                .filter { set.add(it.listId) }
         }
             .onFailure { Timber.e(it) }
             .getOrNull()
@@ -287,7 +289,7 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = movieId,
                         showId = -1,
-                        posterPath = posterPath?.substringAfterLast('/'),
+                        posterPath = posterPath,
                         title = title,
                         createdAt = Clock.System.now()
                     )
@@ -306,7 +308,7 @@ class ListRepository(
                         userId = auth.currentUserOrNull()!!.id,
                         movieId = -1,
                         showId = showId,
-                        posterPath = posterPath?.substringAfterLast('/'),
+                        posterPath = posterPath,
                         title = title,
                         createdAt = Clock.System.now()
                     )

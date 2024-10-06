@@ -10,7 +10,6 @@ import io.silv.movie.R
 import io.silv.movie.data.prefrences.StoragePreferences
 import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings
-import kotlinx.collections.immutable.persistentListOf
 import org.koin.compose.koinInject
 
 
@@ -42,7 +41,7 @@ data object SettingsStorageeScreen: SearchableSettings {
 
         return Preference.PreferenceGroup(
             title = stringResource(R.string.cache),
-            preferenceItems = persistentListOf(
+            preferenceItems = listOf(
                 Preference.PreferenceItem.SwitchPreference(
                     pref = cacheAllPosters,
                     title = stringResource(id = R.string.cache_list_posters),

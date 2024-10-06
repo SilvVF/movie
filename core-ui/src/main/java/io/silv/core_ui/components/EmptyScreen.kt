@@ -13,18 +13,17 @@ import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExploreOff
-import androidx.compose.material.ripple.LocalRippleTheme
 import androidx.compose.material.ripple.RippleAlpha
-import androidx.compose.material.ripple.RippleTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -32,8 +31,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.R
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun NoResultsEmptyScreen(contentPaddingValues: PaddingValues) {
@@ -50,7 +47,7 @@ fun EmptyScreen(
     icon: ImageVector,
     iconSize: Dp = 24.dp,
     message: String? = null,
-    actions: ImmutableList<Action> = persistentListOf(),
+    actions: List<Action> = emptyList(),
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     val iconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .45f)
@@ -64,24 +61,21 @@ fun EmptyScreen(
     }
 }
 
-object PrimaryColorRippleTheme : RippleTheme {
-
-    @Composable override fun defaultColor(): Color = MaterialTheme.colorScheme.primary
-
-    @Composable
-    override fun rippleAlpha() =
+val PrimaryColorRippleTheme
+    @Composable get() = RippleConfiguration(
+    MaterialTheme.colorScheme.primary,
         RippleAlpha(
             draggedAlpha = 0.9f,
             focusedAlpha = 0.9f,
             hoveredAlpha = 0.9f,
             pressedAlpha = 0.9f,
         )
-}
+    )
 
 @Composable
 private fun EmptyScreen(
     message: String? = null,
-    actions: ImmutableList<Action> = persistentListOf(),
+    actions: List<Action> = emptyList(),
     contentPadding: PaddingValues,
     icon: @Composable () -> Unit,
 ) {
@@ -106,7 +100,7 @@ private fun EmptyScreen(
                 )
             }
             CompositionLocalProvider(
-                LocalRippleTheme provides PrimaryColorRippleTheme
+                LocalRippleConfiguration provides PrimaryColorRippleTheme
             ) {
                 actions.forEach { action ->
                     Spacer(modifier = Modifier.size(16.dp))
@@ -130,7 +124,7 @@ private fun EmptyViewPreview() {
         icon = Icons.Filled.ExploreOff,
         iconSize = 72.dp,
         message = stringResource(id = R.string.no_results_found),
-        actions = persistentListOf(Action(R.string.retry)),
+        actions = listOf(Action(R.string.retry)),
     )
 }
 

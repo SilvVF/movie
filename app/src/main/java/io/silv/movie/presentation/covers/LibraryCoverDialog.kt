@@ -24,10 +24,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,29 +37,24 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
 import io.silv.movie.R
-import io.silv.movie.core.DiskUtil
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.components.content.ContentPreviewDefaults
 import io.silv.movie.presentation.components.content.rememberListUri
-import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.toPoster
-import kotlinx.collections.immutable.ImmutableList
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
-import org.koin.compose.koinInject
 
 @Composable
 fun LibraryCoverDialog(
     list: ContentList,
-    items: ImmutableList<ContentItem>,
+    items: List<ContentItem>,
     isCustomCover: Boolean,
     snackbarHostState: SnackbarHostState,
     onShareClick: () -> Unit,
@@ -225,7 +217,7 @@ fun LibraryCoverDialog(
 @Composable
 fun ListViewCoverDialog(
     list: ContentList,
-    items: ImmutableList<ContentItem>,
+    items: List<ContentItem>,
     isCustomCover: Boolean,
     snackbarHostState: SnackbarHostState,
     onShareClick: () -> Unit,

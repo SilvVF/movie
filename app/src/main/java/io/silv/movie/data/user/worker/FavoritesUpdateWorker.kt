@@ -27,7 +27,7 @@ import io.silv.movie.data.content.tv.interactor.UpdateShow
 import io.silv.movie.data.content.tv.model.toDomain
 import io.silv.movie.data.content.tv.model.toShowUpdate
 import io.silv.movie.data.user.repository.ListRepository
-import io.silv.movie.presentation.list.screenmodel.FavoritesSortMode
+import io.silv.movie.presentation.screenmodel.FavoritesSortMode
 import kotlinx.coroutines.flow.firstOrNull
 
 /**

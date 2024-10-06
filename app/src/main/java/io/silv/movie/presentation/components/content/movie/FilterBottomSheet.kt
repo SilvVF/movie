@@ -67,7 +67,6 @@ import io.silv.movie.data.content.Genre
 import io.silv.movie.data.content.GenreMode
 import io.silv.movie.data.content.SearchItem
 import io.silv.movie.data.content.SortingOption
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
 
 
@@ -76,13 +75,13 @@ fun MovieFilterBottomSheet(
     onDismissRequest: () -> Unit,
     onApplyFilter: () -> Unit,
     onResetFilter: () -> Unit,
-    searchItems: ImmutableList<SearchItem>,
+    searchItems: List<SearchItem>,
     onSortingItemSelected: (SortingOption) -> Unit,
     selectedSortingOption: SortingOption,
     onGenreSelected: (Genre) -> Unit,
     genreMode: GenreMode,
     changeGenreMode: (GenreMode) -> Unit,
-    genres: ImmutableList<Pair<Boolean, Genre>>,
+    genres: List<Pair<Boolean, Genre>>,
 ) {
     var selectedSearchItemIdx by remember { mutableIntStateOf(0) }
     ModalBottomSheet(
@@ -90,7 +89,7 @@ fun MovieFilterBottomSheet(
             skipPartiallyExpanded = true
         ),
         onDismissRequest = onDismissRequest,
-        windowInsets = WindowInsets(0, 0, 0, 0)
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) }
     ) {
         val screenHeight = LocalConfiguration.current.screenHeightDp.dp
         val selectedSearchItem by remember {

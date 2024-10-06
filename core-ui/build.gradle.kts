@@ -2,6 +2,7 @@
 plugins {
     alias(libs.plugins.movie.android.library.compose)
     alias(libs.plugins.org.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -17,13 +18,19 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -36,42 +43,23 @@ android {
 dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.util)
-    implementation(libs.androidx.material3.window.size)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.material3.android)
-    androidTestImplementation(libs.androidx.compose.ui.test.junit)
     debugImplementation(libs.androidx.compose.ui.manifest)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.compose.ui.animation.core)
-    implementation(libs.androidx.compose.ui.animation)
-
-    implementation(libs.androidx.compose.ui.util)
-
-    implementation(libs.compose.shimmer)
-
-    api("com.google.android.material:material:1.12.0")
 
     // COIL
-    implementation(libs.coil.compose)
-    implementation(libs.coil)
+    api(libs.coil.compose)
+    api(libs.compose.shimmer)
+    api(libs.androidx.palette)
 
-    implementation(libs.androidx.palette)
+    api(libs.androidx.paging.compose)
 
-    implementation(libs.kotlin.collections.immutable)
-    implementation(libs.androidx.paging.common)
-    implementation(libs.androidx.paging.compose)
-
-    implementation(libs.bundles.voyager)
+    api(libs.voyager.screenModel)
 
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-
 }
 
 tasks {

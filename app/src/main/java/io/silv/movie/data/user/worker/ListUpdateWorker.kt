@@ -161,7 +161,7 @@ class ListUpdater(
                                 id = item.movieId,
                                 title = item.title,
                                 overview = item.description.orEmpty(),
-                                posterUrl = "https://image.tmdb.org/t/p/original/${item.posterPath}".takeIf { !item.posterPath.isNullOrBlank() },
+                                posterUrl = item.posterPath.takeIf { !item.posterPath.isNullOrBlank() },
                             )
                         )
                         movie = getMovie.await(id!!)!!
@@ -175,7 +175,7 @@ class ListUpdater(
                                 id = item.showId,
                                 title = item.title,
                                 overview = item.description.orEmpty(),
-                                posterUrl =  "https://image.tmdb.org/t/p/original/${item.posterPath}".takeIf { !item.posterPath.isNullOrBlank() },
+                                posterUrl =  item.posterPath.takeIf { !item.posterPath.isNullOrBlank() },
                             )
                         )
                         show = getShow.await(id!!)!!

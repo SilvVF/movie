@@ -3,9 +3,10 @@ package io.silv.movie.data.content.lists
 import io.silv.movie.data.content.lists.repository.ContentListRepository
 import io.silv.movie.data.content.movie.interactor.GetMovie
 import io.silv.movie.data.content.tv.interactor.GetShow
-import io.silv.movie.presentation.list.screenmodel.ListPreviewItem
-import kotlinx.collections.immutable.toImmutableList
+import io.silv.movie.presentation.screenmodel.ListPreviewItem
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerialName
@@ -75,7 +76,7 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
                 ContentItem.create().copy(
                     contentId = contentId,
                     isMovie = isMovie,
-                    posterUrl = "https://image.tmdb.org/t/p/original/$posterPath",
+                    posterUrl = posterPath,
                 )
             }
 
@@ -89,8 +90,7 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
                 }
 
 
-            contentItem.stateIn(scope)
+            contentItem.stateIn(scope, SharingStarted.WhileSubscribed(), contentItem.first())
         }
-            .toImmutableList()
     )
 }

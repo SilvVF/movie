@@ -18,16 +18,15 @@ import io.silv.core_ui.components.lazy.VerticalGridFastScroller
 import io.silv.movie.R
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.presentation.list.screenmodel.LibraryState
+import io.silv.movie.presentation.screenmodel.LibraryState
 import io.silv.movie.presentation.tabs.posterSharedElement
-import kotlinx.collections.immutable.ImmutableList
 
 @Composable
 fun LibraryGridView(
     paddingValues: PaddingValues,
     state: LibraryState,
     onFavoritesClicked: () -> Unit,
-    onListLongClick: (contentList: ContentList, items: ImmutableList<ContentItem>) -> Unit,
+    onListLongClick: (contentList: ContentList, items: List<ContentItem>) -> Unit,
     onListClick: (contentList: ContentList) -> Unit,
     onPosterClick: (contentList: ContentList) -> Unit,
     modifier: Modifier,

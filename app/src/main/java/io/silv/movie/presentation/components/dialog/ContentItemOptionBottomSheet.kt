@@ -52,7 +52,7 @@ fun ContentOptionsBottomSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismissRequest,
-        windowInsets = WindowInsets(0, 0, 0, 0),
+        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
         dragHandle = {
             BottomSheetDragHandlerNoPadding(Modifier.padding(top = 16.dp))
         }

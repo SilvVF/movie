@@ -1,9 +1,9 @@
 package io.silv.movie.data.prefrences
 
 import io.silv.movie.data.prefrences.core.PreferenceStore
-import io.silv.movie.presentation.list.screenmodel.FavoritesSortMode
-import io.silv.movie.presentation.list.screenmodel.LibrarySortMode
-import io.silv.movie.presentation.list.screenmodel.ListSortMode
+import io.silv.movie.presentation.screenmodel.FavoritesSortMode
+import io.silv.movie.presentation.screenmodel.LibrarySortMode
+import io.silv.movie.presentation.screenmodel.ListSortMode
 
 class LibraryPreferences(
     private val preferenceStore: PreferenceStore

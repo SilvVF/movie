@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -23,7 +24,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import com.google.android.material.color.utilities.Scheme
+import io.silv.core_ui.theme.scheme.Scheme
+import kotlin.math.ln
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -141,4 +143,20 @@ fun Scheme.toColorScheme() = ColorScheme(
     outline = Color(outline),
     outlineVariant = Color(outlineVariant),
     scrim = Color(scrim),
+    surfaceBright = surfaceColorAtElevation(0.dp),
+    surfaceDim = surfaceColorAtElevation(0.dp),
+    surfaceContainer = surfaceColorAtElevation(2.dp),
+    surfaceContainerHigh = surfaceColorAtElevation(4.dp),
+    surfaceContainerHighest = surfaceColorAtElevation(8.dp),
+    surfaceContainerLow = surfaceColorAtElevation(1.dp),
+    surfaceContainerLowest = surfaceColorAtElevation(0.dp),
 )
+
+@SuppressLint("RestrictedApi")
+fun Scheme.surfaceColorAtElevation(
+    elevation: Dp,
+): Color {
+    if (elevation == 0.dp) return Color(surface)
+    val alpha = ((4.5f * ln(elevation.value + 1)) + 2f) / 100f
+    return Color(primary).copy(alpha = alpha).compositeOver(Color(surface))
+}

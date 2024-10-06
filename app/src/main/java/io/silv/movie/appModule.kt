@@ -1,13 +1,13 @@
 package io.silv.movie
 
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.dataModule
+import io.silv.movie.di.dataModule
 import io.silv.movie.presentation.covers.ImageSaver
 import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
-import io.silv.movie.presentation.screenModelModule
+import io.silv.movie.di.screenModelModule
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module

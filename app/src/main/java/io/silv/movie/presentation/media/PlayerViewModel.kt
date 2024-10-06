@@ -26,7 +26,6 @@ import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.media.util.PlayerHelper
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -222,7 +221,7 @@ class PlayerViewModel(
 
             trailerToStreams = null
             trailerQueue.clear()
-            trailerQueue.addAll(mutableTrailers.toImmutableList())
+            trailerQueue.addAll(mutableTrailers)
         }
     }
 

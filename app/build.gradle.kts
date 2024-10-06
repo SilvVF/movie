@@ -2,10 +2,11 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.movie.android.application.compose)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.org.jetbrains.kotlin.android)
     alias(libs.plugins.movie.android.application)
     kotlin("plugin.serialization")
-    id("com.google.devtools.ksp") version "1.9.23-1.0.20"
+    id("com.google.devtools.ksp")
     id("kotlin-parcelize")
     id("app.cash.sqldelight") version "2.0.1"
 }
@@ -61,6 +62,12 @@ android {
         buildType.buildConfigField("String", "SUPABSE_ANON_KEY", properties.getProperty("SUPABSE_ANON_KEY"))
         buildType.buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", properties.getProperty("GOOGLE_WEB_CLIENT_ID"))
     }
+
+    composeCompiler {
+        reportsDestination = layout.buildDirectory.dir("compose_compiler")
+        stabilityConfigurationFile = rootProject.layout.projectDirectory.file("stability_config.conf")
+    }
+
 
     buildFeatures {
         buildConfig = true
@@ -142,7 +149,6 @@ dependencies {
     // KOTLIN
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.serialization)
-    implementation(libs.kotlin.collections.immutable)
     implementation(libs.kotlinx.serialization.json.okio)
 
     // Database
@@ -157,7 +163,6 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.bundles.supabase)
 }
-
 
 tasks {
     // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)

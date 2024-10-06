@@ -10,15 +10,15 @@ import cafe.adriel.voyager.navigator.Navigator
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.ContentInteractor
 import io.silv.movie.presentation.ContentInteractor.ContentEvent
-import io.silv.movie.presentation.list.screen.ListViewScreen
+import io.silv.movie.presentation.screen.ListViewScreen
 
 
 @Composable
 internal fun HandleItemEvents(
     contentInteractor: ContentInteractor,
     snackbarHostState: SnackbarHostState,
-    navigator: () -> Navigator?,
-    context: Context = LocalContext.current
+    context: Context = LocalContext.current,
+    navigate: suspend (Navigator.() -> Unit) -> Unit,
 ) {
     CollectEventsWithLifecycle(contentInteractor) { event ->
         when(event)  {
@@ -110,7 +110,7 @@ internal fun HandleItemEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator()?.push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty()))
+                            navigate { push(ListViewScreen(event.list.id, event.list.supabaseId.orEmpty())) }
                     }
                 } else {
                     val result = snackbarHostState.showSnackbar(

@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -42,6 +41,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -60,7 +60,6 @@ import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.tabs.listNameSharedElement
 import io.silv.movie.presentation.toPoster
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.compose.koinInject
 
@@ -99,7 +98,7 @@ fun rememberListUri(list: ContentList): ListUri? {
 @Composable
 fun ContentListPosterStateFlowItems(
     list: ContentList,
-    items: ImmutableList<StateFlow<ContentItem?>>,
+    items: List<StateFlow<ContentItem>>,
     modifier: Modifier = Modifier
 ) {
     val listUri = rememberListUri(list = list)
@@ -115,7 +114,9 @@ fun ContentListPosterStateFlowItems(
         when {
             items.isEmpty() -> ContentPreviewDefaults.PlaceholderPoster(modifier = modifier)
             items.size < 4 -> {
-                val item by items.first().collectAsStateWithLifecycle()
+
+                val item by items[0].collectAsStateWithLifecycle()
+
                 ContentPreviewDefaults.SingleItemPoster(
                     modifier = modifier,
                     item = item
@@ -135,7 +136,7 @@ fun ContentListPosterStateFlowItems(
 @Composable
 fun ContentListPoster(
     list: ContentList,
-    items: ImmutableList<ContentItem>,
+    items: List<ContentItem>,
     modifier: Modifier = Modifier
 ) {
     val listUri = rememberListUri(list = list)
@@ -192,22 +193,41 @@ object ContentPreviewDefaults {
     @Composable
     fun MultiItemPosterStateFlowItems(
         modifier: Modifier,
-        items: ImmutableList<StateFlow<ContentItem?>>,
+        items: List<StateFlow<ContentItem>>,
     ) {
         val trimmed = remember(items) { items.take(4) }
-
-        FlowRow(
-            maxItemsInEachRow = 2,
-            modifier = modifier.aspectRatio(1f)
-        ) {
-            trimmed.fastForEach {
-                val item by it.collectAsStateWithLifecycle()
-                item?.let {
+        Layout(
+            content = {
+                trimmed.fastForEach {
+                    val data by it.collectAsStateWithLifecycle()
                     ItemCover.Square(
-                        modifier = Modifier.weight(1f),
                         shape = RectangleShape,
-                        data = remember(it) { it.toPoster() }
+                        data = remember(data) { data.toPoster() }
                     )
+                }
+            },
+            modifier = modifier.aspectRatio(1f)
+        ) { measurables, constraints ->
+
+            val placeables = measurables.take(4).map {
+                it.measure(
+                    constraints.copy(
+                        minHeight = 0,
+                        minWidth = 0,
+                        maxHeight = minOf(constraints.minHeight / 2, constraints.minWidth / 2),
+                        maxWidth = minOf(constraints.minHeight / 2, constraints.minWidth / 2)
+                    )
+                )
+            }
+
+            layout(constraints.minWidth, constraints.minHeight) {
+                placeables.forEachIndexed { i, item ->
+                    when (i) {
+                        0 -> item.place(0, 0)
+                        1 -> item.place(constraints.maxWidth / 2,  0)
+                        2 -> item.place(0, constraints.maxHeight / 2)
+                        3 -> item.place(constraints.maxWidth / 2, constraints.maxHeight / 2)
+                    }
                 }
             }
         }
@@ -216,20 +236,42 @@ object ContentPreviewDefaults {
     @Composable
     fun MultiItemPoster(
         modifier: Modifier,
-        items: ImmutableList<ContentItem>,
+        items: List<ContentItem>,
     ) {
         val trimmed = remember(items) { items.take(4) }
 
-        FlowRow(
-            maxItemsInEachRow = 2,
+        Layout(
+            content = {
+                trimmed.fastForEach {
+                    ItemCover.Square(
+                        shape = RectangleShape,
+                        data = remember(it) { it.toPoster() }
+                    )
+                }
+            },
             modifier = modifier.aspectRatio(1f)
-        ) {
-            trimmed.fastForEach {
-                ItemCover.Square(
-                    modifier = Modifier.weight(1f),
-                    shape = RectangleShape,
-                    data = remember(it) { it.toPoster() }
+        ) { measurables, constraints ->
+
+            val placeables = measurables.take(4).map {
+                it.measure(
+                    constraints.copy(
+                        minHeight = 0,
+                        minWidth = 0,
+                        maxHeight = constraints.maxHeight / 2,
+                        maxWidth = constraints.maxWidth / 2
+                    )
                 )
+            }
+
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                placeables.forEachIndexed { i, item ->
+                    when (i) {
+                        0 -> item.place(0, 0)
+                        1 -> item.place(constraints.maxWidth / 2,  0)
+                        2 -> item.place(0, constraints.maxHeight / 2)
+                        3 -> item.place(constraints.maxWidth / 2, constraints.maxHeight / 2)
+                    }
+                }
             }
         }
     }
@@ -307,7 +349,7 @@ object ContentPreviewDefaults {
             ItemCover.Square(
                 modifier = modifier,
                 shape = RectangleShape,
-                data = remember(item.posterLastUpdated) { item.toPoster() }
+                data = remember(item.posterLastUpdated) { item.toPoster() },
             )
         }
     }

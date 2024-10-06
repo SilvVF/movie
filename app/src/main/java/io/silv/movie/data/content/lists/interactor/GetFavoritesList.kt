@@ -2,7 +2,7 @@ package io.silv.movie.data.content.lists.interactor
 
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.repository.ContentListRepository
-import io.silv.movie.presentation.list.screenmodel.FavoritesSortMode
+import io.silv.movie.presentation.screenmodel.FavoritesSortMode
 import kotlinx.coroutines.flow.Flow
 
 class GetFavoritesList(

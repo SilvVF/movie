@@ -97,7 +97,7 @@ fun LazyListScope.creditsPagingList(
                    AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(credit.profilePath)
-                            .fallback(R.drawable.user_default_proflie_icon)
+                            //.fallback(R.drawable.user_default_proflie_icon)
                             .crossfade(true)
                             .build(),
                        contentScale = ContentScale.Crop,

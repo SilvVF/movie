@@ -8,6 +8,7 @@ import coil.fetch.SourceResult
 import coil.key.Keyer
 import coil.request.Options
 import coil.request.Parameters
+import coil.size.pxOrElse
 import io.silv.core_ui.components.PosterData
 import io.silv.movie.coil.core.FetcherDiskStore
 import io.silv.movie.coil.core.FetcherDiskStoreImageFile
@@ -98,10 +99,29 @@ class ContentPosterFetcher(
         return null
     }
 
+    private val sizes = arrayOf(
+        "w92" to 92,
+        "w154" to 154,
+        "w185" to 185,
+        "w342" to 342,
+        "w500" to 500,
+        "w780" to 780,
+        "original" to Int.MAX_VALUE // "original" is the largest option
+    )
+
+    private fun getClosestSize(widthPx: Int): String {
+        // Find the closest size
+        val closestSize = sizes.minByOrNull { (_, sizePx) ->
+            if (widthPx <= sizePx) sizePx - widthPx else Int.MAX_VALUE
+        }
+
+        return closestSize?.first ?: "w185"
+    }
+
     override suspend fun fetch(options: Options, data: PosterData): Response {
         fun newRequest(): Request {
             val request = Request.Builder()
-                .url(data.url!!)
+                .url(data.url!!.replace("original", getClosestSize(options.size.width.pxOrElse { -1 })))
                 .headers(options.headers)
                 // Support attaching custom data to the network request.
                 .tag(Parameters::class.java, options.parameters)

@@ -7,8 +7,8 @@ import io.silv.movie.data.content.lists.ContentListMapper
 import io.silv.movie.data.content.lists.ContentListUpdate
 import io.silv.movie.database.DatabaseHandler
 import io.silv.movie.presentation.covers.cache.ListCoverCache
-import io.silv.movie.presentation.list.screenmodel.FavoritesSortMode
-import io.silv.movie.presentation.list.screenmodel.ListSortMode
+import io.silv.movie.presentation.screenmodel.FavoritesSortMode
+import io.silv.movie.presentation.screenmodel.ListSortMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock

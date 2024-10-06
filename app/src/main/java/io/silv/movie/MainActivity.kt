@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -50,10 +51,11 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
 import io.silv.core_ui.theme.colorScheme.CloudflareColorScheme
@@ -84,8 +86,6 @@ import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.repository.UserRepository
-import io.silv.movie.presentation.ContentInteractor
-import io.silv.movie.presentation.ListInteractor
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
@@ -102,12 +102,14 @@ import io.silv.movie.presentation.tabs.DiscoverTab
 import io.silv.movie.presentation.tabs.LibraryTab
 import io.silv.movie.presentation.tabs.ProfileTab
 import io.silv.movie.presentation.tabs.SettingsTab
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import org.koin.android.ext.android.inject
+import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.getViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.compose.currentKoinScope
+import org.koin.core.parameter.ParametersDefinition
+import org.koin.core.qualifier.Qualifier
+import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
 
 
@@ -135,24 +137,21 @@ class MainActivity : ComponentActivity() {
         ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
         setContent {
-            val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
+            KoinAndroidContext {
+                val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
 
-            LifecycleEventEffect(event = Lifecycle.Event.ON_STOP) {
-                Nav.clear()
-            }
-
-            CompositionLocalProvider(
-                LocalMainViewModelStoreOwner provides this,
-            ) {
-                when(val s = appStateProvider.state) {
-                    AppStateProvider.State.Loading -> Unit
-                    is AppStateProvider.State.Success -> {
-                        MainContent(
-                            appState = s.state,
-                            currentUser = currentUser,
-                            contentInteractor = mainScreenModel.contentInteractor,
-                            listInteractor = mainScreenModel.listInteractor
-                        )
+                CompositionLocalProvider(
+                    LocalMainViewModelStoreOwner provides this,
+                ) {
+                    when (val s = appStateProvider.state) {
+                        AppStateProvider.State.Loading -> Unit
+                        is AppStateProvider.State.Success -> {
+                            MainContent(
+                                appState = s.state,
+                                currentUser = currentUser,
+                                mainScreenModel = mainScreenModel
+                            )
+                        }
                     }
                 }
             }
@@ -160,20 +159,40 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Stable
+class StableParametersDefinition(val parametersDefinition: ParametersDefinition?)
+
+@Composable
+fun rememberStableParametersDefinition(
+    parametersDefinition: ParametersDefinition?
+): StableParametersDefinition = remember { StableParametersDefinition(parametersDefinition) }
+
+@Composable
+public inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
+    qualifier: Qualifier? = null,
+    scope: Scope = currentKoinScope(),
+    noinline parameters: ParametersDefinition? = null
+): T {
+    val st = parameters?.let { rememberStableParametersDefinition(parameters) }
+    val tag = remember(qualifier, scope) { qualifier?.value }
+    return rememberScreenModel(tag = tag) {
+        scope.get(qualifier, st?.parametersDefinition)
+    }
+}
+
 @Composable
 private fun MainContent(
     appState: AppState,
+    mainScreenModel: MainScreenModel,
     currentUser: User?,
-    contentInteractor: ContentInteractor,
-    listInteractor: ListInteractor,
 ) {
     CompositionLocalProvider(
         LocalUser provides currentUser,
-        LocalListInteractor provides listInteractor,
-        LocalContentInteractor provides contentInteractor,
+        LocalListInteractor provides mainScreenModel.listInteractor,
+        LocalContentInteractor provides mainScreenModel.contentInteractor,
         LocalAppState provides appState
     ) {
-        val playerViewModel = getActivityViewModel<PlayerViewModel>()
+        val playerViewModel by getActivityViewModel<PlayerViewModel>()
         val collapsableVideoState = rememberCollapsableVideoState()
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -198,11 +217,6 @@ private fun MainContent(
             playerViewModel.clearMediaQueue()
         }
 
-        val trailers by remember(playerViewModel.trailerQueue) {
-            derivedStateOf { playerViewModel.trailerQueue.toImmutableList() }
-        }
-
-
         MovieTheme(
             appState.appTheme,
             appState.amoled,
@@ -219,7 +233,7 @@ private fun MainContent(
                         contentWindowInsets = WindowInsets(0, 0, 0, 0),
                         bottomBar = {
                             AppBottomBar(
-                                videos = trailers,
+                                videos =  playerViewModel.trailerQueue,
                                 progress = { collapsableVideoState.progress },
                                 tabNavigator = tabNavigator,
                                 modifier = Modifier
@@ -289,14 +303,14 @@ private fun MainContent(
                     }
                 }
                 HandleItemEvents(
-                    contentInteractor = contentInteractor,
+                    contentInteractor = mainScreenModel.contentInteractor,
                     snackbarHostState = snackbarHostState,
-                    navigator = { Nav.current }
+                    navigate = mainScreenModel.navigationChannel::send
                 )
                 HandleListEvents(
-                    listInteractor = listInteractor,
+                    listInteractor = mainScreenModel.listInteractor,
                     snackbarHostState = snackbarHostState,
-                    navigator = { Nav.current }
+                    navigation = mainScreenModel.navigationChannel::send
                 )
             }
         }
@@ -351,23 +365,21 @@ fun MovieTheme(
     )
 }
 
+private val tabs = listOf(
+    LibraryTab,
+    BrowseTab,
+    DiscoverTab,
+    ProfileTab,
+    SettingsTab
+)
 
 @Composable
 fun AppBottomBar(
-    videos: ImmutableList<Trailer>?,
+    videos: List<Trailer>?,
     progress: () -> Float,
     tabNavigator: TabNavigator,
     modifier: Modifier = Modifier,
 ) {
-    val tabs = remember {
-        persistentListOf(
-            LibraryTab,
-            BrowseTab,
-            DiscoverTab,
-            ProfileTab,
-            SettingsTab
-        )
-    }
     val density = LocalDensity.current
     val insets = WindowInsets.systemBars.getBottom(density)
 

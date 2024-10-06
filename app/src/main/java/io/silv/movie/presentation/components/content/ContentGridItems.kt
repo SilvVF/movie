@@ -42,8 +42,6 @@ import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
 import io.silv.movie.presentation.tabs.coverDataSharedElement
 import io.silv.movie.presentation.toPoster
-import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.persistentListOf
 
 @Composable
 fun EntryGridItemIconButton(
@@ -129,7 +127,7 @@ fun ContentItemComfortableGridItem(
 
 @Composable
 fun ContentListPosterGrid(
-    items: ImmutableList<ContentItem>,
+    items: List<ContentItem>,
     mode: PosterDisplayMode.Grid,
     paddingValues: PaddingValues,
     onLongClick: (item: ContentItem) -> Unit,
@@ -141,7 +139,7 @@ fun ContentListPosterGrid(
     onRecommendationLongClick: (item: ContentItem) -> Unit = {},
     onAddRecommendation: (item: ContentItem) -> Unit = {},
     showFavorite: Boolean = true,
-    recommendations: ImmutableList<ContentItem> = persistentListOf(),
+    recommendations: List<ContentItem> = emptyList(),
     refreshingRecommendations: Boolean = false,
     startAddingClick: () -> Unit = {},
     onRefreshClick: () -> Unit = {},

@@ -474,7 +474,6 @@ object ModalBottomSheetDefaults {
      * Properties used to customize the behavior of a [ModalBottomSheet]. */
     val properties = ModalBottomSheetProperties(
         securePolicy = SecureFlagPolicy.Inherit,
-        isFocusable = true,
         shouldDismissOnBackPress = true
     )
 }
@@ -735,7 +734,7 @@ private class ModalBottomSheetDialogWrapper(
 ) : ComponentDialog(
     ContextThemeWrapper(
         composeView.context,
-        io.silv.core_ui.R.style.EdgeToEdgeFloatingDialogWindowTheme
+        R.style.FloatingDialogWindowTheme
     )
 ), ViewRootForInspector {
 

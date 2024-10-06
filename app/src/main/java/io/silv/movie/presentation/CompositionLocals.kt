@@ -19,13 +19,14 @@ import io.silv.movie.data.prefrences.ThemeMode
 import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.user.User
 import io.silv.movie.presentation.tabs.LibraryTab
-import org.koin.androidx.compose.defaultExtras
-import org.koin.androidx.viewmodel.resolveViewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
+import org.koin.viewmodel.defaultExtras
+import org.koin.viewmodel.lazyResolveViewModel
+
 
 val LocalIsScrolling = compositionLocalOf<MutableState<Boolean>> { error("not provided yet")  }
 
@@ -93,15 +94,20 @@ inline fun <reified T : ViewModel> getActivityViewModel(
     key: String? = null,
     scope: Scope = currentKoinScope(),
     noinline parameters: ParametersDefinition? = null,
-): T {
+): Lazy<T> {
 
     val viewModelStoreOwner = checkNotNull(LocalMainViewModelStoreOwner.current) {
         "No ViewModelStoreOwner was provided via LocalMainViewModelStoreOwner"
     }
     val extras = defaultExtras(viewModelStoreOwner)
 
-    return resolveViewModel(
-        T::class, viewModelStoreOwner.viewModelStore, key, extras, qualifier, scope, parameters
+    return lazyResolveViewModel(
+        T::class,
+        { viewModelStoreOwner.viewModelStore }, key,
+        { extras },
+        qualifier,
+        scope,
+        parameters
     )
 }
 

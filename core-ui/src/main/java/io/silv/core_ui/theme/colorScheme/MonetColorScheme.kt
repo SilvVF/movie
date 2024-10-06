@@ -12,11 +12,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.getSystemService
-import com.google.android.material.color.utilities.Hct
-import com.google.android.material.color.utilities.MaterialDynamicColors
-import com.google.android.material.color.utilities.QuantizerCelebi
-import com.google.android.material.color.utilities.SchemeContent
-import com.google.android.material.color.utilities.Score
+import io.silv.core_ui.theme.dynamiccolor.MaterialDynamicColors
+import io.silv.core_ui.theme.hct.Hct
+import io.silv.core_ui.theme.quantize.QuantizerCelebi
+import io.silv.core_ui.theme.scheme.SchemeContent
+import io.silv.core_ui.theme.score.Score
 
 class MonetColorScheme(context: Context) : BaseColorScheme() {
 

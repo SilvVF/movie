@@ -28,7 +28,6 @@ import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TextFieldDefaults.ContainerBox
 import androidx.compose.material3.TextFieldDefaults.colors
 import androidx.compose.material3.TextFieldDefaults.contentPaddingWithoutLabel
 import androidx.compose.material3.TextFieldDefaults.shape
@@ -74,7 +73,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.silv.core_ui.R
 import io.silv.core_ui.util.keyboardAsState
-import kotlinx.collections.immutable.ImmutableList
 
 const val SEARCH_DEBOUNCE_MILLIS = 250L
 
@@ -216,7 +214,7 @@ fun AppBarTitle(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.basicMarquee(
-                        delayMillis = 2_000,
+                        repeatDelayMillis = 2_000,
                     ),
                 )
             }
@@ -257,7 +255,7 @@ fun Pill(
 
 @Composable
 fun AppBarActions(
-    actions: ImmutableList<AppBar.AppBarAction>,
+    actions: List<AppBar.AppBarAction>,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -487,7 +485,7 @@ fun SearchToolbar(
                         colors = colors(),
                         contentPadding = contentPaddingWithoutLabel(),
                         container = {
-                            ContainerBox(true,
+                            TextFieldDefaults.Container(true,
                                 isError = false,
                                 interactionSource = interactionSource,
                                 colors = colors(),

@@ -4,7 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
@@ -12,10 +12,12 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import cafe.adriel.voyager.transitions.FadeTransition
-import io.silv.movie.Nav
+import io.silv.movie.MainScreenModel
 import io.silv.movie.R
+import io.silv.movie.presentation.getActivityViewModel
 import io.silv.movie.presentation.settings.LocalBackPress
 import io.silv.movie.presentation.settings.SettingsMainScreen
+import kotlinx.coroutines.flow.receiveAsFlow
 
 data object SettingsTab: Tab {
 
@@ -29,6 +31,8 @@ data object SettingsTab: Tab {
     @Composable
     override fun Content() {
         val tabNavigator = LocalTabNavigator.current
+        val mainScreenModel by getActivityViewModel<MainScreenModel>()
+
         Navigator(SettingsMainScreen) { navigator ->
             val pop: () -> Unit = {
                 if (navigator.canPop) {
@@ -37,9 +41,14 @@ data object SettingsTab: Tab {
                     tabNavigator.current = LibraryTab
                 }
             }
-            CompositionLocalProvider(LocalBackPress provides pop) {
-                SideEffect { Nav.setNav(navigator) }
 
+            LaunchedEffect(Unit) {
+                mainScreenModel.navigationChannel.receiveAsFlow().collect { action ->
+                    with(navigator) { action() }
+                }
+            }
+
+            CompositionLocalProvider(LocalBackPress provides pop) {
                 FadeTransition(navigator)
             }
         }

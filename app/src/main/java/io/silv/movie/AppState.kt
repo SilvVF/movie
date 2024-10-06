@@ -1,11 +1,14 @@
 package io.silv.movie
 
 import android.text.format.DateUtils
+import androidx.annotation.CallSuper
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.navigator.tab.Tab
 import io.silv.movie.data.prefrences.AppTheme
 import io.silv.movie.data.prefrences.ThemeMode
@@ -16,6 +19,9 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.toJavaInstant
+import org.koin.core.component.KoinScopeComponent
+import org.koin.core.component.createScope
+import org.koin.core.scope.Scope
 import java.text.DateFormat
 import java.util.Date
 
@@ -97,5 +103,29 @@ class AppStateProvider(
         data object Loading: State
         @Stable
         data class Success(val state: AppState): State
+    }
+}
+
+abstract class ScopedStateScreenModel<T>(state: T): StateScreenModel<T>(state), KoinScopeComponent {
+
+    override val scope: Scope by lazy { createScope(this) }
+
+    // clear scope
+    @CallSuper
+    override fun onDispose() {
+        super.onDispose()
+        scope.close()
+    }
+}
+
+abstract class ScopedScreenModel: ScreenModel, KoinScopeComponent {
+
+    override val scope: Scope by lazy { createScope(this) }
+
+    // clear scope
+    @CallSuper
+    override fun onDispose() {
+        super.onDispose()
+        scope.close()
     }
 }

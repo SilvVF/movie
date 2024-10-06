@@ -4,12 +4,14 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.splineBasedDecay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.AnchoredDraggableState
 import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.gestures.animateToWithDecay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -88,20 +90,18 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
     val state = remember {
         AnchoredDraggableState(
             initialValue = initial,
+            anchors = DraggableAnchors {
+                CollapsableVideoAnchors.Start at 0f
+                CollapsableVideoAnchors.End at
+                        with(density) { configuration.screenHeightDp.dp.toPx() }
+                CollapsableVideoAnchors.Dismiss at
+                        with(density) { configuration.screenHeightDp.dp.toPx() + CollapsablePlayerMinHeight.toPx() }
+            },
             positionalThreshold = { distance: Float -> distance * 0.5f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = tween(),
-        ).apply {
-            updateAnchors(
-                DraggableAnchors {
-                    CollapsableVideoAnchors.Start at 0f
-                    CollapsableVideoAnchors.End at
-                            with(density) { configuration.screenHeightDp.dp.toPx() }
-                    CollapsableVideoAnchors.Dismiss at
-                            with(density) { configuration.screenHeightDp.dp.toPx() + CollapsablePlayerMinHeight.toPx() }
-                }
-            )
-        }
+            snapAnimationSpec = tween(),
+            decayAnimationSpec = splineBasedDecay(density),
+        )
     }
 
     DisposableEffect(Unit) {
@@ -111,18 +111,16 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
     val fullScreenVideoDraggable = remember {
         AnchoredDraggableState(
             initialValue = VideoDragAnchors.Normal,
+            anchors =  DraggableAnchors {
+                VideoDragAnchors.Normal at 0f
+                VideoDragAnchors.FullScreen at 1200f
+                VideoDragAnchors.Dismiss at 1200f
+            },
             positionalThreshold = { distance: Float -> distance * 0.5f },
             velocityThreshold = { with(density) { 100.dp.toPx() } },
-            animationSpec = tween(),
-        ).apply {
-            updateAnchors(
-                DraggableAnchors {
-                    VideoDragAnchors.Normal at 0f
-                    VideoDragAnchors.FullScreen at 1200f
-                    VideoDragAnchors.Dismiss at 1200f
-                }
-            )
-        }
+            snapAnimationSpec = tween(),
+            decayAnimationSpec = splineBasedDecay(density),
+        )
     }
 
     val scope =  rememberCoroutineScope()
@@ -243,7 +241,7 @@ private class CollapsableVideoLayoutScrollConnection(
         preFlingIdx = lazyListState.firstVisibleItemIndex
 
         return if (available.y < 0 && !lazyListState.canScrollBackward && canConsumeDelta && lazyListState.firstVisibleItemIndex == 0) {
-            state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
+            state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
             available
         } else {
             Velocity.Zero
@@ -254,7 +252,7 @@ private class CollapsableVideoLayoutScrollConnection(
         consumed: Velocity,
         available: Velocity
     ): Velocity {
-        state.animateTo(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
+        state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
         return super.onPostFling(consumed, available)
     }
 }

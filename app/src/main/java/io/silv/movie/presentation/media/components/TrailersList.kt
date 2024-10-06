@@ -9,10 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.silv.movie.data.content.trailers.Trailer
-import kotlinx.collections.immutable.ImmutableList
 
 fun LazyListScope.trailersList(
-    trailers: ImmutableList<Trailer>,
+    trailers: List<Trailer>,
     onClick: (trailer: Trailer) -> Unit,
     onYoutubeClick: (trailer: Trailer) -> Unit
 ) {

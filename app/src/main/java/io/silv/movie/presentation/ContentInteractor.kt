@@ -19,7 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
+@Stable
 interface ContentInteractor: EventProducer<ContentEvent> {
     fun toggleFavorite(contentItem: ContentItem)
     fun addToList(contentList: ContentList, contentItem: ContentItem)

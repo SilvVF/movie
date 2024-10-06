@@ -29,6 +29,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 import kotlinx.datetime.Clock
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import timber.log.Timber
 
 /**
@@ -37,20 +39,21 @@ import timber.log.Timber
  * No deletion / removals of favorites happen only additions for current signed in user.
  */
 class UserListUpdateWorker (
-    private val contentListRepository: ContentListRepository,
-    private val listRepository: ListRepository,
-    private val auth: Auth,
-    private val getShow: GetShow,
-    private val getMovie: GetMovie,
-    private val getRemoteTVShows: GetRemoteTVShows,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
-    private val userRepository: UserRepository,
-
     appContext: Context,
     private val params: WorkerParameters
-): CoroutineWorker(appContext, params) {
+): CoroutineWorker(appContext, params), KoinComponent {
+
+    private val contentListRepository: ContentListRepository by inject()
+    private val listRepository: ListRepository by inject()
+    private val auth: Auth by inject()
+    private val getShow: GetShow by inject()
+    private val getMovie: GetMovie by inject()
+    private val getRemoteTVShows: GetRemoteTVShows by inject()
+    private val getRemoteMovie: GetRemoteMovie by inject()
+    private val networkToLocalMovie: NetworkToLocalMovie by inject()
+    private val networkToLocalTVShow: NetworkToLocalTVShow by inject()
+    private val userRepository: UserRepository by inject()
+
 
     override suspend fun doWork(): Result {
 

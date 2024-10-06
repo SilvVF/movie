@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import io.silv.core_ui.util.colorClickable
 import io.silv.movie.R
 import io.silv.movie.data.user.User
-import io.silv.movie.presentation.profile.UserProfileImage
+import io.silv.movie.presentation.components.profile.UserProfileImage
 
 
 @Composable
@@ -62,7 +62,7 @@ fun TitleWithProfilePicture(
         ) {
             UserProfileImage(
                 user = user,
-                error = painterResource(id = R.drawable.user_default_proflie_icon),
+                error = null,//painterResource(id = R.drawable.user_default_proflie_icon),
                 modifier = Modifier
                     .size(28.dp)
                     .clip(CircleShape)

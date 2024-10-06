@@ -9,14 +9,14 @@ import androidx.compose.ui.platform.LocalContext
 import cafe.adriel.voyager.navigator.Navigator
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.ListInteractor
-import io.silv.movie.presentation.ListInteractor.*
-import io.silv.movie.presentation.list.screen.ListViewScreen
+import io.silv.movie.presentation.ListInteractor.ListEvent
+import io.silv.movie.presentation.screen.ListViewScreen
 
 @Composable
 internal fun HandleListEvents(
     listInteractor: ListInteractor,
     snackbarHostState: SnackbarHostState,
-    navigator: () -> Navigator?,
+    navigation: suspend (Navigator.() -> Unit) -> Unit,
     context: Context = LocalContext.current
 ) {
     CollectEventsWithLifecycle(listInteractor) { event ->
@@ -31,12 +31,12 @@ internal fun HandleListEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator()?.push(
+                            navigation {
                                 ListViewScreen(
                                     event.list.id,
                                     event.list.supabaseId.orEmpty()
                                 )
-                            )
+                            }
                     }
                 } else {
                     val result = snackbarHostState.showSnackbar(
@@ -80,12 +80,14 @@ internal fun HandleListEvents(
                     when (result) {
                         SnackbarResult.Dismissed -> Unit
                         SnackbarResult.ActionPerformed ->
-                            navigator()?.push(
-                                ListViewScreen(
-                                    event.list.id,
-                                    event.list.supabaseId.orEmpty()
+                            navigation {
+                                push(
+                                    ListViewScreen(
+                                        event.list.id,
+                                        event.list.supabaseId.orEmpty()
+                                    )
                                 )
-                            )
+                            }
                     }
                 } else {
                     val result = snackbarHostState.showSnackbar(
