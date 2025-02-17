@@ -2,7 +2,7 @@ package io.silv.movie.network.model
 
 import io.silv.movie.core.SCredit
 import io.silv.movie.core.SMovie
-import io.silv.movie.core.STVShow
+import io.silv.movie.core.SShow
 import io.silv.movie.network.model.person.CombinedCreditsResponse
 import io.silv.movie.network.model.person.CreditsResponse
 import io.silv.movie.network.model.movie.MovieDiscoverResponse
@@ -94,9 +94,9 @@ fun CreditsResponse.toSCredits(): List<SCredit>  {
     }
 }
 
-fun TVResult.toSTVShow(): STVShow {
+fun TVResult.toSShow(): SShow {
     val m = this
-    return STVShow.create().apply {
+    return SShow.create().apply {
         url = "https://api.themoviedb.org/3/tv/${m.id}"
         posterPath = "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.name
@@ -137,9 +137,9 @@ fun MovieRecommendationResponse.Result.toSMovie(): SMovie {
     }
 }
 
-fun TVSeriesRecommendationResponse.Result.toSTVShow(): STVShow {
+fun TVSeriesRecommendationResponse.Result.toSShow(): SShow {
     val m = this
-    return STVShow.create().apply {
+    return SShow.create().apply {
         url = "https://api.themoviedb.org/3/tv/${m.id}"
         posterPath = "https://image.tmdb.org/t/p/original${m.posterPath}".takeIf { m.posterPath != null }
         title = m.name

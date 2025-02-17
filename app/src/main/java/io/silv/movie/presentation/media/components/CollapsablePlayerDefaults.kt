@@ -44,7 +44,7 @@ import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.conditional
 import io.silv.core_ui.util.playOnYoutube
 import io.silv.movie.R
-import io.silv.movie.data.content.trailers.Trailer
+import io.silv.movie.data.content.movie.model.Trailer
 import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.ReorderableLazyListState
 import org.burnoutcrew.reorderable.detectReorder

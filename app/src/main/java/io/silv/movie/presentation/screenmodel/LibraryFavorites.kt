@@ -10,9 +10,9 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.core.Penta
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.RecommendationManager
-import io.silv.movie.data.content.lists.interactor.GetFavoritesList
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.data.user.FavoritesUpdateManager
 import io.silv.movie.presentation.asState
@@ -24,9 +24,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FavoritesScreenModel(
-    getFavoritesList: GetFavoritesList,
     private val recommendationManager: RecommendationManager,
     private val libraryPreferences: LibraryPreferences,
+    private val contentListRepository: ContentListRepository,
     private val favoritesUpdateManager: FavoritesUpdateManager,
 ): ScreenModel {
 
@@ -50,7 +50,7 @@ class FavoritesScreenModel(
             favoritesUpdateManager.isRunning(),
         ) { a, b, c, d, e -> Penta(a, b, c, d, e) }
         .flatMapLatest { (query, sortMode, recommendations, refRecs, refFavs) ->
-            getFavoritesList.subscribe(query, sortMode)
+            contentListRepository.observeFavorites(query, sortMode)
                 .map { content ->
                     FavoritesListState(
                         sortMode,

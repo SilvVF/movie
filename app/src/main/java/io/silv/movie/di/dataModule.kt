@@ -1,13 +1,9 @@
 package io.silv.movie.di
 
-import io.silv.movie.data.content.contentModule
 import io.silv.movie.data.content.lists.RecommendationManager
 import io.silv.movie.data.content.lists.RecommendationWorker
-import io.silv.movie.data.content.lists.interactor.AddContentItemToList
 import io.silv.movie.data.content.lists.interactor.DeleteContentList
 import io.silv.movie.data.content.lists.interactor.EditContentList
-import io.silv.movie.data.content.lists.interactor.RemoveContentItemFromList
-import io.silv.movie.data.content.lists.interactor.ToggleContentItemFavorite
 import io.silv.movie.data.prefrences.StoragePreferences
 import io.silv.movie.data.prefrences.UiPreferences
 import io.silv.movie.data.prefrences.preferenceModule
@@ -57,13 +53,7 @@ val dataModule =
 
         factoryOf(::EditContentList)
 
-        factoryOf(::AddContentItemToList)
-
-        factoryOf(::RemoveContentItemFromList)
-
         factoryOf(::DeleteContentList)
-
-        factoryOf(::ToggleContentItemFavorite)
 
         singleOf(::RecommendationManager)
 

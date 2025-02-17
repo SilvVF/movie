@@ -4,10 +4,16 @@ import androidx.compose.runtime.Stable
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.interactor.AddContentItemToList
-import io.silv.movie.data.content.lists.interactor.RemoveContentItemFromList
-import io.silv.movie.data.content.lists.interactor.ToggleContentItemFavorite
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
+import io.silv.movie.data.content.lists.toContentItem
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.local.networkToLocalShow
+import io.silv.movie.data.content.movie.model.toDomain
+import io.silv.movie.data.content.movie.model.toMovieUpdate
+import io.silv.movie.data.content.movie.model.toShowUpdate
+import io.silv.movie.data.content.movie.network.NetworkContentDelegate
+import io.silv.movie.data.user.repository.ListRepository
 import io.silv.movie.presentation.ContentInteractor.ContentEvent
 import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToAnotherList
 import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToList
@@ -18,9 +24,10 @@ import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 @Stable
-interface ContentInteractor: EventProducer<ContentEvent> {
+interface ContentInteractor : EventProducer<ContentEvent> {
     fun toggleFavorite(contentItem: ContentItem)
     fun addToList(contentList: ContentList, contentItem: ContentItem)
     fun addToAnotherList(listId: Long, contentItem: ContentItem)
@@ -29,21 +36,21 @@ interface ContentInteractor: EventProducer<ContentEvent> {
 
     companion object {
         fun default(
-            toggleContentItemFavorite: ToggleContentItemFavorite,
-            removeContentItemFromList: RemoveContentItemFromList,
-            addContentItemToList: AddContentItemToList,
+            local: LocalContentDelegate,
+            listRepository: ListRepository,
             contentListRepository: ContentListRepository,
+            network: NetworkContentDelegate,
             auth: Auth,
             movieCoverCache: MovieCoverCache,
             showCoverCache: TVShowCoverCache,
             scope: CoroutineScope,
         ): ContentInteractor {
             return DefaultContentInteractor(
-                toggleContentItemFavorite,
-                removeContentItemFromList,
-                addContentItemToList,
                 contentListRepository,
+                listRepository,
+                local,
                 auth,
+                network,
                 movieCoverCache,
                 showCoverCache,
                 scope
@@ -52,28 +59,39 @@ interface ContentInteractor: EventProducer<ContentEvent> {
     }
 
     sealed interface ContentEvent {
-        data class Favorite(val item: ContentItem, val success: Boolean): ContentEvent
-        data class AddToList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
-        data class AddToAnotherList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
-        data class RemoveFromList(val item: ContentItem, val list: ContentList, val success: Boolean): ContentEvent
+        data class Favorite(val item: ContentItem, val success: Boolean) : ContentEvent
+        data class AddToList(val item: ContentItem, val list: ContentList, val success: Boolean) :
+            ContentEvent
+
+        data class AddToAnotherList(
+            val item: ContentItem,
+            val list: ContentList,
+            val success: Boolean
+        ) : ContentEvent
+
+        data class RemoveFromList(
+            val item: ContentItem,
+            val list: ContentList,
+            val success: Boolean
+        ) : ContentEvent
     }
 }
 
 @Stable
 private class DefaultContentInteractor(
-    private val toggleContentItemFavorite: ToggleContentItemFavorite,
-    private val removeContentItemFromList: RemoveContentItemFromList,
-    private val addContentItemToList: AddContentItemToList,
-    private val contentListRepository: ContentListRepository,
-    private val auth: Auth,
-    private val movieCoverCache: MovieCoverCache,
-    private val showCoverCache: TVShowCoverCache,
-    private val scope: CoroutineScope,
-): ContentInteractor, EventProducer<ContentEvent> by EventProducer.default() {
+    val contentListRepository: ContentListRepository,
+    val listRepository: ListRepository,
+    val local: LocalContentDelegate,
+    val auth: Auth,
+    val network: NetworkContentDelegate,
+    val movieCoverCache: MovieCoverCache,
+    val showCoverCache: TVShowCoverCache,
+    val scope: CoroutineScope,
+) : ContentInteractor, EventProducer<ContentEvent> by EventProducer.default() {
 
     override fun toggleFavorite(contentItem: ContentItem) {
         scope.launch(Dispatchers.IO) {
-            toggleContentItemFavorite.await(
+            toggleContentItemFavorite(
                 contentItem,
                 changeOnNetwork = auth.currentUserOrNull() != null
             )
@@ -88,7 +106,7 @@ private class DefaultContentInteractor(
 
     override fun addToList(contentList: ContentList, contentItem: ContentItem) {
         scope.launch(Dispatchers.IO) {
-            addContentItemToList.await(contentItem, contentList)
+            addContentItemToList(auth, listRepository, contentListRepository, contentItem, contentList)
                 .onSuccess {
                     emitEvent(AddToList(contentItem, contentList, true))
                 }
@@ -101,7 +119,7 @@ private class DefaultContentInteractor(
     override fun addToAnotherList(listId: Long, contentItem: ContentItem) {
         scope.launch(Dispatchers.IO) {
             val list = contentListRepository.getList(listId) ?: return@launch
-            addContentItemToList.await(contentItem, list)
+            addContentItemToList(auth, listRepository, contentListRepository, contentItem, list)
                 .onSuccess {
                     emitEvent(AddToAnotherList(contentItem, list, true))
                 }
@@ -120,7 +138,10 @@ private class DefaultContentInteractor(
 
     override fun removeFromList(contentList: ContentList, contentItem: ContentItem) {
         scope.launch(Dispatchers.IO) {
-            removeContentItemFromList.await(contentItem, contentList, movieCoverCache, showCoverCache)
+            removeContentItemFromList(
+                contentItem,
+                contentList,
+            )
                 .onSuccess {
                     emitEvent(RemoveFromList(contentItem, contentList, true))
                 }
@@ -129,7 +150,141 @@ private class DefaultContentInteractor(
                 }
         }
     }
+}
 
+private suspend fun DefaultContentInteractor.toggleContentItemFavorite(
+    contentItem: ContentItem,
+    changeOnNetwork: Boolean = false
+): Result<ContentItem> {
+    return runCatching {
+        if (contentItem.isMovie) {
+            val movie = local.getMovieById(contentItem.contentId) ?: run {
+                local.networkToLocalMovie(
+                    network.getMovie(contentItem.contentId)!!.toDomain()
+                )
+            }
+            val new = movie.copy(favorite = !movie.favorite)
+
+            if (changeOnNetwork) {
+                if (new.favorite) {
+                    listRepository.addMovieToFavoritesList(new)
+                } else {
+                    listRepository.deleteMovieFromFavorites(new.id)
+                }
+            }
+
+            if (!new.favorite && !new.inList) {
+                movieCoverCache.deleteFromCache(movie)
+            }
+            local.updateMovie(new.toMovieUpdate())
+            new.toContentItem()
+        } else {
+            val show = local.getShowById(contentItem.contentId) ?: run {
+                local.networkToLocalShow(
+                    network.getShow(contentItem.contentId)!!.toDomain()
+                )
+            }
+            val new = show.copy(favorite = !show.favorite)
+
+            if (changeOnNetwork) {
+                if (new.favorite) {
+                    listRepository.addShowToFavorites(new)
+                } else {
+                    listRepository.deleteShowFromFavorites(new.id)
+                }
+            }
+
+            if (!new.favorite && !new.inList) {
+                showCoverCache.deleteFromCache(show)
+            }
+            local.updateShow(new.toShowUpdate())
+            new.toContentItem()
+        }
+    }
+}
+
+suspend fun addContentItemToList(
+    auth: Auth,
+    listRepository: ListRepository,
+    contentListRepository: ContentListRepository,
+    contentItem: ContentItem,
+    list: ContentList,
+): Result<Unit> {
+    if (auth.currentUserOrNull()?.id != list.createdBy && list.createdBy != null) {
+        return Result.failure(IOException("Unable to edit unowned list"))
+    }
+
+    if (list.supabaseId != null) {
+        val result = if (contentItem.isMovie) {
+            listRepository.addMovieToList(
+                contentItem.contentId,
+                contentItem.posterUrl,
+                contentItem.title,
+                list
+            )
+        } else {
+            listRepository.addShowToList(
+                contentItem.contentId,
+                contentItem.posterUrl,
+                contentItem.title,
+                list
+            )
+        }
+
+        if (!result) {
+            return Result.failure(IOException("Failed to remove from network"))
+        }
+    }
+
+    if (contentItem.isMovie) {
+        contentListRepository.addMovieToList(contentItem.contentId, list, null)
+    } else {
+        contentListRepository.addShowToList(contentItem.contentId, list, null)
+    }
+
+    return Result.success(Unit)
+}
+
+private suspend fun DefaultContentInteractor.removeContentItemFromList(
+    item: ContentItem,
+    list: ContentList,
+): Result<Unit> {
+
+    if (auth.currentUserOrNull()?.id != list.createdBy && list.createdBy != null) {
+        return Result.failure(IOException("Unable to edit unowned list"))
+    }
+
+    if (list.supabaseId != null) {
+        val result = if (item.isMovie) {
+            listRepository.deleteMovieFromList(item.contentId, list)
+        } else {
+            listRepository.deleteShowFromList(item.contentId, list)
+        }
+
+        if (!result) {
+            return Result.failure(IOException("Failed to remove from network"))
+        }
+    }
+
+    if (item.inLibraryLists == 1L && !item.favorite) {
+        if (item.isMovie) {
+            local.getMovieById(item.contentId)?.let {
+                movieCoverCache.deleteFromCache(it)
+            }
+        } else {
+            local.getShowById(item.contentId)?.let {
+                showCoverCache.deleteFromCache(it)
+            }
+        }
+    }
+
+    if (item.isMovie) {
+        contentListRepository.removeMovieFromList(item.contentId, list)
+    } else {
+        contentListRepository.removeShowFromList(item.contentId, list)
+    }
+
+    return Result.success(Unit)
 }
 
 

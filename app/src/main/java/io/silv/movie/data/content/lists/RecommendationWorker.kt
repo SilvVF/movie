@@ -13,15 +13,15 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.silv.movie.R
 import io.silv.movie.core.SMovie
-import io.silv.movie.core.STVShow
+import io.silv.movie.core.SShow
 import io.silv.movie.core.await
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.content.tv.model.toDomain
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.local.networkToLocalShow
 import io.silv.movie.database.DatabaseHandler
 import io.silv.movie.network.model.toSMovie
-import io.silv.movie.network.model.toSTVShow
+import io.silv.movie.network.model.toSShow
 import io.silv.movie.network.service.tmdb.TMDBRecommendationService
 import timber.log.Timber
 import kotlin.math.ceil
@@ -30,8 +30,7 @@ import kotlin.math.roundToInt
 class RecommendationWorker(
     private val recommendationService: TMDBRecommendationService,
     private val handler: DatabaseHandler,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
-    private val networkToLocalMovie: NetworkToLocalMovie,
+    private val local: LocalContentDelegate,
     appContext: Context,
     private val params: WorkerParameters
 ): CoroutineWorker(appContext, params) {
@@ -93,7 +92,7 @@ class RecommendationWorker(
                     for (smovie in movieRecommendations) {
                         if (taken == maxSize) { break }
 
-                        val movie = networkToLocalMovie.await(smovie.toDomain())
+                        val movie = local.networkToLocalMovie(smovie.toDomain())
                         recommendationQueries.insert(listId, movie.id, null)
                         Timber.d("inserted recommendation movie ${movie.id}")
                         taken++
@@ -107,7 +106,7 @@ class RecommendationWorker(
                     for (sshow in showRecommendations) {
                         if (taken == maxSize) { break }
 
-                        val show = networkToLocalTVShow.await(sshow.toDomain())
+                        val show = local.networkToLocalShow(sshow.toDomain())
                         recommendationQueries.insert(listId,null, show.id)
                         Timber.d("inserted recommendation show ${show.id}")
                         taken++
@@ -127,12 +126,12 @@ class RecommendationWorker(
             .map { it.toSMovie() }
     }
 
-    private suspend fun getShowRecommendations(id: Long): List<STVShow> {
+    private suspend fun getShowRecommendations(id: Long): List<SShow> {
         return recommendationService.showRecommendations(id.toInt())
             .await()
             .body()!!
             .results
-            .map { it.toSTVShow() }
+            .map { it.toSShow() }
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {

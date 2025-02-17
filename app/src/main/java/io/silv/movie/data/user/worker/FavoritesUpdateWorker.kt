@@ -13,19 +13,14 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.repository.ContentListRepository
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.content.movie.interactor.UpdateMovie
+import io.silv.movie.data.content.lists.ContentListRepository
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.local.networkToLocalShow
 import io.silv.movie.data.content.movie.model.toDomain
 import io.silv.movie.data.content.movie.model.toMovieUpdate
-import io.silv.movie.data.content.tv.interactor.GetRemoteTVShows
-import io.silv.movie.data.content.tv.interactor.GetShow
-import io.silv.movie.data.content.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.content.tv.interactor.UpdateShow
-import io.silv.movie.data.content.tv.model.toDomain
-import io.silv.movie.data.content.tv.model.toShowUpdate
+import io.silv.movie.data.content.movie.model.toShowUpdate
+import io.silv.movie.data.content.movie.network.NetworkContentDelegate
 import io.silv.movie.data.user.repository.ListRepository
 import io.silv.movie.presentation.screenmodel.FavoritesSortMode
 import kotlinx.coroutines.flow.firstOrNull
@@ -39,68 +34,62 @@ class FavoritesUpdateWorker (
     private val contentListRepository: ContentListRepository,
     private val listRepository: ListRepository,
     private val auth: Auth,
-    private val getShow: GetShow,
-    private val getMovie: GetMovie,
-    private val getRemoteTVShows: GetRemoteTVShows,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
-    private val updateMovie: UpdateMovie,
-    private val updateShow: UpdateShow,
+    private val local: LocalContentDelegate,
+    private val network: NetworkContentDelegate,
     appContext: Context,
     private val params: WorkerParameters
 ): CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
 
-        val local = contentListRepository
+        val localList = contentListRepository
             .observeFavorites("", FavoritesSortMode.RecentlyAdded)
             .firstOrNull()
             .orEmpty()
 
         val user = auth.currentUserOrNull()!!
 
-        val network = listRepository.selectFavoritesList(user.id)!!
+        val networkList = listRepository.selectFavoritesList(user.id)!!
 
-        val movieIds = network.mapNotNull { c -> c.movieId.takeIf { it != -1L } }.toSet()
-        val showIds = network.mapNotNull { c ->  c.showId.takeIf { it != -1L } }.toSet()
+        val movieIds = networkList.mapNotNull { c -> c.movieId.takeIf { it != -1L } }.toSet()
+        val showIds = networkList.mapNotNull { c ->  c.showId.takeIf { it != -1L } }.toSet()
 
-        val needToAdd = local.filterNot {
+        val needToAdd = localList.filterNot {
             if (it.isMovie) it.contentId in movieIds else it.contentId in showIds
         }
 
         for (item in needToAdd) {
             if (item.isMovie) {
                 runCatching {
-                    val movie = getMovie.await(item.contentId)!!
+                    val movie = local.getMovieById(item.contentId)!!
                     listRepository.addMovieToFavoritesList(movie)
                 }
             } else {
                 runCatching {
-                    val show = getShow.await(item.contentId)!!
+                    val show = local.getShowById(item.contentId)!!
                     listRepository.addShowToFavorites(show)
                 }
             }
         }
 
-        for (favorite in network) {
+        for (favorite in networkList) {
             try {
                 if (favorite.movieId != -1L) {
-                    var movie = getMovie.await(favorite.movieId)
+                    var movie = local.getMovieById(favorite.movieId)
                     if (movie == null) {
-                        movie = networkToLocalMovie.await(
-                            getRemoteMovie.awaitOne(favorite.movieId)!!.toDomain()
+                        movie = local.networkToLocalMovie(
+                            network.getMovie(favorite.movieId)!!.toDomain()
                         )
                     }
-                    updateMovie.await(movie.copy(favorite = true).toMovieUpdate())
+                    local.updateMovie(movie.copy(favorite = true).toMovieUpdate())
                 } else if (favorite.showId != -1L) {
-                    var show = getShow.await(favorite.showId)
+                    var show = local.getShowById(favorite.showId)
                     if (show == null) {
-                        show = networkToLocalTVShow.await(
-                            getRemoteTVShows.awaitOne(favorite.showId)!!.toDomain()
+                        show = local.networkToLocalShow(
+                            network.getShow(favorite.showId)!!.toDomain()
                         )
                     }
-                    updateShow.await(show.copy(favorite = true).toShowUpdate())
+                    local.updateShow(show.copy(favorite = true).toShowUpdate())
                 }
             } catch (ignored: Exception){}
         }

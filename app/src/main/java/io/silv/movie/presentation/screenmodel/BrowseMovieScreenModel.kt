@@ -18,18 +18,17 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.ScopedStateScreenModel
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.content.ContentPagedType
-import io.silv.movie.data.content.Filters
-import io.silv.movie.data.content.Genre
-import io.silv.movie.data.content.SearchItem
+import io.silv.movie.data.content.movie.model.ContentPagedType
+import io.silv.movie.data.content.movie.model.Filters
+import io.silv.movie.data.content.movie.model.Genre
+import io.silv.movie.data.content.movie.model.SearchItem
 import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
 import io.silv.movie.data.content.movie.model.MoviePoster
 import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.movie.repository.SourceMovieRepository
-import io.silv.movie.data.content.toDomain
+import io.silv.movie.data.content.movie.local.MovieRepository
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.network.SourceMovieRepository
+import io.silv.movie.data.content.movie.network.getMoviePager
 import io.silv.movie.data.prefrences.BrowsePreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.asState
@@ -47,9 +46,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 class MovieScreenModel(
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val getMovie: GetMovie,
+    private val movieRepo: MovieRepository,
     private val sourceRepository: SourceMovieRepository,
     networkMonitor: NetworkMonitor,
     browsePreferences: BrowsePreferences,
@@ -78,7 +75,7 @@ class MovieScreenModel(
 
     init {
         screenModelScope.launch {
-            val genres = sourceRepository.getSourceGenres().map { it.toDomain() }
+            val genres = sourceRepository.getMovieGenres().map { it.toDomain() }
             mutableState.update {state -> state.copy(genres = genres) }
         }
 
@@ -101,12 +98,12 @@ class MovieScreenModel(
             Pager(
                 PagingConfig(pageSize = 25)
             ) {
-                getRemoteMovie.subscribe(listing)
+                sourceRepository.getMoviePager(listing)
             }.flow.map { pagingData ->
                 val seenIds = mutableSetOf<Long>()
                 pagingData.map { sMovie ->
-                    networkToLocalMovie.await(sMovie.toDomain())
-                        .let { localMovie -> getMovie.subscribePartial(localMovie.id) }
+                    movieRepo.networkToLocalMovie(sMovie.toDomain())
+                        .let { localMovie -> movieRepo.observeMoviePartialById(localMovie.id) }
                         .stateIn(ioCoroutineScope)
                 }
                     .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }

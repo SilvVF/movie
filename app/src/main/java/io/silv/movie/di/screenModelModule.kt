@@ -1,7 +1,7 @@
 package io.silv.movie.di
 
 import io.silv.core_ui.voyager.ScreenResultsViewModel
-import io.silv.movie.MainScreenModel
+import io.silv.movie.MainViewModel
 import io.silv.movie.presentation.components.profile.ProfileScreenModel
 import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
@@ -30,7 +30,7 @@ import org.koin.dsl.module
 
 val screenModelModule = module {
 
-        viewModelOf(::MainScreenModel)
+        viewModelOf(::MainViewModel)
 
         viewModelOf(::ScreenResultsViewModel)
 

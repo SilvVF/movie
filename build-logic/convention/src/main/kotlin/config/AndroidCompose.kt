@@ -46,9 +46,9 @@ internal fun Project.configureAndroidCompose(
 
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
-//            freeCompilerArgs += buildComposeMetricsParameters()
-//            freeCompilerArgs += stabilityConfiguration()
-//            freeCompilerArgs += strongSkippingConfiguration()
+            freeCompilerArgs += buildComposeMetricsParameters()
+            freeCompilerArgs += stabilityConfiguration()
+            freeCompilerArgs += strongSkippingConfiguration()
             freeCompilerArgs += listOf(
                 "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
                 "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",

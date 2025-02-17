@@ -212,7 +212,7 @@ private fun LibraryLists(
                                 onLongClick = { onListLongClick(list) },
                                 onClick = { onListClick(list) }
                             )
-                            .animateItemPlacement()
+                            .animateItem()
                             .padding(8.dp),
                         cover = {
                             ContentListPoster(

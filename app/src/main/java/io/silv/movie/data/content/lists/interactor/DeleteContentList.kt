@@ -3,9 +3,8 @@ package io.silv.movie.data.content.lists.interactor
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.lists.ContentListRepository
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.data.user.repository.ListRepository
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
@@ -13,9 +12,8 @@ import kotlinx.coroutines.supervisorScope
 
 class DeleteContentList(
     private val network: ListRepository,
-    private val local: ContentListRepository,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
+    private val listRepo: ContentListRepository,
+    private val local: LocalContentDelegate,
     private val auth: Auth,
 ) {
 
@@ -34,12 +32,12 @@ class DeleteContentList(
             }
             supervisorScope {
                 if (list.inLibrary) {
-                    for (item in  local.getListItems(list.id)) {
+                    for (item in  listRepo.getListItems(list.id)) {
                         deleteContentItemFromCache(item, movieCoverCache, showCoverCache)
                     }
                 }
             }
-            local.deleteList(list)
+            listRepo.deleteList(list)
         }
     }
 
@@ -50,10 +48,10 @@ class DeleteContentList(
     ) {
         if (item.inLibraryLists == 1L && !item.favorite) {
             if (item.isMovie) {
-                val movie = getMovie.await(item.contentId) ?: return
+                val movie = local.getMovieById(item.contentId) ?: return
                 movieCoverCache.deleteFromCache(movie)
             } else {
-                val show = getShow.await(item.contentId) ?: return
+                val show = local.getShowById(item.contentId) ?: return
                 showCoverCache.deleteFromCache(show)
             }
         }

@@ -2,7 +2,7 @@ package io.silv.movie.data.content.lists.interactor
 
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toUpdate
 import io.silv.movie.data.user.model.list.toUserListUpdate
 import io.silv.movie.data.user.repository.ListRepository

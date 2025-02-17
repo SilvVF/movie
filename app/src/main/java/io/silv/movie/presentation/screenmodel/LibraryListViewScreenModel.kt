@@ -13,7 +13,7 @@ import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.content.lists.RecommendationManager
 import io.silv.movie.data.content.lists.interactor.DeleteContentList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.prefrences.BasePreferences.Companion.addToRecentlyViewed
 import io.silv.movie.data.prefrences.LibraryPreferences

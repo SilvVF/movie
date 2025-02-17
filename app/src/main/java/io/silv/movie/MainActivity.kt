@@ -78,7 +78,7 @@ import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
 import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
-import io.silv.movie.data.content.trailers.Trailer
+import io.silv.movie.data.content.movie.model.Trailer
 import io.silv.movie.data.prefrences.AppTheme
 import io.silv.movie.data.prefrences.ThemeMode.DARK
 import io.silv.movie.data.prefrences.ThemeMode.LIGHT
@@ -116,7 +116,7 @@ import kotlin.math.roundToInt
 class MainActivity : ComponentActivity() {
 
     private val userRepository by inject<UserRepository>()
-    private val mainScreenModel by viewModel<MainScreenModel>()
+    private val mainViewModel by viewModel<MainViewModel>()
     private val uiPreferences by inject<UiPreferences>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -149,7 +149,7 @@ class MainActivity : ComponentActivity() {
                             MainContent(
                                 appState = s.state,
                                 currentUser = currentUser,
-                                mainScreenModel = mainScreenModel
+                                mainViewModel = mainViewModel
                             )
                         }
                     }
@@ -168,7 +168,7 @@ fun rememberStableParametersDefinition(
 ): StableParametersDefinition = remember { StableParametersDefinition(parametersDefinition) }
 
 @Composable
-public inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
+inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
     qualifier: Qualifier? = null,
     scope: Scope = currentKoinScope(),
     noinline parameters: ParametersDefinition? = null
@@ -183,13 +183,13 @@ public inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
 @Composable
 private fun MainContent(
     appState: AppState,
-    mainScreenModel: MainScreenModel,
+    mainViewModel: MainViewModel,
     currentUser: User?,
 ) {
     CompositionLocalProvider(
         LocalUser provides currentUser,
-        LocalListInteractor provides mainScreenModel.listInteractor,
-        LocalContentInteractor provides mainScreenModel.contentInteractor,
+        LocalListInteractor provides mainViewModel.listInteractor,
+        LocalContentInteractor provides mainViewModel.contentInteractor,
         LocalAppState provides appState
     ) {
         val playerViewModel by getActivityViewModel<PlayerViewModel>()
@@ -303,14 +303,14 @@ private fun MainContent(
                     }
                 }
                 HandleItemEvents(
-                    contentInteractor = mainScreenModel.contentInteractor,
+                    contentInteractor = mainViewModel.contentInteractor,
                     snackbarHostState = snackbarHostState,
-                    navigate = mainScreenModel.navigationChannel::send
+                    navigate = mainViewModel.navigationChannel::send
                 )
                 HandleListEvents(
-                    listInteractor = mainScreenModel.listInteractor,
+                    listInteractor = mainViewModel.listInteractor,
                     snackbarHostState = snackbarHostState,
-                    navigation = mainScreenModel.navigationChannel::send
+                    navigation = mainViewModel.navigationChannel::send
                 )
             }
         }

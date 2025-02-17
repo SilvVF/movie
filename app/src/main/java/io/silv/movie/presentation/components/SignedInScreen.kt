@@ -241,7 +241,7 @@ fun SubscribedListsView(
                                     onLongClick = { onListLongClick(list to items) },
                                     onClick = { onListClick(list) }
                                 )
-                                .animateItemPlacement()
+                                .animateItem()
                                 .padding(8.dp),
                             cover = {
                                 ContentListPoster(

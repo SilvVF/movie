@@ -4,9 +4,8 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.core_ui.components.PosterData
-import io.silv.movie.data.content.lists.repository.ContentListRepository
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.lists.ContentListRepository
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.launchIn
@@ -17,8 +16,7 @@ import kotlinx.coroutines.flow.update
 
 class AddToListScreenModel(
     contentListRepository: ContentListRepository,
-    getMovie: GetMovie,
-    getShow: GetShow,
+    local: LocalContentDelegate,
     auth: Auth,
     contentId: Long,
     isMovie: Boolean,
@@ -26,12 +24,12 @@ class AddToListScreenModel(
 
     init {
         val posterDataFlow = if (isMovie) {
-            getMovie.subscribePartial(contentId)
+            local.observeMoviePartialById(contentId)
                 .onEach { movie ->
                     mutableState.update { movie.toPoster() }
                 }
         } else {
-            getShow.subscribePartial(contentId)
+            local.observeShowPartialById(contentId)
                 .onEach { show ->
                     mutableState.update { show.toPoster() }
                 }

@@ -20,7 +20,7 @@ import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.plus
-import io.silv.movie.data.content.tv.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.TVShowPoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge

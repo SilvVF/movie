@@ -44,7 +44,7 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.data.content.ContentPagedType
+import io.silv.movie.data.content.movie.model.ContentPagedType
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.data.content.movie.model.MoviePoster
 import io.silv.movie.data.prefrences.PosterDisplayMode

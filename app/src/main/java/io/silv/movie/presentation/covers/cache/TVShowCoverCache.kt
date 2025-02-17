@@ -17,7 +17,7 @@ package io.silv.movie.presentation.covers.cache
 
 import android.content.Context
 import io.silv.movie.core.DiskUtil
-import io.silv.movie.data.content.tv.model.TVShow
+import io.silv.movie.data.content.movie.model.TVShow
 import okio.IOException
 import java.io.File
 import java.io.InputStream

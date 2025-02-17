@@ -6,7 +6,7 @@ import io.github.jan.supabase.postgrest.query.Columns
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
 import io.silv.movie.data.content.movie.model.Movie
-import io.silv.movie.data.content.tv.model.TVShow
+import io.silv.movie.data.content.movie.model.TVShow
 import io.silv.movie.data.user.SupabaseConstants.FAVORITE_MOVIES
 import io.silv.movie.data.user.SupabaseConstants.LIST_ITEM
 import io.silv.movie.data.user.SupabaseConstants.RPC.moreFromSubscribed

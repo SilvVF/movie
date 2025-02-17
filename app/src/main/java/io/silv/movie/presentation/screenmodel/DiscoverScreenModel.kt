@@ -13,11 +13,10 @@ import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toContentItem
 import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.data.prefrences.BasePreferences
 import io.silv.movie.data.user.model.list.ListWithItems
 import io.silv.movie.data.user.repository.ListRepository
@@ -28,9 +27,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.joinAll
@@ -74,12 +73,11 @@ data class ListPreviewItem(
 class BrowseListsScreenModel(
     private val postgrest: Postgrest,
     private val contentListRepository: ContentListRepository,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
     private val listRepository: ListRepository,
+    private val local: LocalContentDelegate,
     basePreferences: BasePreferences,
     auth: Auth,
-): ScreenModel {
+) : ScreenModel {
 
     private val DEFAULT_LIST_USER = "c532e5da-71ca-4b4b-b896-d1d36f335149"
     var refreshing by mutableStateOf(false)
@@ -107,7 +105,7 @@ class BrowseListsScreenModel(
                         PopularListParams(10, 0)
                     )
                         .decodeList<ListWithPostersRpcResponse>()
-                } .onFailure { Timber.e(it) }
+                }.onFailure { Timber.e(it) }
                     .getOrDefault(emptyList())
             )
         },
@@ -165,7 +163,11 @@ class BrowseListsScreenModel(
     val subscribedRecommended = subscribedRecommendedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
+                listWithPosters.toListPreviewItem(
+                    contentListRepository,
+                    local,
+                    ioCoroutineScope
+                )
             }
         }
         .stateIn(
@@ -174,10 +176,10 @@ class BrowseListsScreenModel(
             null
         )
 
-    val recentlyCreated= recentlyCreatedResult.asStateFlow()
+    val recentlyCreated = recentlyCreatedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
+                listWithPosters.toListPreviewItem(contentListRepository, local, ioCoroutineScope)
             }
         }
         .stateIn(
@@ -186,10 +188,10 @@ class BrowseListsScreenModel(
             null
         )
 
-    val recentlyViewed= recentlyViewedResult.asStateFlow()
+    val recentlyViewed = recentlyViewedResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
+                listWithPosters.toListPreviewItem(contentListRepository, local, ioCoroutineScope)
             }
         }
         .stateIn(
@@ -201,7 +203,7 @@ class BrowseListsScreenModel(
     val popularLists = popularResult.asStateFlow()
         .map { response ->
             response?.map { listWithPosters ->
-                listWithPosters.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
+                listWithPosters.toListPreviewItem(contentListRepository, local, ioCoroutineScope)
             }
         }
         .stateIn(
@@ -233,7 +235,7 @@ class BrowseListsScreenModel(
             .launchIn(screenModelScope)
     }
 
-    private var refreshJob: Job?  = null
+    private var refreshJob: Job? = null
 
     fun refresh(isUserAction: Boolean = false) {
         if (refreshJob?.isActive == true)
@@ -261,49 +263,50 @@ class BrowseListsScreenModel(
     private suspend fun toContentListWithItems(
         listWithItems: ListWithItems
     ): Pair<ContentList, List<StateFlow<ContentItem>>> {
-        val local = contentListRepository.getListForSupabaseId(listWithItems.listId)
-        val list = local ?: ContentList(
-            id = -1,
-            supabaseId = listWithItems.listId,
-            createdBy = "c532e5da-71ca-4b4b-b896-d1d36f335149",
-            lastSynced = null,
-            public = true,
-            name = listWithItems.name,
-            username = "Default User",
-            description = listWithItems.description,
-            lastModified = -1L,
-            posterLastModified = -1L,
-            createdAt = listWithItems.createdAt.epochSeconds,
-            inLibrary = false,
-            subscribers = listWithItems.subscribers,
-            pinned = false
-        )
+        val defList by lazy {
+            ContentList(
+                id = -1,
+                supabaseId = listWithItems.listId,
+                createdBy = "c532e5da-71ca-4b4b-b896-d1d36f335149",
+                lastSynced = null,
+                public = true,
+                name = listWithItems.name,
+                username = "Default User",
+                description = listWithItems.description,
+                lastModified = -1L,
+                posterLastModified = -1L,
+                createdAt = listWithItems.createdAt.epochSeconds,
+                inLibrary = false,
+                subscribers = listWithItems.subscribers,
+                pinned = false
+            )
+        }
+        val list = contentListRepository.getListForSupabaseId(listWithItems.listId) ?: defList
         val posters = listWithItems.items.orEmpty().map { listItem ->
             val isMovie = listItem.movieId != -1L
             val id = listItem.movieId.takeIf { isMovie } ?: listItem.showId
 
-            val defItem by lazy {
-                ContentItem(
-                    contentId = id,
-                    isMovie = isMovie,
-                    title = listItem.title,
-                    posterUrl = listItem.posterPath,
-                    favorite = false,
-                    inLibraryLists = -1L,
-                    posterLastUpdated = -1L,
-                    lastModified = -1L,
-                    description = "",
-                    popularity = -1.0
-                )
+            if (isMovie) {
+                local.observeMoviePartialByIdOrNull(id).mapNotNull { it?.toContentItem() }
+            } else {
+                local.observeShowPartialByIdOrNull(id).mapNotNull { it?.toContentItem() }
             }
-
-            val item = if(isMovie)
-                getMovie.subscribePartialOrNull(id).map { it?.toContentItem() ?: defItem }
-            else
-                getShow.subscribePartialOrNull(id).map { it?.toContentItem() ?: defItem }
-
-            item.stateIn(ioCoroutineScope, SharingStarted.WhileSubscribed(), item.first())
+                .stateIn(
+                    ioCoroutineScope, SharingStarted.WhileSubscribed(), ContentItem(
+                        contentId = id,
+                        isMovie = isMovie,
+                        title = listItem.title,
+                        posterUrl = listItem.posterPath,
+                        favorite = false,
+                        inLibraryLists = -1L,
+                        posterLastUpdated = -1L,
+                        lastModified = -1L,
+                        description = "",
+                        popularity = -1.0
+                    )
+                )
         }
-        return Pair(list, posters)
+
+        return list to posters
     }
 }

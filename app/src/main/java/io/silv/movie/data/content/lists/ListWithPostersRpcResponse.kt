@@ -1,13 +1,10 @@
 package io.silv.movie.data.content.lists
 
-import io.silv.movie.data.content.lists.repository.ContentListRepository
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.presentation.screenmodel.ListPreviewItem
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -53,8 +50,7 @@ data class ListWithPostersRpcResponse(
 
 suspend fun ListWithPostersRpcResponse.toListPreviewItem(
     contentListRepository: ContentListRepository,
-    getShow: GetShow,
-    getMovie: GetMovie,
+    local: LocalContentDelegate,
     scope: CoroutineScope,
 ): ListPreviewItem {
     val item = this
@@ -71,26 +67,23 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
         profileImage = item.profileImagePath,
         username = item.username,
         items = item.content.map { (isMovie, contentId, posterPath) ->
-
-            val defItem by lazy {
+            if (isMovie) {
+                local.observeMoviePartialByIdOrNull(contentId).mapNotNull { movie ->
+                    movie?.toContentItem()
+                }
+            } else {
+                local.observeShowPartialByIdOrNull(contentId).mapNotNull { show ->
+                    show?.toContentItem()
+                }
+            }.stateIn(
+                scope,
+                SharingStarted.WhileSubscribed(),
                 ContentItem.create().copy(
                     contentId = contentId,
                     isMovie = isMovie,
                     posterUrl = posterPath,
                 )
-            }
-
-            val contentItem = if (isMovie)
-                getMovie.subscribePartialOrNull(contentId).map {
-                    it?.toContentItem() ?: defItem
-                }
-            else
-                getShow.subscribePartialOrNull(contentId).map {
-                    it?.toContentItem() ?: defItem
-                }
-
-
-            contentItem.stateIn(scope, SharingStarted.WhileSubscribed(), contentItem.first())
+            )
         }
     )
 }

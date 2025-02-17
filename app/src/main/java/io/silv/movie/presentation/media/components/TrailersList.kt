@@ -8,7 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import io.silv.movie.data.content.trailers.Trailer
+import io.silv.movie.data.content.movie.model.Trailer
 
 fun LazyListScope.trailersList(
     trailers: List<Trailer>,

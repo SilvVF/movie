@@ -17,10 +17,8 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.trailers.Trailer
-import io.silv.movie.data.content.trailers.TrailerRepository
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.model.Trailer
+import io.silv.movie.data.content.movie.local.TrailerRepository
 import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
@@ -43,8 +41,6 @@ class PlayerViewModel(
     private val trailerRepository: TrailerRepository,
     private val pipedApi: PipedApi,
     private val savedStateHandle: SavedStateHandle,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
 ): ViewModel(), EventProducer<PlayerViewModel.PlayerEvent> by EventProducer.default() {
 
     private var trailerToStreams by mutableStateOf<Pair<Trailer, StreamState>?>(null)
@@ -206,9 +202,9 @@ class PlayerViewModel(
 
         viewModelScope.launch {
             val trailers = if (isMovie) {
-                trailerRepository.getTrailersByMovieId(contentId)
+                trailerRepository.getByMovieId(contentId)
             } else {
-                trailerRepository.getTrailersByShowId(contentId)
+                trailerRepository.getByShowId(contentId)
             }
 
             val mutableTrailers =  trailers.toMutableList()

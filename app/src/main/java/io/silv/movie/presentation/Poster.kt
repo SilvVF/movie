@@ -5,8 +5,8 @@ import io.silv.core_ui.components.PosterData
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.movie.model.Movie
 import io.silv.movie.data.content.movie.model.MoviePoster
-import io.silv.movie.data.content.tv.model.TVShow
-import io.silv.movie.data.content.tv.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.TVShow
+import io.silv.movie.data.content.movie.model.TVShowPoster
 
 fun MoviePoster.toPoster(): PosterData {
     return PosterData(

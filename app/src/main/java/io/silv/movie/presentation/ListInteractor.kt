@@ -3,10 +3,9 @@ package io.silv.movie.presentation
 import androidx.compose.runtime.Stable
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.interactor.AddContentItemToList
 import io.silv.movie.data.content.lists.interactor.DeleteContentList
 import io.silv.movie.data.content.lists.interactor.EditContentList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toUpdate
 import io.silv.movie.data.user.repository.ListRepository
 import io.silv.movie.data.user.worker.ListUpdater
@@ -38,7 +37,6 @@ interface ListInteractor: EventProducer<ListEvent> {
             local: ContentListRepository,
             network: ListRepository,
             updater: ListUpdater,
-            addContentItemToList: AddContentItemToList,
             editContentList: EditContentList,
             deleteContentList: DeleteContentList,
             movieCoverCache: MovieCoverCache,
@@ -50,7 +48,6 @@ interface ListInteractor: EventProducer<ListEvent> {
                local,
                 network,
                 updater,
-                addContentItemToList,
                 editContentList,
                 deleteContentList,
                 movieCoverCache,
@@ -77,7 +74,6 @@ private class DefaultListInteractor(
     private val local: ContentListRepository,
     private val network: ListRepository,
     private val updater: ListUpdater,
-    private val addContentItemToList: AddContentItemToList,
     private val editContentList: EditContentList,
     private val deleteContentList: DeleteContentList,
     private val movieCoverCache: MovieCoverCache,
@@ -143,7 +139,7 @@ private class DefaultListInteractor(
                 val copied =     local.getList(id)!!
 
                 for (item in local.getListItems(list.id)) {
-                    addContentItemToList.await(item, copied)
+                    addContentItemToList(auth, network, local,item, copied)
                 }
 
                 copied

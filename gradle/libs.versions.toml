@@ -46,7 +46,7 @@ workMultiprocess = "2.9.1"
 workRuntimeKtx = "2.9.1"
 workTesting = "2.9.1"
 
-agp = "8.4.2"
+agp = "8.7.3"
 androidTools = "31.4.0"
 
 org-jetbrains-kotlin-android = "2.0.0"

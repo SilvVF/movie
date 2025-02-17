@@ -11,9 +11,9 @@ import coil.size.Size
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.R
 import io.silv.movie.core.ImageUtil
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.UpdateMovie
 import io.silv.movie.data.content.movie.model.Movie
+import io.silv.movie.data.content.movie.local.MovieRepository
+import io.silv.movie.data.content.movie.local.awaitUpdateCoverLastModified
 import io.silv.movie.presentation.covers.Image
 import io.silv.movie.presentation.covers.ImageSaver
 import io.silv.movie.presentation.covers.Location
@@ -24,13 +24,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.InputStream
 
 class MovieCoverScreenModel(
-    private val mangaId: Long,
-    private val getMovie: GetMovie,
+    private val movieId: Long,
+    private val movieRepo: MovieRepository,
     private val imageSaver: ImageSaver,
-    private val updateMovie: UpdateMovie,
     private val coverCache: MovieCoverCache,
 ) : StateScreenModel<Movie?>(null) {
 
@@ -38,7 +36,7 @@ class MovieCoverScreenModel(
 
     init {
         ioCoroutineScope.launch {
-            getMovie.subscribe(mangaId)
+            movieRepo.observeMovieById(movieId)
                 .collect { newManga -> mutableState.update { newManga } }
         }
     }
@@ -118,9 +116,10 @@ class MovieCoverScreenModel(
     fun editCover(context: Context, data: Uri) {
         val movie = state.value ?: return
         ioCoroutineScope.launch {
-            context.contentResolver.openInputStream(data)?.use {
+            context.contentResolver.openInputStream(data)?.use { ins ->
                 try {
-                    movie.editCover(it, updateMovie, coverCache)
+                    coverCache.setCustomCoverToCache(movie, ins)
+                    movieRepo.awaitUpdateCoverLastModified(movie.id)
                     notifyCoverUpdated(context)
                 } catch (e: Exception) {
                     notifyFailedCoverUpdate(context, e)
@@ -134,7 +133,7 @@ class MovieCoverScreenModel(
         ioCoroutineScope.launch {
             try {
                 coverCache.deleteCustomCover(mangaId)
-                updateMovie.awaitUpdateCoverLastModified(mangaId)
+                movieRepo.awaitUpdateCoverLastModified(mangaId)
                 notifyCoverUpdated(context)
             } catch (e: Exception) {
                 notifyFailedCoverUpdate(context, e)
@@ -159,14 +158,5 @@ class MovieCoverScreenModel(
             )
             Timber.e(e)
         }
-    }
-
-    private suspend fun Movie.editCover(
-        stream: InputStream,
-        updateMovie: UpdateMovie,
-        coverCache: MovieCoverCache,
-    ) {
-        coverCache.setCustomCoverToCache(this, stream)
-        updateMovie.awaitUpdateCoverLastModified(id)
     }
 }

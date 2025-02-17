@@ -7,9 +7,8 @@ import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.components.PosterData
-import io.silv.movie.data.content.credits.CreditRepository
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.local.CreditRepository
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -17,9 +16,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class CreditsViewScreenModel(
-    private val creditsRepository: CreditRepository,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
+    private val creditsRepo: CreditRepository,
+    private val local: LocalContentDelegate,
     private val contentId: Long,
     private val isMovie: Boolean,
 ): StateScreenModel<PosterData?>(null) {
@@ -27,9 +25,9 @@ class CreditsViewScreenModel(
     init {
         screenModelScope.launch {
             val poster = if (isMovie) {
-                getMovie.await(contentId)?.toPoster()
+                local.getMovieById(contentId)?.toPoster()
             } else {
-                getShow.await(contentId)?.toPoster()
+                local.getShowById(contentId)?.toPoster()
             }
             mutableState.update { poster }
         }
@@ -39,9 +37,9 @@ class CreditsViewScreenModel(
         config = PagingConfig(20),
     ) {
         if (isMovie) {
-            creditsRepository.movieCreditsPagingSource(contentId)
+            creditsRepo.movieCreditsPagingSource(contentId)
         } else {
-            creditsRepository.showCreditsPagingSource(contentId)
+            creditsRepo.showCreditsPagingSource(contentId)
         }
     }
         .flow.cachedIn(screenModelScope)

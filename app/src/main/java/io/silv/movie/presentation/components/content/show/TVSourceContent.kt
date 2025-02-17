@@ -31,7 +31,7 @@ import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.movie.R
-import io.silv.movie.data.content.tv.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.TVShowPoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.screenmodel.TVActions

@@ -9,8 +9,7 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.interactor.GetFavoritesList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.prefrences.LibraryPreferences
 import io.silv.movie.data.user.FavoritesUpdateManager
 import io.silv.movie.data.user.UserListUpdateManager
@@ -32,7 +31,6 @@ import timber.log.Timber
 class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
     preferences: LibraryPreferences,
-    getFavoritesList: GetFavoritesList,
     private val listRepository: ListRepository,
     private val userListUpdateManager: UserListUpdateManager,
     private val favoritesUpdateManager: FavoritesUpdateManager,
@@ -73,7 +71,7 @@ class LibraryScreenModel(
             }
             .launchIn(screenModelScope)
 
-        getFavoritesList.subscribe()
+        contentListRepository.observeFavorites(query, FavoritesSortMode.RecentlyAdded)
             .onEach { posters ->
                 mutableState.update { state ->
                     state.copy(favorites = posters)

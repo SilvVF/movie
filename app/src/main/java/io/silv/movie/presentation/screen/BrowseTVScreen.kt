@@ -44,9 +44,9 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.data.content.ContentPagedType
+import io.silv.movie.data.content.movie.model.ContentPagedType
 import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.tv.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.TVShowPoster
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor

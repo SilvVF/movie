@@ -11,9 +11,9 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import io.silv.movie.MainScreenModel
+import io.silv.movie.MainViewModel
 import io.silv.movie.R
-import io.silv.movie.data.content.ContentPagedType
+import io.silv.movie.data.content.movie.model.ContentPagedType
 import io.silv.movie.presentation.screen.BrowseMovieScreen
 import io.silv.movie.presentation.getActivityViewModel
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -30,12 +30,12 @@ data object BrowseTab: SharedTransitionTab() {
     @Composable
     override fun Content() {
 
-        val mainScreenModel by getActivityViewModel<MainScreenModel>()
+        val mainViewModel by getActivityViewModel<MainViewModel>()
 
         Navigator(BrowseMovieScreen(ContentPagedType.Default.Popular)) { navigator ->
 
             LaunchedEffect(Unit) {
-                mainScreenModel.navigationChannel.receiveAsFlow().collect { action ->
+                mainViewModel.navigationChannel.receiveAsFlow().collect { action ->
                     with(navigator) { action() }
                 }
             }

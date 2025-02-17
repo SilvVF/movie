@@ -77,10 +77,9 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.data.user.SupabaseConstants
 import io.silv.movie.data.user.User
 import io.silv.movie.data.user.repository.UserRepository
@@ -112,8 +111,7 @@ class ProfileViewScreenModel(
     private val postgrest: Postgrest,
     private val userRepository: UserRepository,
     private val contentListRepository: ContentListRepository,
-    private val getShow: GetShow,
-    private val getMovie: GetMovie,
+    private val local: LocalContentDelegate,
     val userId: String
 ): StateScreenModel<ProfileViewState>(Loading) {
 
@@ -149,7 +147,7 @@ class ProfileViewScreenModel(
         UserListPagingSource()
     }.flow.map { pagingData ->
         pagingData.map { response ->
-            response.toListPreviewItem(contentListRepository, getShow, getMovie, screenModelScope)
+            response.toListPreviewItem(contentListRepository, local, screenModelScope)
         }
     }
         .cachedIn(screenModelScope)

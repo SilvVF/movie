@@ -13,7 +13,7 @@ import io.silv.movie.R
 import io.silv.movie.core.ImageUtil
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.content.lists.ContentListUpdate
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toUpdate
 import io.silv.movie.presentation.covers.Image
 import io.silv.movie.presentation.covers.ImageSaver

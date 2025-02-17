@@ -13,16 +13,13 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import io.github.jan.supabase.gotrue.Auth
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toUpdate
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.local.networkToLocalShow
 import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.tv.interactor.GetRemoteTVShows
-import io.silv.movie.data.content.tv.interactor.GetShow
-import io.silv.movie.data.content.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.content.tv.model.toDomain
+import io.silv.movie.data.content.movie.network.NetworkContentDelegate
 import io.silv.movie.data.user.repository.ListRepository
 import io.silv.movie.data.user.repository.UserRepository
 import kotlinx.coroutines.Dispatchers
@@ -46,12 +43,8 @@ class UserListUpdateWorker (
     private val contentListRepository: ContentListRepository by inject()
     private val listRepository: ListRepository by inject()
     private val auth: Auth by inject()
-    private val getShow: GetShow by inject()
-    private val getMovie: GetMovie by inject()
-    private val getRemoteTVShows: GetRemoteTVShows by inject()
-    private val getRemoteMovie: GetRemoteMovie by inject()
-    private val networkToLocalMovie: NetworkToLocalMovie by inject()
-    private val networkToLocalTVShow: NetworkToLocalTVShow by inject()
+    private val local: LocalContentDelegate by inject()
+    private val network: NetworkContentDelegate by inject()
     private val userRepository: UserRepository by inject()
 
 
@@ -73,13 +66,13 @@ class UserListUpdateWorker (
                 userRepository.getUser(user.id)?.username
             }
 
-            val network = userCreated.await().orEmpty() + subscriptions.await().orEmpty()
+            val networkLists = userCreated.await().orEmpty() + subscriptions.await().orEmpty()
 
-            for (list in network) {
+            for (list in networkLists) {
                 try {
-                    var local = contentListRepository.getListForSupabaseId(list.listId)
+                    var localList = contentListRepository.getListForSupabaseId(list.listId)
 
-                    if (local == null) {
+                    if (localList == null) {
                         val id = contentListRepository.createList(
                             name = list.name,
                             supabaseId = list.listId,
@@ -88,17 +81,17 @@ class UserListUpdateWorker (
                             subscribers = list.subscribers,
                             createdAt = list.createdAt.epochSeconds
                         )
-                        local = contentListRepository.getList(id)
-                            ?: error("failed to add list $network")
+                        localList = contentListRepository.getList(id)
+                            ?: error("failed to add list $networkLists")
                     }
 
-                    Timber.d(local.toString())
+                    Timber.d(localList.toString())
 
                     contentListRepository.updateList(
-                        local.copy(
+                        localList.copy(
                             description = list.description,
                             name = list.name,
-                            username = username.await() ?: local.username,
+                            username = username.await() ?: localList.username,
                             public = list.public,
                             inLibrary = true,
                             subscribers = list.subscribers,
@@ -115,18 +108,18 @@ class UserListUpdateWorker (
                     for (item in items) {
                         try {
                             if (item.movieId != -1L) {
-                                var movie = getMovie.await(item.movieId)
+                                var movie = local.getMovieById(item.movieId)
                                 if (movie == null) {
-                                    movie = networkToLocalMovie.await(
-                                        getRemoteMovie.awaitOne(item.movieId)!!.toDomain()
+                                    movie = local.networkToLocalMovie(
+                                        network.getMovie(item.movieId)!!.toDomain()
                                     )
                                 }
                                 addToList.add(movie.id to true)
                             } else if (item.showId != -1L) {
-                                var show = getShow.await(item.showId)
+                                var show = local.getShowById(item.showId)
                                 if (show == null) {
-                                    show = networkToLocalTVShow.await(
-                                        getRemoteTVShows.awaitOne(item.showId)!!.toDomain()
+                                    show = local.networkToLocalShow(
+                                        network.getShow(item.showId)!!.toDomain()
                                     )
                                 }
                                 addToList.add(show.id to false)
@@ -135,7 +128,7 @@ class UserListUpdateWorker (
                             Timber.e(ignored)
                         }
                     }
-                    contentListRepository.addItemsToList(addToList, local)
+                    contentListRepository.addItemsToList(addToList, localList)
                 } catch (ignored: Exception) {
                     Timber.e(ignored)
                 }

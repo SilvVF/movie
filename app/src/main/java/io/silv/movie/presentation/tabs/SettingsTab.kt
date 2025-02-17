@@ -10,7 +10,7 @@ import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import io.silv.movie.MainScreenModel
+import io.silv.movie.MainViewModel
 import io.silv.movie.R
 import io.silv.movie.presentation.getActivityViewModel
 import io.silv.movie.presentation.settings.LocalBackPress
@@ -29,7 +29,7 @@ data object SettingsTab: SharedTransitionTab() {
     @Composable
     override fun Content() {
         val tabNavigator = LocalTabNavigator.current
-        val mainScreenModel by getActivityViewModel<MainScreenModel>()
+        val mainViewModel by getActivityViewModel<MainViewModel>()
 
         Navigator(SettingsMainScreen) { navigator ->
             val pop: () -> Unit = {
@@ -41,7 +41,7 @@ data object SettingsTab: SharedTransitionTab() {
             }
 
             LaunchedEffect(Unit) {
-                mainScreenModel.navigationChannel.receiveAsFlow().collect { action ->
+                mainViewModel.navigationChannel.receiveAsFlow().collect { action ->
                     with(navigator) { action() }
                 }
             }

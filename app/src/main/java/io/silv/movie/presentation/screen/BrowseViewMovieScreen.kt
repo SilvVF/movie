@@ -71,6 +71,7 @@ import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.content.lists.toContentItem
+import io.silv.movie.data.content.movie.model.Credit
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
@@ -225,12 +226,12 @@ data class MovieViewScreen(
 private fun MovieDetailsContent(
     state: MovieDetailsState.Success,
     commentsState: CommentsState,
-    creditsProvider: () -> LazyPagingItems<io.silv.movie.data.content.credits.Credit>,
+    creditsProvider: () -> LazyPagingItems<Credit>,
     refresh: () -> Unit,
     onPosterClick: () -> Unit,
     onViewCreditsClick: () -> Unit,
     onVideoThumbnailClick: (movieId: Long, isMovie: Boolean,  trailerId: String) -> Unit,
-    onCreditClick: (credit: io.silv.movie.data.content.credits.Credit) -> Unit,
+    onCreditClick: (credit: Credit) -> Unit,
     onWatchMovieClick: () -> Unit,
     onAddToList: () -> Unit,
     onShowComments: () -> Unit,

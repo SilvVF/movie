@@ -3,8 +3,8 @@ package io.silv.movie.data.content.lists
 import android.os.Parcelable
 import io.silv.movie.data.content.movie.model.Movie
 import io.silv.movie.data.content.movie.model.MoviePoster
-import io.silv.movie.data.content.tv.model.TVShow
-import io.silv.movie.data.content.tv.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.TVShow
+import io.silv.movie.data.content.movie.model.TVShowPoster
 import kotlinx.parcelize.Parcelize
 
 @Parcelize

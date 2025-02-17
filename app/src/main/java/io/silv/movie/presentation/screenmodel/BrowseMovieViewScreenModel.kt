@@ -7,21 +7,19 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.movie.data.content.credits.CreditRepository
-import io.silv.movie.data.content.credits.GetRemoteCredits
-import io.silv.movie.data.content.credits.NetworkToLocalCredit
-import io.silv.movie.data.content.credits.toDomain
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
-import io.silv.movie.data.content.movie.interactor.UpdateMovie
-import io.silv.movie.data.content.movie.model.Movie
+import io.silv.movie.data.content.movie.local.CreditRepository
+import io.silv.movie.data.content.movie.network.SourceCreditsRepository
 import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.trailers.GetMovieTrailers
-import io.silv.movie.data.content.trailers.GetRemoteTrailers
-import io.silv.movie.data.content.trailers.NetworkToLocalTrailer
-import io.silv.movie.data.content.trailers.Trailer
-import io.silv.movie.data.content.trailers.toDomain
+import io.silv.movie.data.content.movie.model.Movie
+import io.silv.movie.data.content.movie.local.MovieRepository
+import io.silv.movie.data.content.movie.local.TrailerRepository
+import io.silv.movie.data.content.movie.local.awaitUpdateFromSource
+import io.silv.movie.data.content.movie.local.networkToLocalCredit
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.network.SourceMovieRepository
+import io.silv.movie.data.content.movie.network.SourceTrailerRepository
+import io.silv.movie.data.content.movie.model.Trailer
+import io.silv.movie.data.content.movie.network.networkToLocalTrailer
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,22 +33,19 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import timber.log.Timber
 
 class MovieViewScreenModel(
-    private val getMovieTrailers: GetMovieTrailers,
-    private val getRemoteTrailers: GetRemoteTrailers,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val networkToLocalTrailer: NetworkToLocalTrailer,
-    private val networkToLocalCredit: NetworkToLocalCredit,
-    private val getRemoteCredits: GetRemoteCredits,
-    private val creditsRepository: CreditRepository,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val getMovie: GetMovie,
-    private val updateMovie: UpdateMovie,
+    private val trailerSource: SourceTrailerRepository,
+    private val trailerRepo: TrailerRepository,
+    private val creditsSource: SourceCreditsRepository,
+    private val creditsRepo: CreditRepository,
+    private val movieSource: SourceMovieRepository,
+    private val movieRepo: MovieRepository,
     private val movieCoverCache: MovieCoverCache,
     private val movieId: Long
-): StateScreenModel<MovieDetailsState>(MovieDetailsState.Loading) {
+) : StateScreenModel<MovieDetailsState>(MovieDetailsState.Loading) {
 
     private fun MutableStateFlow<MovieDetailsState>.updateSuccess(
         function: (MovieDetailsState.Success) -> MovieDetailsState.Success
@@ -66,15 +61,15 @@ class MovieViewScreenModel(
     init {
         screenModelScope.launch {
             try {
-                val movie = getMovie.await(id = movieId)
+                val movie = movieRepo.getMovieById(movieId)
 
                 when {
                     movie == null -> {
-                        val smovie = getRemoteMovie.awaitOne(movieId)
+                        val smovie = movieSource.getMovie(movieId)
 
                         mutableState.value = if (smovie != null) {
                             MovieDetailsState.Success(
-                                movie = networkToLocalMovie.await(smovie.toDomain())
+                                movie = movieRepo.networkToLocalMovie(smovie.toDomain())
                             )
                         } else {
                             MovieDetailsState.Error
@@ -104,7 +99,10 @@ class MovieViewScreenModel(
                 .distinctUntilChanged()
                 .collectLatest { movieId ->
 
-                    val trailers = runCatching{  getMovieTrailers.await(movieId) }.getOrDefault(emptyList())
+                    val trailers = runCatching {
+                        trailerRepo.getByMovieId(movieId)
+                    }
+                        .getOrDefault(emptyList())
 
                     if (trailers.isEmpty()) {
                         refreshMovieTrailers()
@@ -116,7 +114,7 @@ class MovieViewScreenModel(
                 }
         }
 
-        getMovie.subscribeOrNull(movieId).filterNotNull().onEach { new ->
+        movieRepo.observeMovieByIdOrNull(movieId).filterNotNull().onEach { new ->
             mutableState.updateSuccess {
                 it.copy(movie = new)
             }
@@ -126,7 +124,7 @@ class MovieViewScreenModel(
 
     val credits = Pager(
         config = PagingConfig(pageSize = 30),
-        pagingSourceFactory = { creditsRepository.movieCreditsPagingSource(movieId) },
+        pagingSourceFactory = { creditsRepo.movieCreditsPagingSource(movieId) },
     ).flow
         .cachedIn(screenModelScope)
         .stateIn(
@@ -137,12 +135,13 @@ class MovieViewScreenModel(
 
 
     private suspend fun refreshMovieCredits() {
-        runCatching { getRemoteCredits.awaitMovie(movieId) }
+        runCatching { creditsSource.awaitMovie(movieId) }
             .onSuccess { credits ->
                 val movie = state.value.success?.movie
                 for (sCredit in credits) {
-                    networkToLocalCredit.await(
-                        sCredit.toDomain().copy(posterPath = movie?.posterUrl, title = movie?.title.orEmpty()),
+                    creditsRepo.networkToLocalCredit(
+                        sCredit.toDomain()
+                            .copy(posterPath = movie?.posterUrl, title = movie?.title.orEmpty()),
                         movieId,
                         true
                     )
@@ -153,31 +152,31 @@ class MovieViewScreenModel(
 
     private suspend fun refreshMovieTrailers() {
 
-        val trailers = runCatching { getRemoteTrailers.awaitMovie(movieId) }.getOrDefault(emptyList())
+        val trailers = runCatching { trailerSource.awaitMovie(movieId) }.getOrDefault(emptyList())
             .map {
-                networkToLocalTrailer.await(
+                trailerRepo.networkToLocalTrailer(
                     it.toDomain(), movieId, true
                 )
             }
 
-        mutableState.updateSuccess {state ->
+        mutableState.updateSuccess { state ->
             state.copy(trailers = trailers)
         }
     }
 
     private suspend fun refreshMovieInfo() {
 
-        val smovie = runCatching { getRemoteMovie.awaitOne(movieId) }.getOrNull()
+        val smovie = runCatching { movieSource.getMovie(movieId) }.getOrNull()
         val movie = state.value.success?.movie
 
         if (smovie != null && movie != null) {
-            updateMovie.awaitUpdateFromSource(movie, smovie, movieCoverCache)
+            movieRepo.awaitUpdateFromSource(movie, smovie, movieCoverCache)
         }
     }
 
     fun updateDialog(dialog: Dialog?) {
         screenModelScope.launch {
-            mutableState.updateSuccess {state ->
+            mutableState.updateSuccess { state ->
                 state.copy(dialog = dialog)
             }
         }
@@ -188,12 +187,14 @@ class MovieViewScreenModel(
 
             mutableState.updateSuccess { it.copy(refreshing = true) }
 
-            listOf(
-                launch { refreshMovieInfo() },
-                launch { refreshMovieTrailers() },
-                launch { refreshMovieCredits() }
-            )
-                .joinAll()
+            supervisorScope {
+                listOf(
+                    launch { refreshMovieInfo() },
+                    launch { refreshMovieTrailers() },
+                    launch { refreshMovieCredits() }
+                )
+                    .joinAll()
+            }
 
             mutableState.updateSuccess { it.copy(refreshing = false) }
         }
@@ -203,10 +204,10 @@ class MovieViewScreenModel(
     sealed interface Dialog {
 
         @Stable
-        data object Comments: Dialog
+        data object Comments : Dialog
 
         @Stable
-        data object FullCover: Dialog
+        data object FullCover : Dialog
     }
 }
 
@@ -214,10 +215,10 @@ class MovieViewScreenModel(
 sealed class MovieDetailsState {
 
     @Stable
-    data object Error: MovieDetailsState()
+    data object Error : MovieDetailsState()
 
     @Stable
-    data object Loading: MovieDetailsState()
+    data object Loading : MovieDetailsState()
 
     @Stable
     data class Success(
@@ -225,7 +226,7 @@ sealed class MovieDetailsState {
         val trailers: List<Trailer> = emptyList(),
         val refreshing: Boolean = false,
         val dialog: MovieViewScreenModel.Dialog? = null
-    ): MovieDetailsState()
+    ) : MovieDetailsState()
 
     val success
         get() = this as? Success

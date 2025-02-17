@@ -14,10 +14,9 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.tv.interactor.GetShow
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
 import io.silv.movie.data.user.SupabaseConstants
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -35,8 +34,7 @@ class ListPagedScreenModel(
     private val postgrest: Postgrest,
     private val pagedType: ListPagedType,
     private val contentListRepository: ContentListRepository,
-    private val getMovie: GetMovie,
-    private val getShow: GetShow,
+    private val local: LocalContentDelegate,
 ): ScreenModel {
 
     private inner class ListPagingSource: PagingSource<Int, ListWithPostersRpcResponse>() {
@@ -94,7 +92,7 @@ class ListPagedScreenModel(
     }
         .flow.map { pagingData ->
             pagingData.uniqueBy { it.listId }.map {
-                it.toListPreviewItem(contentListRepository, getShow, getMovie, ioCoroutineScope)
+                it.toListPreviewItem(contentListRepository, local, ioCoroutineScope)
             }
         }
         .cachedIn(ioCoroutineScope)

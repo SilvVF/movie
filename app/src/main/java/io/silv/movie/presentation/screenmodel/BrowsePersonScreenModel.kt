@@ -11,9 +11,10 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.await
-import io.silv.movie.data.content.credits.CreditRepository
-import io.silv.movie.data.content.credits.NetworkToLocalCredit
-import io.silv.movie.data.content.credits.toDomain
+import io.silv.movie.data.content.movie.local.CreditRepository
+import io.silv.movie.data.content.movie.local.networkToLocalCredit
+import io.silv.movie.data.content.movie.model.Credit
+import io.silv.movie.data.content.movie.model.toDomain
 import io.silv.movie.network.model.toSCredit
 import io.silv.movie.network.service.tmdb.TMDBPersonService
 import kotlinx.coroutines.Dispatchers
@@ -37,9 +38,8 @@ data class PersonInfo(
 )
 
 class PersonViewScreenModel(
-    private val creditsRepository: CreditRepository,
     private val personService: TMDBPersonService,
-    private val networkToLocalCredit: NetworkToLocalCredit,
+    private val creditsRepo: CreditRepository,
     private val personId: Long,
     private val profilePath: String,
 ): StateScreenModel<PersonViewState>(PersonViewState.Loading) {
@@ -52,7 +52,6 @@ class PersonViewScreenModel(
     init {
         refresh()
     }
-
 
     fun refresh() {
         if (refreshJob?.isActive == true)
@@ -118,12 +117,12 @@ class PersonViewScreenModel(
     }
 
     private suspend fun insertCreditWithContent(
-        credit: io.silv.movie.data.content.credits.Credit,
+        credit: Credit,
         contentId: Long,
         isMovie: Boolean,
-    ): io.silv.movie.data.content.credits.Credit? {
+    ): Credit? {
         return runCatching {
-            networkToLocalCredit.await(
+            creditsRepo.networkToLocalCredit(
                 credit,
                 contentId,
                 isMovie
@@ -134,7 +133,7 @@ class PersonViewScreenModel(
 
     val credits = Pager(
         config = PagingConfig(pageSize = 20),
-        pagingSourceFactory = { creditsRepository.personCreditsPagingSource(personId) },
+        pagingSourceFactory = { creditsRepo.personCreditsPagingSource(personId) },
     ).flow
         .cachedIn(screenModelScope)
         .stateIn(

@@ -63,10 +63,10 @@ import androidx.compose.ui.util.fastForEachIndexed
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.conditional
 import io.silv.movie.R
-import io.silv.movie.data.content.Genre
-import io.silv.movie.data.content.GenreMode
-import io.silv.movie.data.content.SearchItem
-import io.silv.movie.data.content.SortingOption
+import io.silv.movie.data.content.movie.model.Genre
+import io.silv.movie.data.content.movie.model.GenreMode
+import io.silv.movie.data.content.movie.model.SearchItem
+import io.silv.movie.data.content.movie.model.SortingOption
 import kotlinx.coroutines.launch
 
 

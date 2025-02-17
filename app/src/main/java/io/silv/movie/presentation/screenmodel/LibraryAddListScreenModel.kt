@@ -16,24 +16,21 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.Quad
-import io.silv.movie.data.content.ContentPagedType
+import io.silv.movie.data.content.movie.model.ContentPagedType
 import io.silv.movie.data.content.lists.ContentItem
 import io.silv.movie.data.content.lists.ContentList
 import io.silv.movie.data.content.lists.RecommendationManager
-import io.silv.movie.data.content.lists.interactor.GetFavoritesList
-import io.silv.movie.data.content.lists.repository.ContentListRepository
+import io.silv.movie.data.content.lists.ContentListRepository
 import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.movie.interactor.GetMovie
-import io.silv.movie.data.content.movie.interactor.GetRemoteMovie
-import io.silv.movie.data.content.movie.interactor.NetworkToLocalMovie
+import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.content.movie.local.networkToLocalMovie
+import io.silv.movie.data.content.movie.local.networkToLocalShow
 import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.tv.interactor.GetRemoteTVShows
-import io.silv.movie.data.content.tv.interactor.GetShow
-import io.silv.movie.data.content.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.content.tv.model.toDomain
+import io.silv.movie.data.content.movie.network.NetworkContentDelegate
+import io.silv.movie.data.content.movie.network.getMoviePager
+import io.silv.movie.data.content.movie.network.getShowPager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -50,13 +47,8 @@ import kotlinx.coroutines.launch
 class ListAddScreenModel(
     private val contentListRepository: ContentListRepository,
     private val recommendationManager: RecommendationManager,
-    private val getFavoritesList: GetFavoritesList,
-    private val getRemoteMovie: GetRemoteMovie,
-    private val networkToLocalMovie: NetworkToLocalMovie,
-    private val networkToLocalTVShow: NetworkToLocalTVShow,
-    private val getRemoteTVShows: GetRemoteTVShows,
-    private val getShow: GetShow,
-    private val getMovie: GetMovie,
+    private val network: NetworkContentDelegate,
+    private val local: LocalContentDelegate,
     private val listId: Long,
 ): StateScreenModel<ListAddState>(ListAddState.Loading){
 
@@ -105,7 +97,7 @@ class ListAddScreenModel(
         state.map { it.showIds to it.movieIds }
             .distinctUntilChanged()
             .flatMapLatest { (showIds, movieIds) ->
-                getFavoritesList.subscribe(query = query, FavoritesSortMode.RecentlyAdded)
+                contentListRepository.observeFavorites(query, FavoritesSortMode.RecentlyAdded)
                     .map { items ->
                         items.filterNot {
                             if (it.isMovie)
@@ -149,50 +141,44 @@ class ListAddScreenModel(
     ) { a, b, c, d -> Quad(a, b, c, d) }
         .debounce(300)
         .flatMapLatest { (query, movieIds, showIds, movies) ->
-
-            if (query.isBlank())
-                return@flatMapLatest flowOf(PagingData.empty<StateFlow<ContentItem>>())
-
-            if (movies) {
-                Pager(PagingConfig(pageSize = 25)) {
-                    getRemoteMovie.subscribe(ContentPagedType.Search(query))
+            when {
+                query.isBlank() -> flowOf(PagingData.empty())
+                movies ->  Pager(PagingConfig(pageSize = 25)) {
+                    network.getMoviePager(ContentPagedType.Search(query))
                 }.flow.map { pagingData ->
                     val seenIds = mutableSetOf<Long>()
                     pagingData.map { sMovie ->
-                        networkToLocalMovie.await(sMovie.toDomain())
+                        local.networkToLocalMovie(sMovie.toDomain())
                             .let { localMovie ->
-                                getMovie.subscribePartial(localMovie.id)
-                                    .map { it.toContentItem() }
-                            }
-                            .stateIn(ioCoroutineScope)
-                    }
-                        .filter {
-                            seenIds.add(it.value.contentId) && it.value.posterUrl.isNullOrBlank()
-                                .not()
-                        }
-                        .filter { !movieIds.contains(it.value.contentId) }
-                }
-            } else {
-                Pager(PagingConfig(pageSize = 25)) {
-                    getRemoteTVShows.subscribe(ContentPagedType.Search(query))
-                }.flow.map { pagingData ->
-                    val seenIds = mutableSetOf<Long>()
-                    pagingData.map { sShow ->
-                        networkToLocalTVShow.await(sShow.toDomain())
-                            .let { localShow ->
-                                getShow.subscribePartial(localShow.id)
+                                local.observeMoviePartialById(localMovie.id)
                                     .map { it.toContentItem() }
                             }
                             .stateIn(ioCoroutineScope)
                     }
                         .filter { seenIds.add(it.value.contentId) && it.value.posterUrl.isNullOrBlank().not() }
-                        .filter { !showIds.contains(it.value.contentId) }
-
+                        .filter { !movieIds.contains(it.value.contentId) }
                 }
+                else ->
+                    Pager(PagingConfig(pageSize = 25)) {
+                        network.getShowPager(ContentPagedType.Search(query))
+                    }.flow.map { pagingData ->
+                        val seenIds = mutableSetOf<Long>()
+                        pagingData.map { sShow ->
+                            local.networkToLocalShow(sShow.toDomain())
+                                .let { localShow ->
+                                    local.observeShowPartialById(localShow.id)
+                                        .map { it.toContentItem() }
+                                }
+                                .stateIn(ioCoroutineScope)
+                        }
+                            .filter { seenIds.add(it.value.contentId) && it.value.posterUrl.isNullOrBlank().not() }
+                            .filter { !showIds.contains(it.value.contentId) }
+                    }
             }
-                .cachedIn(ioCoroutineScope)
+                .cachedIn(screenModelScope)
+
         }
-        .stateIn(ioCoroutineScope, SharingStarted.Lazily, PagingData.empty())
+        .stateIn(screenModelScope, SharingStarted.Lazily, PagingData.empty())
 
 
     fun changePagingItems() {

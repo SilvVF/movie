@@ -18,18 +18,18 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.content.ContentPagedType
-import io.silv.movie.data.content.Filters
-import io.silv.movie.data.content.Genre
-import io.silv.movie.data.content.SearchItem
+import io.silv.movie.data.content.movie.model.ContentPagedType
+import io.silv.movie.data.content.movie.model.Filters
+import io.silv.movie.data.content.movie.model.Genre
+import io.silv.movie.data.content.movie.model.SearchItem
 import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.toDomain
-import io.silv.movie.data.content.tv.interactor.GetRemoteTVShows
-import io.silv.movie.data.content.tv.interactor.GetShow
-import io.silv.movie.data.content.tv.interactor.NetworkToLocalTVShow
-import io.silv.movie.data.content.tv.model.TVShowPoster
-import io.silv.movie.data.content.tv.model.toDomain
-import io.silv.movie.data.content.tv.repository.SourceTVRepository
+import io.silv.movie.data.content.movie.local.ShowRepository
+import io.silv.movie.data.content.movie.local.networkToLocalShow
+import io.silv.movie.data.content.movie.model.toDomain
+import io.silv.movie.data.content.movie.model.TVShowPoster
+import io.silv.movie.data.content.movie.model.toDomain
+import io.silv.movie.data.content.movie.network.SourceShowRepository
+import io.silv.movie.data.content.movie.network.getShowPager
 import io.silv.movie.data.prefrences.BrowsePreferences
 import io.silv.movie.data.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.asState
@@ -47,10 +47,8 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 class TVScreenModel(
-    private val getRemoteTVShow: GetRemoteTVShows,
-    private val networkToLocalMovie: NetworkToLocalTVShow,
-    private val getShow: GetShow,
-    private val sourceRepository: SourceTVRepository,
+    private val showRepo: ShowRepository,
+    private val showSource: SourceShowRepository,
     networkMonitor: NetworkMonitor,
     browsePreferences: BrowsePreferences,
     savedStateContentPagedType: ContentPagedType
@@ -77,7 +75,7 @@ class TVScreenModel(
 
     init {
         screenModelScope.launch {
-            val genres = sourceRepository.getSourceGenres().map { it.toDomain() }
+            val genres = showSource.getShowGenres().map { it.toDomain() }
             mutableState.update {state -> state.copy(genres = genres) }
         }
 
@@ -100,12 +98,12 @@ class TVScreenModel(
             Pager(
                 PagingConfig(pageSize = 25)
             ) {
-                getRemoteTVShow.subscribe(listing)
+                showSource.getShowPager(listing)
             }.flow.map { pagingData ->
                 val seenIds = mutableSetOf<Long>()
                 pagingData.map { sTVShow ->
-                    networkToLocalMovie.await(sTVShow.toDomain())
-                        .let { localShow -> getShow.subscribePartial(localShow.id) }
+                    showRepo.networkToLocalShow(sTVShow.toDomain())
+                        .let { localShow -> showRepo.observeShowPartialById(localShow.id) }
                         .stateIn(ioCoroutineScope)
                 }
                     .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
