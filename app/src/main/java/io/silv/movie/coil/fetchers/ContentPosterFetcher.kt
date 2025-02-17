@@ -14,7 +14,7 @@ import io.silv.movie.coil.core.FetcherDiskStore
 import io.silv.movie.coil.core.FetcherDiskStoreImageFile
 import io.silv.movie.coil.core.OkHttpFetcherConfig
 import io.silv.movie.core.await
-import io.silv.movie.data.prefrences.StoragePreferences
+import io.silv.movie.prefrences.StoragePreferences
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.Dispatchers

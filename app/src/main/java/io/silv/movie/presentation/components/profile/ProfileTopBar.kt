@@ -39,7 +39,7 @@ import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
-import io.silv.movie.data.user.User
+import io.silv.movie.data.supabase.model.User
 import io.silv.movie.presentation.rememberProfileImageData
 
 @Composable

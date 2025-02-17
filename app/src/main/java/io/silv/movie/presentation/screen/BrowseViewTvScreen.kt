@@ -46,8 +46,8 @@ import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
-import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.movie.model.Credit
+import io.silv.movie.data.model.toContentItem
+import io.silv.movie.data.model.Credit
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser

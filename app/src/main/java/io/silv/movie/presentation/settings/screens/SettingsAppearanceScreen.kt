@@ -48,11 +48,11 @@ import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
-import io.silv.movie.data.prefrences.AppTheme
-import io.silv.movie.data.prefrences.StartScreen
-import io.silv.movie.data.prefrences.TabletUiMode
-import io.silv.movie.data.prefrences.ThemeMode
-import io.silv.movie.data.prefrences.UiPreferences
+import io.silv.movie.prefrences.AppTheme
+import io.silv.movie.prefrences.StartScreen
+import io.silv.movie.prefrences.TabletUiMode
+import io.silv.movie.prefrences.ThemeMode
+import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings

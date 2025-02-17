@@ -17,10 +17,10 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.model.ListWithPostersRpcResponse
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toListPreviewItem
+import io.silv.movie.data.local.LocalContentDelegate
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter

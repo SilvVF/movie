@@ -17,8 +17,9 @@ package io.silv.movie.presentation.covers.cache
 
 import android.content.Context
 import io.silv.movie.core.DiskUtil
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentList
 import okio.IOException
+
 import java.io.File
 import java.io.InputStream
 
@@ -30,6 +31,7 @@ import java.io.InputStream
  * @param context the application context.
  * @constructor creates an instance of the cover cache.
  */
+
 class ListCoverCache(private val context: Context) {
 
     companion object {

@@ -17,8 +17,9 @@ import io.silv.movie.coil.fetchers.ContentPosterFetcher
 import io.silv.movie.coil.fetchers.UserProfileImageFetcher
 import io.silv.movie.coil.utils.CoilDiskCache
 import io.silv.movie.coil.utils.CoilMemoryCache
-import io.silv.movie.data.prefrences.StoragePreferences
+import io.silv.movie.prefrences.StoragePreferences
 import io.silv.movie.di.appModule
+import io.silv.movie.di.screenModelModule
 import io.silv.movie.extract.TmdbExtractor
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
@@ -32,8 +33,7 @@ import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 import timber.log.Timber
 
-
-class App: Application(), ImageLoaderFactory {
+class App : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
@@ -46,7 +46,7 @@ class App: Application(), ImageLoaderFactory {
             androidLogger()
             androidContext(this@App)
             workManagerFactory()
-            modules(appModule)
+            modules(appModule, screenModelModule)
         }
 
         TmdbExtractor.extractVideo()
@@ -59,7 +59,7 @@ class App: Application(), ImageLoaderFactory {
         val diskCacheInit =
             lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilDiskCache.get(this, storagePreferences) }
 
-        val memCacheInit=
+        val memCacheInit =
             lazy(LazyThreadSafetyMode.SYNCHRONIZED) { CoilMemoryCache.get(this) }
 
         return ImageLoader.Builder(this)
@@ -82,9 +82,9 @@ class App: Application(), ImageLoaderFactory {
                     memoryCache = memCacheInit,
                     fetcher = UserProfileImageFetcher(
                         this@App,
-                            inject<Storage>(),
-                            inject<ProfileImageCache>(),
-                            inject<Postgrest>()
+                        inject<Storage>(),
+                        inject<ProfileImageCache>(),
+                        inject<Postgrest>()
                     )
                 )
                 addByteArrayDiskFetcher(
@@ -103,19 +103,21 @@ class App: Application(), ImageLoaderFactory {
                 }
             }
             .crossfade(
-                    300 *
-                            Settings.Global.getFloat(
-                                this@App.contentResolver,
-                                Settings.Global.ANIMATOR_DURATION_SCALE,
-                                1f,
-                            )
-                                .toInt()
-                )
+                300 *
+                        Settings.Global.getFloat(
+                            this@App.contentResolver,
+                            Settings.Global.ANIMATOR_DURATION_SCALE,
+                            1f,
+                        )
+                            .toInt()
+            )
             .fetcherDispatcher(Dispatchers.IO.limitedParallelism(8))
             .decoderDispatcher(Dispatchers.IO.limitedParallelism(2))
             .transformationDispatcher(Dispatchers.IO.limitedParallelism(2))
             .apply {
-                if (BuildConfig.DEBUG) { logger(DebugLogger()) }
+                if (BuildConfig.DEBUG) {
+                    logger(DebugLogger())
+                }
             }
             .build()
     }

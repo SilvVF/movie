@@ -11,10 +11,10 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.await
-import io.silv.movie.data.content.movie.local.CreditRepository
-import io.silv.movie.data.content.movie.local.networkToLocalCredit
-import io.silv.movie.data.content.movie.model.Credit
-import io.silv.movie.data.content.movie.model.toDomain
+import io.silv.movie.data.local.CreditRepository
+import io.silv.movie.data.local.networkToLocalCredit
+import io.silv.movie.data.model.Credit
+import io.silv.movie.data.model.toDomain
 import io.silv.movie.network.model.toSCredit
 import io.silv.movie.network.service.tmdb.TMDBPersonService
 import kotlinx.coroutines.Dispatchers

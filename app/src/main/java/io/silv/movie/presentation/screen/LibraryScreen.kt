@@ -29,8 +29,8 @@ import dev.chrisbanes.haze.hazeChild
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalListInteractor

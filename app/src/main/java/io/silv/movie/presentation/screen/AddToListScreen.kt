@@ -52,8 +52,8 @@ import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
 import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.components.content.ContentListPoster
 import io.silv.movie.presentation.components.content.ContentListPreview

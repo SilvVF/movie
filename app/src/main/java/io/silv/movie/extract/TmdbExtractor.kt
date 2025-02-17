@@ -45,9 +45,5 @@ object  TmdbExtractor {
         commonEmptyHeaders
     )
 
-    fun extractVideo() {
-        GlobalScope.launch {
-
-        }
-    }
+    fun extractVideo() = Unit
 }

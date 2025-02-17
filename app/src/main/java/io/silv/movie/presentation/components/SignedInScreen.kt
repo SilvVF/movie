@@ -30,9 +30,9 @@ import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.user.User
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.supabase.model.User
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentListPoster

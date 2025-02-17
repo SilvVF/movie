@@ -5,21 +5,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.SessionStatus
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
-import io.silv.movie.data.prefrences.BasePreferences
-import io.silv.movie.data.user.model.list.ListWithItems
-import io.silv.movie.data.user.repository.ListRepository
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.model.ListWithPostersRpcResponse
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toContentItem
+import io.silv.movie.data.model.toListPreviewItem
+import io.silv.movie.data.local.LocalContentDelegate
+import io.silv.movie.prefrences.BasePreferences
+import io.silv.movie.data.supabase.model.list.ListWithItems
+import io.silv.movie.data.supabase.ListRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -128,6 +128,7 @@ class BrowseListsScreenModel(
             val lists = runCatching {
                 listRepository
                     .selectListsByUserId(DEFAULT_LIST_USER)
+                    .getOrNull()
                     ?.map { listWithItems ->
                         toContentListWithItems(listWithItems)
                     }
@@ -140,7 +141,7 @@ class BrowseListsScreenModel(
         },
         suspend sub@{
             val fromSubscribed =
-                listRepository.selectRecommendedFromSubscriptions() ?: return@sub
+                listRepository.selectRecommendedFromSubscriptions().getOrNull() ?: return@sub
             subscribedRecommendedResult.emit(fromSubscribed)
         }
     )

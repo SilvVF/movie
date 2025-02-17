@@ -11,9 +11,9 @@ import coil.size.Size
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.R
 import io.silv.movie.core.ImageUtil
-import io.silv.movie.data.content.movie.local.ShowRepository
-import io.silv.movie.data.content.movie.local.awaitUpdateCoverLastModified
-import io.silv.movie.data.content.movie.model.TVShow
+import io.silv.movie.data.local.ShowRepository
+import io.silv.movie.data.local.awaitUpdateCoverLastModified
+import io.silv.movie.data.model.TVShow
 import io.silv.movie.presentation.covers.Image
 import io.silv.movie.presentation.covers.ImageSaver
 import io.silv.movie.presentation.covers.Location

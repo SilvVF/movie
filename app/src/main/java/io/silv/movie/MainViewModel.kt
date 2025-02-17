@@ -5,14 +5,14 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.navigator.Navigator
-import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.content.lists.interactor.DeleteContentList
-import io.silv.movie.data.content.lists.interactor.EditContentList
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
-import io.silv.movie.data.content.movie.network.NetworkContentDelegate
-import io.silv.movie.data.user.repository.ListRepository
-import io.silv.movie.data.user.worker.ListUpdater
+import io.github.jan.supabase.auth.Auth
+import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.EditContentList
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.local.LocalContentDelegate
+import io.silv.movie.data.network.NetworkContentDelegate
+import io.silv.movie.data.ListUpdateManager
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.presentation.ContentInteractor
 import io.silv.movie.presentation.ListInteractor
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
@@ -28,9 +28,9 @@ class MainViewModel(
     contentListRepository: ContentListRepository,
     local: LocalContentDelegate,
     network: NetworkContentDelegate,
-    listRepository: ListRepository,
+    backendRepository: BackendRepository,
     deleteContentList: DeleteContentList,
-    listUpdater: ListUpdater,
+    listUpdateManager: ListUpdateManager,
     auth: Auth
 ): ViewModel() {
 
@@ -38,7 +38,7 @@ class MainViewModel(
 
     val contentInteractor = ContentInteractor.default(
         local,
-        listRepository,
+        backendRepository,
         contentListRepository,
         network,
         auth,
@@ -49,8 +49,8 @@ class MainViewModel(
 
     val listInteractor = ListInteractor.default(
         contentListRepository,
-        listRepository,
-        listUpdater,
+        backendRepository,
+        listUpdateManager,
         editContentList,
         deleteContentList,
         movieCoverCache,

@@ -117,8 +117,8 @@ import io.silv.core_ui.components.topbar.runOnEnterKeyPressed
 import io.silv.core_ui.util.keyboardAsState
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
-import io.silv.movie.data.user.User
-import io.silv.movie.data.user.model.comment.PagedComment
+import io.silv.movie.data.supabase.model.User
+import io.silv.movie.data.supabase.model.comment.PagedComment
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalUser

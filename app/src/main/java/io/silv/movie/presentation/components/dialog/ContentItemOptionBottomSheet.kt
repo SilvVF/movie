@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.presentation.components.content.ContentPreviewDefaults
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.launch

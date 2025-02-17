@@ -43,8 +43,8 @@ import coil.request.ImageRequest
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.clickableNoIndication
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.presentation.components.content.ContentPreviewDefaults
 import io.silv.movie.presentation.components.content.rememberListUri
 import io.silv.movie.presentation.toPoster

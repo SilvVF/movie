@@ -37,8 +37,8 @@ import io.silv.core_ui.components.EntryCompactGridItem
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.lazy.VerticalGridFastScroller
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
 import io.silv.movie.presentation.tabs.registerSharedElement
 import io.silv.movie.presentation.tabs.toSharedElement

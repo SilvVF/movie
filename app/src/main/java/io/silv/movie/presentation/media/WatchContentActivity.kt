@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import io.silv.core_ui.components.NoResultsEmptyScreen
 import io.silv.movie.MainActivity
 import io.silv.movie.MovieTheme
-import io.silv.movie.data.prefrences.AppTheme
+import io.silv.movie.prefrences.AppTheme
 
 
 class WatchContentActivity : ComponentActivity() {

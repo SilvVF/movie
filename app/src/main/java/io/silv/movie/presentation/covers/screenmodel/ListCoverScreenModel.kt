@@ -11,10 +11,10 @@ import coil.size.Size
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.R
 import io.silv.movie.core.ImageUtil
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.ContentListUpdate
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toUpdate
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.model.ContentListUpdate
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toUpdate
 import io.silv.movie.presentation.covers.Image
 import io.silv.movie.presentation.covers.ImageSaver
 import io.silv.movie.presentation.covers.Location

@@ -1,19 +1,20 @@
 package io.silv.movie.presentation
 
 import androidx.compose.runtime.Stable
-import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
-import io.silv.movie.data.content.movie.local.networkToLocalMovie
-import io.silv.movie.data.content.movie.local.networkToLocalShow
-import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.movie.model.toMovieUpdate
-import io.silv.movie.data.content.movie.model.toShowUpdate
-import io.silv.movie.data.content.movie.network.NetworkContentDelegate
-import io.silv.movie.data.user.repository.ListRepository
+import io.github.jan.supabase.auth.Auth
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toContentItem
+import io.silv.movie.data.local.LocalContentDelegate
+import io.silv.movie.data.local.networkToLocalMovie
+import io.silv.movie.data.local.networkToLocalShow
+import io.silv.movie.data.model.toDomain
+import io.silv.movie.data.model.toMovieUpdate
+import io.silv.movie.data.model.toShowUpdate
+import io.silv.movie.data.network.NetworkContentDelegate
+import io.silv.movie.data.supabase.ContentType
+import io.silv.movie.data.supabase.ListRepository
 import io.silv.movie.presentation.ContentInteractor.ContentEvent
 import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToAnotherList
 import io.silv.movie.presentation.ContentInteractor.ContentEvent.AddToList
@@ -169,7 +170,7 @@ private suspend fun DefaultContentInteractor.toggleContentItemFavorite(
                 if (new.favorite) {
                     listRepository.addMovieToFavoritesList(new)
                 } else {
-                    listRepository.deleteMovieFromFavorites(new.id)
+                    listRepository.deleteFromFavorites(new.id, ContentType.Movie)
                 }
             }
 
@@ -190,7 +191,7 @@ private suspend fun DefaultContentInteractor.toggleContentItemFavorite(
                 if (new.favorite) {
                     listRepository.addShowToFavorites(new)
                 } else {
-                    listRepository.deleteShowFromFavorites(new.id)
+                    listRepository.deleteFromFavorites(new.id, ContentType.Show)
                 }
             }
 
@@ -215,21 +216,13 @@ suspend fun addContentItemToList(
     }
 
     if (list.supabaseId != null) {
-        val result = if (contentItem.isMovie) {
-            listRepository.addMovieToList(
-                contentItem.contentId,
-                contentItem.posterUrl,
-                contentItem.title,
-                list
-            )
-        } else {
-            listRepository.addShowToList(
-                contentItem.contentId,
-                contentItem.posterUrl,
-                contentItem.title,
-                list
-            )
-        }
+        val result =  listRepository.addToList(
+            contentItem.contentId,
+            contentItem.posterUrl,
+            contentItem.title,
+            list,
+            contentItem.toType()
+        )
 
         if (!result) {
             return Result.failure(IOException("Failed to remove from network"))
@@ -255,12 +248,7 @@ private suspend fun DefaultContentInteractor.removeContentItemFromList(
     }
 
     if (list.supabaseId != null) {
-        val result = if (item.isMovie) {
-            listRepository.deleteMovieFromList(item.contentId, list)
-        } else {
-            listRepository.deleteShowFromList(item.contentId, list)
-        }
-
+        val result = listRepository.deleteFromList(item.contentId, list, item.toType())
         if (!result) {
             return Result.failure(IOException("Failed to remove from network"))
         }

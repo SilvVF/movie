@@ -41,8 +41,8 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.util.colorClickable
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser

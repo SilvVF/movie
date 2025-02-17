@@ -8,13 +8,13 @@ import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.movie.core.Penta
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.RecommendationManager
-import io.silv.movie.data.prefrences.LibraryPreferences
-import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
-import io.silv.movie.data.user.FavoritesUpdateManager
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.RecommendationManager
+import io.silv.movie.prefrences.LibraryPreferences
+import io.silv.movie.prefrences.PosterDisplayMode
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.ListUpdateManager
+import io.silv.movie.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.presentation.asState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -27,7 +27,7 @@ class FavoritesScreenModel(
     private val recommendationManager: RecommendationManager,
     private val libraryPreferences: LibraryPreferences,
     private val contentListRepository: ContentListRepository,
-    private val favoritesUpdateManager: FavoritesUpdateManager,
+    private val listUpdateManager: ListUpdateManager,
 ): ScreenModel {
 
     var listViewDisplayMode by libraryPreferences.listViewDisplayMode()
@@ -47,7 +47,7 @@ class FavoritesScreenModel(
             sortModeFavorites.stateIn(screenModelScope),
             recommendationManager.subscribe(-1L).map { it.take(6) },
             recommendationManager.isRunning(-1L),
-            favoritesUpdateManager.isRunning(),
+            listUpdateManager.isFavoritesUpdateRunning(),
         ) { a, b, c, d, e -> Penta(a, b, c, d, e) }
         .flatMapLatest { (query, sortMode, recommendations, refRecs, refFavs) ->
             contentListRepository.observeFavorites(query, sortMode)
@@ -95,7 +95,7 @@ class FavoritesScreenModel(
 
     fun refreshFavoritesFromNetwork() {
         screenModelScope.launch {
-            favoritesUpdateManager.refreshFavorites()
+            listUpdateManager.refreshFavorites()
         }
     }
 

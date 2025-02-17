@@ -48,8 +48,8 @@ import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser

@@ -7,19 +7,19 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.movie.data.content.movie.local.CreditRepository
-import io.silv.movie.data.content.movie.network.SourceCreditsRepository
-import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.movie.model.Movie
-import io.silv.movie.data.content.movie.local.MovieRepository
-import io.silv.movie.data.content.movie.local.TrailerRepository
-import io.silv.movie.data.content.movie.local.awaitUpdateFromSource
-import io.silv.movie.data.content.movie.local.networkToLocalCredit
-import io.silv.movie.data.content.movie.local.networkToLocalMovie
-import io.silv.movie.data.content.movie.network.SourceMovieRepository
-import io.silv.movie.data.content.movie.network.SourceTrailerRepository
-import io.silv.movie.data.content.movie.model.Trailer
-import io.silv.movie.data.content.movie.network.networkToLocalTrailer
+import io.silv.movie.data.local.CreditRepository
+import io.silv.movie.data.network.SourceCreditsRepository
+import io.silv.movie.data.model.toDomain
+import io.silv.movie.data.model.Movie
+import io.silv.movie.data.local.MovieRepository
+import io.silv.movie.data.local.TrailerRepository
+import io.silv.movie.data.local.awaitUpdateFromSource
+import io.silv.movie.data.local.networkToLocalCredit
+import io.silv.movie.data.local.networkToLocalMovie
+import io.silv.movie.data.network.SourceMovieRepository
+import io.silv.movie.data.network.SourceTrailerRepository
+import io.silv.movie.data.model.Trailer
+import io.silv.movie.data.network.networkToLocalTrailer
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -135,7 +135,7 @@ class MovieViewScreenModel(
 
 
     private suspend fun refreshMovieCredits() {
-        runCatching { creditsSource.awaitMovie(movieId) }
+        creditsSource.awaitMovie(movieId)
             .onSuccess { credits ->
                 val movie = state.value.success?.movie
                 for (sCredit in credits) {
@@ -151,8 +151,7 @@ class MovieViewScreenModel(
     }
 
     private suspend fun refreshMovieTrailers() {
-
-        val trailers = runCatching { trailerSource.awaitMovie(movieId) }.getOrDefault(emptyList())
+        val trailers = trailerSource.awaitMovie(movieId).getOrDefault(emptyList())
             .map {
                 trailerRepo.networkToLocalTrailer(
                     it.toDomain(), movieId, true

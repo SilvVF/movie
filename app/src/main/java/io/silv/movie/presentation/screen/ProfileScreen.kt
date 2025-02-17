@@ -29,6 +29,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
+import io.github.jan.supabase.compose.auth.ui.annotations.AuthUiExperimental
 import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
@@ -48,6 +49,7 @@ import org.koin.compose.koinInject
 
 data object ProfileScreen: Screen {
 
+    @OptIn(AuthUiExperimental::class)
     @Composable
     override fun Content() {
 

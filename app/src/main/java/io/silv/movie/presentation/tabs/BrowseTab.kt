@@ -13,7 +13,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import io.silv.movie.MainViewModel
 import io.silv.movie.R
-import io.silv.movie.data.content.movie.model.ContentPagedType
+import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.presentation.screen.BrowseMovieScreen
 import io.silv.movie.presentation.getActivityViewModel
 import kotlinx.coroutines.flow.receiveAsFlow

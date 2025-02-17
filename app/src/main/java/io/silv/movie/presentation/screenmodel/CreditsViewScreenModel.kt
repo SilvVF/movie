@@ -7,8 +7,8 @@ import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.components.PosterData
-import io.silv.movie.data.content.movie.local.CreditRepository
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
+import io.silv.movie.data.local.CreditRepository
+import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn

@@ -1,4 +1,3 @@
-
 /*
 Copyright 2015 Javier Tomás
 
@@ -29,20 +28,23 @@ import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.paging3.QueryPagingSource
 import co.touchlab.stately.concurrency.ThreadLocalRef
 import io.silv.Database
+import io.silv.movie.IoDispatcher
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
+
 /*
     edited from https://github.com/aniyomiorg/aniyomi/blob/aec7893099f947413d35ed3f962e7775936829f9/data/src/main/java/tachiyomi/data/handlers/manga/MangaDatabaseHandler.kt#L9
     to support multiplatform by using stately ThreadLocalRef and implementing kotlinx coroutines wrapper for it.
  */
+
 class DatabaseHandlerImpl(
     val db: Database,
     val driver: SqlDriver,
-    val queryDispatcher: CoroutineDispatcher = Dispatchers.IO,
-    val transactionDispatcher: CoroutineDispatcher = queryDispatcher,
+    @IoDispatcher val queryDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    val transactionDispatcher: CoroutineDispatcher = queryDispatcher
 ) : DatabaseHandler {
 
     val suspendingTransactionId = ThreadLocalRef<Int>()
@@ -105,15 +107,15 @@ class DatabaseHandlerImpl(
         queryProvider: Database.(limit: Long, offset: Long) -> Query<V>,
         initialOffset: Long,
     ): PagingSource<Int, V> {
-           return QueryPagingSource(
-              countQuery = db.countQuery(),
-              transacter = db.transacter(),
-              context = queryDispatcher,
-              queryProvider =  { offset, limit ->
-                  db.queryProvider(offset, limit)
-              },
-              initialOffset = initialOffset
-          )
+        return QueryPagingSource(
+            countQuery = db.countQuery(),
+            transacter = db.transacter(),
+            context = queryDispatcher,
+            queryProvider = { offset, limit ->
+                db.queryProvider(offset, limit)
+            },
+            initialOffset = initialOffset
+        )
     }
 
     private suspend fun <T> dispatch(inTransaction: Boolean, block: suspend Database.() -> T): T {

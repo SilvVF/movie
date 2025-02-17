@@ -34,7 +34,7 @@ import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import io.silv.movie.data.content.movie.model.Credit
+import io.silv.movie.data.model.Credit
 
 fun LazyListScope.creditsPagingList(
     creditsProvider: () -> LazyPagingItems<Credit>,

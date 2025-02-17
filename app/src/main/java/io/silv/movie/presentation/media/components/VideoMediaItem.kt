@@ -35,7 +35,7 @@ import io.silv.core_ui.components.ItemCover
 import io.silv.core_ui.components.TooltipIconButton
 import io.silv.core_ui.util.playOnYoutube
 import io.silv.movie.R
-import io.silv.movie.data.content.movie.model.Trailer
+import io.silv.movie.data.model.Trailer
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale

@@ -33,6 +33,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.compose.auth.ui.AuthForm
 import io.github.jan.supabase.compose.auth.ui.LocalAuthState
+import io.github.jan.supabase.compose.auth.ui.annotations.AuthUiExperimental
 import io.github.jan.supabase.compose.auth.ui.email.OutlinedEmailField
 import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
@@ -40,6 +41,7 @@ import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
 import kotlinx.parcelize.Parcelize
 
+@AuthUiExperimental
 class ResetPasswordScreen(
     private val email: String,
 ): ScreenWithResult<ResetPasswordScreen.Result> {

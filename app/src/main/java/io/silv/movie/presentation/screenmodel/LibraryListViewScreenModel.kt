@@ -7,20 +7,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
+import io.github.jan.supabase.auth.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.RecommendationManager
-import io.silv.movie.data.content.lists.interactor.DeleteContentList
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.prefrences.BasePreferences
-import io.silv.movie.data.prefrences.BasePreferences.Companion.addToRecentlyViewed
-import io.silv.movie.data.prefrences.LibraryPreferences
-import io.silv.movie.data.prefrences.PosterDisplayMode
-import io.silv.movie.data.user.ListUpdateManager
-import io.silv.movie.data.user.User
-import io.silv.movie.data.user.repository.UserRepository
+import io.silv.movie.core.suspendRunCatching
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.RecommendationManager
+import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.prefrences.BasePreferences
+import io.silv.movie.prefrences.BasePreferences.Companion.addToRecentlyViewed
+import io.silv.movie.prefrences.LibraryPreferences
+import io.silv.movie.prefrences.PosterDisplayMode
+import io.silv.movie.data.ListUpdateManager
+import io.silv.movie.data.supabase.model.User
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
@@ -28,6 +29,7 @@ import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -45,7 +47,7 @@ class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
     private val recommendationManager: RecommendationManager,
     private val deleteContentList: DeleteContentList,
-    private val userRepository: UserRepository,
+    private val backendRepository: BackendRepository,
     private val listUpdateManager: ListUpdateManager,
     private val movieCoverCache: MovieCoverCache,
     private val showCoverCache: TVShowCoverCache,
@@ -77,11 +79,13 @@ class ListViewScreenModel(
         initializeList()
 
         createdByFlow.onEach { userId ->
-            val user = userRepository.getUser(userId) ?: return@onEach
-            mutableState.updateSuccess { state ->
-                state.copy(user = user)
+            backendRepository.getUser(userId).onSuccess {
+                mutableState.updateSuccess { state ->
+                    state.copy(user = it)
+                }
             }
         }
+            .catch { Timber.e(it) }
             .launchIn(screenModelScope)
 
         listIdFlow.flatMapLatest { id ->
@@ -166,36 +170,41 @@ class ListViewScreenModel(
             return
 
         initializeJob = ioCoroutineScope.launch {
-            var list: ContentList? = null
+            suspendRunCatching {
+                var list: ContentList? = null
 
-            if (listId != -1L) {
-                list = contentListRepository.getList(listId)
-            } else if (supabaseId.isNotBlank()) {
-                list = contentListRepository.getListForSupabaseId(supabaseId)
-                if (list == null) {
-                    val result = listUpdateManager.awaitRefresh(supabaseId).isSuccess
+                if (listId != -1L) {
+                    list = contentListRepository.getList(listId)
+                } else if (supabaseId.isNotBlank()) {
+                    list = contentListRepository.getListForSupabaseId(supabaseId)
+                    if (list == null) {
+                        val result = listUpdateManager.awaitRefresh(supabaseId).isSuccess
 
-                    if (result) {
-                        list = contentListRepository.getListForSupabaseId(supabaseId)
+                        if (result) {
+                            list = contentListRepository.getListForSupabaseId(supabaseId)
+                        }
                     }
                 }
-            }
-            mutableState.value = if (list == null) {
-                ListViewState.Error("No list found")
-            } else {
-                val items = contentListRepository.getListItems(list.id)
-                if (
-                    items.isEmpty() &&
-                    list.supabaseId != null &&
-                    list.createdBy != auth.currentUserOrNull()?.id) {
-                    listUpdateManager.refreshList(list.supabaseId.orEmpty())
+                mutableState.value = if (list == null) {
+                    ListViewState.Error("No list found")
+                } else {
+                    val items = contentListRepository.getListItems(list.id)
+                    if (
+                        items.isEmpty() &&
+                        list.supabaseId != null &&
+                        list.createdBy != auth.currentUserOrNull()?.id) {
+                        listUpdateManager.refreshList(list.supabaseId.orEmpty())
+                    }
+                    ListViewState.Success(
+                        list = list,
+                        allItems = items,
+                        sortMode = listSortMode.get()
+                    )
                 }
-                ListViewState.Success(
-                    list = list,
-                    allItems = items,
-                    sortMode = listSortMode.get()
-                )
             }
+                .onFailure {
+                    mutableState.value = ListViewState.Error(it.message ?: "")
+                }
         }
     }
 

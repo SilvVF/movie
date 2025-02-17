@@ -17,8 +17,8 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
-import io.silv.movie.data.content.movie.model.Trailer
-import io.silv.movie.data.content.movie.local.TrailerRepository
+import io.silv.movie.data.model.Trailer
+import io.silv.movie.data.local.TrailerRepository
 import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi

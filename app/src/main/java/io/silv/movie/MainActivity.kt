@@ -51,8 +51,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
@@ -78,14 +80,14 @@ import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
 import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
-import io.silv.movie.data.content.movie.model.Trailer
-import io.silv.movie.data.prefrences.AppTheme
-import io.silv.movie.data.prefrences.ThemeMode.DARK
-import io.silv.movie.data.prefrences.ThemeMode.LIGHT
-import io.silv.movie.data.prefrences.ThemeMode.SYSTEM
-import io.silv.movie.data.prefrences.UiPreferences
-import io.silv.movie.data.user.User
-import io.silv.movie.data.user.repository.UserRepository
+import io.silv.movie.data.model.Trailer
+import io.silv.movie.prefrences.AppTheme
+import io.silv.movie.prefrences.ThemeMode.DARK
+import io.silv.movie.prefrences.ThemeMode.LIGHT
+import io.silv.movie.prefrences.ThemeMode.SYSTEM
+import io.silv.movie.prefrences.UiPreferences
+import io.silv.movie.data.supabase.model.User
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
@@ -102,6 +104,7 @@ import io.silv.movie.presentation.tabs.DiscoverTab
 import io.silv.movie.presentation.tabs.LibraryTab
 import io.silv.movie.presentation.tabs.ProfileTab
 import io.silv.movie.presentation.tabs.SettingsTab
+import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.getViewModel
@@ -115,7 +118,7 @@ import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
 
-    private val userRepository by inject<UserRepository>()
+    private val backendRepository by inject<BackendRepository>()
     private val mainViewModel by viewModel<MainViewModel>()
     private val uiPreferences by inject<UiPreferences>()
 
@@ -125,12 +128,21 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope)
+        val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope, lifecycle)
 
         splashScreen.setKeepOnScreenCondition {
-            when (appStateProvider.state) {
+            when (appStateProvider.state.value) {
                 AppStateProvider.State.Loading -> true
                 is AppStateProvider.State.Success -> false
+            }
+        }
+
+
+        lifecycleScope.launch {
+            launch {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    backendRepository.listenForUpdates()
+                }
             }
         }
 
@@ -138,12 +150,13 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             KoinAndroidContext {
-                val currentUser by userRepository.currentUser.collectAsStateWithLifecycle()
+                val currentUser by backendRepository.currentUser.collectAsStateWithLifecycle()
+                val appState by appStateProvider.state.collectAsStateWithLifecycle()
 
                 CompositionLocalProvider(
                     LocalMainViewModelStoreOwner provides this,
                 ) {
-                    when (val s = appStateProvider.state) {
+                    when (val s = appState) {
                         AppStateProvider.State.Loading -> Unit
                         is AppStateProvider.State.Success -> {
                             MainContent(
@@ -355,7 +368,7 @@ private fun getThemeColorScheme(
 @Composable
 fun MovieTheme(
     appTheme: AppTheme = AppTheme.MONET,
-    amoled: Boolean = false ,
+    amoled: Boolean = false,
     dark: Boolean = true,
     content: @Composable () -> Unit,
 ) {

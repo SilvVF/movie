@@ -58,8 +58,8 @@ import io.silv.core_ui.components.topbar.SearchBarInputField
 import io.silv.core_ui.components.topbar.SearchLargeTopBar
 import io.silv.core_ui.components.topbar.colors2
 import io.silv.movie.R
-import io.silv.movie.data.content.movie.model.ContentPagedType
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.model.ContentPagedType
+import io.silv.movie.prefrences.PosterDisplayMode
 
 @Composable
 fun ContentBrowseTopBar(

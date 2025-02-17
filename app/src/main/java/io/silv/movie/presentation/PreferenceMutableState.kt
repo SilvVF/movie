@@ -5,8 +5,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
-import io.silv.movie.data.prefrences.core.Preference
-import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
+import io.silv.movie.prefrences.core.Preference
+import io.silv.movie.prefrences.core.getOrDefaultBlocking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach

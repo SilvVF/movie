@@ -4,13 +4,14 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.gotrue.Auth
-import io.github.jan.supabase.gotrue.SessionStatus
-import io.github.jan.supabase.gotrue.user.UserInfo
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.status.RefreshFailureCause
+import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserInfo
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.user.repository.UserRepository
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import kotlinx.coroutines.Dispatchers
@@ -32,7 +33,7 @@ import timber.log.Timber
 
 
 class ProfileScreenModel(
-    private val userRepository: UserRepository,
+    private val backendRepository: BackendRepository,
     private val auth: Auth,
     private val networkMonitor: NetworkMonitor,
     private val contentListRepository: ContentListRepository,
@@ -44,11 +45,11 @@ class ProfileScreenModel(
     private val isOnline = networkMonitor.isOnline
         .stateIn(screenModelScope, SharingStarted.Lazily, true)
 
-    val currentUser = userRepository.currentUser
+    val currentUser = backendRepository.currentUser
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            userRepository.currentUser.value
+            backendRepository.currentUser.value
         )
 
     init {
@@ -70,8 +71,13 @@ class ProfileScreenModel(
                 }
 
                 mutableState.value = when(status) {
-                    SessionStatus.LoadingFromStorage -> ProfileState.Loading
-                    SessionStatus.NetworkError -> ProfileState.LoggedOut("Network Error")
+                    SessionStatus.Initializing -> ProfileState.Loading
+                    is SessionStatus.RefreshFailure -> ProfileState.LoggedOut(
+                        when (val cause = status.cause) {
+                            is RefreshFailureCause.InternalServerError -> cause.exception.error
+                            is RefreshFailureCause.NetworkError -> cause.exception.message ?: "unknown error"
+                        }
+                    )
                     is SessionStatus.Authenticated -> {
                         val info =  status.session.user ?: run {
                             Timber.d("clearing session no user")
@@ -90,9 +96,9 @@ class ProfileScreenModel(
 
     fun updateUsername(name: String) {
         screenModelScope.launch {
-            val user = userRepository.currentUser.value ?: return@launch
+            val user = backendRepository.currentUser.value ?: return@launch
 
-            userRepository.updateUser(user.copy(username = name))
+            backendRepository.updateUser(user.copy(username = name))
         }
     }
 
@@ -137,18 +143,17 @@ class ProfileScreenModel(
 
     fun updateProfilePicture(path: String) {
         screenModelScope.launch {
-            val user = userRepository.currentUser.value ?: return@launch
-
-            val new = userRepository.updateUser(user.copy(profileImage = path))
-            if(new != null) {
-                profileImageCache.deleteCustomCover(new.userId)
-            }
+            val user = backendRepository.currentUser.value ?: return@launch
+            backendRepository.updateUser(user.copy(profileImage = path))
+                .onSuccess {
+                    profileImageCache.deleteCustomCover(it.userId)
+                }
         }
     }
 
     fun deleteAccount() {
         ioCoroutineScope.launch {
-            if(userRepository.deleteAccount()) {
+            if(backendRepository.deleteAccount()) {
                 emitEvent(ProfileEvent.AccountDeleted)
                 auth.clearSession()
             }
@@ -157,14 +162,14 @@ class ProfileScreenModel(
 
     fun signOut() {
         ioCoroutineScope.launch {
-            userRepository.signOut()
+            backendRepository.signOut()
         }
     }
 
     fun registerWithEmailAndPassword(email: String, password: String) {
         ioCoroutineScope.launch {
             updateJob(true)
-            val result = userRepository.registerWithEmailAndPassword(email, password)
+            val result = backendRepository.registerWithEmailAndPassword(email, password)
             if (result) {
                 mutableState.updateLoggedOut { state ->
                     state.copy(error =  "Failed to create an account")
@@ -182,7 +187,7 @@ class ProfileScreenModel(
     fun signInWithEmailAndPassword(email: String, password: String) {
         ioCoroutineScope.launch {
             updateJob(true)
-            val result = userRepository.signInWithEmailAndPassword(email, password)
+            val result = backendRepository.signInWithEmailAndPassword(email, password)
             if (!result) {
                 mutableState.updateLoggedOut {state ->
                     state.copy(error = "Failed to login")
@@ -211,7 +216,7 @@ class ProfileScreenModel(
     fun resetPassword(email: String) {
         ioCoroutineScope.launch {
             updateJob(true)
-            if (userRepository.resetPassword(email)) {
+            if (backendRepository.resetPassword(email)) {
                 emitEvent(ProfileEvent.PasswordResetSent)
             }
             updateJob(false)

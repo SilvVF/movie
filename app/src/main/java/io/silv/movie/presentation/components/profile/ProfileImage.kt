@@ -14,15 +14,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
 import coil.compose.AsyncImagePainter
 import coil.compose.DefaultModelEqualityDelegate
 import coil.compose.EqualityDelegate
 import coil.request.ImageRequest
-import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
-import io.silv.movie.data.user.User
+import io.silv.movie.data.supabase.model.User
 import io.silv.movie.presentation.LocalUser
 
 

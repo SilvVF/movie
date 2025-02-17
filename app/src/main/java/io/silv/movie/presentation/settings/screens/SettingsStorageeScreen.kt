@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import io.silv.movie.R
-import io.silv.movie.data.prefrences.StoragePreferences
+import io.silv.movie.prefrences.StoragePreferences
 import io.silv.movie.presentation.settings.Preference
 import io.silv.movie.presentation.settings.SearchableSettings
 import org.koin.compose.koinInject

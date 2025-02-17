@@ -14,23 +14,23 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import androidx.paging.filter
 import androidx.paging.map
+import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
-import io.silv.movie.ScopedStateScreenModel
 import io.silv.movie.core.NetworkMonitor
-import io.silv.movie.data.content.movie.model.ContentPagedType
-import io.silv.movie.data.content.movie.model.Filters
-import io.silv.movie.data.content.movie.model.Genre
-import io.silv.movie.data.content.movie.model.SearchItem
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.movie.model.MoviePoster
-import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.movie.local.MovieRepository
-import io.silv.movie.data.content.movie.local.networkToLocalMovie
-import io.silv.movie.data.content.movie.network.SourceMovieRepository
-import io.silv.movie.data.content.movie.network.getMoviePager
-import io.silv.movie.data.prefrences.BrowsePreferences
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.model.ContentPagedType
+import io.silv.movie.data.model.Filters
+import io.silv.movie.data.model.Genre
+import io.silv.movie.data.model.SearchItem
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.MoviePoster
+import io.silv.movie.data.model.toDomain
+import io.silv.movie.data.local.MovieRepository
+import io.silv.movie.data.local.networkToLocalMovie
+import io.silv.movie.data.network.SourceMovieRepository
+import io.silv.movie.data.network.getMoviePager
+import io.silv.movie.prefrences.BrowsePreferences
+import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.asState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -51,7 +51,7 @@ class MovieScreenModel(
     networkMonitor: NetworkMonitor,
     browsePreferences: BrowsePreferences,
     savedStateContentPagedType: ContentPagedType
-) : ScopedStateScreenModel<MovieState>(
+) : StateScreenModel<MovieState>(
     MovieState(
         listing = savedStateContentPagedType
     )

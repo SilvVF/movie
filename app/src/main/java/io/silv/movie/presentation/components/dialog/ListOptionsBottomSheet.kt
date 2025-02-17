@@ -37,8 +37,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.presentation.components.content.ContentListPoster
 import io.silv.movie.presentation.screenmodel.ListSortMode
 

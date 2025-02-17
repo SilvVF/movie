@@ -1,14 +1,14 @@
 package io.silv.movie.presentation
 
 import androidx.compose.runtime.Stable
-import io.github.jan.supabase.gotrue.Auth
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.interactor.DeleteContentList
-import io.silv.movie.data.content.lists.interactor.EditContentList
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toUpdate
-import io.silv.movie.data.user.repository.ListRepository
-import io.silv.movie.data.user.worker.ListUpdater
+import io.github.jan.supabase.auth.Auth
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.EditContentList
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toUpdate
+import io.silv.movie.data.supabase.ListRepository
+import io.silv.movie.data.ListUpdateManager
 import io.silv.movie.presentation.ListInteractor.ListEvent
 import io.silv.movie.presentation.ListInteractor.ListEvent.Copied
 import io.silv.movie.presentation.ListInteractor.ListEvent.Delete
@@ -36,7 +36,7 @@ interface ListInteractor: EventProducer<ListEvent> {
         fun default(
             local: ContentListRepository,
             network: ListRepository,
-            updater: ListUpdater,
+            listUpdateManager: ListUpdateManager,
             editContentList: EditContentList,
             deleteContentList: DeleteContentList,
             movieCoverCache: MovieCoverCache,
@@ -47,7 +47,7 @@ interface ListInteractor: EventProducer<ListEvent> {
             return DefaultListInteractor(
                local,
                 network,
-                updater,
+                listUpdateManager,
                 editContentList,
                 deleteContentList,
                 movieCoverCache,
@@ -73,7 +73,7 @@ interface ListInteractor: EventProducer<ListEvent> {
 private class DefaultListInteractor(
     private val local: ContentListRepository,
     private val network: ListRepository,
-    private val updater: ListUpdater,
+    private val listUpdateManager: ListUpdateManager,
     private val editContentList: EditContentList,
     private val deleteContentList: DeleteContentList,
     private val movieCoverCache: MovieCoverCache,
@@ -113,7 +113,7 @@ private class DefaultListInteractor(
                 var list = local.getList(contentList.id)
 
                 if (list == null) {
-                    updater.await(contentList.supabaseId!!)
+                    listUpdateManager.awaitRefresh(contentList.supabaseId!!)
                     list = local.getListForSupabaseId(contentList.supabaseId)!!
                 }
 
@@ -122,7 +122,7 @@ private class DefaultListInteractor(
                 val uid = auth.currentUserOrNull()?.id
 
                 val networkList = if (uid != null) {
-                    network.insertList(list.name)!!
+                    network.insertList(list.name).getOrNull()
                 } else {
                     null
                 }
@@ -163,7 +163,7 @@ private class DefaultListInteractor(
                 var list = local.getList(contentList.id)
 
                 if (list == null) {
-                    updater.await(contentList.supabaseId!!)
+                    listUpdateManager.awaitRefresh(contentList.supabaseId!!)
                     list = local.getListForSupabaseId(contentList.supabaseId)!!
                 }
 

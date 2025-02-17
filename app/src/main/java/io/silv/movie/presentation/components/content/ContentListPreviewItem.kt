@@ -55,8 +55,8 @@ import io.silv.core_ui.components.CoverPlaceholderColor
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.R
 import io.silv.movie.core.DiskUtil
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.tabs.SharedElement
 import io.silv.movie.presentation.tabs.registerSharedElement

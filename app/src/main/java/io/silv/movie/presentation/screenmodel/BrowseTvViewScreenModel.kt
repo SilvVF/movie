@@ -7,19 +7,19 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.movie.data.content.movie.local.CreditRepository
-import io.silv.movie.data.content.movie.local.ShowRepository
-import io.silv.movie.data.content.movie.local.TrailerRepository
-import io.silv.movie.data.content.movie.local.awaitUpdateFromSource
-import io.silv.movie.data.content.movie.local.networkToLocalCredit
-import io.silv.movie.data.content.movie.local.networkToLocalShow
-import io.silv.movie.data.content.movie.network.SourceCreditsRepository
-import io.silv.movie.data.content.movie.model.toDomain
-import io.silv.movie.data.content.movie.network.SourceTrailerRepository
-import io.silv.movie.data.content.movie.model.Trailer
-import io.silv.movie.data.content.movie.model.TVShow
-import io.silv.movie.data.content.movie.network.SourceShowRepository
-import io.silv.movie.data.content.movie.network.networkToLocalTrailer
+import io.silv.movie.data.local.CreditRepository
+import io.silv.movie.data.local.ShowRepository
+import io.silv.movie.data.local.TrailerRepository
+import io.silv.movie.data.local.awaitUpdateFromSource
+import io.silv.movie.data.local.networkToLocalCredit
+import io.silv.movie.data.local.networkToLocalShow
+import io.silv.movie.data.network.SourceCreditsRepository
+import io.silv.movie.data.model.toDomain
+import io.silv.movie.data.network.SourceTrailerRepository
+import io.silv.movie.data.model.Trailer
+import io.silv.movie.data.model.TVShow
+import io.silv.movie.data.network.SourceShowRepository
+import io.silv.movie.data.network.networkToLocalTrailer
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -130,7 +130,7 @@ class TVViewScreenModel(
 
 
     private suspend fun refreshShowCredits() {
-        runCatching { creditsSource.awaitShow(showId) }
+         creditsSource.awaitShow(showId)
             .onSuccess { credits ->
                 val show =  state.value.success?.show
                 Timber.d(credits.toString())
@@ -149,7 +149,7 @@ class TVViewScreenModel(
 
     private suspend fun refreshShowTrailers() {
 
-        val trailers = runCatching { trailerSource.awaitShow(showId) }.getOrDefault(emptyList())
+        val trailers =  trailerSource.awaitShow(showId).getOrDefault(emptyList())
             .map {
                 trailerRepo.networkToLocalTrailer(
                     it.toDomain(), showId, false

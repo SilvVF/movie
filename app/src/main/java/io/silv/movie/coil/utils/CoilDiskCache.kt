@@ -2,8 +2,8 @@ package io.silv.movie.coil.utils
 
 import android.content.Context
 import coil.disk.DiskCache
-import io.silv.movie.data.prefrences.StoragePreferences
-import io.silv.movie.data.prefrences.core.getOrDefaultBlocking
+import io.silv.movie.prefrences.StoragePreferences
+import io.silv.movie.prefrences.core.getOrDefaultBlocking
 
 /**
  * Direct copy of Coil's internal SingletonDiskCache so that [StorageItemFetcher] can access it.

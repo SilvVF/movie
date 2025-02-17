@@ -5,7 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import io.silv.movie.R
-import io.silv.movie.data.prefrences.core.Preference as PreferenceData
+import io.silv.movie.prefrences.core.Preference as PreferenceData
 
 sealed class Preference {
     abstract val title: String

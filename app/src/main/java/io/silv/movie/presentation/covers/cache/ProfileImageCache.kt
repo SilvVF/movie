@@ -18,6 +18,7 @@ package io.silv.movie.presentation.covers.cache
 import android.content.Context
 import io.silv.movie.core.DiskUtil
 import okio.IOException
+
 import timber.log.Timber
 import java.io.File
 import java.io.InputStream
@@ -30,6 +31,7 @@ import java.io.InputStream
  * @param context the application context.
  * @constructor creates an instance of the cover cache.
  */
+
 class ProfileImageCache(private val context: Context) {
     companion object {
         private const val COVERS_DIR = "profileimages"

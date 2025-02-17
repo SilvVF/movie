@@ -32,8 +32,10 @@ import io.github.jan.supabase.compose.auth.ui.email.OutlinedEmailField
 import io.github.jan.supabase.compose.auth.ui.password.OutlinedPasswordField
 import io.github.jan.supabase.compose.auth.ui.password.PasswordRule
 import io.github.jan.supabase.compose.auth.ui.password.rememberPasswordRuleList
-import io.github.jan.supabase.gotrue.providers.Google
+import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.compose.auth.ui.annotations.AuthUiExperimental
 
+@AuthUiExperimental
 @OptIn(ExperimentalMaterial3Api::class, SupabaseExperimental::class)
 @Composable
 fun AuthScreenContent(

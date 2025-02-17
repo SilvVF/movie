@@ -44,10 +44,10 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.data.content.movie.model.ContentPagedType
-import io.silv.movie.data.content.lists.toContentItem
-import io.silv.movie.data.content.movie.model.MoviePoster
-import io.silv.movie.data.prefrences.PosterDisplayMode
+import io.silv.movie.data.model.ContentPagedType
+import io.silv.movie.data.model.toContentItem
+import io.silv.movie.data.model.MoviePoster
+import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalIsScrolling

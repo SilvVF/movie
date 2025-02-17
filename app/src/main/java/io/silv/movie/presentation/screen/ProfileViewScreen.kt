@@ -76,13 +76,13 @@ import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ListWithPostersRpcResponse
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.content.lists.toListPreviewItem
-import io.silv.movie.data.content.movie.local.LocalContentDelegate
-import io.silv.movie.data.user.SupabaseConstants
-import io.silv.movie.data.user.User
-import io.silv.movie.data.user.repository.UserRepository
+import io.silv.movie.data.model.ListWithPostersRpcResponse
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.toListPreviewItem
+import io.silv.movie.data.local.LocalContentDelegate
+import io.silv.movie.data.supabase.SupabaseConstants
+import io.silv.movie.data.supabase.model.User
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.ProvideLocalsForPreviews
@@ -109,7 +109,7 @@ sealed interface ProfileViewState {
 
 class ProfileViewScreenModel(
     private val postgrest: Postgrest,
-    private val userRepository: UserRepository,
+    private val backendRepository: BackendRepository,
     private val contentListRepository: ContentListRepository,
     private val local: LocalContentDelegate,
     val userId: String
@@ -138,7 +138,7 @@ class ProfileViewScreenModel(
     }
     
     private suspend fun loadUser(userId: String): User? {
-        return userRepository.getUser(userId)
+        return backendRepository.getUser(userId).getOrNull()
     }
     
     val userListsPagingData = Pager(

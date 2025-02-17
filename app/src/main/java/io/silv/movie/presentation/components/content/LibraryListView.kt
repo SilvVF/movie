@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.movie.R
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.presentation.screenmodel.LibraryState
 import io.silv.movie.presentation.tabs.SharedElement
 import io.silv.movie.presentation.tabs.registerSharedElement

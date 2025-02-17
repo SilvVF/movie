@@ -7,13 +7,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.silv.movie.data.content.lists.ContentItem
-import io.silv.movie.data.content.lists.ContentList
-import io.silv.movie.data.content.lists.ContentListRepository
-import io.silv.movie.data.prefrences.LibraryPreferences
-import io.silv.movie.data.user.FavoritesUpdateManager
-import io.silv.movie.data.user.UserListUpdateManager
-import io.silv.movie.data.user.repository.ListRepository
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.ListUpdateManager
+import io.silv.movie.prefrences.LibraryPreferences
+import io.silv.movie.data.supabase.ListRepository
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import kotlinx.coroutines.flow.SharingStarted
@@ -32,8 +31,7 @@ class LibraryScreenModel(
     private val contentListRepository: ContentListRepository,
     preferences: LibraryPreferences,
     private val listRepository: ListRepository,
-    private val userListUpdateManager: UserListUpdateManager,
-    private val favoritesUpdateManager: FavoritesUpdateManager,
+    private val listUpdateManager: ListUpdateManager,
 ):  StateScreenModel<LibraryState>(LibraryState()),
     EventProducer<LibraryEvent> by EventProducer.default() {
 
@@ -79,7 +77,7 @@ class LibraryScreenModel(
             }
             .launchIn(screenModelScope)
 
-        userListUpdateManager.isRunning()
+        listUpdateManager.isUserListUpdateRunning()
             .onEach { refreshing ->
                 mutableState.update {state ->
                     state.copy(refreshingLists = refreshing)
@@ -87,7 +85,7 @@ class LibraryScreenModel(
             }
             .launchIn(screenModelScope)
 
-        favoritesUpdateManager.isRunning()
+        listUpdateManager.isFavoritesUpdateRunning()
             .onEach { refreshing ->
                 mutableState.update {state ->
                     state.copy(refreshingFavorites = refreshing)
@@ -98,13 +96,13 @@ class LibraryScreenModel(
 
     fun refreshFavoritesList() {
         screenModelScope.launch {
-            favoritesUpdateManager.refreshFavorites()
+            listUpdateManager.refreshFavorites()
         }
     }
 
     fun refreshUserLists() {
         screenModelScope.launch {
-            userListUpdateManager.refreshUserLists()
+            listUpdateManager.refreshUserLists()
         }
     }
 
@@ -124,7 +122,7 @@ class LibraryScreenModel(
         screenModelScope.launch {
 
             if (isOnline) {
-                val network = listRepository.insertList(name) ?: return@launch
+                val network = listRepository.insertList(name).getOrNull() ?: return@launch
 
                 val id = contentListRepository.createList(
                     name = network.name,

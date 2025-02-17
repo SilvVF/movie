@@ -7,7 +7,7 @@ import io.silv.core_ui.components.Badge
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
-import io.silv.movie.data.content.movie.model.MoviePoster
+import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.presentation.toPoster
 
 @Composable
