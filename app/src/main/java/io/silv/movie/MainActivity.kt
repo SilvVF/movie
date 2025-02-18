@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -114,6 +115,7 @@ import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
+import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 
 class MainActivity : ComponentActivity() {
@@ -134,15 +136,6 @@ class MainActivity : ComponentActivity() {
             when (appStateProvider.state.value) {
                 AppStateProvider.State.Loading -> true
                 is AppStateProvider.State.Success -> false
-            }
-        }
-
-
-        lifecycleScope.launch {
-            launch {
-                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    backendRepository.listenForUpdates()
-                }
             }
         }
 
@@ -207,6 +200,11 @@ private fun MainContent(
     ) {
         val playerViewModel by getActivityViewModel<PlayerViewModel>()
         val collapsableVideoState = rememberCollapsableVideoState()
+
+        SideEffect {
+            playerViewModel.collapsableVideoState = collapsableVideoState
+        }
+
         val snackbarHostState = remember { SnackbarHostState() }
 
         val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
@@ -230,15 +228,7 @@ private fun MainContent(
             playerViewModel.clearMediaQueue()
         }
 
-        MovieTheme(
-            appState.appTheme,
-            appState.amoled,
-            dark = when(appState.themeMode) {
-                LIGHT -> false
-                DARK -> true
-                SYSTEM -> isSystemInDarkTheme()
-            }
-        ) {
+        MovieTheme {
             TabNavigator(appState.startScreen) { tabNavigator ->
                 Surface(Modifier.fillMaxSize()) {
                     Scaffold(
@@ -246,7 +236,7 @@ private fun MainContent(
                         contentWindowInsets = WindowInsets(0, 0, 0, 0),
                         bottomBar = {
                             AppBottomBar(
-                                videos =  playerViewModel.trailerQueue,
+                                videos = playerViewModel.trailerQueue,
                                 progress = { collapsableVideoState.progress },
                                 tabNavigator = tabNavigator,
                                 modifier = Modifier
@@ -333,7 +323,7 @@ private fun MainContent(
 
 @Composable
 @ReadOnlyComposable
-private fun getThemeColorScheme(
+fun getThemeColorScheme(
     appTheme: AppTheme,
     amoled: Boolean,
     dark: Boolean,
@@ -365,15 +355,26 @@ private fun getThemeColorScheme(
     )
 }
 
+@ReadOnlyComposable
+@Composable
+fun isDarkTheme(): Boolean {
+    val appState = LocalAppState.current
+    val systemTheme = isSystemInDarkTheme()
+    return when (appState.themeMode) {
+        LIGHT -> false
+        DARK -> true
+        SYSTEM -> systemTheme
+    }
+}
+
 @Composable
 fun MovieTheme(
-    appTheme: AppTheme = AppTheme.MONET,
-    amoled: Boolean = false,
-    dark: Boolean = true,
+    dark: Boolean = isDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val appState = LocalAppState.current
     MaterialTheme(
-        colorScheme =  getThemeColorScheme(appTheme, amoled, dark),
+        colorScheme = getThemeColorScheme(appState.appTheme, appState.amoled, dark),
         content = content,
     )
 }
@@ -425,7 +426,7 @@ fun AppBottomBar(
                 icon = {
                     Icon(
                         painter = tab.options.icon ?: return@NavigationBarItem,
-                        contentDescription =  tab.options.title
+                        contentDescription = tab.options.title
                     )
                 },
             )

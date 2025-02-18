@@ -13,10 +13,8 @@ import kotlinx.datetime.Clock
 
 interface MovieRepository {
     suspend fun getMovieById(id: Long): Movie?
-    fun observeMoviePartialById(id: Long): Flow<MoviePoster>
-    fun observeMoviePartialByIdOrNull(id: Long): Flow<MoviePoster?>
-    fun observeMovieById(id: Long): Flow<Movie>
-    fun observeMovieByIdOrNull(id: Long): Flow<Movie?>
+    fun observeMoviePartialById(id: Long): Flow<MoviePoster?>
+    fun observeMovieById(id: Long): Flow<Movie?>
     suspend fun insertMovie(movie: Movie): Long?
     suspend fun updateMovie(update: MovieUpdate): Boolean
     fun observeFavoriteMovies(query: String): Flow<List<Movie>>
@@ -116,16 +114,7 @@ class MovieRepositoryImpl(
         return handler.awaitOneOrNull { movieQueries.selectById(id, MovieMapper.mapMovie) }
     }
 
-    override fun observeMoviePartialById(id: Long): Flow<MoviePoster> {
-        return handler.subscribeToOne {
-            movieQueries.selectMoviePartialById(
-                id,
-                MovieMapper.mapMoviePoster
-            )
-        }
-    }
-
-    override fun observeMoviePartialByIdOrNull(id: Long): Flow<MoviePoster?> {
+    override fun observeMoviePartialById(id: Long): Flow<MoviePoster?> {
         return handler.subscribeToOneOrNull {
             movieQueries.selectMoviePartialById(
                 id,
@@ -134,11 +123,7 @@ class MovieRepositoryImpl(
         }
     }
 
-    override fun observeMovieById(id: Long): Flow<Movie> {
-        return handler.subscribeToOne { movieQueries.selectById(id, MovieMapper.mapMovie) }
-    }
-
-    override fun observeMovieByIdOrNull(id: Long): Flow<Movie?> {
+    override fun observeMovieById(id: Long): Flow<Movie?> {
         return handler.subscribeToOneOrNull { movieQueries.selectById(id, MovieMapper.mapMovie) }
     }
 

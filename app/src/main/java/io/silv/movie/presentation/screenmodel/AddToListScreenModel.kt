@@ -23,19 +23,18 @@ class AddToListScreenModel(
 ): StateScreenModel<PosterData?>(null) {
 
     init {
-        val posterDataFlow = if (isMovie) {
+        if (isMovie) {
             local.observeMoviePartialById(contentId)
                 .onEach { movie ->
-                    mutableState.update { movie.toPoster() }
+                    mutableState.emit(movie?.toPoster())
                 }
         } else {
             local.observeShowPartialById(contentId)
                 .onEach { show ->
-                    mutableState.update { show.toPoster() }
+                    mutableState.emit(show?.toPoster())
                 }
         }
-
-        posterDataFlow.launchIn(screenModelScope)
+            .launchIn(screenModelScope)
     }
 
     val lists = contentListRepository.observeLibraryItems("")

@@ -1,6 +1,8 @@
 package io.silv.movie.data.model
 
 import android.os.Parcelable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import io.silv.movie.data.supabase.ContentType
 import kotlinx.parcelize.Parcelize
 
@@ -174,6 +176,8 @@ fun TVShowPoster.toContentItem(): ContentItem {
     )
 }
 
+@Stable
+@Immutable
 data class ContentItem(
     val contentId: Long,
     val isMovie: Boolean,

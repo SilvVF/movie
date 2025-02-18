@@ -35,6 +35,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -48,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.ItemCover
 import io.silv.movie.MovieTheme
 import io.silv.movie.R
+import io.silv.movie.getThemeColorScheme
+import io.silv.movie.isDarkTheme
 import io.silv.movie.prefrences.AppTheme
 import io.silv.movie.prefrences.StartScreen
 import io.silv.movie.prefrences.TabletUiMode
@@ -64,6 +67,7 @@ import java.time.Instant
 
 
 data object SettingsAppearanceScreen: SearchableSettings {
+    private fun readResolve(): Any = SettingsAppearanceScreen
 
     @ReadOnlyComposable
     @Composable
@@ -88,13 +92,10 @@ data object SettingsAppearanceScreen: SearchableSettings {
         val scope = rememberCoroutineScope()
 
         val themeModePref = remember { uiPreferences.themeMode() }
-        val themeMode = appState.themeMode
 
-        val appThemePref  = remember { uiPreferences.appTheme() }
-        val appTheme = appState.appTheme
+        val appThemePref = remember { uiPreferences.appTheme() }
 
-        val amoledPref   = remember { uiPreferences.themeDarkAmoled() }
-        val amoled = appState.amoled
+        val amoledPref = remember { uiPreferences.themeDarkAmoled() }
 
         val sharedElementTransitionsPref   = remember { uiPreferences.sharedElementTransitions() }
         val predictiveBackPref   = remember { uiPreferences.predictiveBack() }
@@ -107,7 +108,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                 ) {
                     Column {
                         AppThemeModePreferenceWidget(
-                            value = themeMode,
+                            value = appState.themeMode,
                             onItemClick = {
                                 scope.launch {
                                     themeModePref.set(it)
@@ -115,8 +116,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                             },
                         )
                         AppThemePreferenceWidget(
-                            value = appTheme,
-                            amoled = amoled,
+                            value = appState.appTheme,
                             onItemClick = {
                                 scope.launch {
                                     appThemePref.set(it)
@@ -128,7 +128,7 @@ data object SettingsAppearanceScreen: SearchableSettings {
                 Preference.PreferenceItem.SwitchPreference(
                     pref = amoledPref,
                     title = stringResource(R.string.pref_dark_theme_pure_black),
-                    enabled = themeMode != ThemeMode.LIGHT,
+                    enabled = appState.themeMode != ThemeMode.LIGHT,
                     onValueChanged = {
                         amoledPref.set(it)
                         amoledPref.get()
@@ -266,14 +266,12 @@ internal fun AppThemeModePreferenceWidget(
 @Composable
 internal fun AppThemePreferenceWidget(
     value: AppTheme,
-    amoled: Boolean,
     onItemClick: (AppTheme) -> Unit,
 ) {
     BasePreferenceWidget(
         subcomponent = {
             AppThemesList(
                 currentTheme = value,
-                amoled = amoled,
                 onItemClick = onItemClick,
             )
         },
@@ -283,13 +281,14 @@ internal fun AppThemePreferenceWidget(
 @Composable
 private fun AppThemesList(
     currentTheme: AppTheme,
-    amoled: Boolean,
     onItemClick: (AppTheme) -> Unit,
 ) {
     val appThemes = remember {
         AppTheme.entries
             .filterNot { it.titleRes == null }
     }
+    val dark = isDarkTheme()
+    val appState = LocalAppState.current
     LazyRow(
         contentPadding = PaddingValues(horizontal = PrefsHorizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -303,14 +302,9 @@ private fun AppThemesList(
                     .width(114.dp)
                     .padding(top = 8.dp),
             ) {
-                MovieTheme(
-                    appTheme = appTheme,
-                    amoled = amoled,
-                    dark = when(LocalAppState.current.themeMode) {
-                        ThemeMode.LIGHT -> false
-                        ThemeMode.DARK -> true
-                        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-                    }
+                MovieTheme {  }
+                MaterialTheme(
+                    colorScheme = getThemeColorScheme(appTheme, appState.amoled, dark)
                 ) {
                     AppThemePreviewItem(
                         selected = currentTheme == appTheme,

@@ -7,6 +7,7 @@ import io.silv.core_ui.components.Badge
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.presentation.toPoster
 
@@ -20,9 +21,9 @@ fun InLibraryBadge(enabled: Boolean) {
 
 @Composable
 fun BrowseMovieSourceCoverOnlyGridItem(
-    movie: MoviePoster,
-    onClick: (MoviePoster) -> Unit = {},
-    onLongClick: (MoviePoster) -> Unit = {},
+    movie: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryCompactGridItem(
         title = null,
@@ -36,9 +37,9 @@ fun BrowseMovieSourceCoverOnlyGridItem(
 
 @Composable
 fun BrowseMovieSourceCompactGridItem(
-    movie: MoviePoster,
-    onClick: (MoviePoster) -> Unit = {},
-    onLongClick: (MoviePoster) -> Unit = {},
+    movie: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryCompactGridItem(
         title = movie.title,
@@ -52,9 +53,9 @@ fun BrowseMovieSourceCompactGridItem(
 
 @Composable
 fun BrowseMovieSourceComfortableGridItem(
-    movie: MoviePoster,
-    onClick: (MoviePoster) -> Unit = {},
-    onLongClick: (MoviePoster) -> Unit = {},
+    movie: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryComfortableGridItem(
         title = movie.title,

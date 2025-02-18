@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -19,6 +20,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.topbar.AppBar
+import io.silv.core_ui.theme.getColorScheme
+import io.silv.movie.AppState
+import io.silv.movie.isDarkTheme
+import io.silv.movie.prefrences.ThemeMode
+import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.collectAsStateOrNull
 import io.silv.movie.presentation.settings.widgets.EditTextPreferenceWidget
 import io.silv.movie.presentation.settings.widgets.FloatSliderItem
@@ -38,10 +44,13 @@ fun PreferenceScaffold(
     titleRes: StringResource,
     actions: @Composable RowScope.() -> Unit = {},
     onBackPressed: (() -> Unit)? = null,
+    appState: AppState = LocalAppState.current,
     itemsProvider: @Composable () -> List<Preference>,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
+        containerColor = getColorScheme(appState.themeMode != ThemeMode.LIGHT, null, null).surface,
+        contentColor = LocalContentColor.current,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             AppBar(
@@ -49,6 +58,7 @@ fun PreferenceScaffold(
                 navigateUp = onBackPressed,
                 actions = actions,
                 scrollBehavior = scrollBehavior,
+                isDarkTheme = isDarkTheme()
             )
         },
         content = { contentPadding ->

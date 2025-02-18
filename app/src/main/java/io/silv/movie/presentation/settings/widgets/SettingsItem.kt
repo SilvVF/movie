@@ -318,7 +318,7 @@ fun <T> SelectItem(
     ) {
         OutlinedTextField(
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryEditable, enabled = true)
                 .fillMaxWidth()
                 .padding(
                     horizontal = SettingsItemsPaddings.Horizontal,

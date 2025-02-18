@@ -9,13 +9,12 @@ import okio.IOException
 import kotlin.coroutines.resumeWithException
 
 // Based on https://github.com/gildor/kotlin-coroutines-okhttp
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun Call.await(callStack: Array<StackTraceElement>): Response {
     return suspendCancellableCoroutine { continuation ->
         val callback =
             object : Callback {
                 override fun onResponse(call: Call, response: Response) {
-                    continuation.resume(response) {
+                    continuation.resume(response) { _, _ ,_ ->
                         response.body?.close()
                     }
                 }
@@ -47,14 +46,13 @@ suspend fun Call.await(): Response {
 
 
 // Based on https://github.com/gildor/kotlin-coroutines-okhttp
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun <T> retrofit2.Call<T>.await(callStack: Array<StackTraceElement>): retrofit2.Response<T> {
     return suspendCancellableCoroutine { continuation ->
 
         val callback =
             object : retrofit2.Callback<T> {
                 override fun onResponse(call: retrofit2.Call<T>, response: retrofit2.Response<T>) {
-                    continuation.resume(response) {
+                    continuation.resume(response) { _, _, _ ->
                         response.raw().body?.close()
                     }
                 }

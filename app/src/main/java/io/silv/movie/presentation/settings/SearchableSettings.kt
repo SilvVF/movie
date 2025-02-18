@@ -7,6 +7,10 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import cafe.adriel.voyager.core.screen.Screen
+import io.silv.movie.MovieTheme
+import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.settings.screens.SettingsAppearanceScreen
+import kotlinx.serialization.Serializable
 
 
 typealias StringResource = Int
@@ -27,18 +31,19 @@ interface SearchableSettings : Screen {
     fun getPreferences(): List<Preference>
 
     @Composable
-    fun RowScope.AppBarAction() {
-    }
+    fun RowScope.AppBarAction() = Unit
 
     @Composable
     override fun Content() {
         val handleBack = LocalBackPress.current
-        PreferenceScaffold(
-            titleRes = getTitleRes(),
-            onBackPressed = if (handleBack != null) handleBack::invoke else null,
-            actions = { AppBarAction() },
-            itemsProvider = { getPreferences() },
-        )
+        MovieTheme {
+            PreferenceScaffold(
+                titleRes = getTitleRes(),
+                onBackPressed = if (handleBack != null) handleBack::invoke else null,
+                actions = { AppBarAction() },
+                itemsProvider = { getPreferences() },
+            )
+        }
     }
 
     companion object {

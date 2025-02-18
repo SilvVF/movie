@@ -288,9 +288,9 @@ class BrowseListsScreenModel(
             val id = listItem.movieId.takeIf { isMovie } ?: listItem.showId
 
             if (isMovie) {
-                local.observeMoviePartialByIdOrNull(id).mapNotNull { it?.toContentItem() }
+                local.observeMoviePartialById(id).mapNotNull { it?.toContentItem() }
             } else {
-                local.observeShowPartialByIdOrNull(id).mapNotNull { it?.toContentItem() }
+                local.observeShowPartialById(id).mapNotNull { it?.toContentItem() }
             }
                 .stateIn(
                     ioCoroutineScope, SharingStarted.WhileSubscribed(), ContentItem(

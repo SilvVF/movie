@@ -69,11 +69,11 @@ suspend fun ListWithPostersRpcResponse.toListPreviewItem(
         username = item.username,
         items = item.content.map { (isMovie, contentId, posterPath) ->
             if (isMovie) {
-                local.observeMoviePartialByIdOrNull(contentId).mapNotNull { movie ->
+                local.observeMoviePartialById(contentId).mapNotNull { movie ->
                     movie?.toContentItem()
                 }
             } else {
-                local.observeShowPartialByIdOrNull(contentId).mapNotNull { show ->
+                local.observeShowPartialById(contentId).mapNotNull { show ->
                     show?.toContentItem()
                 }
             }.stateIn(

@@ -20,6 +20,7 @@ import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.plus
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
@@ -31,10 +32,10 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun BrowseMovieSourceList(
     modifier: Modifier,
-    pagingItems: LazyPagingItems<StateFlow<MoviePoster>>,
+    pagingItems: LazyPagingItems<StateFlow<ContentItem>>,
     contentPadding: PaddingValues,
-    onMovieClick: (MoviePoster) -> Unit,
-    onMovieLongClick: (MoviePoster) -> Unit,
+    onMovieClick: (ContentItem) -> Unit,
+    onMovieLongClick: (ContentItem) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -54,7 +55,7 @@ fun BrowseMovieSourceList(
         items(
             count = pagingItems.itemCount,
             contentType = pagingItems.itemContentType { PosterDisplayMode.List.hashCode() },
-            key = pagingItems.itemKey { it.value.id }
+            key = pagingItems.itemKey { it.value.itemKey }
         ) { index ->
             val movie by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
 
@@ -77,7 +78,7 @@ fun BrowseMovieSourceList(
 
 @Composable
 private fun BrowseMovieSourceListItem(
-    movie: MoviePoster,
+    movie: ContentItem,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -88,7 +89,7 @@ private fun BrowseMovieSourceListItem(
         badge = {
             InLibraryBadge(enabled = movie.favorite)
         },
-        coverModifier = Modifier.registerSharedElement(SharedElement.Movie(movie.id)),
+        coverModifier = Modifier.registerSharedElement(SharedElement.Movie(movie.contentId)),
         onLongClick = onLongClick,
         onClick = onClick,
     )

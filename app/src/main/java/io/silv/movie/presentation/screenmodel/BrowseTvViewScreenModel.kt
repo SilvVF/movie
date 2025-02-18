@@ -109,7 +109,7 @@ class TVViewScreenModel(
                 }
         }
 
-        showRepo.observeShowByIdOrNull(showId).filterNotNull().onEach { new ->
+        showRepo.observeShowById(showId).filterNotNull().onEach { new ->
             mutableState.updateSuccess {
                 it.copy(show = new)
             }

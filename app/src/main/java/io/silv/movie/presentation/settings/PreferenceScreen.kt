@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,41 +64,43 @@ fun PreferenceScreen(
         }
     }
 
-    ScrollbarLazyColumn(
-        modifier = modifier,
-        state = state,
-        contentPadding = contentPadding,
-    ) {
-        items.fastForEachIndexed { i, preference ->
-            when (preference) {
-                // Create Preference Group
-                is Preference.PreferenceGroup -> {
-                    if (!preference.enabled) return@fastForEachIndexed
+    Surface {
+        ScrollbarLazyColumn(
+            modifier = modifier,
+            state = state,
+            contentPadding = contentPadding,
+        ) {
+            items.fastForEachIndexed { i, preference ->
+                when (preference) {
+                    // Create Preference Group
+                    is Preference.PreferenceGroup -> {
+                        if (!preference.enabled) return@fastForEachIndexed
 
-                    item {
-                        Column {
-                            PreferenceGroupHeader(title = preference.title)
+                        item {
+                            Column {
+                                PreferenceGroupHeader(title = preference.title)
+                            }
+                        }
+                        items(preference.preferenceItems) { item ->
+                            PreferenceItem(
+                                item = item,
+                                highlightKey = highlightKey,
+                            )
+                        }
+                        item {
+                            if (i < items.lastIndex) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
                         }
                     }
-                    items(preference.preferenceItems) { item ->
+
+                    // Create Preference Item
+                    is Preference.PreferenceItem<*> -> item {
                         PreferenceItem(
-                            item = item,
+                            item = preference,
                             highlightKey = highlightKey,
                         )
                     }
-                    item {
-                        if (i < items.lastIndex) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                    }
-                }
-
-                // Create Preference Item
-                is Preference.PreferenceItem<*> -> item {
-                    PreferenceItem(
-                        item = preference,
-                        highlightKey = highlightKey,
-                    )
                 }
             }
         }

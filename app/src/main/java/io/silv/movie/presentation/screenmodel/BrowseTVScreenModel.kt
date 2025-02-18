@@ -18,6 +18,8 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
+import io.silv.movie.data.local.GetContentPagerFlow
+import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.Filters
 import io.silv.movie.data.model.Genre
@@ -27,8 +29,10 @@ import io.silv.movie.data.local.ShowRepository
 import io.silv.movie.data.local.networkToLocalShow
 import io.silv.movie.data.model.toDomain
 import io.silv.movie.data.model.TVShowPoster
+import io.silv.movie.data.network.NetworkContentDelegate
 import io.silv.movie.data.network.SourceShowRepository
 import io.silv.movie.data.network.getShowPager
+import io.silv.movie.data.supabase.ContentType
 import io.silv.movie.prefrences.BrowsePreferences
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.asState
@@ -48,14 +52,18 @@ import java.time.LocalDateTime
 class TVScreenModel(
     private val showRepo: ShowRepository,
     private val showSource: SourceShowRepository,
+    private val localContentDelegate: LocalContentDelegate,
+    private val networkContentDelegate: NetworkContentDelegate,
     networkMonitor: NetworkMonitor,
     browsePreferences: BrowsePreferences,
-    savedStateContentPagedType: ContentPagedType
+    savedStateContentPagedType: ContentPagedType,
 ) : StateScreenModel<TVState>(
     TVState(
         listing = savedStateContentPagedType
     )
 ) {
+    private val getContentPagerFlow: GetContentPagerFlow = GetContentPagerFlow.create(localContentDelegate, networkContentDelegate)
+
     var displayMode by browsePreferences.browsePosterDisplayMode().asState(screenModelScope)
         private set
 
@@ -94,21 +102,9 @@ class TVScreenModel(
         .combine(browsePreferences.browseHideLibraryItems().changes()) { a, b -> a to b}
         .distinctUntilChanged()
         .flatMapLatest { (listing, hideLibraryItems) ->
-            Pager(
-                PagingConfig(pageSize = 25)
-            ) {
-                showSource.getShowPager(listing)
-            }.flow.map { pagingData ->
-                val seenIds = mutableSetOf<Long>()
-                pagingData.map { sTVShow ->
-                    showRepo.networkToLocalShow(sTVShow.toDomain())
-                        .let { localShow -> showRepo.observeShowPartialById(localShow.id) }
-                        .stateIn(ioCoroutineScope)
-                }
-                    .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
-                    .filter { !hideLibraryItems || !it.value.favorite }
+            getContentPagerFlow(ContentType.Show, listing, ioCoroutineScope) {
+                filter { (!hideLibraryItems || !it.value.favorite) && it.value.posterUrl.isNullOrBlank().not() }
             }
-                .cachedIn(ioCoroutineScope)
         }
         .stateIn(ioCoroutineScope, SharingStarted.WhileSubscribed(replayExpirationMillis = 10000), PagingData.empty())
 
@@ -257,8 +253,8 @@ data class TVState(
 data class TVActions(
     val changeCategory: (ContentPagedType) -> Unit,
     val changeQuery: (String) -> Unit,
-    val showLongClick: (tvShow: TVShowPoster) -> Unit,
-    val showClick: (tvShow: TVShowPoster) -> Unit,
+    val showLongClick: (tvShow: ContentItem) -> Unit,
+    val showClick: (tvShow: ContentItem) -> Unit,
     val onSearch: (String) -> Unit,
     val setDisplayMode: (PosterDisplayMode) -> Unit,
     val changeGridCellCount: (Int) -> Unit

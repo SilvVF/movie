@@ -1,5 +1,6 @@
 package io.silv.movie.data.supabase
 
+import app.cash.molecule.launchMolecule
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -36,6 +37,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -44,6 +46,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
@@ -60,7 +63,6 @@ import java.util.UUID
 
 interface UserRepository {
     val currentUser: StateFlow<User?>
-    suspend fun listenForUpdates(): Job
     suspend fun deleteAccount(): Boolean
     suspend fun signOut(scope: SignOutScope = SignOutScope.LOCAL): Boolean
     suspend fun getUser(id: String): Result<User>
@@ -93,14 +95,14 @@ interface ListRepository {
 interface BackendRepository: UserRepository, ListRepository
 
 sealed interface BackendEvent {
-    data object UserUpdated: BackendEvent
+    data class UserUpdated(val user: User): BackendEvent
 }
 
 class BackendRepositoryImpl(
     private val postgrest: Postgrest,
     private val auth: Auth,
     private val networkMonitor: NetworkMonitor,
-    private val basePreferences: BasePreferences,
+    basePreferences: BasePreferences,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : BackendRepository {
 
@@ -119,37 +121,44 @@ class BackendRepositoryImpl(
             null
         )
 
-    override suspend fun listenForUpdates() = supervisorScope {
-        auth.sessionStatus
-                .combine(networkMonitor.isOnline, ::Pair)
-                .onEach { (status, online) ->
 
-                    if (!online) return@onEach
+    init {
+        scope.launch {
+            supervisorScope {
+                listenToAuthEvents()
+                listenForUpdates()
+            }
+        }
+    }
 
-                    when (status) {
-                        is SessionStatus.Authenticated -> {
-                            val id = status.session.user?.id ?: return@onEach
-                            getUser(id).onSuccess  {
-                                savedUser.set(it)
-                            }
+    private fun CoroutineScope.listenToAuthEvents(): Job {
+        return auth.sessionStatus
+            .combine(networkMonitor.isOnline, ::Pair)
+            .filter { (_, online) -> online }
+            .onEach { (status, online) ->
+                when (status) {
+                    is SessionStatus.Authenticated -> {
+                        val id = status.session.user?.id ?: return@onEach
+                        getUser(id).onSuccess  {
+                            savedUser.set(it)
                         }
-
-                        is SessionStatus.NotAuthenticated -> {
-                            savedUser.set(null)
-                        }
-
-                        else -> Unit
                     }
+                    is SessionStatus.NotAuthenticated -> {
+                        savedUser.set(null)
+                    }
+
+                    else -> Unit
                 }
-                .catch { Timber.e(it) }
-                .launchIn(this)
+            }
+            .catch { Timber.e(it) }
+            .launchIn(this)
+    }
 
-        events.receiveAsFlow().onEach { event ->
+    private fun CoroutineScope.listenForUpdates(): Job {
+        return events.receiveAsFlow().onEach { event ->
             when(event) {
-                BackendEvent.UserUpdated -> launch {
-                    auth.currentUserOrNull()?.let {
-                        getUser(it.id)
-                    }
+                is BackendEvent.UserUpdated -> launch {
+                    _currentUser.emit(event.user)
                 }
             }
         }
@@ -196,6 +205,9 @@ class BackendRepositoryImpl(
                 }
                 .decodeSingle<User>()
         }
+            .onSuccess {
+                events.send(BackendEvent.UserUpdated(it))
+            }
     }
 
     override suspend fun registerWithEmailAndPassword(email: String, password: String): Boolean = withContext(ioDispatcher) {

@@ -20,6 +20,7 @@ import io.silv.core_ui.components.EntryListItem
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.core_ui.util.plus
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.TVShowPoster
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
@@ -32,10 +33,10 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun BrowseTVSourceList(
     modifier: Modifier,
-    pagingItems: LazyPagingItems<StateFlow<TVShowPoster>>,
+    pagingItems: LazyPagingItems<StateFlow<ContentItem>>,
     contentPadding: PaddingValues,
-    onShowClick: (TVShowPoster) -> Unit,
-    onShowLongClick: (TVShowPoster) -> Unit,
+    onShowClick: (ContentItem) -> Unit,
+    onShowLongClick: (ContentItem) -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -55,7 +56,7 @@ fun BrowseTVSourceList(
         items(
             count = pagingItems.itemCount,
             contentType = pagingItems.itemContentType { PosterDisplayMode.List.hashCode() },
-            key = pagingItems.itemKey { it.value.id }
+            key = pagingItems.itemKey {it.value.itemKey }
         ) { index ->
             val tvShow by pagingItems[index]?.collectAsStateWithLifecycle() ?: return@items
 
@@ -78,7 +79,7 @@ fun BrowseTVSourceList(
 
 @Composable
 private fun BrowseTVSourceListItem(
-    show: TVShowPoster,
+    show: ContentItem,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
@@ -89,7 +90,7 @@ private fun BrowseTVSourceListItem(
         badge = {
             InLibraryBadge(enabled = show.favorite)
         },
-        coverModifier = Modifier.registerSharedElement(SharedElement.Show(show.id)),
+        coverModifier = Modifier.registerSharedElement(SharedElement.Show(show.contentId)),
         onLongClick = onLongClick,
         onClick = onClick,
     )

@@ -13,6 +13,7 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -24,7 +25,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
-import io.silv.core_ui.theme.scheme.Scheme
+import io.silv.core_ui.theme.dynamiccolor.DynamicScheme
+import io.silv.core_ui.theme.dynamiccolor.Variant
+import io.silv.core_ui.theme.hct.Hct
+import java.util.Optional
 import kotlin.math.ln
 
 private val DarkColorScheme = darkColorScheme(
@@ -72,8 +76,44 @@ fun ColorScheme.applyTonalElevation(
     }
 }
 
+@Composable
+@ReadOnlyComposable
+fun getColorScheme(
+    darkTheme: Boolean,
+    seedColor: Color? = null,
+    fallback: ColorScheme? = null,
+): ColorScheme {
+    val context = LocalContext.current
+    return when {
+        seedColor != null -> {
+            DynamicScheme(
+                Hct.fromInt(seedColor.toArgb()),
+                Variant.NEUTRAL,
+                darkTheme,
+                1.0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                Optional.empty(),
+            )
+                .toColorScheme()
+        }
 
-@SuppressLint("RestrictedApi")
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
+        }
+
+        darkTheme -> fallback ?: DarkColorScheme
+        else -> fallback ?: LightColorScheme
+    }
+}
+
 @Composable
 fun SeededMaterialTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -81,21 +121,6 @@ fun SeededMaterialTheme(
     fallback: ColorScheme? = null,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-
-    val colorScheme = remember(fallback, seedColor, darkTheme) {
-        when {
-            seedColor != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                if (darkTheme) Scheme.dark(seedColor.toArgb()).toColorScheme()
-                else Scheme.light(seedColor.toArgb()).toColorScheme()
-            }
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                fallback ?: if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-            darkTheme -> fallback ?: DarkColorScheme
-            else -> fallback ?: LightColorScheme
-        }
-    }
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -106,14 +131,14 @@ fun SeededMaterialTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = getColorScheme(darkTheme, seedColor, fallback),
         typography = Typography,
         content = content
     )
 }
 
 @SuppressLint("RestrictedApi")
-fun Scheme.toColorScheme() = ColorScheme(
+fun DynamicScheme.toColorScheme() = ColorScheme(
     primary = Color(primary),
     onPrimary = Color(onPrimary),
     primaryContainer = Color(primaryContainer),
@@ -143,17 +168,17 @@ fun Scheme.toColorScheme() = ColorScheme(
     outline = Color(outline),
     outlineVariant = Color(outlineVariant),
     scrim = Color(scrim),
-    surfaceBright = surfaceColorAtElevation(0.dp),
-    surfaceDim = surfaceColorAtElevation(0.dp),
-    surfaceContainer = surfaceColorAtElevation(2.dp),
-    surfaceContainerHigh = surfaceColorAtElevation(4.dp),
-    surfaceContainerHighest = surfaceColorAtElevation(8.dp),
-    surfaceContainerLow = surfaceColorAtElevation(1.dp),
-    surfaceContainerLowest = surfaceColorAtElevation(0.dp),
+    Color(surfaceBright),
+    Color(surfaceDim),
+    Color(surfaceContainer),
+    Color(surfaceContainerHigh),
+    Color(surfaceContainerHighest),
+    Color(surfaceContainerLow),
+    Color(surfaceContainerLowest)
 )
 
 @SuppressLint("RestrictedApi")
-fun Scheme.surfaceColorAtElevation(
+fun DynamicScheme.surfaceColorAtElevation(
     elevation: Dp,
 ): Color {
     if (elevation == 0.dp) return Color(surface)

@@ -172,10 +172,9 @@ private fun SearchResult(
     if (searchKey.isEmpty()) return
 
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
-
     val index = getIndex()
     val result by produceState<List<SearchResultItem>?>(initialValue = null, searchKey) {
-        val res = index.asSequence()
+        this.value = index.asSequence()
             .flatMap { settingsData ->
                 settingsData.contents.asSequence()
                     // Only search from enabled prefs and one with valid title
@@ -219,7 +218,6 @@ private fun SearchResult(
             }
             .take(10) // Just take top 10 result for quicker result
             .toList()
-        value = res
     }
 
     Crossfade(

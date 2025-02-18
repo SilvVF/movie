@@ -44,6 +44,7 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.toContentItem
 import io.silv.movie.data.model.MoviePoster
@@ -100,9 +101,9 @@ data class BrowseMovieScreen(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
                 movieLongClick = {
-                    stableChangeDialogRefrence(MovieScreenModel.Dialog.ContentOptions(it.toContentItem()))
+                    stableChangeDialogRefrence(MovieScreenModel.Dialog.ContentOptions(it))
                 },
-                movieClick = { navigator.push(MovieViewScreen(it.id)) },
+                movieClick = { navigator.push(MovieViewScreen(it.contentId)) },
                 onSearch = screenModel::onSearch,
                 setDisplayMode = screenModel::changeDisplayMode,
                 changeGridCellCount = screenModel::changeGridCells
@@ -190,7 +191,7 @@ private fun MovieStandardScreenSizeContent(
     listing: () -> ContentPagedType,
     query: () -> String,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<MoviePoster>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<ContentItem>>>,
     gridCellsCount: () -> Int,
     changeResourceType: () -> Unit,
     online: Boolean,

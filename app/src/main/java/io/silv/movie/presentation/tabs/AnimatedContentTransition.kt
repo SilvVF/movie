@@ -33,6 +33,10 @@ import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.bottomsheet.modal.PredictiveBack
 import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.getActivityViewModel
+import io.silv.movie.presentation.media.PlayerViewModel
+import io.silv.movie.presentation.media.components.CollapsableVideoAnchors
+import io.silv.movie.presentation.media.components.CollapsableVideoState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
@@ -67,9 +71,8 @@ fun SharedTransitionTab.AnimatedContentTransition(
     }
 }
 
-context(SharedTransitionTab)
 @Composable
-fun AnimatedContentTransitionNoPredictiveBack(
+fun SharedTransitionTab.AnimatedContentTransitionNoPredictiveBack(
     navigator: Navigator,
     transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform,
     label: String,
@@ -90,7 +93,7 @@ fun AnimatedContentTransitionNoPredictiveBack(
                     SharedTransitionState(
                         transitionScope = this@SharedTransitionScope,
                         visibilityScope = this@AnimatedContent,
-                        transform =  this@SharedTransitionTab.transform
+                        transform = this@SharedTransitionTab.transform
                     )
                         .takeIf { sharedElementTransitions }
                 )
@@ -103,9 +106,8 @@ fun AnimatedContentTransitionNoPredictiveBack(
     }
 }
 
-context(SharedTransitionTab)
 @Composable
-fun PredictiveBackAnimatedContentTransition(
+fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
     navigator: Navigator,
     transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform,
     label: String,
@@ -113,17 +115,31 @@ fun PredictiveBackAnimatedContentTransition(
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit
 ) {
     var transitionProgress by rememberSaveable { mutableFloatStateOf(0f) }
+    val playerViewModel by getActivityViewModel<PlayerViewModel>()
 
     PredictiveBackHandler(
         enabled = navigator.items.size >= 2
     ) { progress: Flow<BackEventCompat> ->
         try {
+            var shouldPop = true
             progress.collect { backevent ->
+                playerViewModel.collapsableVideoState?.let {
+                    if (it.state.currentValue == CollapsableVideoAnchors.Start) {
+                        shouldPop = false
+                        playerViewModel.collapsableVideoState?.predictiveBack(backevent.progress)
+                        return@collect
+                    }
+                }
                 transitionProgress = PredictiveBack.transform(backevent.progress)
             }
             transitionProgress = 0f
-            navigator.pop()
+            if (shouldPop) {
+                navigator.pop()
+            } else {
+                playerViewModel.collapsableVideoState?.dismiss()
+            }
         } catch (e: CancellationException) {
+            playerViewModel.collapsableVideoState?.settle()
             animate(
                 transitionProgress,
                 targetValue = 0f,
@@ -137,10 +153,8 @@ fun PredictiveBackAnimatedContentTransition(
 
     Box {
         if (transitionProgress > 0) {
-            val screen = navigator.items.getOrNull(navigator.items.lastIndex - 1)
-            screen?.let {
-                navigator.saveableState(key = "transition", it, content = { it.Content() })
-            }
+            val prevScreen = navigator.items.getOrNull(navigator.items.lastIndex - 1)
+            prevScreen?.Content()
         }
 
         SharedTransitionScope {
@@ -169,13 +183,13 @@ fun PredictiveBackAnimatedContentTransition(
                         SharedTransitionState(
                             transitionScope = this@SharedTransitionScope,
                             visibilityScope = this@AnimatedContent,
-                            transform =  this@SharedTransitionTab.transform
+                            transform = this@SharedTransitionTab.transform
                         )
                             .takeIf { LocalAppState.current.sharedElementTransitions }
                     )
                 ) {
-                    navigator.saveableState("transition", screen) {
-                        this@AnimatedContent.content(screen)
+                    navigator.saveableState(screen.key, screen) {
+                        content(screen)
                     }
                 }
             }
@@ -195,14 +209,20 @@ private fun GraphicsLayerScope.calculatePredictiveBackScaleY(progress: Float): F
     return lerp(1f, minScale, progress)
 }
 
-private fun GraphicsLayerScope.calculatePredictiveBackTranslationX(progress: Float, size: Float): Float {
+private fun GraphicsLayerScope.calculatePredictiveBackTranslationX(
+    progress: Float,
+    size: Float
+): Float {
     // Here, you move the view horizontally based on the view width.
     // Translation is typically a fraction of the view width.
     val maxTranslationX = (size / 20).coerceAtLeast(8.dp.toPx())
     return lerp(0f, maxTranslationX, progress)
 }
 
-private fun GraphicsLayerScope.calculatePredictiveBackTranslationY(progress: Float, size: Float): Float {
+private fun GraphicsLayerScope.calculatePredictiveBackTranslationY(
+    progress: Float,
+    size: Float
+): Float {
     // Vertical translation is often less noticeable.
     val maxTranslationY = size / 20 // This can be customized.
     return lerp(0f, maxTranslationY, progress)
@@ -210,10 +230,10 @@ private fun GraphicsLayerScope.calculatePredictiveBackTranslationY(progress: Flo
 
 sealed class SharedElement(val key: String) {
 
-    data class Movie(val id: Long): SharedElement(key = PREFIX_MOVIE_POSTER + id)
-    data class Show(val id: Long): SharedElement(key = PREFIX_SHOW_POSTER + id)
-    data class List(val id: Long): SharedElement(key = PREFIX_LIST_POSTER + id)
-    data class From(val id: String): SharedElement(key = id)
+    data class Movie(val id: Long) : SharedElement(key = PREFIX_MOVIE_POSTER + id)
+    data class Show(val id: Long) : SharedElement(key = PREFIX_SHOW_POSTER + id)
+    data class List(val id: Long) : SharedElement(key = PREFIX_LIST_POSTER + id)
+    data class From(val id: String) : SharedElement(key = id)
 
     companion object {
         const val PREFIX_LIST_NAME = "list_name:"
@@ -225,7 +245,7 @@ sealed class SharedElement(val key: String) {
     }
 }
 
-fun PosterData.toSharedElement() = if(isMovie) SharedElement.Movie(id) else SharedElement.Show(id)
+fun PosterData.toSharedElement() = if (isMovie) SharedElement.Movie(id) else SharedElement.Show(id)
 
 @Composable
 fun Modifier.registerSharedElement(
@@ -235,9 +255,9 @@ fun Modifier.registerSharedElement(
         ?.LocalSharedTransitionState
         ?.current
 
-): Modifier = this then when(transitionState) {
+): Modifier = this then when (transitionState) {
     null -> Modifier
-    else -> with(transitionState.transitionScope){
+    else -> with(transitionState.transitionScope) {
         Modifier.sharedElement(
             state = rememberSharedContentState(key = element.key),
             animatedVisibilityScope = transitionState.visibilityScope,

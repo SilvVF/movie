@@ -59,6 +59,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import io.silv.core_ui.components.bottomsheet.modal.PredictiveBack
 import io.silv.core_ui.components.lazy.FastScrollLazyColumn
 import io.silv.core_ui.util.clickableNoIndication
 import kotlinx.coroutines.CoroutineScope
@@ -83,9 +84,9 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 
-     var initial by rememberSaveable {
-         mutableStateOf(CollapsableVideoAnchors.Start)
-     }
+    var initial by rememberSaveable {
+        mutableStateOf(CollapsableVideoAnchors.Start)
+    }
 
     val state = remember {
         AnchoredDraggableState(
@@ -105,13 +106,13 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
     }
 
     DisposableEffect(Unit) {
-        onDispose { initial = state.currentValue  }
+        onDispose { initial = state.currentValue }
     }
 
     val fullScreenVideoDraggable = remember {
         AnchoredDraggableState(
             initialValue = VideoDragAnchors.Normal,
-            anchors =  DraggableAnchors {
+            anchors = DraggableAnchors {
                 VideoDragAnchors.Normal at 0f
                 VideoDragAnchors.FullScreen at 1200f
                 VideoDragAnchors.Dismiss at 1200f
@@ -123,7 +124,7 @@ fun rememberCollapsableVideoState(): CollapsableVideoState {
         )
     }
 
-    val scope =  rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     return remember {
         CollapsableVideoState(
@@ -145,21 +146,42 @@ class CollapsableVideoState(
     }
 
     val fullScreenProgress by derivedStateOf {
-            val fullscreenAnchorPos = fullscreenState.anchors.positionOf(VideoDragAnchors.FullScreen)
-            (fullscreenState.requireOffset() / fullscreenAnchorPos)
-                .coerceIn(0f..1f)
+        val fullscreenAnchorPos = fullscreenState.anchors.positionOf(VideoDragAnchors.FullScreen)
+        (fullscreenState.requireOffset() / fullscreenAnchorPos)
+            .coerceIn(0f..1f)
     }
 
-    val dismissOffsetPx  by derivedStateOf {
+    val dismissOffsetPx by derivedStateOf {
         val offset = state.requireOffset() - state.anchors.positionOf(CollapsableVideoAnchors.End)
         offset.coerceAtLeast(0f).roundToInt()
     }
 
-    val dismissFullscreenOffsetPx  by derivedStateOf {
+    val dismissFullscreenOffsetPx by derivedStateOf {
         val offset = fullscreenState.requireOffset() - fullscreenState.anchors.positionOf(
             VideoDragAnchors.FullScreen
         )
         offset.coerceAtLeast(0f).roundToInt()
+    }
+
+    fun settle() {
+        scope.launch {
+            state.settle(state.lastVelocity)
+        }
+    }
+
+    fun predictiveBack(progress: Float) {
+        val targetOffset = state.anchors.minAnchor() + lerp(
+            0f,
+            state.anchors.maxAnchor() * 0.24f,
+            PredictiveBack.transform(progress)
+        )
+
+        val dist = targetOffset - state.offset
+        scope.launch {
+            state.dispatchRawDelta(
+                dist
+            )
+        }
     }
 
     fun expand() {
@@ -179,7 +201,7 @@ private class CollapsableVideoLayoutScrollConnection(
     private val lazyListState: LazyListState,
     private val state: AnchoredDraggableState<VideoDragAnchors>,
     scope: CoroutineScope,
-): NestedScrollConnection {
+) : NestedScrollConnection {
 
     var canConsumeDelta by mutableStateOf(true)
     var preFlingIdx by mutableIntStateOf(0)
@@ -241,7 +263,8 @@ private class CollapsableVideoLayoutScrollConnection(
         preFlingIdx = lazyListState.firstVisibleItemIndex
 
         return if (available.y < 0 && !lazyListState.canScrollBackward && canConsumeDelta && lazyListState.firstVisibleItemIndex == 0) {
-            state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
+            state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss }
+                ?: VideoDragAnchors.FullScreen, available.y)
             available
         } else {
             Velocity.Zero
@@ -252,7 +275,8 @@ private class CollapsableVideoLayoutScrollConnection(
         consumed: Velocity,
         available: Velocity
     ): Velocity {
-        state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss } ?: VideoDragAnchors.FullScreen, available.y)
+        state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss }
+            ?: VideoDragAnchors.FullScreen, available.y)
         return super.onPostFling(consumed, available)
     }
 }
@@ -274,7 +298,7 @@ fun DefaultSizeCollapsableVideoLayout(
     content: LazyListScope.() -> Unit,
 ) {
     val progress = collapsableVideoState.progress
-    val density= LocalDensity.current
+    val density = LocalDensity.current
     val state = collapsableVideoState.state
     val scope = rememberCoroutineScope()
 
@@ -323,37 +347,39 @@ fun DefaultSizeCollapsableVideoLayout(
             ) {
                 actions()
             }
-            Box(modifier = Modifier
-                .height(IntrinsicSize.Max)
-                .aspectRatio(16f / 9f)
-                .anchoredDraggable(
-                    collapsableVideoState.fullscreenState,
-                    Orientation.Vertical,
-                    fullscreenDraggableEnabled
-                )
-                .anchoredDraggable(
-                    state,
-                    Orientation.Vertical,
-                    !fullscreenDraggableEnabled
-                )
-                .layoutId("player")
+            Box(
+                modifier = Modifier
+                    .height(IntrinsicSize.Max)
+                    .aspectRatio(16f / 9f)
+                    .anchoredDraggable(
+                        collapsableVideoState.fullscreenState,
+                        Orientation.Vertical,
+                        fullscreenDraggableEnabled
+                    )
+                    .anchoredDraggable(
+                        state,
+                        Orientation.Vertical,
+                        !fullscreenDraggableEnabled
+                    )
+                    .layoutId("player")
             ) {
                 player()
             }
-            Surface(modifier = Modifier
-                .layoutId("content")
-                .anchoredDraggable(
-                    collapsableVideoState.fullscreenState,
-                    Orientation.Vertical,
-                    fullscreenDraggableEnabled
-                )
-                .graphicsLayer {
-                    alpha =
-                        minOf(
-                            1f - collapsableVideoState.fullScreenProgress,
-                            contentAlpha
-                        )
-                },
+            Surface(
+                modifier = Modifier
+                    .layoutId("content")
+                    .anchoredDraggable(
+                        collapsableVideoState.fullscreenState,
+                        Orientation.Vertical,
+                        fullscreenDraggableEnabled
+                    )
+                    .graphicsLayer {
+                        alpha =
+                            minOf(
+                                1f - collapsableVideoState.fullScreenProgress,
+                                contentAlpha
+                            )
+                    },
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
             ) {
                 Column {
@@ -375,7 +401,7 @@ fun DefaultSizeCollapsableVideoLayout(
                 val visible by remember {
                     derivedStateOf { reorderState.listState.firstVisibleItemIndex > 0 }
                 }
-                AnimatedVisibility(visible = visible, enter = fadeIn(),exit = fadeOut()) {
+                AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
                     scrollToTopButton {
                         scope.launch { reorderState.listState.animateScrollToItem(0) }
                     }
@@ -405,11 +431,20 @@ fun DefaultSizeCollapsableVideoLayout(
         val height = lerp(CollapsablePlayerMinHeight.roundToPx(), constraints.maxHeight, progress)
         val paddingTop = (topPadding * progress).roundToInt()
 
-        val landscape = constraints.maxWidth > constraints.maxHeight && state.currentValue != CollapsableVideoAnchors.Dismiss
+        val landscape =
+            constraints.maxWidth > constraints.maxHeight && state.currentValue != CollapsableVideoAnchors.Dismiss
 
         val playerPlaceable = measurables
             .first { it.layoutId == "player" }
-            .measure(constraints.copy(maxHeight = height - if(landscape) lerp(0, bottomPadding, progress) else 0))
+            .measure(
+                constraints.copy(
+                    maxHeight = height - if (landscape) lerp(
+                        0,
+                        bottomPadding,
+                        progress
+                    ) else 0
+                )
+            )
 
         val buttonPlaceable = measurables
             .first { it.layoutId == "scrollToTop" }
@@ -417,7 +452,13 @@ fun DefaultSizeCollapsableVideoLayout(
 
         val contentPlaceable = measurables
             .first { it.layoutId == "content" }
-            .measure(constraints.copy(maxHeight = (height - playerPlaceable.height - paddingTop).coerceAtLeast(0)))
+            .measure(
+                constraints.copy(
+                    maxHeight = (height - playerPlaceable.height - paddingTop).coerceAtLeast(
+                        0
+                    )
+                )
+            )
 
         val actionsPlaceable = measurables
             .first { it.layoutId == "actions" }
@@ -441,7 +482,8 @@ fun DefaultSizeCollapsableVideoLayout(
             val playerY = (playerCenteredY * collapsableVideoState.fullScreenProgress).roundToInt()
 
             if (landscape) {
-                val playerX = lerp(0, constraints.maxWidth / 2 - playerPlaceable.width / 2, progress)
+                val playerX =
+                    lerp(0, constraints.maxWidth / 2 - playerPlaceable.width / 2, progress)
                 playerPlaceable.placeRelative(
                     playerX,
                     paddingTop + playerY.coerceAtLeast(0) + collapsableVideoState.dismissFullscreenOffsetPx

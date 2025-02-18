@@ -54,7 +54,7 @@ suspend fun <T> suspendRunCatching(block: suspend () -> T): Result<T> =
 
 @OptIn(ExperimentalContracts::class)
 fun <T, R> Iterable<T>.filterUniqueBy(selector: (T) -> R): List<T> {
-    contract { callsInPlace(selector, InvocationKind.AT_MOST_ONCE) }
+    contract { callsInPlace(selector, InvocationKind.UNKNOWN) }
     val seen = mutableSetOf<R>()
     return buildList {
         for (e in this@filterUniqueBy) {

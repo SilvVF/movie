@@ -18,6 +18,8 @@ import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.NetworkMonitor
+import io.silv.movie.data.local.GetContentPagerFlow
+import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.Filters
 import io.silv.movie.data.model.Genre
@@ -27,8 +29,10 @@ import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.data.model.toDomain
 import io.silv.movie.data.local.MovieRepository
 import io.silv.movie.data.local.networkToLocalMovie
+import io.silv.movie.data.network.NetworkContentDelegate
 import io.silv.movie.data.network.SourceMovieRepository
 import io.silv.movie.data.network.getMoviePager
+import io.silv.movie.data.supabase.ContentType
 import io.silv.movie.prefrences.BrowsePreferences
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.asState
@@ -46,16 +50,21 @@ import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 class MovieScreenModel(
-    private val movieRepo: MovieRepository,
-    private val sourceRepository: SourceMovieRepository,
+    private val local: LocalContentDelegate,
+    private val network: NetworkContentDelegate,
     networkMonitor: NetworkMonitor,
     browsePreferences: BrowsePreferences,
-    savedStateContentPagedType: ContentPagedType
+    savedStateContentPagedType: ContentPagedType,
 ) : StateScreenModel<MovieState>(
     MovieState(
         listing = savedStateContentPagedType
     )
 ) {
+    private val getContentPagerFlow: GetContentPagerFlow = GetContentPagerFlow.create(
+        local,
+        network
+    )
+
     var displayMode by browsePreferences.browsePosterDisplayMode().asState(screenModelScope)
         private set
 
@@ -75,15 +84,15 @@ class MovieScreenModel(
 
     init {
         screenModelScope.launch {
-            val genres = sourceRepository.getMovieGenres().map { it.toDomain() }
-            mutableState.update {state -> state.copy(genres = genres) }
+            val genres = network.getMovieGenres().map { it.toDomain() }
+            mutableState.update { state -> state.copy(genres = genres) }
         }
 
         snapshotFlow { query }
             .debounce(1000)
             .onEach {
                 if (it.isNotBlank()) {
-                    mutableState.update {state ->
+                    mutableState.update { state ->
                         state.copy(listing = ContentPagedType.Search(it))
                     }
                 }
@@ -92,30 +101,22 @@ class MovieScreenModel(
     }
 
     val moviePagerFlowFlow = state.map { it.listing }
-        .combine(browsePreferences.browseHideLibraryItems().changes()) { a, b -> a to b}
+        .combine(browsePreferences.browseHideLibraryItems().changes()) { a, b -> a to b }
         .distinctUntilChanged()
         .flatMapLatest { (listing, hideLibraryItems) ->
-            Pager(
-                PagingConfig(pageSize = 25)
-            ) {
-                sourceRepository.getMoviePager(listing)
-            }.flow.map { pagingData ->
-                val seenIds = mutableSetOf<Long>()
-                pagingData.map { sMovie ->
-                    movieRepo.networkToLocalMovie(sMovie.toDomain())
-                        .let { localMovie -> movieRepo.observeMoviePartialById(localMovie.id) }
-                        .stateIn(ioCoroutineScope)
+            getContentPagerFlow(ContentType.Movie, listing, ioCoroutineScope) {
+                filter {
+                    it.value.posterUrl.isNullOrBlank().not()
+                }.filter {
+                    !hideLibraryItems || !it.value.favorite
                 }
-                    .filter { seenIds.add(it.value.id) && it.value.posterUrl.isNullOrBlank().not() }
-                    .filter { !hideLibraryItems || !it.value.favorite }
             }
-                .cachedIn(ioCoroutineScope)
         }
         .stateIn(ioCoroutineScope, SharingStarted.Lazily, PagingData.empty())
 
     fun changeCategory(category: ContentPagedType) {
         screenModelScope.launch {
-            if(category is ContentPagedType.Search && category.query.isBlank()) {
+            if (category is ContentPagedType.Search && category.query.isBlank()) {
                 return@launch
             }
             mutableState.update { state -> state.copy(listing = category) }
@@ -186,7 +187,8 @@ class MovieScreenModel(
             error = derivedStateOf {
                 state.value.filters.year.value
                     .takeIf { s ->
-                        ((s.toIntOrNull() ?: -1) > LocalDateTime.now().year || (s.toIntOrNull() ?: -1) < 1900 || s.any { !it.isDigit() })
+                        ((s.toIntOrNull() ?: -1) > LocalDateTime.now().year || (s.toIntOrNull()
+                            ?: -1) < 1900 || s.any { !it.isDigit() })
                                 && s.isNotBlank()
                     }
                     ?.let { "Year must be between 1900 and the current year" }
@@ -226,7 +228,7 @@ class MovieScreenModel(
     sealed interface Dialog {
 
         @Stable
-        data class ContentOptions(val item: ContentItem): Dialog
+        data class ContentOptions(val item: ContentItem) : Dialog
 
         @Stable
         data object Filter : Dialog
@@ -255,8 +257,8 @@ data class MovieState(
 data class MovieActions(
     val changeCategory: (ContentPagedType) -> Unit,
     val changeQuery: (String) -> Unit,
-    val movieLongClick: (movie: MoviePoster) -> Unit,
-    val movieClick: (movie: MoviePoster) -> Unit,
+    val movieLongClick: (movie: ContentItem) -> Unit,
+    val movieClick: (movie: ContentItem) -> Unit,
     val onSearch: (String) -> Unit,
     val setDisplayMode: (PosterDisplayMode) -> Unit,
     val changeGridCellCount: (Int) -> Unit

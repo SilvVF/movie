@@ -44,6 +44,7 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.toContentItem
 import io.silv.movie.data.model.TVShowPoster
@@ -98,9 +99,9 @@ data class BrowseTVScreen(
                 changeCategory = screenModel::changeCategory,
                 changeQuery = screenModel::changeQuery,
                 showLongClick = {
-                    stableChangeDialogRefrence(TVScreenModel.Dialog.ContentOptions(it.toContentItem()))
+                    stableChangeDialogRefrence(TVScreenModel.Dialog.ContentOptions(it))
                 },
-                showClick = { navigator.push(TVViewScreen(it.id)) },
+                showClick = { navigator.push(TVViewScreen(it.contentId)) },
                 onSearch = screenModel::onSearch,
                 setDisplayMode = screenModel::changeDisplayMode,
                 changeGridCellCount = screenModel::changeGridCells
@@ -188,7 +189,7 @@ private fun TVStandardScreenSizeContent(
     listing: () -> ContentPagedType,
     query: () -> String,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<TVShowPoster>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<ContentItem>>>,
     gridCellsCount: () -> Int,
     changeResourceType: () -> Unit,
     online: Boolean,

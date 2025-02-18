@@ -114,7 +114,7 @@ class MovieViewScreenModel(
                 }
         }
 
-        movieRepo.observeMovieByIdOrNull(movieId).filterNotNull().onEach { new ->
+        movieRepo.observeMovieById(movieId).filterNotNull().onEach { new ->
             mutableState.updateSuccess {
                 it.copy(movie = new)
             }

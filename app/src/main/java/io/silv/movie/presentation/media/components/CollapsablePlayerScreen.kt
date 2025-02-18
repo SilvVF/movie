@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import io.silv.movie.R
 import io.silv.movie.presentation.media.PlayerViewModel
 import io.silv.movie.presentation.media.StreamState
+import io.silv.movie.presentation.media.components.CollapsablePlayerDefaults.Actions
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
@@ -44,7 +45,7 @@ fun CollapsablePlayerScreen(
         reorderState = reorderState,
         onDismissRequested = onDismissRequested,
         actions = {
-            CollapsablePlayerDefaults.Actions(
+            Actions(
                 currentTrailer = playerViewModel.currentTrailer,
                 playing = playerViewModel.playing,
                 onPlayClick = {

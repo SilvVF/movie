@@ -23,6 +23,7 @@ import io.silv.movie.network.model.Streams
 import io.silv.movie.network.model.Subtitle
 import io.silv.movie.network.service.piped.PipedApi
 import io.silv.movie.presentation.EventProducer
+import io.silv.movie.presentation.media.components.CollapsableVideoState
 import io.silv.movie.presentation.media.util.PlayerHelper
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -48,6 +49,8 @@ class PlayerViewModel(
     var playerState by mutableIntStateOf(Player.STATE_IDLE)
 
     val trailerQueue = mutableStateListOf<Trailer>()
+
+    var collapsableVideoState: CollapsableVideoState? = null
 
     val trailer by derivedStateOf { trailerToStreams?.first }
     val streamState by derivedStateOf { trailerToStreams?.second }

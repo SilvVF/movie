@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.repeatOnLifecycle
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.StateScreenModel
@@ -63,7 +64,7 @@ data class AppState(
 
 class AppStateProvider(
     private val uiPreferences: UiPreferences,
-    private val scope: CoroutineScope,
+    scope: LifecycleCoroutineScope,
     private val lifecycle: Lifecycle,
 ) {
     private val _state = MutableStateFlow<State>(State.Loading)

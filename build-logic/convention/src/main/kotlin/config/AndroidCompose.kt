@@ -49,7 +49,8 @@ internal fun Project.configureAndroidCompose(
             freeCompilerArgs.apply {
                 addAll(buildComposeMetricsParameters())
                 addAll(stabilityConfiguration())
-                addAll(strongSkippingConfiguration())
+                // enabled by default now
+                //addAll(strongSkippingConfiguration())
                 addAll(listOf(
                     "-opt-in=androidx.compose.animation.ExperimentalSharedTransitionApi",
                     "-opt-in=androidx.compose.foundation.layout.ExperimentalLayoutApi",
@@ -101,5 +102,5 @@ private fun Project.stabilityConfiguration() = listOf(
 
 private fun Project.strongSkippingConfiguration() = listOf(
     "-P",
-    "plugin:androidx.compose.compiler.plugins.kotlin:experimentalStrongSkipping=true",
+    "plugin:androidx.compose.compiler.plugins.kotlin:featureFlag=StrongSkipping",
 )

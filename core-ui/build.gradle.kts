@@ -1,8 +1,6 @@
-@Suppress("DSL_SCOPE_VIOLATION") // TODO: Remove once KTIJ-19369 is fixed
 plugins {
     alias(libs.plugins.movie.android.library.compose)
     alias(libs.plugins.org.jetbrains.kotlin.android)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
@@ -33,6 +31,15 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
+
+    kotlin {
+        compilerOptions {
+            freeCompilerArgs.addAll(
+                "-opt-in=coil.annotation.ExperimentalCoilApi",
+                "-opt-in=kotlinx.coroutines.FlowPreview",
+            )
+        }
+    }
 }
 
 dependencies {
@@ -55,14 +62,4 @@ dependencies {
     api(libs.voyager.screenModel)
 
     implementation(libs.androidx.core.ktx)
-}
-
-tasks {
-    // See https://kotlinlang.org/docs/reference/experimental.html#experimental-status-of-experimental-api(-markers)
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.freeCompilerArgs += listOf(
-            "-opt-in=coil.annotation.ExperimentalCoilApi",
-            "-opt-in=kotlinx.coroutines.FlowPreview",
-        )
-    }
 }

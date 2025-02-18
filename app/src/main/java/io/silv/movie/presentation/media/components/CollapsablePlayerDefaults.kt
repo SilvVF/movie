@@ -78,9 +78,8 @@ object CollapsablePlayerDefaults {
         }
     }
 
-    context(RowScope)
     @Composable
-    fun Actions(
+    fun RowScope.Actions(
         currentTrailer: Trailer?,
         playing: Boolean,
         onPlayClick: () -> Unit,

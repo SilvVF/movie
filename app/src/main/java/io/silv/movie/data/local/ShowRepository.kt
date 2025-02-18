@@ -4,6 +4,7 @@ package io.silv.movie.data.local
 import io.silv.Show
 import io.silv.movie.core.SShow
 import io.silv.movie.core.Status
+import io.silv.movie.core.suspendRunCatching
 import io.silv.movie.data.model.TVShow
 import io.silv.movie.data.model.TVShowPoster
 import io.silv.movie.data.model.TVShowUpdate
@@ -15,10 +16,8 @@ import kotlinx.datetime.Clock
 
 interface ShowRepository {
     suspend fun getShowById(id: Long): TVShow?
-    fun observeShowPartialById(id: Long): Flow<TVShowPoster>
-    fun observeShowPartialByIdOrNull(id: Long): Flow<TVShowPoster?>
-    fun observeShowById(id: Long): Flow<TVShow>
-    fun observeShowByIdOrNull(id: Long): Flow<TVShow?>
+    fun observeShowPartialById(id: Long): Flow<TVShowPoster?>
+    fun observeShowById(id: Long): Flow<TVShow?>
     suspend fun insertShow(show: TVShow): Long?
     suspend fun updateShow(update: TVShowUpdate): Boolean
     fun observeFavoriteShows(query: String): Flow<List<TVShow>>
@@ -109,23 +108,13 @@ class ShowRepositoryImpl(
         return handler.awaitOneOrNull { showQueries.selectById(id, ShowMapper.mapShow) }
     }
 
-    override fun observeShowPartialByIdOrNull(id: Long): Flow<TVShowPoster?> {
+    override fun observeShowPartialById(id: Long): Flow<TVShowPoster?> {
         return handler.subscribeToOneOrNull { showQueries.selectShowPartialById(id,
             ShowMapper.mapShowPoster
         ) }
     }
 
-    override fun observeShowPartialById(id: Long): Flow<TVShowPoster> {
-        return handler.subscribeToOne { showQueries.selectShowPartialById(id,
-            ShowMapper.mapShowPoster
-        ) }
-    }
-
-    override fun observeShowById(id: Long): Flow<TVShow> {
-        return handler.subscribeToOne { showQueries.selectById(id, ShowMapper.mapShow) }
-    }
-
-    override fun observeShowByIdOrNull(id: Long): Flow<TVShow?> {
+    override fun observeShowById(id: Long): Flow<TVShow?> {
         return handler.subscribeToOneOrNull { showQueries.selectById(id, ShowMapper.mapShow) }
     }
 
@@ -152,7 +141,7 @@ class ShowRepositoryImpl(
     }
 
     override suspend fun updateShow(update: TVShowUpdate): Boolean {
-        return runCatching {
+        return suspendRunCatching {
             partialUpdateShow(update)
         }
             .isSuccess

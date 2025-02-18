@@ -31,6 +31,7 @@ import androidx.paging.compose.itemKey
 import io.silv.core_ui.components.loadingIndicatorItem
 import io.silv.core_ui.util.isScrollingUp
 import io.silv.movie.R
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.presentation.LocalIsScrolling
@@ -47,7 +48,7 @@ fun MovieSourcePagingContent(
     snackbarHostState: SnackbarHostState,
     actions: MovieActions,
     displayMode: () -> PosterDisplayMode,
-    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<MoviePoster>>>,
+    pagingFlowFlow: () -> StateFlow<PagingData<StateFlow<ContentItem>>>,
     gridCellsCount: () -> Int,
     modifier: Modifier = Modifier,
 ) {
@@ -117,9 +118,9 @@ fun MovieSourcePosterGrid(
     modifier: Modifier,
     gridCellsCount:() -> Int,
     paddingValues: PaddingValues,
-    pagingItems: LazyPagingItems<StateFlow<MoviePoster>>,
-    onMovieClick: (MoviePoster) -> Unit,
-    onMovieLongClick: (MoviePoster) -> Unit,
+    pagingItems: LazyPagingItems<StateFlow<ContentItem>>,
+    onMovieClick: (ContentItem) -> Unit,
+    onMovieLongClick: (ContentItem) -> Unit,
 ) {
     val gridState = rememberLazyGridState()
 
@@ -137,14 +138,14 @@ fun MovieSourcePosterGrid(
         modifier = modifier.padding(top = 12.dp)
     ) {
         items(
-            key = pagingItems.itemKey { it.value.id },
+            key = pagingItems.itemKey { it.value.itemKey },
             count = pagingItems.itemCount,
             contentType = pagingItems.itemContentType { mode.hashCode() }
         ) {
 
             val movie by pagingItems[it]?.collectAsStateWithLifecycle() ?: return@items
 
-            Box(Modifier.registerSharedElement(SharedElement.Movie(movie.id))) {
+            Box(Modifier.registerSharedElement(SharedElement.Movie(movie.contentId))) {
                 when(mode) {
                     PosterDisplayMode.Grid.ComfortableGrid -> {
                         BrowseMovieSourceComfortableGridItem(

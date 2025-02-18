@@ -4,15 +4,16 @@ import androidx.compose.runtime.Composable
 import io.silv.core_ui.components.CommonEntryItemDefaults
 import io.silv.core_ui.components.EntryComfortableGridItem
 import io.silv.core_ui.components.EntryCompactGridItem
+import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.TVShowPoster
 import io.silv.movie.presentation.components.content.movie.InLibraryBadge
 import io.silv.movie.presentation.toPoster
 
 @Composable
 fun BrowseShowSourceCoverOnlyGridItem(
-    show: TVShowPoster,
-    onClick: (TVShowPoster) -> Unit = {},
-    onLongClick: (TVShowPoster) -> Unit = {},
+    show: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryCompactGridItem(
         title = null,
@@ -26,9 +27,9 @@ fun BrowseShowSourceCoverOnlyGridItem(
 
 @Composable
 fun BrowsShowSourceCompactGridItem(
-    show: TVShowPoster,
-    onClick: (TVShowPoster) -> Unit = {},
-    onLongClick: (TVShowPoster) -> Unit = {},
+    show: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryCompactGridItem(
         title = show.title,
@@ -42,9 +43,9 @@ fun BrowsShowSourceCompactGridItem(
 
 @Composable
 fun BrowseShowSourceComfortableGridItem(
-    show: TVShowPoster,
-    onClick: (TVShowPoster) -> Unit = {},
-    onLongClick: (TVShowPoster) -> Unit = {},
+    show: ContentItem,
+    onClick: (ContentItem) -> Unit = {},
+    onLongClick: (ContentItem) -> Unit = {},
 ) {
     EntryComfortableGridItem(
         title = show.title,

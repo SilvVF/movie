@@ -93,7 +93,7 @@ fun AppBar(
     actionModeCounter: Int = 0,
     onCancelActionMode: () -> Unit = {},
     actionModeActions: @Composable RowScope.() -> Unit = {},
-
+    isDarkTheme: Boolean,
     scrollBehavior: TopAppBarScrollBehavior? = null,
 ) {
     val isActionMode by remember(actionModeCounter) {
@@ -105,9 +105,9 @@ fun AppBar(
         backgroundColor = backgroundColor,
         titleContent = {
             if (isActionMode) {
-                AppBarTitle(actionModeCounter.toString())
+                AppBarTitle(actionModeCounter.toString(), isDarkTheme = isDarkTheme)
             } else {
-                AppBarTitle(title, subtitle = subtitle)
+                AppBarTitle(title, subtitle = subtitle, isDarkTheme = isDarkTheme)
             }
         },
         navigateUp = navigateUp,
@@ -181,6 +181,7 @@ fun AppBarTitle(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     count: Int = 0,
+    isDarkTheme: Boolean,
 ) {
     if (count > 0) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -190,7 +191,7 @@ fun AppBarTitle(
                 modifier = Modifier.weight(1f, false),
                 overflow = TextOverflow.Ellipsis,
             )
-            val pillAlpha = if (isSystemInDarkTheme()) 0.12f else 0.08f
+            val pillAlpha = if (isDarkTheme) 0.12f else 0.08f
             Pill(
                 text = "$count",
                 modifier = Modifier.padding(start = 4.dp),

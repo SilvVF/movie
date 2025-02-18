@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -80,7 +81,7 @@ import kotlin.math.absoluteValue
 
 data class ListAddScreen(
     val listId: Long
-): Screen {
+) : Screen {
 
     override val key: ScreenKey = "add_$listId"
 
@@ -137,6 +138,7 @@ data class ListAddScreen(
                             entryToRemove = s.list.name
                         )
                     }
+
                     null -> Unit
                 }
             }
@@ -207,47 +209,49 @@ private fun SuccessScreenContent(
             verticalArrangement = Arrangement.Top
         ) {
             SearchBar(
-                query = query,
                 modifier = Modifier.padding(
                     horizontal = animateDpAsState(
                         if (searchActive) 0.dp else 12.dp,
                         label = "search-padding"
                     ).value
                 ),
-                onQueryChange = changeQuery,
-                onSearch = changeQuery,
-                leadingIcon = {
-                    IconButton(onClick = changePagingItems) {
-                        Icon(
-                            imageVector = if(state.movies) Icons.Filled.Movie else Icons.Filled.Tv,
-                            contentDescription = null
-                        )
-                    }
-                },
+                expanded = false,
+                onExpandedChange = { },
                 windowInsets = WindowInsets(12.dp),
-                placeholder = {
-                    Text(stringResource(id = R.string.search))
-                },
-                trailingIcon = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        AnimatedVisibility(visible = query.isNotEmpty()) {
-                            IconButton(onClick = { changeQuery("") }) {
+                inputField = {
+                    SearchBarDefaults.InputField(query, changeQuery, changeQuery, searchActive,
+                        onExpandedChange = { searchActive = it },
+                        placeholder = {
+                            Text(stringResource(id = R.string.search))
+                        },
+                        leadingIcon = {
+                            IconButton(onClick = changePagingItems) {
                                 Icon(
-                                    imageVector = Icons.Filled.Clear,
+                                    imageVector = if (state.movies) Icons.Filled.Movie else Icons.Filled.Tv,
                                     contentDescription = null
                                 )
                             }
+                        },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                AnimatedVisibility(visible = query.isNotEmpty()) {
+                                    IconButton(onClick = { changeQuery("") }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Clear,
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
+                                IconButton(onClick = { changeQuery(query) }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Search,
+                                        contentDescription = stringResource(id = R.string.search)
+                                    )
+                                }
+                            }
                         }
-                        IconButton(onClick = { changeQuery(query) }) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = stringResource(id = R.string.search)
-                            )
-                        }
-                    }
+                    )
                 },
-                active = searchActive,
-                onActiveChange = { searchActive = it }
             ) {
                 PagingListing(
                     content = contentPagingItems,
@@ -266,7 +270,7 @@ private fun SuccessScreenContent(
                     .fillMaxWidth()
                     .weight(1f)
             ) {
-                when(ListAddCategory.entries[it]) {
+                when (ListAddCategory.entries[it]) {
                     ListAddCategory.Suggested -> {
                         CategoryListing(
                             title = "Suggested",
@@ -277,6 +281,7 @@ private fun SuccessScreenContent(
                             onAddClick = onAddClick
                         )
                     }
+
                     ListAddCategory.Favorites -> {
                         CategoryListing(
                             title = "Favorites",
@@ -352,7 +357,7 @@ private fun PagingListing(
     onLongClick: (ContentItem) -> Unit,
     onAddClick: (ContentItem) -> Unit,
 ) {
-    if(content.itemCount == 0) {
+    if (content.itemCount == 0) {
         Surface(
             color = MaterialTheme.colorScheme.surfaceColorAtElevation(3.dp),
             modifier = Modifier
@@ -363,7 +368,8 @@ private fun PagingListing(
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally) {
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = "Find content to add to your list",
                     style = MaterialTheme.typography.titleMedium,
