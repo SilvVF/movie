@@ -25,7 +25,7 @@ import io.silv.movie.data.supabase.model.comment.CommentWithUser
 import io.silv.movie.data.supabase.model.comment.PagedComment
 import io.silv.movie.data.supabase.model.comment.ReplyWithUser
 import io.silv.movie.data.supabase.CommentPagingSource
-import io.silv.movie.data.supabase.CommentsRepository
+import io.silv.movie.data.supabase.CommentRepository
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.ObsoleteCoroutinesApi
@@ -47,6 +47,8 @@ import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import kotlin.time.Duration.Companion.minutes
+import io.silv.movie.data.supabase.UserRepository
+import io.silv.movie.data.supabase.ContentType
 
 @Immutable
 @Stable
@@ -83,9 +85,8 @@ sealed interface CommentEvent {
 fun ContentScreen.getCommentsScreenModel() = koin4ScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
 
 class CommentsScreenModel(
-    private val postgrest: Postgrest,
-    private val auth: Auth,
-    private val commentsRepository: CommentsRepository,
+    private val userRepository: UserRepository,
+    private val commentsRepository: CommentRepository,
     val contentId: Long,
     val isMovie: Boolean,
 ):
@@ -140,13 +141,7 @@ class CommentsScreenModel(
                 config = PagingConfig(30)
             ) {
                 likedComments.clear()
-                CommentPagingSource(
-                    postgrest,
-                    pagedType,
-                    movieId,
-                    showId,
-                    auth.currentUserOrNull()?.id ?: ""
-                )
+                commentsRepository.pagingSource(pagedType, contentId, if (isMovie) ContentType.Movie else ContentType.Show)
                     .also { pagingSource = it }
             }
                 .flow.map { data ->
@@ -215,7 +210,7 @@ class CommentsScreenModel(
         }
 
         screenModelScope.launch {
-            if (auth.currentUserOrNull() == null) {
+            if (userRepository.currentUser.value == null) {
                 mutableState.update { state -> state.copy(sendError = SendError.NotSignedIn) }
                 return@launch
             }
@@ -239,7 +234,7 @@ class CommentsScreenModel(
 
     private fun sendReply(text: String, pagedComment: PagedComment) {
         screenModelScope.launch {
-            if (auth.currentUserOrNull() == null) {
+            if (userRepository.currentUser.value == null) {
                 mutableState.update { state -> state.copy(sendError = SendError.NotSignedIn) }
                 return@launch
             }

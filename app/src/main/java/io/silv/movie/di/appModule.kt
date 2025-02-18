@@ -51,7 +51,6 @@ import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.prefrences.core.DatastorePreferenceStore
 import io.silv.movie.prefrences.core.PreferenceStore
 import io.silv.movie.data.ListUpdateManager
-import io.silv.movie.data.supabase.CommentsRepository
 import io.silv.movie.data.supabase.ListRepository
 import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.data.supabase.BackendRepositoryImpl
@@ -62,15 +61,14 @@ import io.silv.movie.data.workers.UserListUpdateWorker
 import io.silv.movie.data.local.ContentListRepository
 import io.silv.movie.data.local.ContentListRepositoryImpl
 import io.silv.movie.data.RecommendationManager
-import io.silv.movie.data.DeleteContentList
 import io.silv.movie.data.EditContentList
 import io.silv.movie.database.DBAdapters.listIntAdapter
 import io.silv.movie.database.DBAdapters.listStringAdapter
 import io.silv.movie.database.DatabaseHandlerImpl
-import io.silv.movie.network.service.tmdb.TMDBMovieService
-import io.silv.movie.network.service.tmdb.TMDBPersonService
-import io.silv.movie.network.service.tmdb.TMDBRecommendationService
-import io.silv.movie.network.service.tmdb.TMDBTVShowService
+import io.silv.movie.api.service.tmdb.TMDBMovieService
+import io.silv.movie.api.service.tmdb.TMDBPersonService
+import io.silv.movie.api.service.tmdb.TMDBRecommendationService
+import io.silv.movie.api.service.tmdb.TMDBTVShowService
 import io.silv.movie.presentation.covers.ImageSaver
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -96,9 +94,11 @@ import io.silv.movie.core.MB
 import io.silv.movie.core.toBytes
 import io.silv.movie.data.supabase.UserRepository
 import io.silv.movie.database.DatabaseHandler
-import io.silv.movie.network.ratelimit.rateLimit
-import io.silv.movie.network.service.piped.PipedApi
-import io.silv.movie.network.service.tmdb.TMDBAuthInterceptor
+import io.silv.movie.api.ratelimit.rateLimit
+import io.silv.movie.api.service.piped.PipedApi
+import io.silv.movie.api.service.tmdb.TMDBAuthInterceptor
+import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.supabase.CommentRepository
 import io.silv.movie.presentation.components.profile.ProfileScreenModel
 import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
@@ -184,6 +184,12 @@ val appModule = module {
         qualifier<MainDispatcher>()
     }
 
+    factory<DeleteContentList> {
+        DeleteContentList.create(
+            get(),get(), get(), get()
+        )
+    }
+
     factoryOf(::SourceTrailerRepository)
 
     singleOf(::CreditRepositoryImpl) { bind<CreditRepository>() }
@@ -219,8 +225,7 @@ val appModule = module {
     singleOf(::BackendRepositoryImpl) { bind<BackendRepository>() }
     single<ListRepository> { get<BackendRepository>() }
     single<UserRepository> { get<BackendRepository>() }
-
-    singleOf(::CommentsRepository)
+    single<CommentRepository> {  get<BackendRepository>() }
 
     singleOf(::UiPreferences)
 
@@ -234,9 +239,7 @@ val appModule = module {
 
     singleOf(::ListUpdateManager)
 
-    factoryOf(::EditContentList)
-
-    factoryOf(::DeleteContentList)
+    factory { EditContentList.create(get(), get(), get()) }
 
     singleOf(::RecommendationManager)
 
@@ -330,6 +333,8 @@ val appModule = module {
             OkHttpClient.Builder()
                 .cache(get())
                 .build(),
+            get(),
+            get(),
             get()
         )
     }

@@ -6,8 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.jan.supabase.auth.Auth
-import io.silv.movie.data.DeleteContentList
 import io.silv.movie.data.EditContentList
+import io.silv.movie.data.DeleteContentList
 import io.silv.movie.data.local.ContentListRepository
 import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.network.NetworkContentDelegate
@@ -25,11 +25,11 @@ class MainViewModel(
     movieCoverCache: MovieCoverCache,
     tvShowCoverCache: TVShowCoverCache,
     editContentList: EditContentList,
+    deleteContentList: DeleteContentList,
     contentListRepository: ContentListRepository,
     local: LocalContentDelegate,
     network: NetworkContentDelegate,
     backendRepository: BackendRepository,
-    deleteContentList: DeleteContentList,
     listUpdateManager: ListUpdateManager,
     auth: Auth
 ): ViewModel() {

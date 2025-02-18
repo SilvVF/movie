@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 
 /**
@@ -84,10 +85,10 @@ sealed class DataStorePreference<T>(
     }
 
     override fun stateIn(scope: CoroutineScope): StateFlow<T> {
-        return changes().stateIn(
+        return changes().onStart { emit(get()) }.stateIn(
             scope,
             SharingStarted.Eagerly,
-            getOrDefaultBlocking()
+            defaultValue
         )
     }
 

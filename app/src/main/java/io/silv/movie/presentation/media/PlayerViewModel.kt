@@ -19,9 +19,9 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import io.silv.movie.data.model.Trailer
 import io.silv.movie.data.local.TrailerRepository
-import io.silv.movie.network.model.Streams
-import io.silv.movie.network.model.Subtitle
-import io.silv.movie.network.service.piped.PipedApi
+import io.silv.movie.api.model.Streams
+import io.silv.movie.api.model.Subtitle
+import io.silv.movie.api.service.piped.PipedApi
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.media.components.CollapsableVideoState
 import io.silv.movie.presentation.media.util.PlayerHelper
@@ -78,7 +78,7 @@ class PlayerViewModel(
                         return@collectLatest
 
                     trailerToStreams = null
-                    trailerToStreams = trailer to runCatching { pipedApi.getStreams(trailer.key) }
+                    trailerToStreams = trailer to pipedApi.getStreams(trailer.key)
                         .fold(
                             onFailure = {
                                 Timber.e(it)

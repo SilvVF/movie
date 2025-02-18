@@ -1,6 +1,7 @@
 package io.silv.movie
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -79,7 +80,6 @@ import io.silv.core_ui.theme.colorScheme.TealTurqoiseColorScheme
 import io.silv.core_ui.theme.colorScheme.TidalWaveColorScheme
 import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
 import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
-import io.silv.core_ui.voyager.ScreenResultsStoreProxy
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.model.Trailer
 import io.silv.movie.prefrences.AppTheme
@@ -105,17 +105,15 @@ import io.silv.movie.presentation.tabs.DiscoverTab
 import io.silv.movie.presentation.tabs.LibraryTab
 import io.silv.movie.presentation.tabs.ProfileTab
 import io.silv.movie.presentation.tabs.SettingsTab
-import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
-import org.koin.androidx.viewmodel.ext.android.getViewModel
+import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Local
 
 
 class MainActivity : ComponentActivity() {
@@ -123,6 +121,8 @@ class MainActivity : ComponentActivity() {
     private val backendRepository by inject<BackendRepository>()
     private val mainViewModel by viewModel<MainViewModel>()
     private val uiPreferences by inject<UiPreferences>()
+
+    private val screenResultsViewModel by viewModel<ScreenResultsViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -132,14 +132,14 @@ class MainActivity : ComponentActivity() {
 
         val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope, lifecycle)
 
+        screenResultsViewModel.bind()
+
         splashScreen.setKeepOnScreenCondition {
             when (appStateProvider.state.value) {
                 AppStateProvider.State.Loading -> true
                 is AppStateProvider.State.Success -> false
             }
         }
-
-        ScreenResultsStoreProxy.screenResultModel = getViewModel<ScreenResultsViewModel>()
 
         setContent {
             KoinAndroidContext {

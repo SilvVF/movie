@@ -6,11 +6,10 @@ import io.silv.movie.core.await
 import io.silv.movie.core.suspendRunCatching
 import io.silv.movie.data.local.TrailerRepository
 import io.silv.movie.data.model.Trailer
-import io.silv.movie.network.model.toSTrailer
-import io.silv.movie.network.service.tmdb.TMDBMovieService
-import io.silv.movie.network.service.tmdb.TMDBTVShowService
+import io.silv.movie.api.model.toSTrailer
+import io.silv.movie.api.service.tmdb.TMDBMovieService
+import io.silv.movie.api.service.tmdb.TMDBTVShowService
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SettingsApplications
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,7 @@ import io.silv.movie.MovieTheme
 import io.silv.movie.R
 import io.silv.movie.isDarkTheme
 import io.silv.movie.presentation.settings.screens.SettingsAppearanceScreen
+import io.silv.movie.presentation.settings.screens.SettingsBaseScreen
 import io.silv.movie.presentation.settings.screens.SettingsSearchScreen
 import io.silv.movie.presentation.settings.screens.SettingsStorageeScreen
 import io.silv.movie.presentation.settings.widgets.TextPreferenceWidget
@@ -127,5 +129,11 @@ data object SettingsMainScreen : Screen {
             icon = Icons.Outlined.Storage,
             screen = SettingsStorageeScreen,
         ),
+        Item(
+            titleRes = R.string.pref_category_base,
+            subtitleRes = R.string.pref_category_theme,
+            icon = Icons.Outlined.SettingsApplications,
+            screen = SettingsBaseScreen
+        )
     )
 }

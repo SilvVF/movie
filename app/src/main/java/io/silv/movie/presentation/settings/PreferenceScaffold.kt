@@ -25,7 +25,7 @@ import io.silv.movie.AppState
 import io.silv.movie.isDarkTheme
 import io.silv.movie.prefrences.ThemeMode
 import io.silv.movie.presentation.LocalAppState
-import io.silv.movie.presentation.collectAsStateOrNull
+import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.settings.widgets.EditTextPreferenceWidget
 import io.silv.movie.presentation.settings.widgets.FloatSliderItem
 import io.silv.movie.presentation.settings.widgets.InfoWidget
@@ -106,7 +106,7 @@ internal fun PreferenceItem(
     ) {
         when (item) {
             is Preference.PreferenceItem.SwitchPreference -> {
-                val value by item.pref.collectAsStateOrNull()
+                val value by item.pref.collectAsState()
                 value?.let {
                     SwitchPreferenceWidget(
                         title = item.title,
@@ -124,7 +124,7 @@ internal fun PreferenceItem(
                 } ?: SwitchPreferenceWidgetPlaceholder()
             }
             is Preference.PreferenceItem.SliderPreference -> {
-                val pref by item.pref.collectAsStateOrNull()
+                val pref by item.pref.collectAsState()
                 pref?.let {
                     SliderItem(
                         label = item.title,
@@ -141,7 +141,7 @@ internal fun PreferenceItem(
                 }
             }
             is Preference.PreferenceItem.ListPreference<*> -> {
-                val itemValue by item.pref.collectAsStateOrNull()
+                val itemValue by item.pref.collectAsState()
                 itemValue?.let {
                     ListPreferenceWidget(
                         value = itemValue,
@@ -174,7 +174,7 @@ internal fun PreferenceItem(
                 )
             }
             is Preference.PreferenceItem.MultiSelectListPreference -> {
-                val values by item.pref.collectAsStateOrNull()
+                val values by item.pref.collectAsState()
                 values?.let {
                     MultiSelectListPreferenceWidget(
                         preference = item,
@@ -202,7 +202,7 @@ internal fun PreferenceItem(
                 )
             }
             is Preference.PreferenceItem.EditTextPreference -> {
-                val values by item.pref.collectAsStateOrNull()
+                val values by item.pref.collectAsState()
                 values?.let { value ->
                     EditTextPreferenceWidget(
                         title = item.title,
@@ -222,7 +222,7 @@ internal fun PreferenceItem(
                 )
             }
             is Preference.PreferenceItem.MultiLineEditTextPreference -> {
-                val values by item.pref.collectAsStateOrNull()
+                val values by item.pref.collectAsState()
                 values?.let { value ->
                     EditTextPreferenceWidget(
                         title = item.title,
@@ -250,7 +250,7 @@ internal fun PreferenceItem(
             }
 
             is Preference.PreferenceItem.FloatSliderPreference -> {
-                val pref by item.pref.collectAsStateOrNull()
+                val pref by item.pref.collectAsState()
                 pref?.let { p ->
                     FloatSliderItem(
                         label = item.title,

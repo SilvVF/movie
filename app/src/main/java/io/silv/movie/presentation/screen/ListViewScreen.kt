@@ -95,6 +95,7 @@ import io.silv.movie.prefrences.ThemeMode.DARK
 import io.silv.movie.prefrences.ThemeMode.LIGHT
 import io.silv.movie.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.supabase.model.User
+import io.silv.movie.isDarkTheme
 import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalAppState
@@ -212,11 +213,7 @@ data class ListViewScreen(
                 SeededMaterialTheme(
                     fallback = MaterialTheme.colorScheme,
                     seedColor = primary.takeIf { it != Color.Transparent },
-                    darkTheme = when (LocalAppState.current.themeMode) {
-                        LIGHT -> false
-                        DARK -> true
-                        SYSTEM -> isSystemInDarkTheme()
-                    }
+                    darkTheme = isDarkTheme()
                 ) {
                     val user = LocalUser.current
                     val isOwnerMe by remember(user, s.list.createdBy) {

@@ -1,5 +1,13 @@
 package io.silv.movie.core
 
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import java.io.Serializable
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -63,4 +71,24 @@ fun <T, R> Iterable<T>.filterUniqueBy(selector: (T) -> R): List<T> {
             }
         }
     }
+}
+
+suspend fun <A, B> List<A>.pmapSupervised(f: suspend (A) -> B) = supervisorScope {
+
+    val jobs = mutableListOf<Job>()
+    val new = MutableList<B?>(this@pmapSupervised.size) { null }
+
+    forEachIndexed { i, value ->
+        val job = launch {
+            suspendRunCatching { f(value) }
+                .onSuccess {
+                    new[i] = it
+                }
+        }
+        jobs.add(job)
+    }
+
+    jobs.joinAll()
+
+    new.toList().filterNotNull()
 }

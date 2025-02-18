@@ -215,8 +215,8 @@ private fun SuccessScreenContent(
                         label = "search-padding"
                     ).value
                 ),
-                expanded = false,
-                onExpandedChange = { },
+                expanded = searchActive,
+                onExpandedChange = { searchActive = it },
                 windowInsets = WindowInsets(12.dp),
                 inputField = {
                     SearchBarDefaults.InputField(query, changeQuery, changeQuery, searchActive,

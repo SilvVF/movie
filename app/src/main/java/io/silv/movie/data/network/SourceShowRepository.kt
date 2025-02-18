@@ -8,8 +8,8 @@ import io.silv.movie.core.await
 import io.silv.movie.core.suspendRunCatching
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.Filters
-import io.silv.movie.network.service.tmdb.TMDBConstants
-import io.silv.movie.network.service.tmdb.TMDBTVShowService
+import io.silv.movie.api.service.tmdb.TMDBConstants
+import io.silv.movie.api.service.tmdb.TMDBTVShowService
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 

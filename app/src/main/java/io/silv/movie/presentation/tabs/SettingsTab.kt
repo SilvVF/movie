@@ -18,6 +18,7 @@ import io.silv.movie.presentation.settings.SettingsMainScreen
 import kotlinx.coroutines.flow.receiveAsFlow
 
 data object SettingsTab: SharedTransitionTab() {
+    private fun readResolve(): Any = SettingsTab
 
     override val options: TabOptions
         @Composable get() = TabOptions(

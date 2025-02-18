@@ -30,6 +30,8 @@ class BasePreferences(
         deserializer = User::deserialize
     )
 
+    fun pipedUrl() = settings.getString("piped_url", "https://api.piped.yt")
+
     fun recentEmojis() = settings.getStringSet(
         "recent_emojis",
         defaultValue = setOf(

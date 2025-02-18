@@ -10,10 +10,10 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import io.github.jan.supabase.auth.Auth
 import io.silv.core_ui.voyager.ioCoroutineScope
 import io.silv.movie.core.suspendRunCatching
+import io.silv.movie.data.DeleteContentList
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.RecommendationManager
-import io.silv.movie.data.DeleteContentList
 import io.silv.movie.data.local.ContentListRepository
 import io.silv.movie.prefrences.BasePreferences
 import io.silv.movie.prefrences.BasePreferences.Companion.addToRecentlyViewed
@@ -22,6 +22,7 @@ import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.data.ListUpdateManager
 import io.silv.movie.data.supabase.model.User
 import io.silv.movie.data.supabase.BackendRepository
+import io.silv.movie.data.supabase.ListRepository
 import io.silv.movie.presentation.EventProducer
 import io.silv.movie.presentation.asState
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
@@ -45,13 +46,15 @@ import timber.log.Timber
 
 class ListViewScreenModel(
     private val contentListRepository: ContentListRepository,
+    private val listRepository: ListRepository,
+
     private val recommendationManager: RecommendationManager,
-    private val deleteContentList: DeleteContentList,
     private val backendRepository: BackendRepository,
     private val listUpdateManager: ListUpdateManager,
     private val movieCoverCache: MovieCoverCache,
     private val showCoverCache: TVShowCoverCache,
     private val auth: Auth,
+    private val deleteContentList: DeleteContentList,
     basePreferences: BasePreferences,
     libraryPreferences: LibraryPreferences,
 
@@ -59,7 +62,6 @@ class ListViewScreenModel(
     private val supabaseId: String,
 ): StateScreenModel<ListViewState>(ListViewState.Loading),
     EventProducer<ListViewEvent> by EventProducer.default() {
-
     private val listSortMode = libraryPreferences.listViewSortMode()
 
     var query by mutableStateOf("")
@@ -241,7 +243,7 @@ class ListViewScreenModel(
     fun deleteList() {
         screenModelScope.launch {
             val state = state.value.success ?: return@launch
-            deleteContentList.await(state.list, movieCoverCache, showCoverCache)
+            deleteContentList(state.list, movieCoverCache, showCoverCache)
                 .onFailure {
                     emitEvent(ListViewEvent.FailedToRemoveListFromNetwork)
                 }

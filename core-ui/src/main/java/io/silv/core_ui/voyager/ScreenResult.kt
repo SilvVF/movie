@@ -25,9 +25,8 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
 
-
 @Composable
-inline fun <reified T: ScreenResult> rememberScreenResult(
+inline fun <reified T : ScreenResult> rememberScreenResult(
     resultKey: ScreenKey
 ): State<T?> {
     val screenResult = remember { mutableStateOf<T?>(null) }
@@ -45,11 +44,11 @@ inline fun <reified T: ScreenResult> rememberScreenResult(
 }
 
 @Composable
-inline fun <S, reified R: ScreenResult> rememberScreenWithResultLauncher(
+inline fun <S, reified R : ScreenResult> rememberScreenWithResultLauncher(
     screen: S,
     navigator: Navigator = LocalNavigator.currentOrThrow,
-    noinline  onResult: (R) -> Unit = {}
-): ScreenWithResultLauncher<S, R> where  S: Screen, S: ScreenWithResult<R> {
+    noinline onResult: (R) -> Unit = {}
+): ScreenWithResultLauncher<S, R> where  S : Screen, S : ScreenWithResult<R> {
 
     val screenResultLauncher = remember(screen, navigator) {
         ScreenWithResultLauncher(
@@ -68,25 +67,41 @@ inline fun <S, reified R: ScreenResult> rememberScreenWithResultLauncher(
 
 class ScreenResultsViewModel(
     private val state: SavedStateHandle
-): ViewModel() {
+) : ViewModel() {
 
-    val screenResults = MutableStateFlow(
+    fun bind() {
+        ScreenResultsStoreProxy.screenResultModel = this
+    }
+
+    internal val screenResults = MutableStateFlow(
         state.get<Map<ScreenKey, ScreenResult>>(SCREEN_RESULTS_SAVEDSTATE_KEY).orEmpty()
     )
 
-    private val callbacks = ConcurrentHashMap<ScreenKey, (ScreenResult) -> Unit>()
+    private val callbacks = mutableMapOf<ScreenKey, (ScreenResult) -> Unit>()
 
-    fun registerCallback(
+    @Synchronized
+    internal fun registerCallback(
         key: ScreenKey,
         onResult: (ScreenResult) -> Unit
     ) {
         callbacks[key] = onResult
     }
 
+    @Synchronized
+    internal fun unregisterCallback(
+        key: ScreenKey,
+        onResult: (ScreenResult) -> Unit
+    ) {
+        if (callbacks[key] == onResult) {
+            callbacks.remove(key)
+        }
+    }
 
-    fun <T: ScreenResult> setResult(screenResultSourceKey: ScreenKey, result: T) {
 
-        val callback  = callbacks.remove(screenResultSourceKey)
+    @Synchronized
+    internal fun <T : ScreenResult> setResult(screenResultSourceKey: ScreenKey, result: T) {
+
+        val callback = callbacks.remove(screenResultSourceKey)
         callback?.invoke(result)
 
         Log.d("d", "Callback $callback")
@@ -98,7 +113,8 @@ class ScreenResultsViewModel(
         }
     }
 
-    fun removeResult(screenResultSourceKey: ScreenKey) {
+    @Synchronized
+    internal fun removeResult(screenResultSourceKey: ScreenKey) {
         screenResults.update { results ->
             results.toMutableMap().apply {
                 this.remove(screenResultSourceKey)
@@ -112,39 +128,47 @@ class ScreenResultsViewModel(
     }
 }
 
+fun triggerOnScreenResultEffect(key: ScreenKey, callback: (ScreenResult) -> Unit) {
+    ScreenResultsStoreProxy.screenResultModel.registerCallback(key, callback)
+}
+
+fun disposeOnScreenResultEffect(key: ScreenKey, callback: (ScreenResult) -> Unit) {
+    ScreenResultsStoreProxy.screenResultModel.unregisterCallback(key, callback)
+}
+
 @Composable
 inline fun <reified R: ScreenResult> TriggerOnScreenResultEffect(
     key: ScreenKey,
-    noinline  onResult: (R) -> Unit = {}
+    noinline onResult: (R) -> Unit = {}
 ) {
     val resultCall by rememberUpdatedState(newValue = onResult)
 
     DisposableEffectIgnoringConfiguration(key) {
-        ScreenResultsStoreProxy.screenResultModel.registerCallback(key) { screenResult ->
-            val res = screenResult as? R
-            if (res != null) {
-                resultCall(res)
-            }
+        triggerOnScreenResultEffect(key) { result ->
+            (result as R?)?.let(resultCall)
         }
-        onDispose {}
+        onDispose {
+            @Suppress("UNCHECKED_CAST")
+            disposeOnScreenResultEffect(key, (resultCall as? (ScreenResult) -> Unit) ?: {})
+        }
     }
 }
 
-object ScreenResultsStoreProxy {
+private object ScreenResultsStoreProxy {
 
     lateinit var screenResultModel: ScreenResultsViewModel
 
-    fun <T: ScreenResult> setResult(screenResultSourceKey: ScreenKey, result: T) =
+    fun <T : ScreenResult> setResult(screenResultSourceKey: ScreenKey, result: T) =
         screenResultModel.setResult(screenResultSourceKey, result)
 
     fun removeResult(screenResultSourceKey: ScreenKey) =
         screenResultModel.removeResult(screenResultSourceKey)
 }
 
-class ScreenWithResultLauncher<S, R: ScreenResult>(
+class ScreenWithResultLauncher<S, R : ScreenResult>(
     val screen: S,
     private val navigator: Navigator,
-) where S: Screen, S: ScreenWithResult<R> {
+) where S : Screen, S : ScreenWithResult<R> {
 
     fun launch() {
         screen.clearScreenResult()
@@ -152,18 +176,18 @@ class ScreenWithResultLauncher<S, R: ScreenResult>(
     }
 }
 
-fun <T: ScreenResult> ScreenWithResult<T>.setScreenResult(
+fun <T : ScreenResult> ScreenWithResult<T>.setScreenResult(
     result: T,
     screenResultSourceKey: ScreenKey = key
 ) = ScreenResultsStoreProxy.setResult(screenResultSourceKey, result)
 
-fun <T: ScreenResult> ScreenWithResult<T>.clearScreenResult(
+fun <T : ScreenResult> ScreenWithResult<T>.clearScreenResult(
     screenResultSourceKey: ScreenKey = key
 ) = ScreenResultsStoreProxy.removeResult(screenResultSourceKey)
 
-interface ScreenResult: Parcelable
+interface ScreenResult : Parcelable
 
-interface ScreenWithResult <T: ScreenResult>: Screen
+interface ScreenWithResult<T : ScreenResult> : Screen
 
 val screenResults: StateFlow<Map<ScreenKey, ScreenResult>>
     get() = ScreenResultsStoreProxy.screenResultModel.screenResults

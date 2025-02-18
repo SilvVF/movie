@@ -18,7 +18,7 @@ import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.RecommendationManager
 import io.silv.movie.data.local.ContentListRepository
-import io.silv.movie.data.local.GetContentPagerFlow
+import io.silv.movie.data.GetContentPagerFlow
 import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.network.NetworkContentDelegate
 import io.silv.movie.data.supabase.ContentType
@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -118,7 +117,7 @@ class ListAddScreenModel(
             }
             .launchIn(screenModelScope)
 
-        contentListRepository.observeListItemsByListId(listId, "", ListSortMode.RecentlyAdded(true))
+        contentListRepository.observeListItemsByListId(listId)
             .onEach { content ->
                 mutableState.updateSuccess { state ->
                     state.copy(listItems = content)

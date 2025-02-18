@@ -8,11 +8,11 @@ import kotlinx.coroutines.withContext
 import io.silv.movie.core.await
 import io.silv.movie.data.model.Filters
 import io.silv.movie.data.model.GenreMode
-import io.silv.movie.network.model.toSMovie
-import io.silv.movie.network.service.tmdb.TMDBConstants
-import io.silv.movie.network.service.tmdb.TMDBConstants.JOIN_MODE_MASK_AND
-import io.silv.movie.network.service.tmdb.TMDBConstants.JOIN_MODE_MASK_OR
-import io.silv.movie.network.service.tmdb.TMDBMovieService
+import io.silv.movie.api.model.toSMovie
+import io.silv.movie.api.service.tmdb.TMDBConstants
+import io.silv.movie.api.service.tmdb.TMDBConstants.JOIN_MODE_MASK_AND
+import io.silv.movie.api.service.tmdb.TMDBConstants.JOIN_MODE_MASK_OR
+import io.silv.movie.api.service.tmdb.TMDBMovieService
 
 
 data class MoviesPage(val movies: List<SMovie>, val hasNextPage: Boolean)

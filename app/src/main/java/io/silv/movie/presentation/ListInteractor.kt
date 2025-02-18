@@ -2,8 +2,8 @@ package io.silv.movie.presentation
 
 import androidx.compose.runtime.Stable
 import io.github.jan.supabase.auth.Auth
-import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.EditContentList
 import io.silv.movie.data.local.ContentListRepository
 import io.silv.movie.data.model.toUpdate
@@ -84,7 +84,7 @@ private class DefaultListInteractor(
 
     override fun deleteList(contentList: ContentList) {
         scope.launch(Dispatchers.IO) {
-            deleteContentList.await(contentList, movieCoverCache, showCoverCache)
+            deleteContentList(contentList, movieCoverCache, showCoverCache)
                 .onSuccess { emitEvent(Delete(contentList, true)) }
                 .onFailure { emitEvent(Delete(contentList, false)) }
         }
@@ -93,7 +93,7 @@ private class DefaultListInteractor(
     override fun toggleListVisibility(contentList: ContentList) {
         scope.launch(Dispatchers.IO) {
             runCatching {
-                editContentList.await(contentList) {
+                editContentList(contentList) {
                     it.copy(public = !it.public)
                 }
                     .getOrThrow()
@@ -151,7 +151,7 @@ private class DefaultListInteractor(
 
     override fun editList(contentList: ContentList, update: (ContentList) -> ContentList) {
         scope.launch(Dispatchers.IO) {
-            editContentList.await(contentList, update)
+            editContentList(contentList, update)
                 .onSuccess { Edited(contentList, it, true) }
                 .onFailure { Edited(contentList, update(contentList), false) }
         }
@@ -171,7 +171,7 @@ private class DefaultListInteractor(
                     network.subscribeToList(list.supabaseId!!)
                 }
 
-                editContentList.await(list) {
+                editContentList(list) {
                     it.copy(inLibrary = true)
                 }
 
@@ -192,7 +192,7 @@ private class DefaultListInteractor(
 
                 network.unsubscribeFromList(contentList.supabaseId!!)
 
-                editContentList.await(contentList) {
+                editContentList(contentList) {
                     it.copy(inLibrary = false)
                 }
 

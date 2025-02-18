@@ -13,7 +13,7 @@ class CommentPagingSource(
     private val pagedType: CommentsPagedType,
     private val movieId: Long,
     private val showId: Long,
-    private val userId: String,
+    private val userId: String?,
 ): PagingSource<Int, PagedComment>() {
 
     override fun getRefreshKey(state: PagingState<Int, PagedComment>): Int? {
@@ -30,7 +30,7 @@ class CommentPagingSource(
             val limit = params.loadSize
 
             val result = postgrest.selectCommentsForContent(
-                userId, movieId, showId, offset, limit,
+                userId ?: "", movieId, showId, offset, limit,
                 order = when(pagedType) {
                     CommentsPagedType.Newest -> SupabaseConstants.CommentsOrder.Newest
                     CommentsPagedType.Top -> SupabaseConstants.CommentsOrder.Top

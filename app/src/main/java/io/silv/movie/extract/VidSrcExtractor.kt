@@ -1,8 +1,8 @@
 package io.silv.movie.extract
 
 import android.util.Base64
-import io.silv.movie.network.GET
-import io.silv.movie.network.parseAs
+import io.silv.movie.api.GET
+import io.silv.movie.api.parseAs
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.Headers

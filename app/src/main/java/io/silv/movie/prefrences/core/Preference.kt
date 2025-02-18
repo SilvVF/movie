@@ -70,12 +70,6 @@ inline fun <reified T : Enum<T>> PreferenceStore.getEnum(
     )
 }
 
-fun <T> Preference<T>.getOrDefaultBlocking(): T {
-    return runBlocking(Dispatchers.IO) {
-        withTimeoutOrNull(50) { get() } ?: defaultValue()
-    }
-}
-
 suspend inline fun <reified T, R : T> Preference<T>.getAndSet(crossinline block: (T) -> R) = set(
     block(get()),
 )

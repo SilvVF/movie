@@ -21,9 +21,9 @@ import io.silv.movie.data.model.toDomain
 import io.silv.movie.data.local.networkToLocalMovie
 import io.silv.movie.data.local.networkToLocalShow
 import io.silv.movie.database.DatabaseHandler
-import io.silv.movie.network.model.toSMovie
-import io.silv.movie.network.model.toSShow
-import io.silv.movie.network.service.tmdb.TMDBRecommendationService
+import io.silv.movie.api.model.toSMovie
+import io.silv.movie.api.model.toSShow
+import io.silv.movie.api.service.tmdb.TMDBRecommendationService
 
 import timber.log.Timber
 import kotlin.math.ceil

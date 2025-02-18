@@ -17,7 +17,7 @@ interface ContentListRepository {
     fun observeLibraryItems(query: String): Flow<List<Pair<ContentList, List<ContentItem>>>>
     fun observeListCount(): Flow<Long>
     fun observeListById(id: Long): Flow<ContentList?>
-    fun observeListItemsByListId(id: Long, query: String, sortMode: ListSortMode): Flow<List<ContentItem>>
+    fun observeListItemsByListId(id: Long, query: String = "", sortMode: ListSortMode = ListSortMode.RecentlyAdded(true)): Flow<List<ContentItem>>
     fun observeFavorites(query: String, sortMode: FavoritesSortMode): Flow<List<ContentItem>>
     suspend fun deleteList(contentList: ContentList)
     suspend fun getList(id: Long): ContentList?

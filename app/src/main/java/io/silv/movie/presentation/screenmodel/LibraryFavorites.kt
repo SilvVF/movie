@@ -14,7 +14,6 @@ import io.silv.movie.prefrences.LibraryPreferences
 import io.silv.movie.prefrences.PosterDisplayMode
 import io.silv.movie.data.local.ContentListRepository
 import io.silv.movie.data.ListUpdateManager
-import io.silv.movie.prefrences.core.getOrDefaultBlocking
 import io.silv.movie.presentation.asState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -64,7 +63,7 @@ class FavoritesScreenModel(
         .stateIn(
             screenModelScope,
             SharingStarted.WhileSubscribed(5_000L),
-            FavoritesListState(sortModeFavorites.getOrDefaultBlocking())
+            FavoritesListState(sortModeFavorites.defaultValue())
         )
 
     fun setSortMode(sortMode: FavoritesSortMode) {

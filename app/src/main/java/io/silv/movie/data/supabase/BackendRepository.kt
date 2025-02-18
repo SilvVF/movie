@@ -1,12 +1,13 @@
 package io.silv.movie.data.supabase
 
-import app.cash.molecule.launchMolecule
+import androidx.paging.PagingSource
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
 import io.silv.movie.IoDispatcher
 import io.silv.movie.core.NetworkMonitor
@@ -16,16 +17,25 @@ import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.model.ListWithPostersRpcResponse
 import io.silv.movie.data.model.Movie
 import io.silv.movie.data.model.TVShow
+import io.silv.movie.data.supabase.SupabaseConstants.CLIKES
+import io.silv.movie.data.supabase.SupabaseConstants.COMMENT
 import io.silv.movie.data.supabase.SupabaseConstants.FAVORITE_MOVIES
 import io.silv.movie.data.supabase.SupabaseConstants.LIST_ITEM
+import io.silv.movie.data.supabase.SupabaseConstants.REPLY
 import io.silv.movie.data.supabase.SupabaseConstants.RPC.moreFromSubscribed
 import io.silv.movie.data.supabase.SupabaseConstants.RPC.subscribedListWithItems
 import io.silv.movie.data.supabase.SupabaseConstants.SUBSCRIPTION
+import io.silv.movie.data.supabase.SupabaseConstants.USERS
 import io.silv.movie.data.supabase.SupabaseConstants.USER_LIST
 import io.silv.movie.data.supabase.model.FavoriteMovie
 import io.silv.movie.data.supabase.model.FavoriteMovieInsert
-import io.silv.movie.prefrences.BasePreferences
 import io.silv.movie.data.supabase.model.User
+import io.silv.movie.data.supabase.model.comment.CLike
+import io.silv.movie.data.supabase.model.comment.CommentWithUser
+import io.silv.movie.data.supabase.model.comment.PagedComment
+import io.silv.movie.data.supabase.model.comment.ReplyWithUser
+import io.silv.movie.data.supabase.model.comment.SendComment
+import io.silv.movie.data.supabase.model.comment.SendReply
 import io.silv.movie.data.supabase.model.list.ListItem
 import io.silv.movie.data.supabase.model.list.ListWithItems
 import io.silv.movie.data.supabase.model.list.UserList
@@ -33,18 +43,17 @@ import io.silv.movie.data.supabase.model.list.UserListUpdate
 import io.silv.movie.data.supabase.model.subscription.Subscription
 import io.silv.movie.data.supabase.model.subscription.SubscriptionWithItem
 import io.silv.movie.data.supabase.model.toListWithItems
+import io.silv.movie.prefrences.BasePreferences
+import io.silv.movie.presentation.screenmodel.CommentsPagedType
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOn
@@ -57,7 +66,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-
 import timber.log.Timber
 import java.util.UUID
 
@@ -70,6 +78,29 @@ interface UserRepository {
     suspend fun registerWithEmailAndPassword(email: String, password: String): Boolean
     suspend fun signInWithEmailAndPassword(email: String, password: String): Boolean
     suspend fun resetPassword(email: String): Boolean
+}
+
+interface CommentRepository {
+    suspend fun unlikeComment(commentId: Long): Result<CLike>
+    suspend fun sendReply(commentId: Long, message: String): Result<Unit>
+    suspend fun getMostRecentComment(
+        movieId: Long = -1,
+        showId: Long = -1
+    ): Result<Pair<Long, CommentWithUser>>
+
+    suspend fun sendComment(
+        message: String,
+        movieId: Long = -1,
+        showId: Long = -1
+    ): Result<Unit>
+
+    suspend fun likeComment(commentId: Long): Result<CLike>
+    suspend fun getRepliesForComment(commentId: Long): Result<List<ReplyWithUser>>
+    fun pagingSource(
+        pagedType: CommentsPagedType,
+        contentId: Long,
+        contentType: ContentType,
+    ): PagingSource<Int, PagedComment>
 }
 
 interface ListRepository {
@@ -89,13 +120,19 @@ interface ListRepository {
     suspend fun deleteList(listId: String): Boolean
     suspend fun insertList(name: String): Result<UserList>
     suspend fun deleteFromList(id: Long, contentList: ContentList, type: ContentType): Boolean
-    suspend fun addToList(id: Long, posterPath: String?, title: String, contentList: ContentList, type: ContentType): Boolean
+    suspend fun addToList(
+        id: Long,
+        posterPath: String?,
+        title: String,
+        contentList: ContentList,
+        type: ContentType
+    ): Boolean
 }
 
-interface BackendRepository: UserRepository, ListRepository
+interface BackendRepository : UserRepository, ListRepository, CommentRepository
 
 sealed interface BackendEvent {
-    data class UserUpdated(val user: User): BackendEvent
+    data class UserUpdated(val user: User) : BackendEvent
 }
 
 class BackendRepositoryImpl(
@@ -139,10 +176,11 @@ class BackendRepositoryImpl(
                 when (status) {
                     is SessionStatus.Authenticated -> {
                         val id = status.session.user?.id ?: return@onEach
-                        getUser(id).onSuccess  {
+                        getUser(id).onSuccess {
                             savedUser.set(it)
                         }
                     }
+
                     is SessionStatus.NotAuthenticated -> {
                         savedUser.set(null)
                     }
@@ -156,7 +194,7 @@ class BackendRepositoryImpl(
 
     private fun CoroutineScope.listenForUpdates(): Job {
         return events.receiveAsFlow().onEach { event ->
-            when(event) {
+            when (event) {
                 is BackendEvent.UserUpdated -> launch {
                     _currentUser.emit(event.user)
                 }
@@ -168,7 +206,7 @@ class BackendRepositoryImpl(
 
 
     override suspend fun deleteAccount(): Boolean {
-        return runCatching {
+        return suspendRunCatching {
             postgrest.rpc("deleteUser")
         }
             .onFailure { Timber.e(it) }
@@ -176,7 +214,7 @@ class BackendRepositoryImpl(
     }
 
     override suspend fun signOut(scope: SignOutScope): Boolean {
-        return runCatching {
+        return suspendRunCatching {
             auth.signOut(scope = scope)
         }
             .onFailure { Timber.e(it) }
@@ -194,7 +232,7 @@ class BackendRepositoryImpl(
         }
     }
 
-    override suspend fun updateUser(user: User): Result<User>  = withContext(ioDispatcher) {
+    override suspend fun updateUser(user: User): Result<User> = withContext(ioDispatcher) {
         suspendRunCatching {
             postgrest[TABLE_USERS]
                 .update(user) {
@@ -210,29 +248,31 @@ class BackendRepositoryImpl(
             }
     }
 
-    override suspend fun registerWithEmailAndPassword(email: String, password: String): Boolean = withContext(ioDispatcher) {
-        suspendRunCatching{
-            auth.signUpWith(Email) {
-                this.email = email
-                this.password = password
+    override suspend fun registerWithEmailAndPassword(email: String, password: String): Boolean =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                auth.signUpWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
             }
+                .onFailure { Timber.e(it) }
+                .isSuccess
         }
-            .onFailure { Timber.e(it) }
-            .isSuccess
-    }
 
-    override suspend fun signInWithEmailAndPassword(email: String, password: String): Boolean = withContext(ioDispatcher) {
-        suspendRunCatching {
-            auth.signInWith(Email) {
-                this.email = email
-                this.password = password
+    override suspend fun signInWithEmailAndPassword(email: String, password: String): Boolean =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                auth.signInWith(Email) {
+                    this.email = email
+                    this.password = password
+                }
             }
+                .onFailure { Timber.e(it) }
+                .isSuccess
         }
-            .onFailure { Timber.e(it) }
-            .isSuccess
-    }
 
-    override suspend fun resetPassword(email: String): Boolean  = withContext(ioDispatcher) {
+    override suspend fun resetPassword(email: String): Boolean = withContext(ioDispatcher) {
         suspendRunCatching {
             auth.resetPasswordForEmail(email)
         }
@@ -240,15 +280,16 @@ class BackendRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun selectFavoritesList(userId: String): Result<List<FavoriteMovie>> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[FAVORITE_MOVIES]
-                .select {
-                    filter { eq("user_id", userId) }
-                }
-                .decodeList<FavoriteMovie>()
+    override suspend fun selectFavoritesList(userId: String): Result<List<FavoriteMovie>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[FAVORITE_MOVIES]
+                    .select {
+                        filter { eq("user_id", userId) }
+                    }
+                    .decodeList<FavoriteMovie>()
+            }
         }
-    }
 
     override suspend fun unsubscribeFromList(id: String): Result<Unit> = withContext(ioDispatcher) {
         suspendRunCatching<Unit> {
@@ -263,7 +304,7 @@ class BackendRepositoryImpl(
     }
 
     override suspend fun subscribeToList(id: String): Result<Unit> {
-        return runCatching {
+        return suspendRunCatching {
             postgrest["subscription"]
                 .insert(
                     Subscription(auth.currentUserOrNull()!!.id, id)
@@ -289,109 +330,123 @@ class BackendRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun addMovieToFavoritesList(movie: Movie): Boolean = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[FAVORITE_MOVIES]
-                .insert(
-                    FavoriteMovieInsert(
-                        auth.currentUserOrNull()!!.id,
-                        movie.posterUrl?.substringAfterLast('/'),
-                        movie.title,
-                        movie.overview,
-                        movie.popularity,
-                        movie.id,
-                        -1
+    override suspend fun addMovieToFavoritesList(movie: Movie): Boolean =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[FAVORITE_MOVIES]
+                    .insert(
+                        FavoriteMovieInsert(
+                            auth.currentUserOrNull()!!.id,
+                            movie.posterUrl?.substringAfterLast('/'),
+                            movie.title,
+                            movie.overview,
+                            movie.popularity,
+                            movie.id,
+                            -1
+                        )
                     )
-                )
+            }
+                .isSuccess
         }
-            .isSuccess
-    }
 
-    override suspend fun selectAllItemsForList(listId: String): Result<List<ListItem>> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[LIST_ITEM]
-                .select {
-                    filter { eq("list_id", listId) }
-                }
-                .decodeList<ListItem>()
-        }
-    }
-
-    override suspend fun selectListWithItemsById(listId: String): Result<ListWithItems> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[USER_LIST]
-                .select(
-                    columns = Columns.raw("*, listitem(*)")
-                ) {
-                    limit(1)
-                    filter { eq("list_id", listId) }
-                }
-                .decodeSingle<ListWithItems>()
-        }
-    }
-
-    override suspend fun selectListById(listId: String): Result<UserList> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[USER_LIST]
-                .select {
-                    filter { eq("list_id", listId) }
-                }
-                .decodeSingle<UserList>()
-        }
-    }
-
-    override suspend fun selectRecommendedFromSubscriptions(): Result<List<ListWithPostersRpcResponse>> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest.moreFromSubscribed(auth.currentUserOrNull()!!.id, limit = 10, offset = 0)
-                .decodeList<ListWithPostersRpcResponse>()
-                .filterUniqueBy { it.listId }
-        }
-    }
-
-    override suspend fun selectSubscriptions(userId: String): Result<List<ListWithItems>> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest.subscribedListWithItems(userId)
-                .decodeList<SubscriptionWithItem>()
-                .toListWithItems()
-        }
-    }
-
-    override suspend fun selectListsByUserId(userId: String): Result<List<ListWithItems>> = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[USER_LIST]
-                .select(
-                    Columns.raw("*, listitem(*)")
-                ) {
-                    filter { eq("user_id", userId) }
-                }
-                .decodeList<ListWithItems>()
-        }
-    }
-
-    override suspend fun deleteFromFavorites(id: Long, type: ContentType): Boolean = withContext(ioDispatcher) {
-        suspendRunCatching {
-            postgrest[FAVORITE_MOVIES]
-                .delete {
-                    filter {
-                        when(type) {
-                            ContentType.Movie -> eq("movie_id", id)
-                            ContentType.Show -> eq("show_id", id)
-                        }
-                        eq("user_id", auth.currentUserOrNull()!!.id)
+    override suspend fun selectAllItemsForList(listId: String): Result<List<ListItem>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[LIST_ITEM]
+                    .select {
+                        filter { eq("list_id", listId) }
                     }
-                }
+                    .decodeList<ListItem>()
+            }
         }
-            .isSuccess
-    }
 
-    override suspend fun updateList(update: UserListUpdate): Boolean = withContext(ioDispatcher){
+    override suspend fun selectListWithItemsById(listId: String): Result<ListWithItems> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[USER_LIST]
+                    .select(
+                        columns = Columns.raw("*, listitem(*)")
+                    ) {
+                        limit(1)
+                        filter { eq("list_id", listId) }
+                    }
+                    .decodeSingle<ListWithItems>()
+            }
+        }
+
+    override suspend fun selectListById(listId: String): Result<UserList> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[USER_LIST]
+                    .select {
+                        filter { eq("list_id", listId) }
+                    }
+                    .decodeSingle<UserList>()
+            }
+        }
+
+    override suspend fun selectRecommendedFromSubscriptions(): Result<List<ListWithPostersRpcResponse>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest.moreFromSubscribed(auth.currentUserOrNull()!!.id, limit = 10, offset = 0)
+                    .decodeList<ListWithPostersRpcResponse>()
+                    .filterUniqueBy { it.listId }
+            }
+        }
+
+    override suspend fun selectSubscriptions(userId: String): Result<List<ListWithItems>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest.subscribedListWithItems(userId)
+                    .decodeList<SubscriptionWithItem>()
+                    .toListWithItems()
+            }
+        }
+
+    override suspend fun selectListsByUserId(userId: String): Result<List<ListWithItems>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[USER_LIST]
+                    .select(
+                        Columns.raw("*, listitem(*)")
+                    ) {
+                        filter { eq("user_id", userId) }
+                    }
+                    .decodeList<ListWithItems>()
+            }
+        }
+
+    override suspend fun deleteFromFavorites(id: Long, type: ContentType): Boolean =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[FAVORITE_MOVIES]
+                    .delete {
+                        filter {
+                            when (type) {
+                                ContentType.Movie -> eq("movie_id", id)
+                                ContentType.Show -> eq("show_id", id)
+                            }
+                            eq("user_id", auth.currentUserOrNull()!!.id)
+                        }
+                    }
+            }
+                .isSuccess
+        }
+
+    override suspend fun updateList(update: UserListUpdate): Boolean = withContext(ioDispatcher) {
         suspendRunCatching {
             postgrest[USER_LIST]
                 .update(
                     {
-                        if (update.name != null) { set("name", update.name) }
-                        if (update.public != null) { set("public", update.public) }
-                        if (update.description != null) { set("description", update.description) }
+                        if (update.name != null) {
+                            set("name", update.name)
+                        }
+                        if (update.public != null) {
+                            set("public", update.public)
+                        }
+                        if (update.description != null) {
+                            set("description", update.description)
+                        }
                     }
                 ) {
                     filter {
@@ -432,15 +487,20 @@ class BackendRepositoryImpl(
         }
     }
 
-    override suspend fun deleteFromList(id: Long , contentList: ContentList, type: ContentType): Boolean = withContext(ioDispatcher) {
+    override suspend fun deleteFromList(
+        id: Long,
+        contentList: ContentList,
+        type: ContentType
+    ): Boolean = withContext(ioDispatcher) {
         suspendRunCatching {
             postgrest[LIST_ITEM]
                 .delete {
                     filter {
-                        when(type) {
+                        when (type) {
                             ContentType.Movie -> {
                                 eq("movie_id", id)
                             }
+
                             ContentType.Show -> {
                                 eq("show_id", id)
                             }
@@ -454,7 +514,13 @@ class BackendRepositoryImpl(
             .isSuccess
     }
 
-    override suspend fun addToList(id: Long, posterPath: String?, title: String, contentList: ContentList, type: ContentType): Boolean = withContext(ioDispatcher) {
+    override suspend fun addToList(
+        id: Long,
+        posterPath: String?,
+        title: String,
+        contentList: ContentList,
+        type: ContentType
+    ): Boolean = withContext(ioDispatcher) {
         suspendRunCatching {
             postgrest[LIST_ITEM]
                 .insert(
@@ -472,6 +538,126 @@ class BackendRepositoryImpl(
             .onFailure { Timber.e(it) }
             .isSuccess
     }
+
+    override suspend fun unlikeComment(commentId: Long): Result<CLike> = withContext(ioDispatcher) {
+        suspendRunCatching {
+            postgrest[CLIKES]
+                .delete {
+                    select()
+                    filter {
+                        eq("cid", commentId)
+                        eq("user_id", auth.currentUserOrNull()!!.id)
+                    }
+                }
+                .decodeSingle<CLike>()
+        }
+    }
+
+    override suspend fun sendReply(commentId: Long, message: String) = withContext(ioDispatcher) {
+        suspendRunCatching<Unit> {
+
+            if (message.isEmpty())
+                error("text empty")
+
+            postgrest[REPLY]
+                .insert(
+                    SendReply(message, commentId)
+                )
+        }
+    }
+
+    override suspend fun getMostRecentComment(
+        movieId: Long,
+        showId: Long
+    ): Result<Pair<Long, CommentWithUser>> = withContext(ioDispatcher) {
+        suspendRunCatching {
+            val result = postgrest[COMMENT]
+                .select(
+                    columns = Columns.raw(
+                        "id, created_at, user_id, message, $USERS:$USERS!${COMMENT}_user_id_fkey(username, profile_image)"
+                    )
+                ) {
+                    count(Count.ESTIMATED)
+                    filter {
+                        eq("show_id", showId)
+                        eq("movie_id", movieId)
+                    }
+                    order("created_at", Order.DESCENDING)
+                    limit(1)
+                }
+
+            result.countOrNull()!! to result.decodeSingle<CommentWithUser>()
+        }
+    }
+
+    override suspend fun sendComment(message: String, movieId: Long, showId: Long) =
+        withContext(ioDispatcher) {
+            suspendRunCatching<Unit> {
+
+                if (message.isEmpty())
+                    error("text empty")
+
+                if (movieId == -1L && showId == -1L)
+                    error("invalid content id's")
+
+                postgrest[COMMENT]
+                    .insert(
+                        SendComment(
+                            message = message,
+                            movieId = movieId,
+                            showId = showId,
+                        )
+                    )
+            }
+        }
+
+    override suspend fun likeComment(commentId: Long): Result<CLike> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[CLIKES]
+                    .insert(
+                        CLike(
+                            userId = auth.currentUserOrNull()!!.id,
+                            cid = commentId
+                        )
+                    ) {
+                        select()
+                    }
+                    .decodeSingle<CLike>()
+            }
+        }
+
+
+    override suspend fun getRepliesForComment(commentId: Long): Result<List<ReplyWithUser>> =
+        withContext(ioDispatcher) {
+            suspendRunCatching {
+                postgrest[REPLY]
+                    .select(
+                        columns = Columns.raw("*, $USERS:$USERS!${REPLY}_user_id_fkey(username, profile_image)")
+                    ) {
+                        order(column = "created_at", order = Order.DESCENDING)
+                        filter {
+                            eq("cid", commentId)
+                        }
+                    }
+                    .decodeList<ReplyWithUser>()
+            }
+        }
+
+    override fun pagingSource(
+        pagedType: CommentsPagedType,
+        contentId: Long,
+        contentType: ContentType
+    ): PagingSource<Int, PagedComment> {
+        return CommentPagingSource(
+            postgrest,
+            pagedType,
+            contentType.movieId(contentId),
+            contentType.showId(contentId),
+            auth.currentUserOrNull()?.id
+        )
+    }
+
     companion object {
         const val TABLE_USERS = "users"
     }
@@ -481,11 +667,12 @@ enum class ContentType {
     Movie,
     Show;
 
-    fun movieId(id: Long) = when(this) {
+    fun movieId(id: Long) = when (this) {
         Movie -> id
         Show -> -1
     }
-    fun showId(id: Long) = when(this) {
+
+    fun showId(id: Long) = when (this) {
         Movie -> -1
         Show -> id
     }

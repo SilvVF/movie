@@ -235,7 +235,7 @@ private val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 }
 
 @Composable
-internal fun AppThemeModePreferenceWidget(
+private fun AppThemeModePreferenceWidget(
     value: ThemeMode,
     onItemClick: (ThemeMode) -> Unit,
 ) {
@@ -264,7 +264,7 @@ internal fun AppThemeModePreferenceWidget(
 }
 
 @Composable
-internal fun AppThemePreferenceWidget(
+private fun AppThemePreferenceWidget(
     value: AppTheme,
     onItemClick: (AppTheme) -> Unit,
 ) {
@@ -332,7 +332,7 @@ private fun AppThemesList(
 }
 
 @Composable
-fun AppThemePreviewItem(
+private fun AppThemePreviewItem(
     selected: Boolean,
     onClick: () -> Unit,
 ) {

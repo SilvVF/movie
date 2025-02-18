@@ -28,6 +28,7 @@ import androidx.core.view.WindowCompat
 import io.silv.core_ui.theme.dynamiccolor.DynamicScheme
 import io.silv.core_ui.theme.dynamiccolor.Variant
 import io.silv.core_ui.theme.hct.Hct
+import io.silv.core_ui.theme.palettes.TonalPalette
 import java.util.Optional
 import kotlin.math.ln
 
@@ -86,16 +87,17 @@ fun getColorScheme(
     val context = LocalContext.current
     return when {
         seedColor != null -> {
+            val palette =  TonalPalette.fromInt(seedColor.toArgb())
             DynamicScheme(
                 Hct.fromInt(seedColor.toArgb()),
                 Variant.NEUTRAL,
                 darkTheme,
                 1.0,
-                null,
-                null,
-                null,
-                null,
-                null,
+                palette,
+                palette,
+                palette,
+                palette,
+                palette,
                 Optional.empty(),
             )
                 .toColorScheme()

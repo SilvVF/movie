@@ -15,8 +15,8 @@ import io.silv.movie.data.local.CreditRepository
 import io.silv.movie.data.local.networkToLocalCredit
 import io.silv.movie.data.model.Credit
 import io.silv.movie.data.model.toDomain
-import io.silv.movie.network.model.toSCredit
-import io.silv.movie.network.service.tmdb.TMDBPersonService
+import io.silv.movie.api.model.toSCredit
+import io.silv.movie.api.service.tmdb.TMDBPersonService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.SharingStarted

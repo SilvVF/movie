@@ -1,7 +1,7 @@
 package io.silv.movie.extract
 
 import android.net.Uri
-import io.silv.movie.network.GET
+import io.silv.movie.api.GET
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

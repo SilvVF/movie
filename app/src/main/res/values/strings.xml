@@ -152,6 +152,7 @@
     <string name="label_settings">Settings</string>
     <string name="action_search">Search</string>
     <string name="pref_category_appearance">Appearance</string>
+    <string name="pref_category_base">Base</string>
     <string name="pref_appearance_summary"><![CDATA[Theme, date & time format]]></string>
     <string name="automatic_background">Automatic</string>
     <string name="lock_always">Always</string>
