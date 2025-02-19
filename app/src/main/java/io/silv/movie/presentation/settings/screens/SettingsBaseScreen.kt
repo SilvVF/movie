@@ -1,5 +1,7 @@
 package io.silv.movie.presentation.settings.screens
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.derivedStateOf
@@ -39,6 +41,7 @@ object SettingsBaseScreen: SearchableSettings {
     ): Preference.PreferenceGroup {
 
         val pipedUrl = remember(basePreferences) { basePreferences.pipedUrl() }
+        val useStreamExtractor = remember(basePreferences) { basePreferences.useStreamExtractor() }
         val providers by produceState(emptyList()) {
             value = pipedApi.getUrlList().getOrDefault(emptyList())
         }
@@ -64,6 +67,16 @@ object SettingsBaseScreen: SearchableSettings {
                     onValueChanged = { url ->
                         pipedUrl.set(url)
                         true
+                    }
+                ),
+                Preference.PreferenceItem.SwitchPreference(
+                    pref = useStreamExtractor,
+                    title = "Use StreamExtractor",
+                    subtitle = "use youtube through NewPipeExtractor",
+                    icon = Icons.Outlined.Extension,
+                    onValueChanged = {
+                        useStreamExtractor.set(it)
+                        it
                     }
                 )
             )

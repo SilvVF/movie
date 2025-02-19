@@ -33,8 +33,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -71,7 +73,7 @@ class ListViewScreenModel(
         private set
 
     private val listIdFlow = state.map { it.success?.list?.id }.filterNotNull().distinctUntilChanged()
-    private val createdByFlow = state.map { it.success?.list?.createdBy }.filterNotNull().distinctUntilChanged()
+    private val createdByFlow = state.map { it.success?.list?.createdBy }.distinctUntilChanged()
     private val listFlow = state.map { it.success?.list }.filterNotNull().distinctUntilChanged()
     private val sortModeFlow = state.map { it.success?.sortMode }.filterNotNull().distinctUntilChanged()
 
@@ -80,7 +82,7 @@ class ListViewScreenModel(
     init {
         initializeList()
 
-        createdByFlow.onEach { userId ->
+        createdByFlow.filterNotNull().onEach { userId ->
             backendRepository.getUser(userId).onSuccess {
                 mutableState.updateSuccess { state ->
                     state.copy(user = it)
@@ -90,17 +92,22 @@ class ListViewScreenModel(
             .catch { Timber.e(it) }
             .launchIn(screenModelScope)
 
-        listIdFlow.flatMapLatest { id ->
-            combine(
-                recommendationManager.subscribe(id).map { it.take(6) },
-                recommendationManager.isRunning(id)
-            ) {  recommendations, isRunning ->
-                mutableState.updateSuccess { state ->
-                    state.copy(
-                        refreshingRecommendations = isRunning,
-                        recommendations = recommendations
-                    )
+        listIdFlow.combine(createdByFlow, ::Pair).flatMapLatest { (id, createdBy) ->
+            if (createdBy == null || createdBy == auth.currentUserOrNull()?.id) {
+                combine(
+                    recommendationManager.subscribe(id).map { it.take(6) },
+                    recommendationManager.isRunning(id)
+                ) {  recommendations, isRunning ->
+
+                    mutableState.updateSuccess { state ->
+                        state.copy(
+                            refreshingRecommendations = isRunning,
+                            recommendations = recommendations
+                        )
+                    }
                 }
+            } else {
+                emptyFlow()
             }
         }
             .launchIn(screenModelScope)
@@ -157,7 +164,7 @@ class ListViewScreenModel(
             .launchIn(screenModelScope)
     }
 
-    val refreshingList = createdByFlow
+    val refreshingList = createdByFlow.filterNotNull()
         .flatMapLatest {
             listUpdateManager.isRunning(it)
         }

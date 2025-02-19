@@ -100,6 +100,7 @@ dependencies {
 
     implementation("org.jsoup:jsoup:1.18.1")
     implementation(libs.okhttp.dnsoverhttps)
+    implementation("com.github.teamnewpipe:NewPipeExtractor:0.24.4")
 
     // Paging3
     implementation(libs.bundles.paging)

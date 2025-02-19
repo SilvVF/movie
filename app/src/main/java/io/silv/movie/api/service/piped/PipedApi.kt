@@ -36,6 +36,7 @@ class PipedApi(
     @IoDispatcher val ioDispatcher: CoroutineDispatcher
 ) {
     private val pipedUrl = basePreferences.pipedUrl()
+    private val useStreamExtractor = basePreferences.useStreamExtractor()
 
     suspend fun getUrlList(): Result<List<PipedProvider>> = withContext(ioDispatcher) {
         suspendRunCatching {
@@ -93,17 +94,21 @@ class PipedApi(
 
     suspend fun getStreams(videoId: String): Result<Streams> = withContext(ioDispatcher) {
         suspendRunCatching {
-            Timber.d("${pipedUrl.get().trim()}/streams/$videoId")
-            client.newCall(
-                GET(
-                    url = "${pipedUrl.get().trim()}/streams/$videoId",
-                    headers = Headers.Builder()
-                        .add("Accept", "application/json")
-                        .build()
+            if (useStreamExtractor.get()) {
+                StreamsExtractor.extractStreams(videoId)
+            } else {
+                Timber.d("${pipedUrl.get().trim()}/streams/$videoId")
+                client.newCall(
+                    GET(
+                        url = "${pipedUrl.get().trim()}/streams/$videoId",
+                        headers = Headers.Builder()
+                            .add("Accept", "application/json")
+                            .build()
+                    )
                 )
-            )
-                .await()
-                .parseAs<Streams>(json)
+                    .await()
+                    .parseAs<Streams>(json)
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.util.DebugLogger
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
+import io.silv.movie.api.service.piped.NewPipeDownloaderImpl
 import io.silv.movie.coil.core.addByteArrayDiskFetcher
 import io.silv.movie.coil.core.addDiskFetcher
 import io.silv.movie.coil.fetchers.BucketItemFetcher
@@ -31,6 +32,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
+import org.schabi.newpipe.extractor.NewPipe
 import timber.log.Timber
 
 class App : Application(), ImageLoaderFactory {
@@ -50,6 +52,7 @@ class App : Application(), ImageLoaderFactory {
         }
 
         TmdbExtractor.extractVideo()
+        NewPipe.init(NewPipeDownloaderImpl())
     }
 
     override fun newImageLoader(): ImageLoader {

@@ -140,3 +140,8 @@
 -dontwarn io.silv.core_ui.voyager.ScreenResultsViewModel
 -dontwarn io.silv.core_ui.voyager.ScreenWithResult
 -dontwarn io.silv.core_ui.voyager.ScreenWithResultLauncher
+
+-keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-dontwarn org.mozilla.javascript.tools.**

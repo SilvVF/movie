@@ -32,6 +32,8 @@ class BasePreferences(
 
     fun pipedUrl() = settings.getString("piped_url", "https://api.piped.yt")
 
+    fun useStreamExtractor() = settings.getBoolean("use_stream_extractor", true)
+
     fun recentEmojis() = settings.getStringSet(
         "recent_emojis",
         defaultValue = setOf(
