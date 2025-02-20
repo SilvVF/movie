@@ -21,7 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.silv.core_ui.components.topbar.AppBar
 import io.silv.core_ui.theme.getColorScheme
-import io.silv.movie.AppState
+import io.silv.movie.AppData
 import io.silv.movie.isDarkTheme
 import io.silv.movie.prefrences.ThemeMode
 import io.silv.movie.presentation.LocalAppState
@@ -44,12 +44,12 @@ fun PreferenceScaffold(
     titleRes: StringResource,
     actions: @Composable RowScope.() -> Unit = {},
     onBackPressed: (() -> Unit)? = null,
-    appState: AppState = LocalAppState.current,
+    appData: AppData = LocalAppState.current,
     itemsProvider: @Composable () -> List<Preference>,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        containerColor = getColorScheme(appState.themeMode != ThemeMode.LIGHT, null, null).surface,
+        containerColor = getColorScheme(appData.themeMode != ThemeMode.LIGHT, null, null).surface,
         contentColor = LocalContentColor.current,
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {

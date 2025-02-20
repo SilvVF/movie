@@ -32,11 +32,12 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.bottomsheet.modal.PredictiveBack
+import io.silv.movie.MainViewModel
 import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.LocalVideoState
 import io.silv.movie.presentation.getActivityViewModel
-import io.silv.movie.presentation.media.PlayerViewModel
+import io.silv.movie.presentation.media.PlayerPresenter
 import io.silv.movie.presentation.media.components.CollapsableVideoAnchors
-import io.silv.movie.presentation.media.components.CollapsableVideoState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
@@ -98,7 +99,7 @@ fun SharedTransitionTab.AnimatedContentTransitionNoPredictiveBack(
                         .takeIf { sharedElementTransitions }
                 )
             ) {
-                navigator.saveableState("transition", screen) {
+                navigator.saveableState(screen.key, screen) {
                     this@AnimatedContent.content(screen)
                 }
             }
@@ -115,7 +116,7 @@ fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit
 ) {
     var transitionProgress by rememberSaveable { mutableFloatStateOf(0f) }
-    val playerViewModel by getActivityViewModel<PlayerViewModel>()
+    val videoState = LocalVideoState.current
 
     PredictiveBackHandler(
         enabled = navigator.items.size >= 2
@@ -123,10 +124,10 @@ fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
         try {
             var shouldPop = true
             progress.collect { backevent ->
-                playerViewModel.collapsableVideoState?.let {
-                    if (it.state.currentValue == CollapsableVideoAnchors.Start) {
+                with(videoState) {
+                    if (videoDragState.currentValue == CollapsableVideoAnchors.Start) {
                         shouldPop = false
-                        playerViewModel.collapsableVideoState?.predictiveBack(backevent.progress)
+                        predictiveBack(backevent.progress)
                         return@collect
                     }
                 }
@@ -136,10 +137,10 @@ fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
             if (shouldPop) {
                 navigator.pop()
             } else {
-                playerViewModel.collapsableVideoState?.dismiss()
+                videoState.dismiss()
             }
         } catch (e: CancellationException) {
-            playerViewModel.collapsableVideoState?.settle()
+            videoState.settle()
             animate(
                 transitionProgress,
                 targetValue = 0f,

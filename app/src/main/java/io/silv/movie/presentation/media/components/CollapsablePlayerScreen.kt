@@ -22,54 +22,65 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.ui.PlayerView
 import io.silv.movie.R
-import io.silv.movie.presentation.media.PlayerViewModel
+import io.silv.movie.presentation.media.PlayerPresenter
+import io.silv.movie.presentation.media.PresenterState
 import io.silv.movie.presentation.media.StreamState
 import io.silv.movie.presentation.media.components.CollapsablePlayerDefaults.Actions
+import org.burnoutcrew.reorderable.ReorderableLazyListState
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
 @Composable
 fun CollapsablePlayerScreen(
-    collapsableVideoState: CollapsableVideoState,
-    onDismissRequested: () -> Unit,
-    playerViewModel: PlayerViewModel,
+    videoState: VideoState,
+    state: PresenterState,
+    reorderState: ReorderableLazyListState,
     modifier: Modifier = Modifier
 ) {
-    val reorderState = rememberReorderableLazyListState(
-        onMove = playerViewModel::onMove,
-    )
-
     DefaultSizeCollapsableVideoLayout(
         modifier = modifier,
         reorderState = reorderState,
-        onDismissRequested = onDismissRequested,
         actions = {
             Actions(
-                currentTrailer = playerViewModel.currentTrailer,
-                playing = playerViewModel.playing,
+                currentTrailer = state.queue.firstOrNull(),
+                playing =  state.playing,
                 onPlayClick = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Play)
+                    videoState.sendPlayerEvent(PlayerPresenter.PlayerEvent.Play)
                 },
-                onCloseClick = { collapsableVideoState.dismiss() },
+                onCloseClick = { videoState.dismiss() },
                 onPauseClick = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Pause)
+                    videoState.sendPlayerEvent(PlayerPresenter.PlayerEvent.Pause)
                 }
             )
         },
-        collapsableVideoState = collapsableVideoState,
+        videoState = videoState,
         player = {
-            when(val state = playerViewModel.streamState) {
+            when(val ss = state.streamState) {
                 is StreamState.Failure -> {
                     Box(
                         modifier = Modifier
                             .aspectRatio(16f / 9f)
                             .fillMaxWidth()
                     ) {
-                        Text("Error Loading Video ${state.message}", Modifier.align(Alignment.Center))
+                        Text("Error Loading Video ${ss.message}", Modifier.align(Alignment.Center))
                     }
                 }
-                null, StreamState.Loading -> {
+                is StreamState.Success -> {
+                    AndroidView(
+                        modifier = Modifier
+                            .aspectRatio(16f / 9f)
+                            .fillMaxWidth(),
+                        factory = { ctx ->
+                            PlayerView(ctx).apply {
+                                player = videoState.player
+                            }
+                        }
+                    )
+                }
+                else -> {
                     Box(
                         modifier = Modifier
                             .aspectRatio(16f / 9f)
@@ -78,20 +89,12 @@ fun CollapsablePlayerScreen(
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
                     }
                 }
-                is StreamState.Success -> {
-                    PipedApiPlayer(
-                        playerViewModel,
-                        modifier = Modifier
-                            .aspectRatio(16f / 9f)
-                            .fillMaxWidth()
-                    )
-                }
             }
         },
         pinnedContent = {
-            playerViewModel.currentTrailer?.let {
+            state.queue.firstOrNull()?.let { trailer ->
                 CollapsablePlayerDefaults.VideoDescription(
-                    trailer = it,
+                    trailer = trailer,
                     modifier = Modifier
                         .padding(12.dp)
                         .fillMaxWidth()
@@ -122,7 +125,7 @@ fun CollapsablePlayerScreen(
         }
     ) {
         itemsIndexed(
-            items = playerViewModel.trailerQueue,
+            items = state.queue,
             key = { _, it -> it.id }
         ) {idx, trailer ->
             CollapsablePlayerDefaults.VideoQueueItem(
@@ -130,7 +133,7 @@ fun CollapsablePlayerScreen(
                 trailer = trailer,
                 idx = idx,
                 onMute = {
-                    playerViewModel.sendPlayerEvent(PlayerViewModel.PlayerEvent.Mute)
+                    videoState.sendPlayerEvent(PlayerPresenter.PlayerEvent.Mute)
                 }
             )
         }

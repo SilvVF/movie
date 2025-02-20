@@ -1,16 +1,19 @@
 package io.silv.movie.presentation
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
-import io.silv.movie.AppState
+import io.silv.movie.AppData
 import io.silv.movie.BuildConfig
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.model.ContentItem
@@ -19,6 +22,7 @@ import io.silv.movie.prefrences.AppTheme
 import io.silv.movie.prefrences.ThemeMode
 import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.data.supabase.model.User
+import io.silv.movie.presentation.media.components.VideoState
 import io.silv.movie.presentation.tabs.LibraryTab
 import org.koin.compose.currentKoinScope
 import org.koin.core.annotation.KoinInternalApi
@@ -39,8 +43,8 @@ val LocalListInteractor = staticCompositionLocalOf<ListInteractor> { error("List
 
 val LocalUser = compositionLocalOf<User?> { null }
 
-private val defaultAppState by lazy {
-    AppState(
+private val defaultAppData by lazy {
+    AppData(
         appTheme = AppTheme.DEFAULT,
         themeMode = ThemeMode.DARK,
         amoled = false,
@@ -48,15 +52,19 @@ private val defaultAppState by lazy {
         relativeTimestamp = true,
         startScreen = LibraryTab,
         sharedElementTransitions = true,
-        predictiveBackNavigation = true
+        predictiveBackNavigation = true,
     )
+}
+
+val LocalVideoState = staticCompositionLocalOf<VideoState> {
+   error("not provided")
 }
 
 val LocalAppState = compositionLocalOf {
     if (BuildConfig.DEBUG) {
         error("app state was not set in production default state will be used")
     } else {
-        defaultAppState
+        defaultAppData
     }
 }
 
@@ -68,7 +76,7 @@ fun ProvideLocalsForPreviews(
 ) {
     CompositionLocalProvider(
         LocalUser providesDefault null,
-        LocalAppState providesDefault defaultAppState,
+        LocalAppState providesDefault defaultAppData,
         LocalIsScrolling providesDefault remember { mutableStateOf(true) },
         LocalContentInteractor providesDefault remember {
             object : ContentInteractor, EventProducer<ContentInteractor.ContentEvent> by EventProducer.default() {

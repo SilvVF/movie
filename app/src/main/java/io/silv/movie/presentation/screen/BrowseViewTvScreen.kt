@@ -44,6 +44,7 @@ import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.voyager.ContentScreen
+import io.silv.movie.MainViewModel
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.model.toContentItem
@@ -59,7 +60,6 @@ import io.silv.movie.presentation.covers.EditCoverAction
 import io.silv.movie.presentation.covers.PosterCoverDialog
 import io.silv.movie.presentation.covers.screenmodel.TVCoverScreenModel
 import io.silv.movie.presentation.getActivityViewModel
-import io.silv.movie.presentation.media.PlayerViewModel
 import io.silv.movie.presentation.media.WatchContentActivity
 import io.silv.movie.presentation.media.components.trailersList
 import io.silv.movie.presentation.screenmodel.CommentsState
@@ -80,7 +80,7 @@ data class TVViewScreen(
     @Composable
     override fun Content() {
         val screenModel = koin4ScreenModel<TVViewScreenModel> { parametersOf(id) }
-        val mainScreenModel by getActivityViewModel<PlayerViewModel>()
+        val mainScreenModel by getActivityViewModel<MainViewModel>()
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         val changeDialog = remember {
@@ -111,7 +111,7 @@ data class TVViewScreen(
                     refresh = screenModel::refresh,
                     creditsProvider = { credits },
                     onPosterClick = { changeDialog(TVViewScreenModel.Dialog.FullCover) },
-                    onVideoThumbnailClick = mainScreenModel::requestMediaQueue,
+                    onVideoThumbnailClick = mainScreenModel.playerPresenter::requestMediaQueue,
                     onViewCreditsClick = { navigator.push(CreditsViewScreen(state.show.id, false)) },
                     onCreditClick = { credit ->
                         credit.personId?.let {

@@ -1,7 +1,6 @@
 package io.silv.movie
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -12,7 +11,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.gestures.snapTo
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,20 +29,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -82,32 +79,30 @@ import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
 import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.model.Trailer
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.prefrences.AppTheme
 import io.silv.movie.prefrences.ThemeMode.DARK
 import io.silv.movie.prefrences.ThemeMode.LIGHT
 import io.silv.movie.prefrences.ThemeMode.SYSTEM
-import io.silv.movie.prefrences.UiPreferences
-import io.silv.movie.data.supabase.model.User
-import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalMainViewModelStoreOwner
 import io.silv.movie.presentation.LocalUser
-import io.silv.movie.presentation.getActivityViewModel
-import io.silv.movie.presentation.media.PlayerViewModel
-import io.silv.movie.presentation.media.components.CollapsablePlayerMinHeight
+import io.silv.movie.presentation.LocalVideoState
+import io.silv.movie.presentation.media.StreamState
 import io.silv.movie.presentation.media.components.CollapsablePlayerScreen
-import io.silv.movie.presentation.media.components.CollapsableVideoAnchors
-import io.silv.movie.presentation.media.components.rememberCollapsableVideoState
+import io.silv.movie.presentation.media.components.VideoState
 import io.silv.movie.presentation.tabs.BrowseTab
 import io.silv.movie.presentation.tabs.DiscoverTab
 import io.silv.movie.presentation.tabs.LibraryTab
 import io.silv.movie.presentation.tabs.ProfileTab
 import io.silv.movie.presentation.tabs.SettingsTab
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.launch
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
-import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.compose.currentKoinScope
 import org.koin.core.parameter.ParametersDefinition
@@ -119,9 +114,8 @@ import kotlin.math.roundToInt
 class MainActivity : ComponentActivity() {
 
     private val backendRepository by inject<BackendRepository>()
-    private val mainViewModel by viewModel<MainViewModel>()
-    private val uiPreferences by inject<UiPreferences>()
 
+    private val mainViewModel by viewModel<MainViewModel>()
     private val screenResultsViewModel by viewModel<ScreenResultsViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -130,31 +124,79 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
 
-        val appStateProvider = AppStateProvider(uiPreferences, lifecycleScope, lifecycle)
-
         screenResultsViewModel.bind()
 
         splashScreen.setKeepOnScreenCondition {
-            when (appStateProvider.state.value) {
-                AppStateProvider.State.Loading -> true
-                is AppStateProvider.State.Success -> false
+            when (mainViewModel.state.value) {
+                AppState.Loading -> true
+                is AppState.Success -> false
+            }
+        }
+
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                mainViewModel.contentInteractor.eventHandler(
+                    mainViewModel.snackbarHostState,
+                    this@MainActivity,
+                    mainViewModel.navigationChannel
+                )
+                    .launchIn(this)
+                mainViewModel.listInteractor.handleEvents(
+                    mainViewModel.snackbarHostState,
+                    this@MainActivity,
+                    mainViewModel.navigationChannel
+                )
+                    .launchIn(this)
             }
         }
 
         setContent {
             KoinAndroidContext {
                 val currentUser by backendRepository.currentUser.collectAsStateWithLifecycle()
-                val appState by appStateProvider.state.collectAsStateWithLifecycle()
+                val appState by mainViewModel.state.collectAsStateWithLifecycle()
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
 
-                CompositionLocalProvider(
-                    LocalMainViewModelStoreOwner provides this,
-                ) {
-                    when (val s = appState) {
-                        AppStateProvider.State.Loading -> Unit
-                        is AppStateProvider.State.Success -> {
+                val videoState = remember {
+                    VideoState(
+                        mainViewModel.playerPresenter,
+                        scope,
+                        context,
+                        mainViewModel.snackbarHostState
+                    )
+                }
+
+                val dismissSnackbarState =
+                    rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+                        when (value) {
+                            SwipeToDismissBoxValue.Settled -> {
+                                mainViewModel.snackbarHostState.currentSnackbarData?.dismiss()
+                                true
+                            }
+
+                            else -> false
+                        }
+                    })
+                LaunchedEffect(dismissSnackbarState.currentValue) {
+                    if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
+                        dismissSnackbarState.reset()
+                    }
+                }
+
+                when (val s = appState) {
+                    AppState.Loading -> Unit
+                    is AppState.Success -> {
+                        CompositionLocalProvider(
+                            LocalMainViewModelStoreOwner provides this,
+                            LocalUser provides currentUser,
+                            LocalListInteractor provides mainViewModel.listInteractor,
+                            LocalContentInteractor provides mainViewModel.contentInteractor,
+                            LocalAppState provides s.state,
+                            LocalVideoState provides videoState
+                        ) {
                             MainContent(
-                                appState = s.state,
-                                currentUser = currentUser,
+                                appData = s.state,
+                                swipeToDismissBoxState = dismissSnackbarState,
                                 mainViewModel = mainViewModel
                             )
                         }
@@ -188,133 +230,93 @@ inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
 
 @Composable
 private fun MainContent(
-    appState: AppState,
+    appData: AppData,
+    swipeToDismissBoxState: SwipeToDismissBoxState,
     mainViewModel: MainViewModel,
-    currentUser: User?,
 ) {
-    CompositionLocalProvider(
-        LocalUser provides currentUser,
-        LocalListInteractor provides mainViewModel.listInteractor,
-        LocalContentInteractor provides mainViewModel.contentInteractor,
-        LocalAppState provides appState
+
+    val videoState = LocalVideoState.current
+    val state by videoState.state.collectAsStateWithLifecycle()
+    val reorderState = rememberReorderableLazyListState(
+        onMove = videoState::onMove,
+        onDragEnd = { _, _ -> videoState.onDragEnd() }
+    )
+
+    BackHandler(
+        enabled = state.queue.isNotEmpty()
     ) {
-        val playerViewModel by getActivityViewModel<PlayerViewModel>()
-        val collapsableVideoState = rememberCollapsableVideoState()
+        videoState.clearQueue()
+    }
 
-        SideEffect {
-            playerViewModel.collapsableVideoState = collapsableVideoState
-        }
 
-        val snackbarHostState = remember { SnackbarHostState() }
+    MovieTheme {
+        TabNavigator(appData.startScreen) { tabNavigator ->
+            Surface(Modifier.fillMaxSize()) {
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                    bottomBar = {
+                        AppBottomBar(
+                            videos = state.queue,
+                            progress = { videoState.progress },
+                            tabNavigator = tabNavigator,
+                            modifier = Modifier
+                        )
+                    },
+                    snackbarHost = {
+                        SwipeToDismissBox(
+                            state = swipeToDismissBoxState,
+                            backgroundContent = {},
+                            content = {
+                                SnackbarHost(
+                                    // classic compost
+                                    // "imePadding doesnt work on M3??"
+                                    hostState = mainViewModel.snackbarHostState,
+                                    modifier = Modifier.imePadding()
+                                )
+                            },
+                        )
+                    }
+                ) { paddingValues ->
+                    Box(
+                        Modifier
+                            .padding(paddingValues)
+                            .consumeWindowInsets(paddingValues)
+                    ) {
 
-        val dismissSnackbarState = rememberSwipeToDismissBoxState(confirmValueChange = { value ->
-            if (value != SwipeToDismissBoxValue.Settled) {
-                snackbarHostState.currentSnackbarData?.dismiss()
-                true
-            } else {
-                false
-            }
-        })
 
-        LaunchedEffect(dismissSnackbarState.currentValue) {
-            if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
-                dismissSnackbarState.reset()
-            }
-        }
 
-        BackHandler(
-            enabled = playerViewModel.trailerQueue.isNotEmpty()
-        ) {
-            playerViewModel.clearMediaQueue()
-        }
+                        val padding by animateDpAsState(
+                            targetValue = if (state.queue.isNotEmpty()) {
+                                videoState.bottomPadding
+                            } else {
+                                0.dp
+                            },
+                            label = "player-aware-padding-animated"
+                        )
 
-        MovieTheme {
-            TabNavigator(appState.startScreen) { tabNavigator ->
-                Surface(Modifier.fillMaxSize()) {
-                    Scaffold(
-                        modifier = Modifier.fillMaxSize(),
-                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-                        bottomBar = {
-                            AppBottomBar(
-                                videos = playerViewModel.trailerQueue,
-                                progress = { collapsableVideoState.progress },
-                                tabNavigator = tabNavigator,
-                                modifier = Modifier
-                            )
-                        },
-                        snackbarHost = {
-                            SwipeToDismissBox(
-                                state = dismissSnackbarState,
-                                backgroundContent = {},
-                                content = {
-                                    SnackbarHost(
-                                        // classic compost
-                                        // "imePadding doesnt work on M3??"
-                                        hostState = snackbarHostState,
-                                        modifier = Modifier.imePadding()
-                                    )
-                                },
-                            )
-                        }
-                    ) { paddingValues ->
-                        val trailerPlayerVisible by remember {
-                            derivedStateOf { playerViewModel.trailerQueue.isNotEmpty() }
-                        }
-                        val density = LocalDensity.current
-                        val bottomPadding by remember {
-                            derivedStateOf {
-                                with(density) {
-                                    CollapsablePlayerMinHeight - collapsableVideoState.dismissOffsetPx.toDp()
-                                }
-                            }
-                        }
                         Box(
                             Modifier
-                                .padding(paddingValues)
-                                .consumeWindowInsets(paddingValues)
+                                .padding(bottom = padding)
                         ) {
-                            Box(
-                                Modifier
-                                    .padding(
-                                        bottom = animateDpAsState(
-                                            targetValue = if (trailerPlayerVisible) bottomPadding else 0.dp,
-                                            label = "player-aware-padding-animated"
-                                        )
-                                            .value
-                                    )
-                            ) {
-                                CurrentTab()
-                            }
-                            AnimatedVisibility(
-                                visible = trailerPlayerVisible,
-                                modifier = Modifier
-                                    .wrapContentSize()
-                                    .align(Alignment.BottomCenter),
-                                enter = slideInVertically { it } + fadeIn(),
-                                exit = fadeOut(tween(0, 0))
-                            ) {
-                                CollapsablePlayerScreen(
-                                    collapsableVideoState = collapsableVideoState,
-                                    onDismissRequested = playerViewModel::clearMediaQueue,
-                                    playerViewModel = playerViewModel
-                                )
-                            }
-                            LaunchedEffect(trailerPlayerVisible) {
-                                collapsableVideoState.state.snapTo(CollapsableVideoAnchors.Start)
-                            }
+                            CurrentTab()
+                        }
+                        AnimatedVisibility(
+                            visible = state.queue.isNotEmpty(),
+                            modifier = Modifier
+                                .wrapContentSize()
+                                .align(Alignment.BottomCenter),
+                            enter = slideInVertically { it } + fadeIn(),
+                            exit = fadeOut(tween(0, 0))
+                        ) {
+                            CollapsablePlayerScreen(
+                                videoState = videoState,
+                                state,
+                                reorderState
+                            )
                         }
                     }
                 }
-                HandleItemEvents(
-                    contentInteractor = mainViewModel.contentInteractor,
-                    snackbarHostState = snackbarHostState,
-                    navigate = mainViewModel.navigationChannel::send
-                )
-                HandleListEvents(
-                    listInteractor = mainViewModel.listInteractor,
-                    snackbarHostState = snackbarHostState,
-                    navigation = mainViewModel.navigationChannel::send
-                )
             }
         }
     }

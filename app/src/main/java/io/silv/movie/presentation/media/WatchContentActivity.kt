@@ -11,18 +11,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import io.silv.core_ui.components.NoResultsEmptyScreen
+import io.silv.movie.AppState
 import io.silv.movie.AppStateProvider
 import io.silv.movie.MainActivity
 import io.silv.movie.MovieTheme
-import io.silv.movie.prefrences.AppTheme
 import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.presentation.LocalAppState
+import kotlinx.coroutines.channels.Channel
 import org.koin.android.ext.android.inject
 
 
@@ -36,7 +37,7 @@ class WatchContentActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val url = intent.getStringExtra("url")
-        val appState = AppStateProvider(uiPreferences, lifecycleScope, lifecycle)
+        val appState = AppStateProvider(uiPreferences)
 
         setContent {
 
@@ -47,11 +48,11 @@ class WatchContentActivity : ComponentActivity() {
                     }
                 )
             }
-            val state by appState.state.collectAsStateWithLifecycle()
+            val state by appState.observeAppData.collectAsStateWithLifecycle(AppState.Loading)
 
             when (val s = state) {
-                AppStateProvider.State.Loading -> {}
-                is AppStateProvider.State.Success -> {
+                AppState.Loading -> {}
+                is AppState.Success -> {
                     CompositionLocalProvider(LocalAppState provides s.state) {
                         MovieTheme {
                             Scaffold { paddingValues ->

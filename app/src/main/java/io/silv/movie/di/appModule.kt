@@ -103,7 +103,6 @@ import io.silv.movie.presentation.components.profile.ProfileScreenModel
 import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.TVCoverScreenModel
-import io.silv.movie.presentation.media.PlayerViewModel
 import io.silv.movie.presentation.screen.ProfileViewScreenModel
 import io.silv.movie.presentation.screenmodel.AddToListScreenModel
 import io.silv.movie.presentation.screenmodel.BrowseListsScreenModel
@@ -347,8 +346,6 @@ val screenModelModule = module {
     viewModelOf(::ScreenResultsViewModel)
 
     factoryOf(::MovieScreenModel)
-
-    viewModelOf(::PlayerViewModel)
 
     factoryOf(::MovieViewScreenModel)
 

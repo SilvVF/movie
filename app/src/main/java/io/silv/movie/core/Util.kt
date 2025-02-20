@@ -5,6 +5,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
@@ -91,4 +96,21 @@ suspend fun <A, B> List<A>.pmapSupervised(f: suspend (A) -> B) = supervisorScope
     jobs.joinAll()
 
     new.toList().filterNotNull()
+}
+
+fun <T> Flow<T>.onEachLatest(action: suspend (value: T) -> Unit): Flow<Unit> {
+    /*
+     * Implementation note:
+     * buffer(0) is inserted here to fulfil user's expectations in sequential usages, e.g.:
+     * ```
+     * flowOf(1, 2, 3).collectLatest {
+     *     delay(1)
+     *     println(it) // Expect only 3 to be printed
+     * }
+     * ```
+     *
+     * It's not the case for intermediate operators which users mostly use for interactive UI,
+     * where performance of dispatch is more important.
+     */
+    return mapLatest(action).buffer(0)
 }
