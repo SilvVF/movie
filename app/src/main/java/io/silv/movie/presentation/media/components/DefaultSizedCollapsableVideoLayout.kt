@@ -92,6 +92,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
@@ -143,32 +144,31 @@ class VideoState(
     val state = presenter.presenterState
 
     val fullScreenDragState = AnchoredDraggableState(
-            initialValue = VideoDragAnchors.Normal,
-            anchors = DraggableAnchors {
-                VideoDragAnchors.Normal at 0f
-                VideoDragAnchors.FullScreen at 1200f
-                VideoDragAnchors.Dismiss at 1200f
-            },
-            positionalThreshold = { distance: Float -> distance * 0.5f },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
-            snapAnimationSpec = tween(),
-            decayAnimationSpec = splineBasedDecay(density),
-        )
+        initialValue = VideoDragAnchors.Normal,
+        anchors = DraggableAnchors {
+            VideoDragAnchors.Normal at 0f
+            VideoDragAnchors.FullScreen at with(density) { configuration.screenHeightDp.dp.toPx() / 2 }
+        },
+        positionalThreshold = { distance: Float -> distance * 0.5f },
+        velocityThreshold = { with(density) { 100.dp.toPx() } },
+        snapAnimationSpec = tween(),
+        decayAnimationSpec = splineBasedDecay(density),
+    )
 
     val videoDragState = AnchoredDraggableState(
-            initialValue = presenter.initialVideoAnchor ?: CollapsableVideoAnchors.Start,
-            anchors = DraggableAnchors {
-                CollapsableVideoAnchors.Start at 0f
-                CollapsableVideoAnchors.End at
-                        with(density) { configuration.screenHeightDp.dp.toPx() }
-                CollapsableVideoAnchors.Dismiss at
-                        with(density) { configuration.screenHeightDp.dp.toPx() + CollapsablePlayerMinHeight.toPx() }
-            },
-            positionalThreshold = { distance: Float -> distance * 0.5f },
-            velocityThreshold = { with(density) { 100.dp.toPx() } },
-            snapAnimationSpec = tween(),
-            decayAnimationSpec = splineBasedDecay(density),
-        )
+        initialValue = presenter.initialVideoAnchor ?: CollapsableVideoAnchors.Dismiss,
+        anchors = DraggableAnchors {
+            CollapsableVideoAnchors.Start at 0f
+            CollapsableVideoAnchors.End at
+                    with(density) { configuration.screenHeightDp.dp.toPx() }
+            CollapsableVideoAnchors.Dismiss at
+                    with(density) { configuration.screenHeightDp.dp.toPx() + CollapsablePlayerMinHeight.toPx() }
+        },
+        positionalThreshold = { distance: Float -> distance * 0.5f },
+        velocityThreshold = { with(density) { 100.dp.toPx() } },
+        snapAnimationSpec = tween(),
+        decayAnimationSpec = splineBasedDecay(density),
+    )
 
 
     val fullScreenDragEnabled by derivedStateOf {
@@ -176,18 +176,23 @@ class VideoState(
     }
 
     val progress by derivedStateOf {
-        1 - (videoDragState.requireOffset() / videoDragState.anchors.positionOf(CollapsableVideoAnchors.End))
+        1 - (videoDragState.requireOffset() / videoDragState.anchors.positionOf(
+            CollapsableVideoAnchors.End
+        ))
             .coerceIn(0f..1f)
     }
 
     val fullScreenProgress by derivedStateOf {
-        val fullscreenAnchorPos = fullScreenDragState.anchors.positionOf(VideoDragAnchors.FullScreen)
+        val fullscreenAnchorPos =
+            fullScreenDragState.anchors.positionOf(VideoDragAnchors.FullScreen)
         (fullScreenDragState.requireOffset() / fullscreenAnchorPos)
             .coerceIn(0f..1f)
     }
 
     val dismissOffsetPx by derivedStateOf {
-        val offset = videoDragState.requireOffset() - videoDragState.anchors.positionOf(CollapsableVideoAnchors.End)
+        val offset = videoDragState.requireOffset() - videoDragState.anchors.positionOf(
+            CollapsableVideoAnchors.End
+        )
         offset.coerceAtLeast(0f).roundToInt()
     }
 
@@ -207,19 +212,21 @@ class VideoState(
     init {
         scope.launch {
             try {
-                awaitCancellation() // Waits until ViewModel is cleared
+                awaitCancellation()
             } finally {
-                presenter.saveState(player.currentPosition, videoDragState.currentValue)
                 player.release()
             }
         }
 
-        presenter.presenterState.onEachLatest {
-            if (it.queue.isNotEmpty()) {
-                videoDragState.snapTo(CollapsableVideoAnchors.Start)
-            } else {
-                videoDragState.snapTo(CollapsableVideoAnchors.End)
-            }
+        presenter.presenterState
+            .map { it.queue.isNotEmpty() }
+            .distinctUntilChanged()
+            .onEach {
+                if (it && videoDragState.currentValue == CollapsableVideoAnchors.Dismiss) {
+                    videoDragState.animateTo(CollapsableVideoAnchors.Start)
+                } else {
+                    videoDragState.animateTo(CollapsableVideoAnchors.End)
+                }
         }
             .launchIn(scope)
 
@@ -231,20 +238,12 @@ class VideoState(
                     true,
                     C.VOLUME_FLAG_REMOVE_SOUND_AND_VIBRATE
                 )
-
-                is PlayerEvent.SnapTo -> videoDragState.snapTo(event.anchors)
-            }
-        }
-            .launchIn(scope)
-
-        snapshotFlow { fullScreenDragState.currentValue }.onEach { anchors ->
-            if (anchors == VideoDragAnchors.Dismiss) {
-                fullScreenDragState.animateTo(VideoDragAnchors.Normal)
             }
         }
             .launchIn(scope)
 
         snapshotFlow { videoDragState.currentValue }.onEach { anchors ->
+            presenter.saveState(player.currentPosition, anchors)
             if (anchors == CollapsableVideoAnchors.Dismiss) {
                 presenter.clearMediaQueue()
             }
@@ -263,6 +262,7 @@ class VideoState(
                             duration = SnackbarDuration.Short
                         )
                     }
+
                     is StreamState.Success -> {
                         if (state.streams.hls == null) {
                             snackbarHostState?.showSnackbar(
@@ -286,6 +286,7 @@ class VideoState(
                             player.prepare()
                         }
                     }
+
                     else -> Unit
                 }
             }
@@ -440,8 +441,7 @@ private class CollapsableVideoLayoutScrollConnection(
         preFlingIdx = lazyListState.firstVisibleItemIndex
 
         return if (available.y < 0 && !lazyListState.canScrollBackward && canConsumeDelta && lazyListState.firstVisibleItemIndex == 0) {
-            state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss }
-                ?: VideoDragAnchors.FullScreen, available.y)
+            state.animateToWithDecay(state.targetValue, available.y)
             available
         } else {
             Velocity.Zero
@@ -452,14 +452,13 @@ private class CollapsableVideoLayoutScrollConnection(
         consumed: Velocity,
         available: Velocity
     ): Velocity {
-        state.animateToWithDecay(state.targetValue.takeIf { it != VideoDragAnchors.Dismiss }
-            ?: VideoDragAnchors.FullScreen, available.y)
+        state.animateToWithDecay(state.targetValue, available.y)
         return super.onPostFling(consumed, available)
     }
 }
 
 enum class VideoDragAnchors {
-    Normal, FullScreen, Dismiss
+    Normal, FullScreen
 }
 
 @Composable
@@ -483,8 +482,6 @@ fun DefaultSizeCollapsableVideoLayout(
 
     val actionsAlpha = lerp(1f, 0f, progress / 0.1f)
     val contentAlpha = lerp(0f, 1f, progress / 0.8f)
-
-    val canDrag = reorderState.draggingItemKey == null
 
     val nestedScrollConnection =
         remember(reorderState.listState, videoState.fullScreenDragState) {
@@ -514,14 +511,13 @@ fun DefaultSizeCollapsableVideoLayout(
                     .anchoredDraggable(
                         videoState.videoDragState,
                         Orientation.Vertical,
-                        canDrag && !videoState.fullScreenDragEnabled
+                        !videoState.fullScreenDragEnabled
                     )
                     .anchoredDraggable(
                         videoState.fullScreenDragState,
                         Orientation.Vertical,
-                        canDrag && videoState.fullScreenDragEnabled,
+                        videoState.fullScreenDragEnabled,
                     )
-
                     .layoutId("player")
             ) {
                 player()
@@ -529,11 +525,6 @@ fun DefaultSizeCollapsableVideoLayout(
             Surface(
                 modifier = Modifier
                     .layoutId("content")
-                    .anchoredDraggable(
-                        videoState.fullScreenDragState,
-                        Orientation.Vertical,
-                        canDrag && videoState.fullScreenDragEnabled
-                    )
                     .graphicsLayer {
                         alpha =
                             minOf(
@@ -543,16 +534,16 @@ fun DefaultSizeCollapsableVideoLayout(
                     },
                 shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
             ) {
-                Column {
-                    pinnedContent()
-                    LazyColumnAnimatedAlpha(
-                        reorderState = reorderState,
-                        nestedScrollConnection = nestedScrollConnection,
-                        scrollEnabled = !videoState.fullScreenDragEnabled,
-                        bottomPaddingPx = bottomPadding
-                    ) {
-                        content()
+                LazyColumnAnimatedAlpha(
+                    reorderState = reorderState,
+                    nestedScrollConnection = nestedScrollConnection,
+                    scrollEnabled = !videoState.fullScreenDragEnabled,
+                    bottomPaddingPx = bottomPadding
+                ) {
+                    item {
+                        pinnedContent()
                     }
+                    content()
                 }
             }
             Box(modifier = Modifier
@@ -629,7 +620,6 @@ fun DefaultSizeCollapsableVideoLayout(
             DraggableAnchors {
                 VideoDragAnchors.Normal at 0f
                 VideoDragAnchors.FullScreen at 1200f
-                VideoDragAnchors.Dismiss at 1200f + playerPlaceable.height
             }
         )
 

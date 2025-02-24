@@ -1,19 +1,16 @@
 package io.silv.movie.prefrences
 
-import android.app.ActivityManager
-import android.content.Context
 import android.os.Build
 import androidx.annotation.StringRes
-import androidx.core.content.getSystemService
 import cafe.adriel.voyager.navigator.tab.Tab
 import io.silv.movie.R
 import io.silv.movie.prefrences.core.PreferenceStore
 import io.silv.movie.prefrences.core.getEnum
 import io.silv.movie.presentation.settings.StringResource
-import io.silv.movie.presentation.tabs.BrowseTab
-import io.silv.movie.presentation.tabs.DiscoverTab
-import io.silv.movie.presentation.tabs.LibraryTab
-import io.silv.movie.presentation.tabs.ProfileTab
+import io.silv.movie.presentation.tabs.BrowseTabElement
+import io.silv.movie.presentation.tabs.DiscoverTabElement
+import io.silv.movie.presentation.tabs.LibraryTabElement
+import io.silv.movie.presentation.tabs.ProfileTabElement
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -99,8 +96,8 @@ enum class TabletUiMode(@StringRes val titleRes: StringResource) {
 }
 
 enum class StartScreen(@StringRes val titleRes: StringResource, val tab: Tab) {
-    LIBRARY(R.string.library_tab_title, LibraryTab),
-    BROWSE(R.string.browse_tab_title, BrowseTab),
-    DISCOVER(R.string.discover_tab_title, DiscoverTab),
-    PROFILE(R.string.profile_tab_title, ProfileTab),
+    LIBRARY(R.string.library_tab_title, LibraryTabElement),
+    BROWSE(R.string.browse_tab_title, BrowseTabElement),
+    DISCOVER(R.string.discover_tab_title, DiscoverTabElement),
+    PROFILE(R.string.profile_tab_title, ProfileTabElement),
 }

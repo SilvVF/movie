@@ -17,16 +17,15 @@ import androidx.paging.PagingSource
 import androidx.paging.cachedIn
 import cafe.adriel.voyager.core.model.StateScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
-import io.github.jan.supabase.auth.Auth
-import io.github.jan.supabase.postgrest.Postgrest
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.core_ui.voyager.ContentScreen
 import io.silv.core_ui.voyager.ioCoroutineScope
+import io.silv.movie.data.supabase.CommentRepository
+import io.silv.movie.data.supabase.ContentType
+import io.silv.movie.data.supabase.UserRepository
 import io.silv.movie.data.supabase.model.comment.CommentWithUser
 import io.silv.movie.data.supabase.model.comment.PagedComment
 import io.silv.movie.data.supabase.model.comment.ReplyWithUser
-import io.silv.movie.data.supabase.CommentPagingSource
-import io.silv.movie.data.supabase.CommentRepository
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.EventProducer
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -47,8 +46,6 @@ import kotlinx.coroutines.launch
 import org.koin.core.parameter.parametersOf
 import timber.log.Timber
 import kotlin.time.Duration.Companion.minutes
-import io.silv.movie.data.supabase.UserRepository
-import io.silv.movie.data.supabase.ContentType
 
 @Immutable
 @Stable
@@ -82,7 +79,7 @@ sealed interface CommentEvent {
 
 
 @Composable
-fun ContentScreen.getCommentsScreenModel() = koin4ScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
+fun ContentScreen.getCommentsScreenModel() = koinScreenModel<CommentsScreenModel> { parametersOf(this.id, this.isMovie) }
 
 class CommentsScreenModel(
     private val userRepository: UserRepository,

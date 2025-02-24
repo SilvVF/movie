@@ -30,7 +30,6 @@ import io.silv.movie.presentation.media.PresenterState
 import io.silv.movie.presentation.media.StreamState
 import io.silv.movie.presentation.media.components.CollapsablePlayerDefaults.Actions
 import org.burnoutcrew.reorderable.ReorderableLazyListState
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 
 
 @Composable
@@ -92,7 +91,7 @@ fun CollapsablePlayerScreen(
             }
         },
         pinnedContent = {
-            state.queue.firstOrNull()?.let { trailer ->
+            state.streamState.trailerOrNull()?.let { trailer ->
                 CollapsablePlayerDefaults.VideoDescription(
                     trailer = trailer,
                     modifier = Modifier

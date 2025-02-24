@@ -47,6 +47,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil.compose.AsyncImage
@@ -63,7 +64,6 @@ import io.silv.core_ui.components.topbar.colors2
 import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.rememberDominantColor
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.screenmodel.CreditsViewScreenModel
 import org.koin.core.parameter.parametersOf
 
@@ -78,7 +78,7 @@ data class CreditsViewScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<CreditsViewScreenModel> { parametersOf(contentId, isMovie) }
+        val screenModel = koinScreenModel<CreditsViewScreenModel> { parametersOf(contentId, isMovie) }
 
         val poster by screenModel.state.collectAsStateWithLifecycle()
         val credits = screenModel.credits.collectAsLazyPagingItems()

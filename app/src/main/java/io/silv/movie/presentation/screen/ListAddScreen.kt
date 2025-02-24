@@ -68,7 +68,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PageLoadingIndicator
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.components.content.ContentListItem
 import io.silv.movie.presentation.components.dialog.RemoveEntryDialog
@@ -88,7 +88,7 @@ data class ListAddScreen(
     @Composable
     override fun Content() {
         val contentInteractor = LocalContentInteractor.current
-        val screenModel = koin4ScreenModel<ListAddScreenModel> { parametersOf(listId) }
+        val screenModel = koinScreenModel<ListAddScreenModel> { parametersOf(listId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val contentPagingItems = screenModel.contentPagingFlow.collectAsLazyPagingItems()
         val navigator = LocalNavigator.currentOrThrow

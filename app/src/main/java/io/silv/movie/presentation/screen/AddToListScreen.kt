@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -54,7 +55,6 @@ import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.components.content.ContentListPoster
 import io.silv.movie.presentation.components.content.ContentListPreview
 import io.silv.movie.presentation.screenmodel.AddToListScreenModel
@@ -76,7 +76,7 @@ data class AddToListScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<AddToListScreenModel> {
+        val screenModel = koinScreenModel<AddToListScreenModel> {
             parametersOf(
                 contentId,
                 isMovie

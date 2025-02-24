@@ -1,14 +1,14 @@
 package io.silv.movie.presentation
 
-import androidx.compose.runtime.Stable
 import io.github.jan.supabase.auth.Auth
+import io.silv.movie.IoDispatcher
 import io.silv.movie.data.DeleteContentList
-import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.EditContentList
+import io.silv.movie.data.ListUpdateManager
 import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.model.ContentList
 import io.silv.movie.data.model.toUpdate
 import io.silv.movie.data.supabase.ListRepository
-import io.silv.movie.data.ListUpdateManager
 import io.silv.movie.presentation.ListInteractor.ListEvent
 import io.silv.movie.presentation.ListInteractor.ListEvent.Copied
 import io.silv.movie.presentation.ListInteractor.ListEvent.Delete
@@ -19,8 +19,9 @@ import io.silv.movie.presentation.ListInteractor.ListEvent.Unsubscribe
 import io.silv.movie.presentation.ListInteractor.ListEvent.VisibleChanged
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 interface ListInteractor: EventProducer<ListEvent> {
@@ -31,32 +32,6 @@ interface ListInteractor: EventProducer<ListEvent> {
     fun subscribeToList(contentList: ContentList)
     fun unsubscribeFromList(contentList: ContentList)
     fun togglePinned(contentList: ContentList)
-
-    companion object {
-        fun default(
-            local: ContentListRepository,
-            network: ListRepository,
-            listUpdateManager: ListUpdateManager,
-            editContentList: EditContentList,
-            deleteContentList: DeleteContentList,
-            movieCoverCache: MovieCoverCache,
-            showCoverCache: TVShowCoverCache,
-            auth: Auth,
-            scope: CoroutineScope,
-        ): ListInteractor {
-            return DefaultListInteractor(
-               local,
-                network,
-                listUpdateManager,
-                editContentList,
-                deleteContentList,
-                movieCoverCache,
-                showCoverCache,
-                auth,
-                scope
-            )
-        }
-    }
 
     sealed interface ListEvent {
         data class VisibleChanged(val list: ContentList, val success: Boolean): ListEvent
@@ -69,8 +44,7 @@ interface ListInteractor: EventProducer<ListEvent> {
     }
 }
 
-@Stable
-private class DefaultListInteractor(
+class DefaultListInteractor(
     private val local: ContentListRepository,
     private val network: ListRepository,
     private val listUpdateManager: ListUpdateManager,
@@ -79,11 +53,13 @@ private class DefaultListInteractor(
     private val movieCoverCache: MovieCoverCache,
     private val showCoverCache: TVShowCoverCache,
     val auth: Auth,
-    private val scope: CoroutineScope,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ): ListInteractor, EventProducer<ListEvent> by EventProducer.default() {
 
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+    
     override fun deleteList(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             deleteContentList(contentList, movieCoverCache, showCoverCache)
                 .onSuccess { emitEvent(Delete(contentList, true)) }
                 .onFailure { emitEvent(Delete(contentList, false)) }
@@ -91,7 +67,7 @@ private class DefaultListInteractor(
     }
 
     override fun toggleListVisibility(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             runCatching {
                 editContentList(contentList) {
                     it.copy(public = !it.public)
@@ -108,7 +84,7 @@ private class DefaultListInteractor(
     }
 
     override fun copyList(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             runCatching {
                 var list = local.getList(contentList.id)
 
@@ -150,7 +126,7 @@ private class DefaultListInteractor(
     }
 
     override fun editList(contentList: ContentList, update: (ContentList) -> ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             editContentList(contentList, update)
                 .onSuccess { Edited(contentList, it, true) }
                 .onFailure { Edited(contentList, update(contentList), false) }
@@ -158,7 +134,7 @@ private class DefaultListInteractor(
     }
 
     override fun subscribeToList(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             runCatching {
                 var list = local.getList(contentList.id)
 
@@ -183,7 +159,7 @@ private class DefaultListInteractor(
     }
 
     override fun unsubscribeFromList(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             runCatching {
 
                 if (contentList.createdBy ==  null || contentList.createdBy == auth.currentUserOrNull()?.id) {
@@ -204,7 +180,7 @@ private class DefaultListInteractor(
     }
 
     override fun togglePinned(contentList: ContentList) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             runCatching {
                 val new = contentList.copy(pinned = !contentList.pinned)
                 local.updateList(new.toUpdate())

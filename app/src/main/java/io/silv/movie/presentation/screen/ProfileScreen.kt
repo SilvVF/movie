@@ -34,7 +34,7 @@ import io.silv.core_ui.components.Action
 import io.silv.core_ui.components.EmptyScreen
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.components.AuthScreenContent
 import io.silv.movie.presentation.components.SignedInScreen
@@ -53,7 +53,7 @@ data object ProfileScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<ProfileScreenModel>()
+        val screenModel = koinScreenModel<ProfileScreenModel>()
         val navigator = LocalNavigator.currentOrThrow
         val state by screenModel.state.collectAsStateWithLifecycle()
         val snackbarHostState = remember { SnackbarHostState() }

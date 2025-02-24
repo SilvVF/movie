@@ -8,9 +8,6 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import cafe.adriel.voyager.core.screen.Screen
 import io.silv.movie.MovieTheme
-import io.silv.movie.presentation.LocalAppState
-import io.silv.movie.presentation.settings.screens.SettingsAppearanceScreen
-import kotlinx.serialization.Serializable
 
 
 typealias StringResource = Int

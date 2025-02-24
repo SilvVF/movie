@@ -1,16 +1,13 @@
 package io.silv.movie.presentation
 
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import io.silv.movie.AppData
@@ -23,7 +20,7 @@ import io.silv.movie.prefrences.ThemeMode
 import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.data.supabase.model.User
 import io.silv.movie.presentation.media.components.VideoState
-import io.silv.movie.presentation.tabs.LibraryTab
+import io.silv.movie.presentation.tabs.LibraryTabElement
 import org.koin.compose.currentKoinScope
 import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.parameter.ParametersDefinition
@@ -34,13 +31,8 @@ import org.koin.viewmodel.lazyResolveViewModel
 
 
 val LocalIsScrolling = compositionLocalOf<MutableState<Boolean>> { error("not provided yet")  }
-
-val LocalMainViewModelStoreOwner = staticCompositionLocalOf<ViewModelStoreOwner> { error("not provided") }
-
 val LocalContentInteractor = staticCompositionLocalOf<ContentInteractor> { error("ContentInteractor not provided in current scope") }
-
 val LocalListInteractor = staticCompositionLocalOf<ListInteractor> { error("ListInteractor not provided in current scope") }
-
 val LocalUser = compositionLocalOf<User?> { null }
 
 private val defaultAppData by lazy {
@@ -50,7 +42,7 @@ private val defaultAppData by lazy {
         amoled = false,
         dateFormat = UiPreferences.dateFormat(""),
         relativeTimestamp = true,
-        startScreen = LibraryTab,
+        startScreen = LibraryTabElement,
         sharedElementTransitions = true,
         predictiveBackNavigation = true,
     )
@@ -60,7 +52,7 @@ val LocalVideoState = staticCompositionLocalOf<VideoState> {
    error("not provided")
 }
 
-val LocalAppState = compositionLocalOf {
+val LocalAppData = compositionLocalOf {
     if (BuildConfig.DEBUG) {
         error("app state was not set in production default state will be used")
     } else {
@@ -76,7 +68,7 @@ fun ProvideLocalsForPreviews(
 ) {
     CompositionLocalProvider(
         LocalUser providesDefault null,
-        LocalAppState providesDefault defaultAppData,
+        LocalAppData providesDefault defaultAppData,
         LocalIsScrolling providesDefault remember { mutableStateOf(true) },
         LocalContentInteractor providesDefault remember {
             object : ContentInteractor, EventProducer<ContentInteractor.ContentEvent> by EventProducer.default() {
@@ -101,30 +93,6 @@ fun ProvideLocalsForPreviews(
     ) {
         content()
     }
-}
-
-@OptIn(KoinInternalApi::class)
-@Composable
-inline fun <reified T : ViewModel> getActivityViewModel(
-    qualifier: Qualifier? = null,
-    key: String? = null,
-    scope: Scope = currentKoinScope(),
-    noinline parameters: ParametersDefinition? = null,
-): Lazy<T> {
-
-    val viewModelStoreOwner = checkNotNull(LocalMainViewModelStoreOwner.current) {
-        "No ViewModelStoreOwner was provided via LocalMainViewModelStoreOwner"
-    }
-    val extras = defaultExtras(viewModelStoreOwner)
-
-    return lazyResolveViewModel(
-        T::class,
-        { viewModelStoreOwner.viewModelStore }, key,
-        { extras },
-        qualifier,
-        scope,
-        parameters
-    )
 }
 
 @Composable

@@ -120,7 +120,7 @@ import io.silv.movie.coil.fetchers.model.UserProfileImageData
 import io.silv.movie.data.supabase.model.User
 import io.silv.movie.data.supabase.model.comment.PagedComment
 import io.silv.movie.presentation.CollectEventsWithLifecycle
-import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.LocalAppData
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.profile.UserProfileImage
 import io.silv.movie.presentation.screen.ProfileScreen
@@ -579,7 +579,7 @@ private fun CommentContent(
         modifier = modifier
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            val appState = LocalAppState.current
+            val appState = LocalAppData.current
             Text(
                 text = username ?: "deleted user",
                 style = MaterialTheme.typography.titleSmall,

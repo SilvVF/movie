@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
@@ -76,7 +77,6 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentItemSourceCoverOnlyGridItem
@@ -87,7 +87,7 @@ import io.silv.movie.presentation.rememberProfileImageData
 import io.silv.movie.presentation.screenmodel.BrowseListsScreenModel
 import io.silv.movie.presentation.screenmodel.ListPagedType
 import io.silv.movie.presentation.screenmodel.ListPreviewItem
-import io.silv.movie.presentation.tabs.ProfileTab
+import io.silv.movie.presentation.tabs.ProfileTabElement
 import io.silv.movie.presentation.toPoster
 import kotlinx.coroutines.flow.StateFlow
 
@@ -97,7 +97,7 @@ data object BrowseListsScreen: Screen {
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<BrowseListsScreenModel>()
+        val screenModel = koinScreenModel<BrowseListsScreenModel>()
         val popularUserLists by screenModel.popularLists.collectAsStateWithLifecycle()
         val subscribedRecommended by screenModel.subscribedRecommended.collectAsStateWithLifecycle()
         val recentlyCreated by screenModel.recentlyCreated.collectAsStateWithLifecycle()
@@ -157,7 +157,7 @@ data object BrowseListsScreen: Screen {
                         title = {
                             TextButton(
                                 onClick = {
-                                    tabNavigator.current = ProfileTab
+                                    tabNavigator.current = ProfileTabElement
                                 },
                                 colors = ButtonDefaults.textButtonColors(
                                     contentColor = dominantColor

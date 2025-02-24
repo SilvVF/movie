@@ -8,14 +8,13 @@ import cafe.adriel.voyager.navigator.Navigator
 import io.silv.movie.presentation.ContentInteractor
 import io.silv.movie.presentation.ContentInteractor.ContentEvent
 import io.silv.movie.presentation.screen.ListViewScreen
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.onEach
 
 
-suspend fun ContentInteractor.eventHandler(
+fun ContentInteractor.eventHandler(
     snackbarHostState: SnackbarHostState,
     context: Context,
-    navigate: SendChannel<Navigator.() -> Unit>
+    navigate: suspend (Navigator.() -> Unit) -> Unit
 ) = eventsAsFlow().onEach { event ->
     when (event) {
         is ContentEvent.AddToList -> {
@@ -126,7 +125,7 @@ suspend fun ContentInteractor.eventHandler(
                 when (result) {
                     SnackbarResult.Dismissed -> Unit
                     SnackbarResult.ActionPerformed ->
-                        navigate.send {
+                        navigate {
                             push(
                                 ListViewScreen(
                                     event.list.id,

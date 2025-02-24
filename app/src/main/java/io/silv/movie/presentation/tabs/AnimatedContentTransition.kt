@@ -32,17 +32,14 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import io.silv.core_ui.components.PosterData
 import io.silv.core_ui.components.bottomsheet.modal.PredictiveBack
-import io.silv.movie.MainViewModel
-import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.LocalAppData
 import io.silv.movie.presentation.LocalVideoState
-import io.silv.movie.presentation.getActivityViewModel
-import io.silv.movie.presentation.media.PlayerPresenter
 import io.silv.movie.presentation.media.components.CollapsableVideoAnchors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun SharedTransitionTab.AnimatedContentTransition(
+fun SharedElementTransitionTab.AnimatedContentTransition(
     navigator: Navigator,
     modifier: Modifier = Modifier,
     transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform = {
@@ -53,7 +50,7 @@ fun SharedTransitionTab.AnimatedContentTransition(
     label: String = "AnimatedContentTransition",
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit = { it.Content() }
 ) {
-    if (Build.VERSION.SDK_INT >= 34 && LocalAppState.current.predictiveBackNavigation) {
+    if (Build.VERSION.SDK_INT >= 34 && LocalAppData.current.predictiveBackNavigation) {
         PredictiveBackAnimatedContentTransition(
             navigator = navigator,
             transform = transform,
@@ -73,14 +70,14 @@ fun SharedTransitionTab.AnimatedContentTransition(
 }
 
 @Composable
-fun SharedTransitionTab.AnimatedContentTransitionNoPredictiveBack(
+fun SharedElementTransitionTab.AnimatedContentTransitionNoPredictiveBack(
     navigator: Navigator,
     transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform,
     label: String,
     modifier: Modifier = Modifier,
     content: @Composable AnimatedVisibilityScope.(Screen) -> Unit
 ) {
-    val sharedElementTransitions = LocalAppState.current.sharedElementTransitions
+    val sharedElementTransitions = LocalAppData.current.sharedElementTransitions
 
     SharedTransitionScope {
         AnimatedContent(
@@ -94,7 +91,7 @@ fun SharedTransitionTab.AnimatedContentTransitionNoPredictiveBack(
                     SharedTransitionState(
                         transitionScope = this@SharedTransitionScope,
                         visibilityScope = this@AnimatedContent,
-                        transform = this@SharedTransitionTab.transform
+                        transform = this@AnimatedContentTransitionNoPredictiveBack.transform
                     )
                         .takeIf { sharedElementTransitions }
                 )
@@ -108,7 +105,7 @@ fun SharedTransitionTab.AnimatedContentTransitionNoPredictiveBack(
 }
 
 @Composable
-fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
+fun SharedElementTransitionTab.PredictiveBackAnimatedContentTransition(
     navigator: Navigator,
     transform: AnimatedContentTransitionScope<Screen>.() -> ContentTransform,
     label: String,
@@ -184,9 +181,9 @@ fun SharedTransitionTab.PredictiveBackAnimatedContentTransition(
                         SharedTransitionState(
                             transitionScope = this@SharedTransitionScope,
                             visibilityScope = this@AnimatedContent,
-                            transform = this@SharedTransitionTab.transform
+                            transform = this@PredictiveBackAnimatedContentTransition.transform
                         )
-                            .takeIf { LocalAppState.current.sharedElementTransitions }
+                            .takeIf { LocalAppData.current.sharedElementTransitions }
                     )
                 ) {
                     navigator.saveableState(screen.key, screen) {
@@ -252,7 +249,7 @@ fun PosterData.toSharedElement() = if (isMovie) SharedElement.Movie(id) else Sha
 fun Modifier.registerSharedElement(
     element: SharedElement,
     inOverlay: Boolean = true,
-    transitionState: SharedTransitionState? = (LocalTabNavigator.current.current as? SharedTransitionTab)
+    transitionState: SharedTransitionState? = (LocalTabNavigator.current.current as? SharedElementTransitionTab)
         ?.LocalSharedTransitionState
         ?.current
 

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,14 +90,10 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.prefrences.PosterDisplayMode
-import io.silv.movie.prefrences.ThemeMode.DARK
-import io.silv.movie.prefrences.ThemeMode.LIGHT
-import io.silv.movie.prefrences.ThemeMode.SYSTEM
 import io.silv.movie.data.supabase.model.User
 import io.silv.movie.isDarkTheme
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
-import io.silv.movie.presentation.LocalAppState
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
@@ -138,7 +133,7 @@ data class ListViewScreen(
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<ListViewScreenModel> { parametersOf(listId, supabaseId) }
+        val screenModel = koinScreenModel<ListViewScreenModel> { parametersOf(listId, supabaseId) }
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val refreshingList by screenModel.refreshingList.collectAsStateWithLifecycle()
@@ -346,7 +341,7 @@ data class ListViewScreen(
 
                         ListViewScreenModel.Dialog.FullCover -> {
                             val sm =
-                                koin4ScreenModel<ListCoverScreenModel> { parametersOf(s.list.id) }
+                                koinScreenModel<ListCoverScreenModel> { parametersOf(s.list.id) }
                             val list by sm.state.collectAsStateWithLifecycle()
 
                             LaunchedEffect(s.list.id) {

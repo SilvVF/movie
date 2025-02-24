@@ -59,7 +59,7 @@ import io.silv.core_ui.voyager.ScreenResult
 import io.silv.core_ui.voyager.ScreenWithResult
 import io.silv.core_ui.voyager.setScreenResult
 import io.silv.movie.R
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.PlaceHolderColors
 import io.silv.movie.presentation.screenmodel.SelectProfileImageScreenModel
 import kotlinx.coroutines.launch
@@ -75,7 +75,7 @@ object SelectProfileImageScreen: ScreenWithResult<SelectProfileImageScreen.Image
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<SelectProfileImageScreenModel>()
+        val screenModel = koinScreenModel<SelectProfileImageScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val hazeState = remember { HazeState() }
         val navigator = LocalNavigator.currentOrThrow

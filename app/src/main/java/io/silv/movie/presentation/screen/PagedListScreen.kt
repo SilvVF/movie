@@ -48,7 +48,7 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentListPosterStateFlowItems
@@ -67,7 +67,7 @@ data class PagedListScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<ListPagedScreenModel> { parametersOf(pagedType) }
+        val screenModel = koinScreenModel<ListPagedScreenModel> { parametersOf(pagedType) }
         val pagingItems = screenModel.pagingData.collectAsLazyPagingItems()
         val listInteractor = LocalListInteractor.current
         val navigator = LocalNavigator.currentOrThrow

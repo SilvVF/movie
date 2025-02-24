@@ -83,7 +83,7 @@ import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.supabase.SupabaseConstants
 import io.silv.movie.data.supabase.model.User
 import io.silv.movie.data.supabase.BackendRepository
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.ProvideLocalsForPreviews
 import io.silv.movie.presentation.components.content.ContentListPosterStateFlowItems
@@ -205,7 +205,7 @@ data class ProfileViewScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<ProfileViewScreenModel> { parametersOf(userId) }
+        val screenModel = koinScreenModel<ProfileViewScreenModel> { parametersOf(userId) }
 
         val navigator = LocalNavigator.currentOrThrow
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

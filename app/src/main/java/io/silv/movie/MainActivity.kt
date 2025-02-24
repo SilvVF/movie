@@ -11,7 +11,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -23,22 +22,17 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.BottomAppBarDefaults
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,73 +44,44 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import cafe.adriel.voyager.core.model.ScreenModel
-import cafe.adriel.voyager.core.model.rememberScreenModel
-import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
-import io.silv.core_ui.theme.colorScheme.CloudflareColorScheme
-import io.silv.core_ui.theme.colorScheme.CottonCandyColorScheme
-import io.silv.core_ui.theme.colorScheme.DoomColorScheme
-import io.silv.core_ui.theme.colorScheme.GreenAppleColorScheme
-import io.silv.core_ui.theme.colorScheme.LavenderColorScheme
-import io.silv.core_ui.theme.colorScheme.MatrixColorScheme
-import io.silv.core_ui.theme.colorScheme.MidnightDuskColorScheme
-import io.silv.core_ui.theme.colorScheme.MochaColorScheme
-import io.silv.core_ui.theme.colorScheme.MonetColorScheme
-import io.silv.core_ui.theme.colorScheme.NordColorScheme
-import io.silv.core_ui.theme.colorScheme.SapphireColorScheme
-import io.silv.core_ui.theme.colorScheme.StrawberryColorScheme
-import io.silv.core_ui.theme.colorScheme.TachiyomiColorScheme
-import io.silv.core_ui.theme.colorScheme.TakoColorScheme
-import io.silv.core_ui.theme.colorScheme.TealTurqoiseColorScheme
-import io.silv.core_ui.theme.colorScheme.TidalWaveColorScheme
-import io.silv.core_ui.theme.colorScheme.YinYangColorScheme
-import io.silv.core_ui.theme.colorScheme.YotsubaColorScheme
 import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.data.model.Trailer
 import io.silv.movie.data.supabase.BackendRepository
-import io.silv.movie.prefrences.AppTheme
-import io.silv.movie.prefrences.ThemeMode.DARK
-import io.silv.movie.prefrences.ThemeMode.LIGHT
-import io.silv.movie.prefrences.ThemeMode.SYSTEM
-import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.prefrences.UiPreferences
+import io.silv.movie.presentation.ContentInteractor
+import io.silv.movie.presentation.ListInteractor
+import io.silv.movie.presentation.LocalAppData
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalListInteractor
-import io.silv.movie.presentation.LocalMainViewModelStoreOwner
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.LocalVideoState
-import io.silv.movie.presentation.media.StreamState
+import io.silv.movie.presentation.media.PlayerPresenter
 import io.silv.movie.presentation.media.components.CollapsablePlayerScreen
 import io.silv.movie.presentation.media.components.VideoState
-import io.silv.movie.presentation.tabs.BrowseTab
-import io.silv.movie.presentation.tabs.DiscoverTab
-import io.silv.movie.presentation.tabs.LibraryTab
-import io.silv.movie.presentation.tabs.ProfileTab
-import io.silv.movie.presentation.tabs.SettingsTab
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.launch
+import io.silv.movie.presentation.tabs.BrowseTabElement
+import io.silv.movie.presentation.tabs.DiscoverTabElement
+import io.silv.movie.presentation.tabs.LibraryTabElement
+import io.silv.movie.presentation.tabs.ProfileTabElement
+import io.silv.movie.presentation.tabs.SettingsTabElement
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import org.koin.compose.currentKoinScope
-import org.koin.core.parameter.ParametersDefinition
-import org.koin.core.qualifier.Qualifier
-import org.koin.core.scope.Scope
 import kotlin.math.roundToInt
 
 
 class MainActivity : ComponentActivity() {
 
     private val backendRepository by inject<BackendRepository>()
-
-    private val mainViewModel by viewModel<MainViewModel>()
     private val screenResultsViewModel by viewModel<ScreenResultsViewModel>()
+    private val uiPreferences by inject<UiPreferences>()
+    private val listInteractor by inject<ListInteractor>()
+    private val contentInteractor by inject<ContentInteractor>()
+    private val playerPresenter by inject<PlayerPresenter>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -125,79 +90,52 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         screenResultsViewModel.bind()
+        val appState =
+            MovieAppState(
+                uiPreferences,
+                contentInteractor,
+                listInteractor,
+                screenResultsViewModel,
+                this,
+                lifecycleScope
+            )
 
         splashScreen.setKeepOnScreenCondition {
-            when (mainViewModel.state.value) {
-                AppState.Loading -> true
-                is AppState.Success -> false
-            }
-        }
-
-        lifecycleScope.launch {
-            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                mainViewModel.contentInteractor.eventHandler(
-                    mainViewModel.snackbarHostState,
-                    this@MainActivity,
-                    mainViewModel.navigationChannel
-                )
-                    .launchIn(this)
-                mainViewModel.listInteractor.handleEvents(
-                    mainViewModel.snackbarHostState,
-                    this@MainActivity,
-                    mainViewModel.navigationChannel
-                )
-                    .launchIn(this)
+            when (appState.state.value) {
+                AppDataState.Loading -> true
+                is AppDataState.Success -> false
             }
         }
 
         setContent {
             KoinAndroidContext {
                 val currentUser by backendRepository.currentUser.collectAsStateWithLifecycle()
-                val appState by mainViewModel.state.collectAsStateWithLifecycle()
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
+                val appData by appState.state.collectAsStateWithLifecycle()
 
                 val videoState = remember {
                     VideoState(
-                        mainViewModel.playerPresenter,
+                        playerPresenter,
                         scope,
                         context,
-                        mainViewModel.snackbarHostState
+                        appState.snackbarHostState
                     )
                 }
 
-                val dismissSnackbarState =
-                    rememberSwipeToDismissBoxState(confirmValueChange = { value ->
-                        when (value) {
-                            SwipeToDismissBoxValue.Settled -> {
-                                mainViewModel.snackbarHostState.currentSnackbarData?.dismiss()
-                                true
-                            }
-
-                            else -> false
-                        }
-                    })
-                LaunchedEffect(dismissSnackbarState.currentValue) {
-                    if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
-                        dismissSnackbarState.reset()
-                    }
-                }
-
-                when (val s = appState) {
-                    AppState.Loading -> Unit
-                    is AppState.Success -> {
+                when (val s = appData) {
+                    AppDataState.Loading -> Unit
+                    is AppDataState.Success -> {
                         CompositionLocalProvider(
-                            LocalMainViewModelStoreOwner provides this,
                             LocalUser provides currentUser,
-                            LocalListInteractor provides mainViewModel.listInteractor,
-                            LocalContentInteractor provides mainViewModel.contentInteractor,
-                            LocalAppState provides s.state,
+                            LocalListInteractor provides listInteractor,
+                            LocalContentInteractor provides contentInteractor,
+                            LocalAppData provides s.state,
                             LocalVideoState provides videoState
                         ) {
                             MainContent(
+                                appState,
                                 appData = s.state,
-                                swipeToDismissBoxState = dismissSnackbarState,
-                                mainViewModel = mainViewModel
                             )
                         }
                     }
@@ -207,47 +145,40 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Stable
-class StableParametersDefinition(val parametersDefinition: ParametersDefinition?)
-
-@Composable
-fun rememberStableParametersDefinition(
-    parametersDefinition: ParametersDefinition?
-): StableParametersDefinition = remember { StableParametersDefinition(parametersDefinition) }
-
-@Composable
-inline fun <reified T : ScreenModel> Screen.koin4ScreenModel(
-    qualifier: Qualifier? = null,
-    scope: Scope = currentKoinScope(),
-    noinline parameters: ParametersDefinition? = null
-): T {
-    val st = parameters?.let { rememberStableParametersDefinition(parameters) }
-    val tag = remember(qualifier, scope) { qualifier?.value }
-    return rememberScreenModel(tag = tag) {
-        scope.get(qualifier, st?.parametersDefinition)
-    }
-}
 
 @Composable
 private fun MainContent(
+    appState: MovieAppState,
     appData: AppData,
-    swipeToDismissBoxState: SwipeToDismissBoxState,
-    mainViewModel: MainViewModel,
 ) {
-
     val videoState = LocalVideoState.current
     val state by videoState.state.collectAsStateWithLifecycle()
     val reorderState = rememberReorderableLazyListState(
         onMove = videoState::onMove,
-        onDragEnd = { _, _ -> videoState.onDragEnd() }
     )
+
+    val dismissSnackbarState =
+        rememberSwipeToDismissBoxState(confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.Settled -> {
+                    appState.snackbarHostState.currentSnackbarData?.dismiss()
+                    true
+                }
+
+                else -> false
+            }
+        })
+    LaunchedEffect(dismissSnackbarState.currentValue) {
+        if (dismissSnackbarState.currentValue != SwipeToDismissBoxValue.Settled) {
+            dismissSnackbarState.reset()
+        }
+    }
 
     BackHandler(
         enabled = state.queue.isNotEmpty()
     ) {
         videoState.clearQueue()
     }
-
 
     MovieTheme {
         TabNavigator(appData.startScreen) { tabNavigator ->
@@ -265,13 +196,13 @@ private fun MainContent(
                     },
                     snackbarHost = {
                         SwipeToDismissBox(
-                            state = swipeToDismissBoxState,
+                            state = dismissSnackbarState,
                             backgroundContent = {},
                             content = {
                                 SnackbarHost(
                                     // classic compost
                                     // "imePadding doesnt work on M3??"
-                                    hostState = mainViewModel.snackbarHostState,
+                                    hostState = appState.snackbarHostState,
                                     modifier = Modifier.imePadding()
                                 )
                             },
@@ -283,9 +214,6 @@ private fun MainContent(
                             .padding(paddingValues)
                             .consumeWindowInsets(paddingValues)
                     ) {
-
-
-
                         val padding by animateDpAsState(
                             targetValue = if (state.queue.isNotEmpty()) {
                                 videoState.bottomPadding
@@ -322,71 +250,12 @@ private fun MainContent(
     }
 }
 
-
-@Composable
-@ReadOnlyComposable
-fun getThemeColorScheme(
-    appTheme: AppTheme,
-    amoled: Boolean,
-    dark: Boolean,
-): ColorScheme {
-    val colorScheme = when (appTheme) {
-        AppTheme.DEFAULT -> TachiyomiColorScheme
-        AppTheme.MONET -> MonetColorScheme(LocalContext.current)
-        AppTheme.CLOUDFLARE -> CloudflareColorScheme
-        AppTheme.COTTONCANDY -> CottonCandyColorScheme
-        AppTheme.DOOM -> DoomColorScheme
-        AppTheme.GREEN_APPLE -> GreenAppleColorScheme
-        AppTheme.LAVENDER -> LavenderColorScheme
-        AppTheme.MATRIX -> MatrixColorScheme
-        AppTheme.MIDNIGHT_DUSK -> MidnightDuskColorScheme
-        AppTheme.MOCHA -> MochaColorScheme
-        AppTheme.SAPPHIRE -> SapphireColorScheme
-        AppTheme.NORD -> NordColorScheme
-        AppTheme.STRAWBERRY_DAIQUIRI -> StrawberryColorScheme
-        AppTheme.TAKO -> TakoColorScheme
-        AppTheme.TEALTURQUOISE -> TealTurqoiseColorScheme
-        AppTheme.TIDAL_WAVE -> TidalWaveColorScheme
-        AppTheme.YINYANG -> YinYangColorScheme
-        AppTheme.YOTSUBA -> YotsubaColorScheme
-        else -> TachiyomiColorScheme
-    }
-    return colorScheme.getColorScheme(
-        dark,
-        amoled,
-    )
-}
-
-@ReadOnlyComposable
-@Composable
-fun isDarkTheme(): Boolean {
-    val appState = LocalAppState.current
-    val systemTheme = isSystemInDarkTheme()
-    return when (appState.themeMode) {
-        LIGHT -> false
-        DARK -> true
-        SYSTEM -> systemTheme
-    }
-}
-
-@Composable
-fun MovieTheme(
-    dark: Boolean = isDarkTheme(),
-    content: @Composable () -> Unit,
-) {
-    val appState = LocalAppState.current
-    MaterialTheme(
-        colorScheme = getThemeColorScheme(appState.appTheme, appState.amoled, dark),
-        content = content,
-    )
-}
-
 private val tabs = listOf(
-    LibraryTab,
-    BrowseTab,
-    DiscoverTab,
-    ProfileTab,
-    SettingsTab
+    LibraryTabElement,
+    BrowseTabElement,
+    DiscoverTabElement,
+    ProfileTabElement,
+    SettingsTabElement
 )
 
 @Composable

@@ -1,5 +1,11 @@
 package io.silv.movie.core
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.remember
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.screen.Screen
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -13,6 +19,10 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import org.koin.compose.currentKoinScope
+import org.koin.core.parameter.ParametersDefinition
+import org.koin.core.qualifier.Qualifier
+import org.koin.core.scope.Scope
 import java.io.Serializable
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
@@ -113,4 +123,25 @@ fun <T> Flow<T>.onEachLatest(action: suspend (value: T) -> Unit): Flow<Unit> {
      * where performance of dispatch is more important.
      */
     return mapLatest(action).buffer(0)
+}
+
+@Stable
+class StableParametersDefinition(val parametersDefinition: ParametersDefinition?)
+
+@Composable
+fun rememberStableParametersDefinition(
+    parametersDefinition: ParametersDefinition?
+): StableParametersDefinition = remember { StableParametersDefinition(parametersDefinition) }
+
+@Composable
+inline fun <reified T : ScreenModel> Screen.koinScreenModel(
+    qualifier: Qualifier? = null,
+    scope: Scope = currentKoinScope(),
+    noinline parameters: ParametersDefinition? = null
+): T {
+    val st = parameters?.let { rememberStableParametersDefinition(parameters) }
+    val tag = remember(qualifier, scope) { qualifier?.value }
+    return rememberScreenModel(tag = tag) {
+        scope.get(qualifier, st?.parametersDefinition)
+    }
 }

@@ -1,8 +1,6 @@
 package io.silv.movie.presentation.screen
 
 import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -59,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -68,12 +67,10 @@ import io.silv.core_ui.components.PullRefresh
 import io.silv.core_ui.components.lazy.VerticalFastScroller
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.voyager.ContentScreen
-import io.silv.movie.MainViewModel
 import io.silv.movie.R
 import io.silv.movie.coil.fetchers.model.UserProfileImageData
-import io.silv.movie.data.model.toContentItem
 import io.silv.movie.data.model.Credit
-import io.silv.movie.koin4ScreenModel
+import io.silv.movie.data.model.toContentItem
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.creditsPagingList
@@ -81,10 +78,6 @@ import io.silv.movie.presentation.components.content.movie.ExpandableDescription
 import io.silv.movie.presentation.components.content.movie.MovieInfoBox
 import io.silv.movie.presentation.components.dialog.CommentsBottomSheet
 import io.silv.movie.presentation.components.profile.UserProfileImage
-import io.silv.movie.presentation.covers.EditCoverAction
-import io.silv.movie.presentation.covers.PosterCoverDialog
-import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
-import io.silv.movie.presentation.getActivityViewModel
 import io.silv.movie.presentation.media.PlayerPresenter
 import io.silv.movie.presentation.media.WatchContentActivity
 import io.silv.movie.presentation.media.components.trailersList
@@ -93,6 +86,8 @@ import io.silv.movie.presentation.screenmodel.MovieDetailsState
 import io.silv.movie.presentation.screenmodel.MovieViewScreenModel
 import io.silv.movie.presentation.screenmodel.getCommentsScreenModel
 import io.silv.movie.presentation.toPoster
+import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 data class MovieViewScreen(
@@ -107,8 +102,8 @@ data class MovieViewScreen(
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<MovieViewScreenModel> { parametersOf(id) }
-        val mainScreenModel by getActivityViewModel<MainViewModel>()
+        val screenModel = koinScreenModel<MovieViewScreenModel> { parametersOf(id) }
+        val playerPresenter = koinInject<PlayerPresenter>()
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         val changeDialog = remember {
@@ -141,7 +136,7 @@ data class MovieViewScreen(
                         onPosterClick = {
                             changeDialog(MovieViewScreenModel.Dialog.FullCover)
                         },
-                        onVideoThumbnailClick = mainScreenModel.playerPresenter::requestMediaQueue,
+                        onVideoThumbnailClick = playerPresenter::requestMediaQueue,
                         onViewCreditsClick = {
                             navigator.push(
                                 CreditsViewScreen(
@@ -182,35 +177,7 @@ data class MovieViewScreen(
                 when (state.dialog) {
                     null -> Unit
                     MovieViewScreenModel.Dialog.FullCover -> {
-                        val sm =
-                            koin4ScreenModel<MovieCoverScreenModel> { parametersOf(state.movie.id) }
-                        val movie by sm.state.collectAsStateWithLifecycle()
-
-                        if (movie != null) {
-                            val getContent = rememberLauncherForActivityResult(
-                                ActivityResultContracts.GetContent(),
-                            ) {
-                                if (it == null) return@rememberLauncherForActivityResult
-                                sm.editCover(context, it)
-                            }
-                            val poster = remember(movie) { movie!!.toPoster() }
-                            PosterCoverDialog(
-                                coverDataProvider = { poster },
-                                isCustomCover = remember(movie) { sm.hasCustomCover(movie!!) },
-                                onShareClick = { sm.shareCover(context) },
-                                onSaveClick = { sm.saveCover(context) },
-                                snackbarHostState = sm.snackbarHostState,
-                                onEditClick = if (movie!!.favorite || movie!!.inList) {
-                                    {
-                                        when (it) {
-                                            EditCoverAction.EDIT -> getContent.launch("image/*")
-                                            EditCoverAction.DELETE -> sm.deleteCustomCover(context)
-                                        }
-                                    }
-                                } else null,
-                                onDismissRequest = onDismissRequest,
-                            )
-                        }
+                       ChangeMovieCoverDialog(state.movie.id, onDismissRequest = onDismissRequest)
                     }
 
                     MovieViewScreenModel.Dialog.Comments -> CommentsBottomSheet(

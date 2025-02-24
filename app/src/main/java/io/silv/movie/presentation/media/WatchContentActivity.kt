@@ -11,25 +11,32 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import io.silv.core_ui.components.NoResultsEmptyScreen
-import io.silv.movie.AppState
-import io.silv.movie.AppStateProvider
+import io.silv.core_ui.voyager.ScreenResultsViewModel
+import io.silv.movie.AppDataState
+import io.silv.movie.MovieAppState
 import io.silv.movie.MainActivity
 import io.silv.movie.MovieTheme
+import io.silv.movie.data.supabase.BackendRepository
 import io.silv.movie.prefrences.UiPreferences
-import io.silv.movie.presentation.LocalAppState
-import kotlinx.coroutines.channels.Channel
+import io.silv.movie.presentation.ContentInteractor
+import io.silv.movie.presentation.ListInteractor
+import io.silv.movie.presentation.LocalAppData
 import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class WatchContentActivity : ComponentActivity() {
 
     val uiPreferences by inject<UiPreferences>()
+    private val screenResultsViewModel by viewModel<ScreenResultsViewModel>()
+    private val listInteractor by inject<ListInteractor>()
+    private val contentInteractor by inject<ContentInteractor>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,7 +44,15 @@ class WatchContentActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val url = intent.getStringExtra("url")
-        val appState = AppStateProvider(uiPreferences)
+        val appState =
+            MovieAppState(
+                uiPreferences,
+                contentInteractor,
+                listInteractor,
+                screenResultsViewModel,
+                this,
+                lifecycleScope
+            )
 
         setContent {
 
@@ -48,12 +63,12 @@ class WatchContentActivity : ComponentActivity() {
                     }
                 )
             }
-            val state by appState.observeAppData.collectAsStateWithLifecycle(AppState.Loading)
+            val state by appState.state.collectAsStateWithLifecycle(AppDataState.Loading)
 
             when (val s = state) {
-                AppState.Loading -> {}
-                is AppState.Success -> {
-                    CompositionLocalProvider(LocalAppState provides s.state) {
+                AppDataState.Loading -> {}
+                is AppDataState.Success -> {
+                    CompositionLocalProvider(LocalAppData provides s.state) {
                         MovieTheme {
                             Scaffold { paddingValues ->
                                 if (url.isNullOrEmpty()) {

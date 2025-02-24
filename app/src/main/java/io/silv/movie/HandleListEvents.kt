@@ -12,10 +12,10 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.onEach
 
 
-internal suspend fun ListInteractor.handleEvents(
+internal fun ListInteractor.eventHandler(
     snackbarHostState: SnackbarHostState,
     context: Context,
-    navigate: SendChannel<Navigator.() -> Unit>
+    navigate: suspend (Navigator.() -> Unit) -> Unit
 ) = eventsAsFlow().onEach { event ->
     when (event) {
         is ListEvent.Copied -> {
@@ -28,7 +28,7 @@ internal suspend fun ListInteractor.handleEvents(
                 when (result) {
                     SnackbarResult.Dismissed -> Unit
                     SnackbarResult.ActionPerformed ->
-                        navigate.send {
+                        navigate {
                             ListViewScreen(
                                 event.list.id,
                                 event.list.supabaseId.orEmpty()
@@ -77,7 +77,7 @@ internal suspend fun ListInteractor.handleEvents(
                 when (result) {
                     SnackbarResult.Dismissed -> Unit
                     SnackbarResult.ActionPerformed ->
-                        navigate.send {
+                        navigate {
                             push(
                                 ListViewScreen(
                                     event.list.id,

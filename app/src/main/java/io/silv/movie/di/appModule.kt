@@ -1,8 +1,10 @@
 package io.silv.movie.di
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import androidx.media3.common.Player
 import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
@@ -23,8 +25,27 @@ import io.ktor.client.engine.okhttp.OkHttp
 import io.silv.Database
 import io.silv.Movie
 import io.silv.Show
+import io.silv.core_ui.voyager.ScreenResultsViewModel
 import io.silv.movie.BuildConfig
+import io.silv.movie.DefaultDispatcher
+import io.silv.movie.IoDispatcher
+import io.silv.movie.MainDispatcher
+import io.silv.movie.api.ratelimit.rateLimit
+import io.silv.movie.api.service.piped.PipedApi
+import io.silv.movie.api.service.tmdb.TMDBAuthInterceptor
+import io.silv.movie.api.service.tmdb.TMDBMovieService
+import io.silv.movie.api.service.tmdb.TMDBPersonService
+import io.silv.movie.api.service.tmdb.TMDBRecommendationService
+import io.silv.movie.api.service.tmdb.TMDBTVShowService
+import io.silv.movie.core.MB
 import io.silv.movie.core.NetworkMonitor
+import io.silv.movie.core.toBytes
+import io.silv.movie.data.DeleteContentList
+import io.silv.movie.data.EditContentList
+import io.silv.movie.data.ListUpdateManager
+import io.silv.movie.data.RecommendationManager
+import io.silv.movie.data.local.ContentListRepository
+import io.silv.movie.data.local.ContentListRepositoryImpl
 import io.silv.movie.data.local.CreditRepository
 import io.silv.movie.data.local.CreditRepositoryImpl
 import io.silv.movie.data.local.LocalContentDelegate
@@ -43,6 +64,19 @@ import io.silv.movie.data.network.SourceMovieRepositoryImpl
 import io.silv.movie.data.network.SourceShowRepository
 import io.silv.movie.data.network.SourceShowRepositoryImpl
 import io.silv.movie.data.network.SourceTrailerRepository
+import io.silv.movie.data.supabase.BackendRepository
+import io.silv.movie.data.supabase.BackendRepositoryImpl
+import io.silv.movie.data.supabase.CommentRepository
+import io.silv.movie.data.supabase.ListRepository
+import io.silv.movie.data.supabase.UserRepository
+import io.silv.movie.data.workers.FavoritesUpdateWorker
+import io.silv.movie.data.workers.ListUpdateWorker
+import io.silv.movie.data.workers.RecommendationWorker
+import io.silv.movie.data.workers.UserListUpdateWorker
+import io.silv.movie.database.DBAdapters.listIntAdapter
+import io.silv.movie.database.DBAdapters.listStringAdapter
+import io.silv.movie.database.DatabaseHandler
+import io.silv.movie.database.DatabaseHandlerImpl
 import io.silv.movie.prefrences.BasePreferences
 import io.silv.movie.prefrences.BrowsePreferences
 import io.silv.movie.prefrences.LibraryPreferences
@@ -50,59 +84,20 @@ import io.silv.movie.prefrences.StoragePreferences
 import io.silv.movie.prefrences.UiPreferences
 import io.silv.movie.prefrences.core.DatastorePreferenceStore
 import io.silv.movie.prefrences.core.PreferenceStore
-import io.silv.movie.data.ListUpdateManager
-import io.silv.movie.data.supabase.ListRepository
-import io.silv.movie.data.supabase.BackendRepository
-import io.silv.movie.data.supabase.BackendRepositoryImpl
-import io.silv.movie.data.workers.FavoritesUpdateWorker
-import io.silv.movie.data.workers.ListUpdateWorker
-import io.silv.movie.data.workers.RecommendationWorker
-import io.silv.movie.data.workers.UserListUpdateWorker
-import io.silv.movie.data.local.ContentListRepository
-import io.silv.movie.data.local.ContentListRepositoryImpl
-import io.silv.movie.data.RecommendationManager
-import io.silv.movie.data.EditContentList
-import io.silv.movie.database.DBAdapters.listIntAdapter
-import io.silv.movie.database.DBAdapters.listStringAdapter
-import io.silv.movie.database.DatabaseHandlerImpl
-import io.silv.movie.api.service.tmdb.TMDBMovieService
-import io.silv.movie.api.service.tmdb.TMDBPersonService
-import io.silv.movie.api.service.tmdb.TMDBRecommendationService
-import io.silv.movie.api.service.tmdb.TMDBTVShowService
+import io.silv.movie.presentation.ContentInteractor
+import io.silv.movie.presentation.DefaultContentInteractor
+import io.silv.movie.presentation.DefaultListInteractor
+import io.silv.movie.presentation.ListInteractor
+import io.silv.movie.presentation.components.profile.ProfileScreenModel
 import io.silv.movie.presentation.covers.ImageSaver
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import org.koin.android.ext.koin.androidContext
-import org.koin.core.module.dsl.singleOf
-import org.koin.dsl.module
-import retrofit2.Retrofit
-import retrofit2.create
 import io.silv.movie.presentation.covers.cache.ListCoverCache
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.ProfileImageCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
-import org.koin.androidx.workmanager.dsl.workerOf
-import org.koin.core.module.dsl.bind
-import org.koin.core.module.dsl.factoryOf
-import io.silv.core_ui.voyager.ScreenResultsViewModel
-import io.silv.movie.DefaultDispatcher
-import io.silv.movie.IoDispatcher
-import io.silv.movie.MainDispatcher
-import io.silv.movie.MainViewModel
-import io.silv.movie.core.MB
-import io.silv.movie.core.toBytes
-import io.silv.movie.data.supabase.UserRepository
-import io.silv.movie.database.DatabaseHandler
-import io.silv.movie.api.ratelimit.rateLimit
-import io.silv.movie.api.service.piped.PipedApi
-import io.silv.movie.api.service.tmdb.TMDBAuthInterceptor
-import io.silv.movie.data.DeleteContentList
-import io.silv.movie.data.supabase.CommentRepository
-import io.silv.movie.presentation.components.profile.ProfileScreenModel
 import io.silv.movie.presentation.covers.screenmodel.ListCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.MovieCoverScreenModel
 import io.silv.movie.presentation.covers.screenmodel.TVCoverScreenModel
+import io.silv.movie.presentation.media.PlayerPresenter
 import io.silv.movie.presentation.screen.ProfileViewScreenModel
 import io.silv.movie.presentation.screenmodel.AddToListScreenModel
 import io.silv.movie.presentation.screenmodel.BrowseListsScreenModel
@@ -121,18 +116,135 @@ import io.silv.movie.presentation.screenmodel.SelectProfileImageScreenModel
 import io.silv.movie.presentation.screenmodel.TVScreenModel
 import io.silv.movie.presentation.screenmodel.TVViewScreenModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.json.Json
 import okhttp3.Cache
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import org.koin.android.ext.koin.androidContext
+import org.koin.androidx.workmanager.dsl.workerOf
+import org.koin.core.module.dsl.bind
+import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.module.dsl.withOptions
 import org.koin.core.qualifier.qualifier
+import org.koin.dsl.module
+import retrofit2.Retrofit
+import retrofit2.create
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
 
 typealias TMDBClient = OkHttpClient
 
-private val android.content.Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 val appModule = module {
+
+    single {
+        Dispatchers.Default
+    } withOptions {
+        qualifier<DefaultDispatcher>()
+    }
+
+    single {
+        Dispatchers.IO
+    } withOptions {
+        qualifier<IoDispatcher>()
+    }
+
+    single {
+        Dispatchers.Main
+    } withOptions {
+        qualifier<MainDispatcher>()
+    }
+
+    factory<DeleteContentList> {
+        DeleteContentList.create(
+            get(), get(), get(), get()
+        )
+    }
+
+    singleOf(::BrowsePreferences)
+
+    singleOf(::LibraryPreferences)
+
+    singleOf(::BasePreferences)
+
+    single<PreferenceStore> {
+        DatastorePreferenceStore(androidContext().dataStore)
+    }
+
+    singleOf(::DefaultContentInteractor) { bind<ContentInteractor>() }
+    singleOf(::DefaultListInteractor) { bind<ListInteractor>() }
+
+    singleOf(::UiPreferences)
+
+    workerOf(::RecommendationWorker)
+
+    workerOf(::FavoritesUpdateWorker)
+
+    workerOf(::UserListUpdateWorker)
+
+    workerOf(::ListUpdateWorker)
+
+    singleOf(::ListUpdateManager)
+
+    factory { EditContentList.create(get(), get(), get()) }
+
+    singleOf(::RecommendationManager)
+
+    singleOf(::StoragePreferences)
+
+    singleOf(::MovieCoverCache)
+
+    singleOf(::ProfileImageCache)
+
+    singleOf(::TVShowCoverCache)
+
+    singleOf(::ListCoverCache)
+
+    singleOf(::ImageSaver)
+
+
+    single<SupabaseClient> {
+        createSupabaseClient(
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABSE_ANON_KEY,
+        ) {
+            install(Postgrest)
+            install(Auth)
+            install(ComposeAuth) {
+                googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID)
+            }
+            install(Storage)
+        }
+    }
+
+    single { get<SupabaseClient>().storage }
+    single { get<SupabaseClient>().auth }
+    single { get<SupabaseClient>().postgrest }
+    single { get<SupabaseClient>().composeAuth }
+
+    singleOf(::BackendRepositoryImpl) { bind<BackendRepository>() }
+    single<ListRepository> { get<BackendRepository>() }
+    single<UserRepository> { get<BackendRepository>() }
+    single<CommentRepository> { get<BackendRepository>() }
+
+
+    singleOf(::CreditRepositoryImpl) { bind<CreditRepository>() }
+
+    singleOf(::ContentListRepositoryImpl) { bind<ContentListRepository>() }
+
+    singleOf(::TrailerRepositoryImpl) { bind<TrailerRepository>() }
+
+    singleOf(::MovieRepositoryImpl) { bind<MovieRepository>() }
+
+    singleOf(::ShowRepositoryImpl) { bind<ShowRepository>() }
+
+    factoryOf(::LocalContentRepositoryImpl) { bind<LocalContentDelegate>() }
+
+    factoryOf(::NetworkContentDelegateImpl) { bind<NetworkContentDelegate>() }
+
     single<SqlDriver> {
         AndroidSqliteDriver(
             Database.Schema,
@@ -165,94 +277,14 @@ val appModule = module {
 
     single<DatabaseHandler> { DatabaseHandlerImpl(get(), get(), get()) }
 
-    single {
-        Dispatchers.Default
-    } withOptions {
-        qualifier<DefaultDispatcher>()
-    }
-
-    single {
-        Dispatchers.IO
-    } withOptions {
-        qualifier<IoDispatcher>()
-    }
-
-    single {
-        Dispatchers.Main
-    } withOptions {
-        qualifier<MainDispatcher>()
-    }
-
-    factory<DeleteContentList> {
-        DeleteContentList.create(
-            get(),get(), get(), get()
-        )
-    }
 
     factoryOf(::SourceTrailerRepository)
-
-    singleOf(::CreditRepositoryImpl) { bind<CreditRepository>() }
-
-    singleOf(::ContentListRepositoryImpl) { bind<ContentListRepository>() }
-
-    singleOf(::TrailerRepositoryImpl) { bind<TrailerRepository>() }
 
     singleOf(::SourceMovieRepositoryImpl) { bind<SourceMovieRepository>() }
 
     singleOf(::SourceShowRepositoryImpl) { bind<SourceShowRepository>() }
 
-    singleOf(::MovieRepositoryImpl) { bind<MovieRepository>() }
-
-    singleOf(::ShowRepositoryImpl) { bind<ShowRepository>() }
-
-    factoryOf(::LocalContentRepositoryImpl) { bind<LocalContentDelegate>() }
-
-    factoryOf(::NetworkContentDelegateImpl) { bind<NetworkContentDelegate>() }
-
     factoryOf(::SourceCreditsRepository)
-
-    singleOf(::BrowsePreferences)
-
-    singleOf(::LibraryPreferences)
-
-    singleOf(::BasePreferences)
-
-    single<PreferenceStore> {
-        DatastorePreferenceStore(androidContext().dataStore)
-    }
-
-    singleOf(::BackendRepositoryImpl) { bind<BackendRepository>() }
-    single<ListRepository> { get<BackendRepository>() }
-    single<UserRepository> { get<BackendRepository>() }
-    single<CommentRepository> {  get<BackendRepository>() }
-
-    singleOf(::UiPreferences)
-
-    workerOf(::RecommendationWorker)
-
-    workerOf(::FavoritesUpdateWorker)
-
-    workerOf(::UserListUpdateWorker)
-
-    workerOf(::ListUpdateWorker)
-
-    singleOf(::ListUpdateManager)
-
-    factory { EditContentList.create(get(), get(), get()) }
-
-    singleOf(::RecommendationManager)
-
-    singleOf(::StoragePreferences)
-
-    singleOf(::MovieCoverCache)
-
-    singleOf(::ProfileImageCache)
-
-    singleOf(::TVShowCoverCache)
-
-    singleOf(::ListCoverCache)
-
-    singleOf(::ImageSaver)
 
     singleOf(::NetworkMonitor)
 
@@ -280,24 +312,7 @@ val appModule = module {
     single { get<Retrofit>().create<TMDBTVShowService>() }
     single { get<Retrofit>().create<TMDBMovieService>() }
 
-    single<SupabaseClient> {
-        createSupabaseClient(
-            supabaseUrl = BuildConfig.SUPABASE_URL,
-            supabaseKey = BuildConfig.SUPABSE_ANON_KEY,
-        ) {
-            install(Postgrest)
-            install(Auth)
-            install(ComposeAuth) {
-                googleNativeLogin(serverClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID)
-            }
-            install(Storage)
-        }
-    }
-
-    single { get<SupabaseClient>().storage }
-    single { get<SupabaseClient>().auth }
-    single { get<SupabaseClient>().postgrest }
-    single { get<SupabaseClient>().composeAuth }
+    singleOf(::PlayerPresenter)
 
     single {
         Cache(
@@ -340,8 +355,6 @@ val appModule = module {
 }
 
 val screenModelModule = module {
-
-    viewModelOf(::MainViewModel)
 
     viewModelOf(::ScreenResultsViewModel)
 

@@ -7,19 +7,17 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.stringResource
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import io.silv.movie.MainViewModel
 import io.silv.movie.R
-import io.silv.movie.presentation.getActivityViewModel
 import io.silv.movie.presentation.screen.LibraryScreen
-import kotlinx.coroutines.flow.receiveAsFlow
 
 
-data object LibraryTab: SharedTransitionTab() {
+data object LibraryTabElement: SharedElementTransitionTab() {
+
+    private fun readResolve(): Any = LibraryTabElement
 
     override val options: TabOptions
         @Composable get() = TabOptions(
@@ -30,18 +28,11 @@ data object LibraryTab: SharedTransitionTab() {
 
     @Composable
     override fun Content() {
-
-        val mainViewModel by getActivityViewModel<MainViewModel>()
-
         Navigator(
             LibraryScreen
         ) { navigator ->
 
-            LaunchedEffect(Unit) {
-                mainViewModel.navigationChannel.receiveAsFlow().collect { action ->
-                    with(navigator) { action() }
-                }
-            }
+            navigator.ConsumeNavEvents()
 
             AnimatedContentTransition(
                 navigator,

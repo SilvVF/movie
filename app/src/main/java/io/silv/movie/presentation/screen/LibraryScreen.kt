@@ -20,6 +20,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -31,7 +32,6 @@ import io.silv.core_ui.components.topbar.rememberPosterTopBarState
 import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.CollectEventsWithLifecycle
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
@@ -50,10 +50,11 @@ import io.silv.movie.presentation.screenmodel.LibraryState
 import org.koin.core.parameter.parametersOf
 
 data object LibraryScreen: Screen {
+    private fun readResolve(): Any = LibraryScreen
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<LibraryScreenModel>()
+        val screenModel = koinScreenModel<LibraryScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val listCount by screenModel.listCount.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
@@ -109,7 +110,7 @@ data object LibraryScreen: Screen {
         when (val dialog = state.dialog) {
             null -> Unit
             is LibraryScreenModel.Dialog.FullCover -> {
-                val sm = koin4ScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
+                val sm = koinScreenModel<ListCoverScreenModel> { parametersOf(dialog.contentList.id) }
 
                 LaunchedEffect(dialog.contentList.id) {
                     sm.refresh(dialog.contentList.id)

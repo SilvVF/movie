@@ -12,15 +12,23 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
@@ -65,9 +73,21 @@ inline fun <S, reified R : ScreenResult> rememberScreenWithResultLauncher(
     return screenResultLauncher
 }
 
+fun interface GlobalNavigator {
+    suspend fun navigate(event: Navigator.() -> Unit)
+}
+
 class ScreenResultsViewModel(
     private val state: SavedStateHandle
-) : ViewModel() {
+) : ViewModel(), GlobalNavigator {
+
+    private val screenSendCh = Channel<Navigator.() -> Unit>(UNLIMITED)
+    val screenNavCh = screenSendCh.receiveAsFlow().produceIn(viewModelScope)
+
+    override suspend fun navigate(event: Navigator.() -> Unit) =
+        withContext(Dispatchers.Main.immediate) {
+            screenSendCh.send(event)
+        }
 
     fun bind() {
         ScreenResultsStoreProxy.screenResultModel = this

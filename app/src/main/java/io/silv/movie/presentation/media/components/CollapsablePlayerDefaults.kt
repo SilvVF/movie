@@ -147,7 +147,7 @@ private fun RerorderableVideoQueueItem(
                         shadowElevation = elevation.toPx()
                         shape = cardShape
                     }
-                    .conditional(idx != 1) {
+                    .conditional(idx != 0) {
                         detectReorderAfterLongPress(reorderableState)
                     },
                 colors = CardDefaults.elevatedCardColors(
@@ -216,7 +216,7 @@ private fun PlayerMediaItemInfo(
                             modifier = Modifier.alpha(0.78f),
                         ) {
                             TooltipIconButton(
-                                onClick = { /*TODO*/ },
+                                onClick = {},
                                 tooltip = stringResource(id = R.string.view_on_youtube),
                                 imageVector = FontAwesomeIcons.Brands.Youtube,
                                 modifier = Modifier.size(22.dp)

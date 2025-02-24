@@ -1,14 +1,14 @@
 package io.silv.movie.presentation
 
-import androidx.compose.runtime.Stable
 import io.github.jan.supabase.auth.Auth
-import io.silv.movie.data.model.ContentItem
-import io.silv.movie.data.model.ContentList
+import io.silv.movie.IoDispatcher
 import io.silv.movie.data.local.ContentListRepository
-import io.silv.movie.data.model.toContentItem
 import io.silv.movie.data.local.LocalContentDelegate
 import io.silv.movie.data.local.networkToLocalMovie
 import io.silv.movie.data.local.networkToLocalShow
+import io.silv.movie.data.model.ContentItem
+import io.silv.movie.data.model.ContentList
+import io.silv.movie.data.model.toContentItem
 import io.silv.movie.data.model.toDomain
 import io.silv.movie.data.model.toMovieUpdate
 import io.silv.movie.data.model.toShowUpdate
@@ -22,42 +22,18 @@ import io.silv.movie.presentation.ContentInteractor.ContentEvent.Favorite
 import io.silv.movie.presentation.ContentInteractor.ContentEvent.RemoveFromList
 import io.silv.movie.presentation.covers.cache.MovieCoverCache
 import io.silv.movie.presentation.covers.cache.TVShowCoverCache
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.io.IOException
 
-@Stable
 interface ContentInteractor : EventProducer<ContentEvent> {
     fun toggleFavorite(contentItem: ContentItem)
     fun addToList(contentList: ContentList, contentItem: ContentItem)
     fun addToAnotherList(listId: Long, contentItem: ContentItem)
     fun addToList(listId: Long, contentItem: ContentItem)
     fun removeFromList(contentList: ContentList, contentItem: ContentItem)
-
-    companion object {
-        fun default(
-            local: LocalContentDelegate,
-            listRepository: ListRepository,
-            contentListRepository: ContentListRepository,
-            network: NetworkContentDelegate,
-            auth: Auth,
-            movieCoverCache: MovieCoverCache,
-            showCoverCache: TVShowCoverCache,
-            scope: CoroutineScope,
-        ): ContentInteractor {
-            return DefaultContentInteractor(
-                contentListRepository,
-                listRepository,
-                local,
-                auth,
-                network,
-                movieCoverCache,
-                showCoverCache,
-                scope
-            )
-        }
-    }
 
     sealed interface ContentEvent {
         data class Favorite(val item: ContentItem, val success: Boolean) : ContentEvent
@@ -78,8 +54,7 @@ interface ContentInteractor : EventProducer<ContentEvent> {
     }
 }
 
-@Stable
-private class DefaultContentInteractor(
+class DefaultContentInteractor(
     val contentListRepository: ContentListRepository,
     val listRepository: ListRepository,
     val local: LocalContentDelegate,
@@ -87,11 +62,13 @@ private class DefaultContentInteractor(
     val network: NetworkContentDelegate,
     val movieCoverCache: MovieCoverCache,
     val showCoverCache: TVShowCoverCache,
-    val scope: CoroutineScope,
+    @IoDispatcher val ioDispatcher: CoroutineDispatcher,
 ) : ContentInteractor, EventProducer<ContentEvent> by EventProducer.default() {
 
+    private val scope = CoroutineScope(ioDispatcher + SupervisorJob())
+
     override fun toggleFavorite(contentItem: ContentItem) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             toggleContentItemFavorite(
                 contentItem,
                 changeOnNetwork = auth.currentUserOrNull() != null
@@ -106,7 +83,7 @@ private class DefaultContentInteractor(
     }
 
     override fun addToList(contentList: ContentList, contentItem: ContentItem) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             addContentItemToList(auth, listRepository, contentListRepository, contentItem, contentList)
                 .onSuccess {
                     emitEvent(AddToList(contentItem, contentList, true))
@@ -118,7 +95,7 @@ private class DefaultContentInteractor(
     }
 
     override fun addToAnotherList(listId: Long, contentItem: ContentItem) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             val list = contentListRepository.getList(listId) ?: return@launch
             addContentItemToList(auth, listRepository, contentListRepository, contentItem, list)
                 .onSuccess {
@@ -131,14 +108,14 @@ private class DefaultContentInteractor(
     }
 
     override fun addToList(listId: Long, contentItem: ContentItem) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             val list = contentListRepository.getList(listId) ?: return@launch
             addToList(list, contentItem)
         }
     }
 
     override fun removeFromList(contentList: ContentList, contentItem: ContentItem) {
-        scope.launch(Dispatchers.IO) {
+        scope.launch(ioDispatcher) {
             removeContentItemFromList(
                 contentItem,
                 contentList,

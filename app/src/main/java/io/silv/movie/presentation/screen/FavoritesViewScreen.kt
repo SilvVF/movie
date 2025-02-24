@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import io.silv.core_ui.components.PullRefresh
@@ -43,7 +44,6 @@ import io.silv.core_ui.util.colorClickable
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.prefrences.PosterDisplayMode
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentListPosterGrid
@@ -61,12 +61,13 @@ import io.silv.movie.presentation.tabs.SharedElement
 import io.silv.movie.presentation.tabs.registerSharedElement
 
 data object FavoritesViewScreen : Screen {
+    private fun readResolve(): Any = FavoritesViewScreen
 
     @Composable
     override fun Content() {
 
         val contentInteractor = LocalContentInteractor.current
-        val screenModel = koin4ScreenModel<FavoritesScreenModel>()
+        val screenModel = koinScreenModel<FavoritesScreenModel>()
         val state by screenModel.state.collectAsStateWithLifecycle()
         val navigator = LocalNavigator.currentOrThrow
         val changeDialog =

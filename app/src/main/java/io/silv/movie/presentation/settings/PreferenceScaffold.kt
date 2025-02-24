@@ -24,7 +24,7 @@ import io.silv.core_ui.theme.getColorScheme
 import io.silv.movie.AppData
 import io.silv.movie.isDarkTheme
 import io.silv.movie.prefrences.ThemeMode
-import io.silv.movie.presentation.LocalAppState
+import io.silv.movie.presentation.LocalAppData
 import io.silv.movie.presentation.collectAsState
 import io.silv.movie.presentation.settings.widgets.EditTextPreferenceWidget
 import io.silv.movie.presentation.settings.widgets.FloatSliderItem
@@ -44,7 +44,7 @@ fun PreferenceScaffold(
     titleRes: StringResource,
     actions: @Composable RowScope.() -> Unit = {},
     onBackPressed: (() -> Unit)? = null,
-    appData: AppData = LocalAppState.current,
+    appData: AppData = LocalAppData.current,
     itemsProvider: @Composable () -> List<Preference>,
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

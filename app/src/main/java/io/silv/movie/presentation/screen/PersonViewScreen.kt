@@ -63,7 +63,7 @@ import io.silv.core_ui.util.clickableNoIndication
 import io.silv.core_ui.util.colorClickable
 import io.silv.core_ui.util.copyToClipboard
 import io.silv.core_ui.util.rememberDominantColor
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.components.content.movie.ExpandableSummary
 import io.silv.movie.presentation.screenmodel.PersonViewScreenModel
 import io.silv.movie.presentation.screenmodel.PersonViewState
@@ -110,7 +110,7 @@ data class PersonViewScreen(
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<PersonViewScreenModel> { parametersOf(personId, posterPath.orEmpty()) }
+        val screenModel = koinScreenModel<PersonViewScreenModel> { parametersOf(personId, posterPath.orEmpty()) }
         val credits = screenModel.credits.collectAsLazyPagingItems()
         val state by screenModel.state.collectAsStateWithLifecycle()
 

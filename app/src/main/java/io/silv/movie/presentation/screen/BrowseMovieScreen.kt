@@ -34,6 +34,7 @@ import androidx.paging.PagingData
 import cafe.adriel.voyager.core.lifecycle.DisposableEffectIgnoringConfiguration
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.core.screen.ScreenKey
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeDefaults
@@ -47,9 +48,7 @@ import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentPagedType
 import io.silv.movie.data.model.toContentItem
-import io.silv.movie.data.model.MoviePoster
 import io.silv.movie.prefrences.PosterDisplayMode
-import io.silv.movie.koin4ScreenModel
 import io.silv.movie.presentation.LocalContentInteractor
 import io.silv.movie.presentation.LocalIsScrolling
 import io.silv.movie.presentation.components.content.movie.ContentBrowseTopBar
@@ -72,7 +71,7 @@ data class BrowseMovieScreen(
     @Composable
     override fun Content() {
 
-        val screenModel = koin4ScreenModel<MovieScreenModel> { parametersOf(contentPagedType) }
+        val screenModel = koinScreenModel<MovieScreenModel> { parametersOf(contentPagedType) }
 
         val state by screenModel.state.collectAsStateWithLifecycle()
         val online by screenModel.online.collectAsStateWithLifecycle()

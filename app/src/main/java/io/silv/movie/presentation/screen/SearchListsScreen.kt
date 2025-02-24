@@ -50,7 +50,7 @@ import io.silv.core_ui.voyager.rememberScreenWithResultLauncher
 import io.silv.movie.R
 import io.silv.movie.data.model.ContentItem
 import io.silv.movie.data.model.ContentList
-import io.silv.movie.koin4ScreenModel
+import cafe.adriel.voyager.koin.koinScreenModel
 import io.silv.movie.presentation.LocalListInteractor
 import io.silv.movie.presentation.LocalUser
 import io.silv.movie.presentation.components.content.ContentListPosterStateFlowItems
@@ -63,7 +63,7 @@ data object SearchForListScreen: Screen {
 
     @Composable
     override fun Content() {
-        val screenModel = koin4ScreenModel<SearchForListScreenModel>()
+        val screenModel = koinScreenModel<SearchForListScreenModel>()
         val pagingItems = screenModel.state.collectAsLazyPagingItems()
         val navigator = LocalNavigator.currentOrThrow
         val listInteractor = LocalListInteractor.current
