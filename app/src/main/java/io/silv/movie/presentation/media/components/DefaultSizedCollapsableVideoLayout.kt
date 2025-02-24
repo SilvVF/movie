@@ -540,7 +540,7 @@ fun DefaultSizeCollapsableVideoLayout(
                     scrollEnabled = !videoState.fullScreenDragEnabled,
                     bottomPaddingPx = bottomPadding
                 ) {
-                    item {
+                    stickyHeader("PINNED_CONTENT") {
                         pinnedContent()
                     }
                     content()

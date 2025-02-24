@@ -60,9 +60,16 @@ object CollapsablePlayerDefaults {
         reorderableState: ReorderableLazyListState,
         onMute: () -> Unit,
         trailer: Trailer,
-        idx: Int,
+        start: Int,
+        offset: Int
     ) {
-        RerorderableVideoQueueItem(reorderableState, onMute, trailer, idx)
+        RerorderableVideoQueueItem(
+            reorderableState,
+            onMute,
+            trailer,
+            offset,
+            start
+        )
     }
 
     @Composable
@@ -101,12 +108,13 @@ private fun RerorderableVideoQueueItem(
     reorderableState: ReorderableLazyListState,
     mutePlayer: () -> Unit,
     trailer: Trailer,
-    idx: Int,
+    offset: Int,
+    start: Int,
 ) {
     ReorderableItem(
         state = reorderableState,
-        key =  { trailer },
-        index = idx,
+        key =  { trailer.key + trailer.id },
+        index = start + offset,
     ) {dragging ->
         val elevation by animateDpAsState(
             label = "drag-elevation",
@@ -116,7 +124,7 @@ private fun RerorderableVideoQueueItem(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.wrapContentSize(),
         ) {
-            if (idx == 0) {
+            if (offset == 0) {
                 AnimatedEqualizer(
                     onClick = mutePlayer
                 )
@@ -147,7 +155,7 @@ private fun RerorderableVideoQueueItem(
                         shadowElevation = elevation.toPx()
                         shape = cardShape
                     }
-                    .conditional(idx != 0) {
+                    .conditional(offset != 0) {
                         detectReorderAfterLongPress(reorderableState)
                     },
                 colors = CardDefaults.elevatedCardColors(

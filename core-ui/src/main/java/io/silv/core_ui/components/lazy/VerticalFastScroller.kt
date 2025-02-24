@@ -143,7 +143,7 @@ fun VerticalFastScroller(
 
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(0, thumbOffsetY.roundToInt()) }
+                    .offset { IntOffset(0, thumbOffsetY.takeIf { !it.isNaN() }?.roundToInt() ?: 0) }
                     .then(
                         // Recompose opts
                         if (isThumbVisible && !listState.isScrollInProgress) {

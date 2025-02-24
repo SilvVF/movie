@@ -126,11 +126,12 @@ fun CollapsablePlayerScreen(
         itemsIndexed(
             items = state.queue,
             key = { _, it -> it.id }
-        ) {idx, trailer ->
+        ) {i, trailer ->
             CollapsablePlayerDefaults.VideoQueueItem(
                 reorderableState = reorderState,
                 trailer = trailer,
-                idx = idx,
+                start = 1,
+                offset = i,
                 onMute = {
                     videoState.sendPlayerEvent(PlayerPresenter.PlayerEvent.Mute)
                 }

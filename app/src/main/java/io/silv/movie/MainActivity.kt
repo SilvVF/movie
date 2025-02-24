@@ -71,6 +71,7 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.koin.android.ext.android.inject
 import org.koin.androidx.compose.KoinAndroidContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 
@@ -154,7 +155,12 @@ private fun MainContent(
     val videoState = LocalVideoState.current
     val state by videoState.state.collectAsStateWithLifecycle()
     val reorderState = rememberReorderableLazyListState(
-        onMove = videoState::onMove,
+        canDragOver = { from, to -> from.index != 0 && to.index != 0 },
+        onMove = { from, to ->
+            // adjust because of sticky header
+            Timber.d("$from, $to")
+            videoState.onMove(from.copy(index = (from.index - 1).coerceAtLeast(0)), to.copy(index = (to.index - 1).coerceAtLeast(0)))
+        },
     )
 
     val dismissSnackbarState =
